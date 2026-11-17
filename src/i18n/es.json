@@ -5,7 +5,9 @@
     "workspace_not_found": "Ese workspace ya no existe.",
     "not_set_up": "Termina el primer arranque antes de hacer esto.",
     "database": "Falló la base de datos local. Inténtalo de nuevo.",
-    "unknown": "Algo salió mal. Inténtalo de nuevo."
+    "unknown": "Algo salió mal. Inténtalo de nuevo.",
+    "team_not_found": "Ese equipo ya no existe.",
+    "invalid_agent": "Revisa los campos: nombre y rol de hasta 80 caracteres, descripción de hasta 500, instrucciones de hasta 10.000, y proveedor y modelo son obligatorios."
   },
   "newWorkspace": {
     "title": "Crea tu workspace",
@@ -17,7 +19,22 @@
   },
   "teams": {
     "title": "Equipos",
-    "noAgents": "Este equipo aún no tiene agentes."
+    "noAgents": "Este equipo aún no tiene agentes.",
+    "newTeam": "Nuevo equipo",
+    "newAgent": "Nuevo agente",
+    "teamName": "Nombre del equipo",
+    "createTeam": "Crear equipo",
+    "cancel": "Cancelar",
+    "agent": {
+      "team": "Equipo",
+      "name": "Nombre",
+      "role": "Rol",
+      "provider": "Proveedor",
+      "model": "Modelo",
+      "description": "Descripción",
+      "instructions": "Instrucciones",
+      "submit": "Crear agente"
+    }
   },
   "home": {
     "soon": "Disponible pronto",
@@ -46,7 +63,7 @@
     },
     "empty": {
       "title": "Tu oficina está lista",
-      "body": "Tus equipos y agentes aparecerán aquí."
+      "body": "Crea tu primer equipo para empezar a sumar agentes."
     }
   }
 }

@@ -17,7 +17,15 @@ function App() {
     createWorkspace,
     switchWorkspace,
   } = useSession();
-  const { teams, errorKey: teamsErrorKey } = useTeams(session?.current_workspace_id ?? null);
+  const {
+    teams,
+    errorKey: teamsErrorKey,
+    actionErrorKey: teamsActionErrorKey,
+    busy: teamsBusy,
+    createTeam,
+    createAgent,
+    clearActionError: clearTeamsActionError,
+  } = useTeams(session?.current_workspace_id ?? null);
   const [draftLocale, setDraftLocale] = useState<Locale>("en");
   const [creating, setCreating] = useState(false);
 
@@ -26,6 +34,7 @@ function App() {
   const locale = session?.locale ?? draftLocale;
   const errorMessage = errorKey ? translateError(locale, errorKey) : null;
   const teamsErrorMessage = teamsErrorKey ? translateError(locale, teamsErrorKey) : null;
+  const teamsActionErrorMessage = teamsActionErrorKey ? translateError(locale, teamsActionErrorKey) : null;
 
   return (
     <I18nProvider locale={locale}>
@@ -53,6 +62,11 @@ function App() {
           workspaces={session.workspaces}
           teams={teams}
           teamsErrorMessage={teamsErrorMessage}
+          teamsActionErrorMessage={teamsActionErrorMessage}
+          teamsBusy={teamsBusy}
+          onCreateTeam={createTeam}
+          onCreateAgent={createAgent}
+          onClearTeamsActionError={clearTeamsActionError}
           currentId={session.current_workspace_id}
           busy={busy}
           errorMessage={errorMessage}

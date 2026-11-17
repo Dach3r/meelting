@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { Team } from "../../hooks/useTeams";
+import type { AgentDraft, Team } from "../../hooks/useTeams";
 import type { WorkspaceSwitcherProps } from "../molecules/WorkspaceSwitcher";
 import { SwitchingOverlay } from "../molecules/SwitchingOverlay";
 import { Rail } from "../organisms/Rail";
@@ -20,11 +20,27 @@ function storedCollapsed() {
 type WorkspaceProps = WorkspaceSwitcherProps & {
   teams: Team[];
   teamsErrorMessage: string | null;
+  teamsActionErrorMessage: string | null;
+  teamsBusy: boolean;
+  onCreateTeam: (name: string) => Promise<boolean>;
+  onCreateAgent: (draft: AgentDraft) => Promise<boolean>;
+  onClearTeamsActionError: () => void;
   errorMessage: string | null;
   onDismissError: () => void;
 };
 
-export function Workspace({ teams, teamsErrorMessage, errorMessage, onDismissError, ...props }: WorkspaceProps) {
+export function Workspace({
+  teams,
+  teamsErrorMessage,
+  teamsActionErrorMessage,
+  teamsBusy,
+  onCreateTeam,
+  onCreateAgent,
+  onClearTeamsActionError,
+  errorMessage,
+  onDismissError,
+  ...props
+}: WorkspaceProps) {
   const [collapsed, setCollapsed] = useState(storedCollapsed);
   const [animated, setAnimated] = useState(false);
   const [switching, setSwitching] = useState<{ name: string; failed: boolean } | null>(null);
@@ -62,7 +78,15 @@ export function Workspace({ teams, teamsErrorMessage, errorMessage, onDismissErr
         <main className="flex min-h-0 flex-1 flex-col px-8 pb-8">
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl bg-surface">
             <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-8">
-              <TeamsPage teams={teams} errorMessage={teamsErrorMessage} />
+              <TeamsPage
+                teams={teams}
+                errorMessage={teamsErrorMessage}
+                actionErrorMessage={teamsActionErrorMessage}
+                busy={teamsBusy}
+                onCreateTeam={onCreateTeam}
+                onCreateAgent={onCreateAgent}
+                onClearActionError={onClearTeamsActionError}
+              />
             </div>
           </div>
         </main>

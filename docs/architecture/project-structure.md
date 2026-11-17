@@ -33,7 +33,7 @@ src-tauri/src/
 │   ├── keychain.rs        ✅ save_secret, secret_last_four, delete_secret
 │   ├── worktree.rs        ✅ run_in_worktree
 │   ├── completion.rs      ✅ stream_completion
-│   └── session.rs         ✅ load_session, complete_first_launch, create_workspace, switch_workspace, list_teams
+│   └── session.rs         ✅ load_session, complete_first_launch, create_workspace, switch_workspace, list_teams, create_team, create_agent
 ├── services/              Capa 2: acciones de negocio (verbos)
 │   ├── worktree_run.rs    ✅ crea un worktree y ejecuta un comando en él
 │   ├── completion_stream.rs ✅ lee la clave del keychain y hace streaming de una respuesta
@@ -41,7 +41,9 @@ src-tauri/src/
 │   ├── first_launch.rs    ✅ crea el perfil y el primer workspace en una transacción
 │   ├── workspace_create.rs ✅ crea un workspace y lo deja como actual
 │   ├── workspace_switch.rs ✅ cambia el workspace actual
-│   └── teams_list.rs      ✅ equipos del workspace actual con sus agentes
+│   ├── teams_list.rs      ✅ equipos del workspace actual con sus agentes
+│   ├── team_create.rs     ✅ crea un equipo y devuelve la lista actualizada
+│   └── agent_create.rs    ✅ valida y crea un agente personalizado y devuelve la lista actualizada
 ├── system/                Capa 3: integración con el SO, sin reglas de negocio
 │   ├── git.rs             ✅ git por tokio::process (worktree add)
 │   ├── terminal.rs        ✅ PTY portable y lectura de salida
@@ -57,7 +59,7 @@ src-tauri/src/
 │   ├── locale.rs          ✅ idioma es/en
 │   ├── profile.rs         ✅ perfil local
 │   ├── session.rs         ✅ perfil + workspaces que recibe la UI
-│   ├── team.rs            ✅ equipo y agente (resumen) que recibe la UI
+│   ├── team.rs            ✅ equipo y agente (resumen) que recibe la UI; AgentDraft y su validación
 │   └── workspace.rs       ✅ workspace y validación del nombre
 └── catalogs/              pendiente: agent_templates/*.yml y llm.yml embebidos
 ```
@@ -76,7 +78,7 @@ src-tauri/src/
 
 - **Un error por módulo** con `thiserror`. Solo se implementa `Serialize` en el error que cruza hacia la UI (el del servicio o el de `keychain`), como cadena.
 - **Comandos de secretos sin servicio:** `commands/keychain.rs` llama a `system/keychain.rs` directamente porque aún no hay regla que orquestar. Cuando exista la verificación previa a guardar (Fase 3), pasa a un servicio.
-- **Errores hacia la UI como código:** `SessionError` se serializa como un código estable (`invalid_name`, `workspace_not_found`, `not_set_up`, `database`); la UI lo traduce. No viaja el detalle de la base de datos.
+- **Errores hacia la UI como código:** `SessionError` se serializa como un código estable (`invalid_name`, `invalid_agent`, `workspace_not_found`, `team_not_found`, `not_set_up`, `database`); la UI lo traduce. No viaja el detalle de la base de datos.
 - **Base de datos:** el pool se abre en `setup` (`app_data_dir()/meelting.db`) y se registra como estado de Tauri; los comandos lo reciben con `State<SqlitePool>`. Los repositorios aceptan cualquier `SqliteExecutor` para poder usarse dentro de transacciones.
 - **Servicios sin Tauri:** reciben `impl Fn` para salida y fin, de modo que se prueban sin ventana ni `AppHandle`.
 - **Eventos hacia la UI:** los emite el comando. Nombres actuales: `terminal-output` (texto), `terminal-exit` (código de salida) y `llm-token` (fragmento de respuesta). El fin del streaming es el retorno del comando.
@@ -98,12 +100,12 @@ src/
 ├── i18n/                  es.json, en.json, translate.ts (texto y errores) e I18nProvider
 ├── hooks/                 Acceso al núcleo y estado asociado
 │   ├── useSession.ts      ✅ invoke load_session, complete_first_launch, create_workspace, switch_workspace
-│   └── useTeams.ts        ✅ invoke list_teams del workspace actual
+│   └── useTeams.ts        ✅ invoke list_teams, create_team, create_agent
 ├── test/setup.ts          Configuración de Vitest (jest-dom)
 └── components/            Atomic design (overview.md §8)
-    ├── atoms/             Button, Logo
-    ├── molecules/         Alert, IslandMenu, LocaleSwitcher, NavItem, SwitchingOverlay, WorkspaceSwitcher
-    ├── organisms/         NewWorkspacePage, Rail, TeamsPage, Topbar
+    ├── atoms/             Button, Field, Logo
+    ├── molecules/         Alert, IslandMenu, LocaleSwitcher, NavItem, SwitchingOverlay, TeamForm, WorkspaceSwitcher
+    ├── organisms/         AgentForm, NewWorkspacePage, Rail, TeamsPage, Topbar
     └── templates/         Workspace (riel + topbar + contenido)
 ```
 

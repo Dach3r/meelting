@@ -216,7 +216,7 @@ describe("workspace shell", () => {
     mockCore(session({ locale: "en" }));
     render(<App />);
 
-    expect(await screen.findByText("Your teams and agents will appear here.")).toBeInTheDocument();
+    expect(await screen.findByText("Create your first team to start adding agents.")).toBeInTheDocument();
   });
 
   it("shows the translated error when the teams fail to load", async () => {
@@ -227,5 +227,85 @@ describe("workspace shell", () => {
     render(<App />);
 
     expect(await screen.findByRole("alert")).toHaveTextContent("The local database failed. Try again.");
+  });
+
+  it("creates a team from the form and shows it", async () => {
+    const created = [{ id: "t1", name: "Design", agents: [] }];
+    invokeMock.mockImplementation(async (command) => {
+      if (command === "list_teams") return [];
+      if (command === "create_team") return created;
+      return session({ locale: "en" });
+    });
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "New team" }));
+    await user.type(screen.getByLabelText("Team name"), "Design");
+    await user.click(screen.getByRole("button", { name: "Create team" }));
+
+    expect(invokeMock).toHaveBeenCalledWith("create_team", { name: "Design" });
+    expect(await screen.findByRole("heading", { name: "Design" })).toBeInTheDocument();
+    expect(screen.queryByLabelText("Team name")).not.toBeInTheDocument();
+  });
+
+  it("keeps the team form open and shows the error when creating fails", async () => {
+    invokeMock.mockImplementation(async (command) => {
+      if (command === "list_teams") return [];
+      if (command === "create_team") throw "invalid_name";
+      return session({ locale: "en" });
+    });
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "New team" }));
+    await user.type(screen.getByLabelText("Team name"), "Design");
+    await user.click(screen.getByRole("button", { name: "Create team" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Enter a name of up to 80 characters.");
+    expect(screen.getByLabelText("Team name")).toBeInTheDocument();
+  });
+
+  it("disables New agent until a team exists", async () => {
+    mockCore(session({ locale: "en" }));
+    render(<App />);
+
+    expect(await screen.findByRole("button", { name: "New agent" })).toBeDisabled();
+  });
+
+  it("creates an agent in the chosen team", async () => {
+    const teams = [{ id: "t1", name: "General", agents: [] }];
+    const withAgent = [
+      { id: "t1", name: "General", agents: [{ id: "a1", team_id: "t1", name: "Ana", role: "Developer" }] },
+    ];
+    invokeMock.mockImplementation(async (command) => {
+      if (command === "list_teams") return teams;
+      if (command === "create_agent") return withAgent;
+      return session({ locale: "en" });
+    });
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "New agent" }));
+    const submit = screen.getByRole("button", { name: "Create agent" });
+    expect(submit).toBeDisabled();
+    await user.type(screen.getByLabelText("Name"), "Ana");
+    await user.type(screen.getByLabelText("Role"), "Developer");
+    await user.type(screen.getByLabelText("Provider"), "openai");
+    await user.type(screen.getByLabelText("Model"), "gpt-4o");
+    await user.click(submit);
+
+    expect(invokeMock).toHaveBeenCalledWith("create_agent", {
+      draft: {
+        team_id: "t1",
+        name: "Ana",
+        role: "Developer",
+        description: "",
+        instructions: "",
+        provider: "openai",
+        model: "gpt-4o",
+      },
+    });
+    expect(await screen.findByText("Ana")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Role")).not.toBeInTheDocument();
   });
 });
