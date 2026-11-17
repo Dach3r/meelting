@@ -91,6 +91,7 @@ describe("workspace shell", () => {
     await user.click(screen.getByRole("button", { name: /Globex/ }));
 
     expect(await screen.findByRole("status")).toHaveTextContent("Switching to Globex");
+    expect(screen.queryByRole("button", { name: "Create another workspace" })).not.toBeInTheDocument();
     expect(invokeMock).toHaveBeenCalledWith("switch_workspace", { workspaceId: "2" });
     expect(await screen.findByRole("button", { name: "Switch workspace" })).toHaveTextContent("Globex");
     await waitFor(() => expect(screen.queryByRole("status")).not.toBeInTheDocument());

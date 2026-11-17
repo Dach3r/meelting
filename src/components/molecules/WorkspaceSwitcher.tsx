@@ -59,8 +59,9 @@ export function WorkspaceSwitcher({
                 key={workspace.id}
                 type="button"
                 disabled={busy}
-                onClick={async () => {
-                  if (await onSwitch(workspace.id)) close();
+                onClick={() => {
+                  close();
+                  void onSwitch(workspace.id);
                 }}
                 className="flex w-full cursor-pointer items-center gap-3 rounded-xl p-2 text-left hover:bg-primary focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ink disabled:cursor-not-allowed disabled:opacity-60"
               >
