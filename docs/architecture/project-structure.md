@@ -94,7 +94,7 @@ La UI llama al núcleo **solo** con `invoke` y `listen` de `@tauri-apps/api`, y 
 ```
 src/
 ├── main.tsx               Monta <App /> en #root
-├── styles.css             Tailwind v4 y tokens Grafito (@theme), fuentes Inter y Rubik
+├── styles.css             Tailwind v4 y tokens Grafito (@theme), fuentes Inter y Rubik, y las clases de conectores del organigrama (org-*)
 ├── App.tsx                Elige entre la página de nuevo workspace (primer arranque o «crear otro») y el shell según la sesión
 ├── assets/fonts/          Inter y Rubik (woff2)
 ├── i18n/                  es.json, en.json, translate.ts (texto y errores) e I18nProvider
@@ -103,9 +103,9 @@ src/
 │   └── useTeams.ts        ✅ invoke list_teams, create_team, create_agent
 ├── test/setup.ts          Configuración de Vitest (jest-dom)
 └── components/            Atomic design (overview.md §8)
-    ├── atoms/             Button, Field, Logo
-    ├── molecules/         Alert, IslandMenu, LocaleSwitcher, NavItem, SwitchingOverlay, TeamForm, WorkspaceSwitcher
-    ├── organisms/         AgentForm, NewWorkspacePage, Rail, TeamsPage, Topbar
+    ├── atoms/             Avatar, Button, Field, Logo
+    ├── molecules/         Alert, IslandMenu, LocaleSwitcher, NavItem, OrgAgentCard, OrgCard, SwitchingOverlay, TeamForm, WorkspaceSwitcher, ZoomControls
+    ├── organisms/         AgentForm, NewWorkspacePage, OrgChart, Rail, TeamsPage, Topbar
     └── templates/         Workspace (riel + topbar + contenido)
 ```
 

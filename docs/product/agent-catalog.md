@@ -1,6 +1,6 @@
 # Catálogo de agentes IA
 
-> **Estado:** en curso (Fase 2). Ya existen: listar equipos y agentes, crear equipos (solo nombre) y crear agentes personalizados con proveedor y modelo escritos a mano. Pendiente: catálogo de plantillas, contratar, editar, eliminar, mover, organigrama, `llm.yml` y el equipo «General» inicial. Comportamiento portado del producto Rails, donde ya estaba implementado.
+> **Estado:** en curso (Fase 2). Ya existen: listar equipos y agentes, crear equipos (solo nombre), crear agentes personalizados con proveedor y modelo escritos a mano y un organigrama básico ("Tú" → equipos → agentes, con tarjetas, contraer y mostrar equipos y agentes, y zoom). Pendiente: catálogo de plantillas, contratar, editar, eliminar, mover y arrastrar, resaltar la selección, minimapa, fijados, estado de cada agente, `llm.yml` y el equipo «General» inicial. Comportamiento portado del producto Rails, donde ya estaba implementado.
 
 **Problema:** el workspace nace vacío; el usuario no puede construir su equipo, que es la base de la oficina virtual.
 **Objetivo:** que el usuario contrate agentes desde un catálogo de plantillas, los personalice y los gestione como el equipo persistente de su workspace. Cada agente tiene su propio proveedor y modelo de IA y trabaja cuando el usuario le dirige una instrucción en una sala ([agent-execution.md](agent-execution.md)).

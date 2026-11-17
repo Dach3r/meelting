@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
@@ -30,9 +30,10 @@ beforeEach(() => {
 
 describe("first launch", () => {
   it("creates the profile with the chosen language and workspace name", async () => {
-    invokeMock.mockImplementation(async (command) =>
-      command === "load_session" ? null : session(),
-    );
+    invokeMock.mockImplementation(async (command) => {
+      if (command === "load_session") return null;
+      return command === "list_teams" ? [] : session();
+    });
     const user = userEvent.setup();
     render(<App />);
 
@@ -190,8 +191,9 @@ describe("workspace shell", () => {
     mockCore(session({ locale: "en" }));
     render(<App />);
 
-    expect((await screen.findByText("Teams")).closest("[aria-current]")).toHaveAttribute("aria-current", "page");
-    expect(screen.getByText("Rooms").closest("[aria-disabled]")).toHaveAttribute("aria-disabled", "true");
+    const nav = within(await screen.findByRole("navigation", { name: "Main navigation" }));
+    expect(nav.getByText("Teams").closest("[aria-current]")).toHaveAttribute("aria-current", "page");
+    expect(nav.getByText("Rooms").closest("[aria-disabled]")).toHaveAttribute("aria-disabled", "true");
   });
 
   it("lists the teams of the workspace with their agents", async () => {
@@ -210,6 +212,83 @@ describe("workspace shell", () => {
     expect(screen.getByText("Developer")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Design" })).toBeInTheDocument();
     expect(screen.getByText("No agents in this team yet.")).toBeInTheDocument();
+  });
+
+  it("draws the org chart with you at the root and the teams under it", async () => {
+    invokeMock.mockImplementation(async (command) =>
+      command === "list_teams"
+        ? [{ id: "t1", name: "General", agents: [{ id: "a1", team_id: "t1", name: "Ana", role: "Developer" }] }]
+        : session({ locale: "en" }),
+    );
+    render(<App />);
+
+    expect(await screen.findByText("You")).toBeInTheDocument();
+    expect(screen.getByText("Supervisor")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Show or hide You" })).toHaveTextContent("1");
+    expect(screen.getByRole("button", { name: "Show or hide General" })).toHaveTextContent("1");
+  });
+
+  it("hides and shows the agents of a team", async () => {
+    invokeMock.mockImplementation(async (command) =>
+      command === "list_teams"
+        ? [{ id: "t1", name: "General", agents: [{ id: "a1", team_id: "t1", name: "Ana", role: "Developer" }] }]
+        : session({ locale: "en" }),
+    );
+    const user = userEvent.setup();
+    render(<App />);
+
+    const toggle = await screen.findByRole("button", { name: "Show or hide General" });
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    await user.click(toggle);
+    expect(screen.queryByText("Ana")).not.toBeInTheDocument();
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    await user.click(toggle);
+    expect(screen.getByText("Ana")).toBeInTheDocument();
+  });
+
+  it("hides and shows the teams from the root card", async () => {
+    invokeMock.mockImplementation(async (command) =>
+      command === "list_teams" ? [{ id: "t1", name: "General", agents: [] }] : session({ locale: "en" }),
+    );
+    const user = userEvent.setup();
+    render(<App />);
+
+    const toggle = await screen.findByRole("button", { name: "Show or hide You" });
+    await user.click(toggle);
+    expect(screen.queryByRole("heading", { name: "General" })).not.toBeInTheDocument();
+    await user.click(toggle);
+    expect(screen.getByRole("heading", { name: "General" })).toBeInTheDocument();
+  });
+
+  it("zooms the chart within its limits and resets it", async () => {
+    invokeMock.mockImplementation(async (command) =>
+      command === "list_teams" ? [{ id: "t1", name: "General", agents: [] }] : session({ locale: "en" }),
+    );
+    const user = userEvent.setup();
+    render(<App />);
+
+    const zoomIn = await screen.findByRole("button", { name: "Zoom in" });
+    const reset = screen.getByRole("button", { name: "Reset zoom" });
+    expect(reset).toHaveTextContent("100%");
+    await user.click(zoomIn);
+    expect(reset).toHaveTextContent("110%");
+    for (let i = 0; i < 4; i++) await user.click(zoomIn);
+    expect(reset).toHaveTextContent("140%");
+    expect(zoomIn).toBeDisabled();
+    await user.click(reset);
+    expect(reset).toHaveTextContent("100%");
+    const zoomOut = screen.getByRole("button", { name: "Zoom out" });
+    for (let i = 0; i < 4; i++) await user.click(zoomOut);
+    expect(reset).toHaveTextContent("60%");
+    expect(zoomOut).toBeDisabled();
+  });
+
+  it("offers no zoom while there are no teams", async () => {
+    mockCore(session({ locale: "en" }));
+    render(<App />);
+
+    expect(await screen.findByRole("button", { name: "New team" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Zoom in" })).not.toBeInTheDocument();
   });
 
   it("shows the empty state when the workspace has no teams", async () => {

@@ -25,6 +25,17 @@
     "teamName": "Team name",
     "createTeam": "Create team",
     "cancel": "Cancel",
+    "chart": {
+      "you": "You",
+      "supervisor": "Supervisor",
+      "team": "Team",
+      "toggle": "Show or hide"
+    },
+    "zoom": {
+      "in": "Zoom in",
+      "out": "Zoom out",
+      "reset": "Reset zoom"
+    },
     "agent": {
       "team": "Team",
       "name": "Name",
