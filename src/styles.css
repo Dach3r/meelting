@@ -169,7 +169,7 @@
     flex-direction: column;
     gap: 10px;
     width: 12.25rem;
-    padding: 10px 0 0 2.25rem;
+    padding: 10px 0 0 2.5rem;
   }
 
   .org-leaf {
@@ -180,20 +180,20 @@
     content: "";
     position: absolute;
     top: -10px;
-    left: -18px;
-    width: 18px;
-    height: 38px;
+    left: -16px;
+    width: 16px;
+    height: 34px;
     border-bottom: 2px solid var(--color-line);
     border-left: 2px solid var(--color-line);
-    border-bottom-left-radius: 8px;
+    border-bottom-left-radius: 16px;
   }
 
   .org-leaf:not(:last-child)::after {
     content: "";
     position: absolute;
-    top: 28px;
+    top: 24px;
     bottom: -10px;
-    left: -18px;
+    left: -16px;
     border-left: 2px solid var(--color-line);
   }
 }
