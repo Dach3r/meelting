@@ -248,7 +248,7 @@ Pantallas: equipos (organigrama), contratar y editar agentes, catálogo, salas (
 | E2E | `tauri-driver` en CI | Crear workspace, contratar agente, enviar instrucción con proveedor simulado, aprobar un comando, descartar una tarea |
 | Proveedores reales | Opcionales, con variable de entorno | Nunca en CI por defecto; incluye Ollama |
 
-Matriz de CI: macOS, Windows y Ubuntu con `cargo test`, `clippy -D warnings`, `rustfmt --check`, lint y tests del frontend. Los specs de Rails (`spec/services/llm`, `spec/models/agent_run_spec.rb`, `spec/catalogs`, `spec/requests`) se leen como lista de casos a portar: cada criterio de aceptación de [agent-execution.md](../product/agent-execution.md) debe tener una prueba equivalente. La política de cobertura (100 % en el dominio del núcleo, alta y medida en el resto) está pendiente de decisión.
+CI (`.github/workflows/ci.yml`), tres trabajos en paralelo: `lint` (Ubuntu: `rustfmt --check`, `clippy -D warnings` y `pnpm build`), `test` (`cargo test` en macOS, Windows y Ubuntu) y `bundle` (instaladores en los tres SO, solo en `main` o a mano, e imprime el tamaño de cada instalador). Los tests del frontend se agregan cuando existan. Los specs de Rails (`spec/services/llm`, `spec/models/agent_run_spec.rb`, `spec/catalogs`, `spec/requests`) se leen como lista de casos a portar: cada criterio de aceptación de [agent-execution.md](../product/agent-execution.md) debe tener una prueba equivalente. La política de cobertura (100 % en el dominio del núcleo, alta y medida en el resto) está pendiente de decisión.
 
 ## 12. Empaquetado y distribución
 
