@@ -44,6 +44,7 @@ pnpm install
 pnpm tauri dev      # full app
 pnpm dev            # frontend only, in the browser (no Tauri APIs)
 pnpm tauri build    # production installer
+pnpm reinstall:dev  # wipe node_modules, reinstall, run the app (fixes "Cannot find native binding")
 ```
 
 ## Checks
