@@ -27,9 +27,9 @@ export function TeamsPage({
   onClearActionError,
 }: Props) {
   const { t } = useI18n();
-  const [form, setForm] = useState<"team" | "agent" | null>(null);
+  const [form, setForm] = useState<{ kind: "team" } | { kind: "agent"; teamId: string } | null>(null);
 
-  function open(next: "team" | "agent") {
+  function open(next: NonNullable<typeof form>) {
     onClearActionError();
     setForm(next);
   }
@@ -51,28 +51,13 @@ export function TeamsPage({
     <div className="mx-auto grid w-full max-w-4xl content-start gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold">{t("teams.title")}</h1>
-        <div className="flex gap-3">
-          <Button type="button" variant="ghost" size="compact" onClick={() => open("team")}>
-            <Plus className="size-4" aria-hidden="true" />
-            {t("teams.newTeam")}
-          </Button>
-          <Button type="button" size="compact" disabled={teams.length === 0} onClick={() => open("agent")}>
-            <Plus className="size-4" aria-hidden="true" />
-            {t("teams.newAgent")}
-          </Button>
-        </div>
+        <Button type="button" size="compact" onClick={() => open({ kind: "team" })}>
+          <Plus className="size-4" aria-hidden="true" />
+          {t("teams.newTeam")}
+        </Button>
       </div>
-      {form === "team" && (
+      {form?.kind === "team" && (
         <TeamForm busy={busy} errorMessage={actionErrorMessage} onSubmit={onCreateTeam} onCancel={close} />
-      )}
-      {form === "agent" && (
-        <AgentForm
-          teams={teams}
-          busy={busy}
-          errorMessage={actionErrorMessage}
-          onSubmit={onCreateAgent}
-          onCancel={close}
-        />
       )}
       {teams.length === 0 ? (
         <div className="grid gap-1 py-16 text-center">
@@ -83,7 +68,27 @@ export function TeamsPage({
         <ul className="grid gap-4">
           {teams.map((team) => (
             <li key={team.id} className="grid gap-3 rounded-2xl border border-line bg-raised p-5">
-              <h2 className="text-lg font-semibold">{team.name}</h2>
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="text-lg font-semibold">{team.name}</h2>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="compact"
+                  onClick={() => open({ kind: "agent", teamId: team.id })}
+                >
+                  <Plus className="size-4" aria-hidden="true" />
+                  {t("teams.newAgent")}
+                </Button>
+              </div>
+              {form?.kind === "agent" && form.teamId === team.id && (
+                <AgentForm
+                  team={team}
+                  busy={busy}
+                  errorMessage={actionErrorMessage}
+                  onSubmit={onCreateAgent}
+                  onCancel={close}
+                />
+              )}
               {team.agents.length === 0 ? (
                 <p className="text-sm text-muted">{t("teams.noAgents")}</p>
               ) : (

@@ -265,15 +265,19 @@ describe("workspace shell", () => {
     expect(screen.getByLabelText("Team name")).toBeInTheDocument();
   });
 
-  it("disables New agent until a team exists", async () => {
+  it("offers no way to create an agent until a team exists", async () => {
     mockCore(session({ locale: "en" }));
     render(<App />);
 
-    expect(await screen.findByRole("button", { name: "New agent" })).toBeDisabled();
+    expect(await screen.findByRole("button", { name: "New team" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "New agent" })).not.toBeInTheDocument();
   });
 
-  it("creates an agent in the chosen team", async () => {
-    const teams = [{ id: "t1", name: "General", agents: [] }];
+  it("creates an agent from the selected team", async () => {
+    const teams = [
+      { id: "t1", name: "General", agents: [] },
+      { id: "t2", name: "Design", agents: [] },
+    ];
     const withAgent = [
       { id: "t1", name: "General", agents: [{ id: "a1", team_id: "t1", name: "Ana", role: "Developer" }] },
     ];
@@ -285,7 +289,10 @@ describe("workspace shell", () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(await screen.findByRole("button", { name: "New agent" }));
+    const newAgentButtons = await screen.findAllByRole("button", { name: "New agent" });
+    expect(newAgentButtons).toHaveLength(2);
+    await user.click(newAgentButtons[0]);
+    expect(screen.queryByLabelText("Team")).not.toBeInTheDocument();
     const submit = screen.getByRole("button", { name: "Create agent" });
     expect(submit).toBeDisabled();
     await user.type(screen.getByLabelText("Name"), "Ana");
