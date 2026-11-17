@@ -4,7 +4,7 @@
 
 ## Estado actual
 
-Fase 0 completada (2026-11-17): scaffold Tauri 2 (React + TypeScript + Vite), spikes de keychain, de `git worktree` + PTY con salida en vivo y de streaming SSE (Chat Completions), validados en los tres SO desde CI y con pruebas reales contra Ollama y DeepSeek. Fase 1 completada (2026-11-17): SQLite con `profile` y `workspaces`, primer arranque (idioma y workspace), shell (riel + topbar), cambio y creación de workspace, tokens Grafito e i18n `es`/`en`. Teams, agentes, salas y ejecución siguen sin construir. Ver [../architecture/overview.md](../architecture/overview.md).
+Fase 0 completada (2026-11-17): scaffold Tauri 2 (React + TypeScript + Vite), spikes de keychain, de `git worktree` + PTY con salida en vivo y de streaming SSE (Chat Completions), validados en los tres SO desde CI y con pruebas reales contra Ollama y DeepSeek. Fase 1 completada (2026-11-17): SQLite con `profile` y `workspaces`, primer arranque (idioma y workspace), shell (riel + topbar), cambio y creación de workspace, tokens Grafito e i18n `es`/`en`. Fase 2 en curso: equipos, agentes personalizados, catálogo de plantillas y contratación con asistente; faltan editar y eliminar agentes, `llm.yml` y el selector de proveedor y modelo. Salas y ejecución siguen sin construir. Ver [../architecture/overview.md](../architecture/overview.md).
 
 ## Fase 0 — Spike de validación (1 semana)
 

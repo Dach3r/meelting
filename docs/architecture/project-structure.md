@@ -33,7 +33,7 @@ src-tauri/src/
 │   ├── keychain.rs        ✅ save_secret, secret_last_four, delete_secret
 │   ├── worktree.rs        ✅ run_in_worktree
 │   ├── completion.rs      ✅ stream_completion
-│   └── session.rs         ✅ load_session, complete_first_launch, create_workspace, switch_workspace, list_teams, create_team, create_agent, change_locale, change_theme
+│   └── session.rs         ✅ load_session, complete_first_launch, create_workspace, switch_workspace, list_teams, create_team, create_agent, list_agent_templates, change_locale, change_theme
 ├── services/              Capa 2: acciones de negocio (verbos)
 │   ├── worktree_run.rs    ✅ crea un worktree y ejecuta un comando en él
 │   ├── completion_stream.rs ✅ lee la clave del keychain y hace streaming de una respuesta
@@ -45,7 +45,8 @@ src-tauri/src/
 │   ├── locale_change.rs   ✅ guarda el idioma del perfil
 │   ├── theme_change.rs    ✅ guarda el tema del perfil
 │   ├── team_create.rs     ✅ crea un equipo y devuelve la lista actualizada
-│   └── agent_create.rs    ✅ valida y crea un agente personalizado y devuelve la lista actualizada
+│   ├── agent_create.rs    ✅ valida y crea un agente (personalizado o desde plantilla) y devuelve la lista actualizada
+│   └── agent_templates_list.rs ✅ plantillas del catálogo en el idioma del perfil
 ├── system/                Capa 3: integración con el SO, sin reglas de negocio
 │   ├── git.rs             ✅ git por tokio::process (worktree add)
 │   ├── terminal.rs        ✅ PTY portable y lectura de salida
@@ -64,7 +65,10 @@ src-tauri/src/
 │   ├── session.rs         ✅ perfil + workspaces que recibe la UI
 │   ├── team.rs            ✅ equipo y agente (resumen) que recibe la UI; AgentDraft y su validación
 │   └── workspace.rs       ✅ workspace y validación del nombre
-└── catalogs/              pendiente: agent_templates/*.yml y llm.yml embebidos
+└── catalogs/              Colecciones de solo lectura embebidas en la app
+    ├── agent_templates.rs ✅ carga las plantillas de agente (YAML es/en) y valida claves
+    ├── agent_templates/   ✅ product_owner, software_developer, qa_engineer, devops_engineer, project_manager (.yml)
+    └── llm.yml            pendiente
 ```
 
 ### Responsabilidad de cada capa
@@ -103,12 +107,13 @@ src/
 ├── i18n/                  es.json, en.json, translate.ts (texto y errores) e I18nProvider
 ├── hooks/                 Acceso al núcleo y estado asociado
 │   ├── useSession.ts      ✅ invoke load_session, complete_first_launch, create_workspace, switch_workspace, change_locale, change_theme
-│   └── useTeams.ts        ✅ invoke list_teams, create_team, create_agent
+│   ├── useTeams.ts        ✅ invoke list_teams, create_team, create_agent
+│   └── useAgentTemplates.ts ✅ invoke list_agent_templates (recarga al cambiar el idioma)
 ├── test/setup.ts          Configuración de Vitest (jest-dom)
 └── components/            Atomic design (overview.md §8)
     ├── atoms/             Avatar, Button, Field, Icons, Logo
-    ├── molecules/         Alert, IslandMenu, LocaleSwitcher, Modal, NavItem, OrgAgentCard, OrgCard, SegmentedControl, SettingsRow, SwitchingOverlay, TeamForm, ThemeSwitcher, WorkspaceSwitcher, ZoomControls
-    ├── organisms/         AgentForm, NewWorkspacePage, OrgChart, Rail, SettingsPage, TeamsPage, Topbar
+    ├── molecules/         AgentTemplateDetail, Alert, IslandMenu, LocaleSwitcher, Modal, NavItem, OrgAgentCard, OrgCard, SegmentedControl, SettingsRow, SwitchingOverlay, TeamForm, ThemeSwitcher, WorkspaceSwitcher, ZoomControls
+    ├── organisms/         AgentCatalogPage, AgentForm, HireWizard, NewWorkspacePage, OrgChart, Rail, SettingsPage, TeamsPage, Topbar
     └── templates/         Workspace (riel + topbar + contenido)
 ```
 
