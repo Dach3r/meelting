@@ -1,3 +1,4 @@
+use crate::catalogs::agent_templates;
 use crate::domain::team::{AgentDraft, Team};
 use crate::repositories::{agents, teams};
 use crate::services::session_load::{self, SessionError};
@@ -7,6 +8,11 @@ use uuid::Uuid;
 
 pub async fn run(pool: &SqlitePool, draft: AgentDraft) -> Result<Vec<Team>, SessionError> {
     let draft = draft.normalize().ok_or(SessionError::InvalidAgent)?;
+    if let Some(key) = &draft.template_key
+        && !agent_templates::exists(key)
+    {
+        return Err(SessionError::InvalidAgent);
+    }
     let workspace_id = session_load::require(pool).await?.current_workspace_id;
     if !teams::exists(pool, &workspace_id, &draft.team_id).await? {
         return Err(SessionError::TeamNotFound);
@@ -25,6 +31,7 @@ mod tests {
     fn draft(team_id: &str) -> AgentDraft {
         AgentDraft {
             team_id: team_id.into(),
+            template_key: None,
             name: "Ana".into(),
             role: "Developer".into(),
             description: "Writes code".into(),
@@ -63,6 +70,30 @@ mod tests {
             run(&pool, invalid).await,
             Err(SessionError::InvalidAgent)
         ));
+    }
+
+    #[tokio::test]
+    async fn hires_from_a_known_template_and_rejects_an_unknown_one() {
+        let (pool, _dir) = open_for_test().await;
+        first_launch::run(&pool, Locale::En, "First").await.unwrap();
+        let team_id = team_create::run(&pool, "General").await.unwrap()[0]
+            .id
+            .clone();
+        let mut hired = draft(&team_id);
+        hired.template_key = Some("qa_engineer".into());
+        let mut unknown = draft(&team_id);
+        unknown.template_key = Some("missing".into());
+
+        assert!(run(&pool, hired).await.is_ok());
+        assert!(matches!(
+            run(&pool, unknown).await,
+            Err(SessionError::InvalidAgent)
+        ));
+        let stored: Option<String> = sqlx::query_scalar("SELECT template_key FROM agents")
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+        assert_eq!(stored.as_deref(), Some("qa_engineer"));
     }
 
     #[tokio::test]

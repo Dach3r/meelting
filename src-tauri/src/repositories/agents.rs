@@ -29,12 +29,13 @@ pub async fn insert<'e>(
     draft: &AgentDraft,
 ) -> Result<(), sqlx::Error> {
     sqlx::query(
-        "INSERT INTO agents (id, workspace_id, team_id, name, role, description, instructions, provider, model, created_at, updated_at) \
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))",
+        "INSERT INTO agents (id, workspace_id, team_id, template_key, name, role, description, instructions, provider, model, created_at, updated_at) \
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))",
     )
     .bind(id)
     .bind(workspace_id)
     .bind(&draft.team_id)
+    .bind(&draft.template_key)
     .bind(&draft.name)
     .bind(&draft.role)
     .bind(&draft.description)
@@ -88,6 +89,7 @@ mod tests {
             .unwrap();
         let draft = AgentDraft {
             team_id: "t1".into(),
+            template_key: None,
             name: "Ana".into(),
             role: "Developer".into(),
             description: String::new(),
@@ -105,5 +107,37 @@ mod tests {
                 .unwrap();
         assert_eq!(template_key, None);
         assert_eq!(list(&pool, "w1").await.unwrap().len(), 1);
+    }
+
+    #[tokio::test]
+    async fn inserts_the_template_key_of_a_hired_agent() {
+        let (pool, _dir) = open_for_test().await;
+        sqlx::query("INSERT INTO workspaces VALUES ('w1', 'A', 'x', 'x')")
+            .execute(&pool)
+            .await
+            .unwrap();
+        sqlx::query("INSERT INTO teams VALUES ('t1', 'w1', 'General', 'x', 'x')")
+            .execute(&pool)
+            .await
+            .unwrap();
+        let draft = AgentDraft {
+            team_id: "t1".into(),
+            template_key: Some("product_owner".into()),
+            name: "Ana".into(),
+            role: "Product Owner".into(),
+            description: String::new(),
+            instructions: String::new(),
+            provider: "openai".into(),
+            model: "gpt".into(),
+        };
+
+        insert(&pool, "a1", "w1", &draft).await.unwrap();
+
+        let template_key: Option<String> =
+            sqlx::query_scalar("SELECT template_key FROM agents WHERE id = 'a1'")
+                .fetch_one(&pool)
+                .await
+                .unwrap();
+        assert_eq!(template_key.as_deref(), Some("product_owner"));
     }
 }

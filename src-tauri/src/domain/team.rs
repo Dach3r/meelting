@@ -22,6 +22,7 @@ pub const INSTRUCTIONS_MAX_CHARS: usize = 10_000;
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 pub struct AgentDraft {
     pub team_id: String,
+    pub template_key: Option<String>,
     pub name: String,
     pub role: String,
     pub description: String,
@@ -34,6 +35,7 @@ impl AgentDraft {
     pub fn normalize(self) -> Option<Self> {
         let draft = Self {
             team_id: self.team_id,
+            template_key: self.template_key.filter(|key| !key.trim().is_empty()),
             name: self.name.trim().to_string(),
             role: self.role.trim().to_string(),
             description: self.description.trim().to_string(),
@@ -58,6 +60,7 @@ mod tests {
     fn draft() -> AgentDraft {
         AgentDraft {
             team_id: "t1".into(),
+            template_key: None,
             name: "  Ana ".into(),
             role: "Developer".into(),
             description: String::new(),
@@ -70,6 +73,20 @@ mod tests {
     #[test]
     fn trims_every_text_field() {
         assert_eq!(draft().normalize().unwrap().name, "Ana");
+    }
+
+    #[test]
+    fn drops_a_blank_template_key() {
+        let mut blank = draft();
+        blank.template_key = Some("  ".into());
+        let mut named = draft();
+        named.template_key = Some("product_owner".into());
+
+        assert_eq!(blank.normalize().unwrap().template_key, None);
+        assert_eq!(
+            named.normalize().unwrap().template_key.as_deref(),
+            Some("product_owner")
+        );
     }
 
     #[test]
