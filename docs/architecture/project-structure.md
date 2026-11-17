@@ -88,15 +88,18 @@ La UI llama al núcleo **solo** con `invoke` y `listen` de `@tauri-apps/api`, y 
 ```
 src/
 ├── main.tsx               Monta <App /> en #root
-├── App.tsx                Composición de pantalla (hoy: pantalla provisional)
+├── styles.css             Tailwind v4 y tokens Grafito (@theme), fuentes Inter y Rubik
+├── App.tsx                Elige entre primer arranque y shell según la sesión
+├── assets/fonts/          Inter y Rubik (woff2)
+├── i18n/                  es.json, en.json, translate.ts (texto y errores) e I18nProvider
 ├── hooks/                 Acceso al núcleo y estado asociado
-│   ├── useWorktreeRun.ts  ✅ invoke run_in_worktree + eventos de terminal
-│   ├── useCompletionStream.ts ✅ invoke stream_completion + evento llm-token
-│   └── useSecret.ts       ✅ guardar clave y mostrar sus últimos 4 caracteres
+│   └── useSession.ts      ✅ invoke load_session, complete_first_launch, create_workspace, switch_workspace
+├── test/setup.ts          Configuración de Vitest (jest-dom)
 └── components/            Atomic design (overview.md §8)
-    └── organisms/
-        ├── WorktreeRunner.tsx  ✅ formulario y salida en vivo
-        └── CompletionStreamer.tsx ✅ formulario y respuesta en streaming
+    ├── atoms/             Button, Input, Label, Logo
+    ├── molecules/         Alert, FormField, LocaleSwitcher, NavItem, WorkspaceSwitcher
+    ├── organisms/         FirstLaunchCard, Rail, Topbar
+    └── templates/         Workspace (riel + topbar + contenido)
 ```
 
 | Carpeta | Responsabilidad |
@@ -105,7 +108,7 @@ src/
 | `hooks/` | Único lugar que llama a `invoke` o `listen`. Un hook por caso de uso, nombrado `use<Verbo><Objeto>` |
 | `App.tsx` | Compone organismos o templates; sin lógica |
 
-Pendientes con ubicación prevista: `src/i18n/` (`es.json`, `en.json`), estilos con Tailwind v4 y tokens Grafito, y tests con Vitest junto a cada componente.
+Los tests con Vitest viven junto al código (`App.test.tsx`, `translate.test.ts`). Los spikes de Fase 0 que tenían interfaz (`run_in_worktree`, `stream_completion`) conservan su comando y servicio en el núcleo, pero ya no tienen pantalla; la interfaz definitiva llega con las fases 3 y 4.
 
 ## Dónde poner lo nuevo
 

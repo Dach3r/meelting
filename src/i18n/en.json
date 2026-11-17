@@ -1,0 +1,40 @@
+{
+  "locale": { "label": "Language" },
+  "errors": {
+    "invalid_name": "Enter a name of up to 80 characters.",
+    "workspace_not_found": "That workspace no longer exists.",
+    "not_set_up": "Finish the first launch before doing this.",
+    "database": "The local database failed. Try again.",
+    "unknown": "Something went wrong. Try again."
+  },
+  "firstLaunch": {
+    "title": "Create your workspace",
+    "subtitle": "give your virtual office a name",
+    "nameLabel": "Workspace name",
+    "submit": "Create workspace"
+  },
+  "home": {
+    "soon": "Coming soon",
+    "nav": {
+      "label": "Main navigation",
+      "rooms": "Rooms",
+      "teams": "Teams",
+      "tasks": "Tasks",
+      "activity": "Activity",
+      "integrations": "Integrations",
+      "apiKeys": "AI keys",
+      "settings": "Settings"
+    },
+    "workspace": {
+      "label": "Workspace",
+      "switch": "Switch workspace",
+      "create": "Create another workspace",
+      "nameLabel": "Workspace name",
+      "submit": "Create"
+    },
+    "empty": {
+      "title": "Your office is ready",
+      "body": "Teams and agents arrive in the next phase."
+    }
+  }
+}

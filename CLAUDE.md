@@ -4,7 +4,7 @@ AI workspace / virtual office: the user builds a virtual office with specialized
 
 ## Current scope
 
-Phase 0 only: Tauri 2 scaffold, a placeholder "Hello, world" screen (`src/App.tsx`), the keychain commands `save_secret`, `secret_last_four` and `delete_secret` (crate `keyring` 3), the `run_in_worktree` spike (`git worktree` + PTY with live output) and the `stream_completion` spike (SSE streaming from an OpenAI-compatible Chat Completions endpoint, optional key from the keychain). Everything else described in `docs/` (SQLite, workspaces, teams, agents, rooms, agent execution, LLM providers, local models, tools, Docker, approvals, integrations, i18n, Tailwind) is **planned, not built**; do not add it unless asked. Check the real code before assuming a feature exists.
+Phase 1 in progress: Tauri 2 scaffold; local SQLite (`sqlx`, migrations `workspaces` and `profile`) with the commands `load_session`, `complete_first_launch`, `create_workspace` and `switch_workspace`; the UI shell (first launch, rail, topbar, workspace switcher) with Tailwind v4 Grafito tokens and `es`/`en` i18n; plus the Phase 0 core: the keychain commands `save_secret`, `secret_last_four` and `delete_secret` (crate `keyring` 3), the `run_in_worktree` spike (`git worktree` + PTY with live output) and the `stream_completion` spike (SSE streaming from an OpenAI-compatible Chat Completions endpoint, optional key from the keychain). Everything else described in `docs/` (teams, agents, rooms, agent execution, LLM providers, local models, tools, Docker, approvals, integrations, settings) is **planned, not built**; do not add it unless asked. Check the real code before assuming a feature exists.
 
 ## Ground rules
 
@@ -37,7 +37,7 @@ Phase 0 only: Tauri 2 scaffold, a placeholder "Hello, world" screen (`src/App.ts
 
 ## Tests
 
-- Rust: `cargo test` (run from `src-tauri`). Frontend: Vitest. E2E: WebDriver with `tauri-driver`. Test runners are mostly pending; add them with the first feature that needs them.
+- Rust: `cargo test` (run from `src-tauri`). Frontend: Vitest (`pnpm test`). E2E: WebDriver with `tauri-driver`. Test runners are mostly pending; add them with the first feature that needs them.
 - Provider tests never call external APIs (mock HTTP). Real-provider checks are optional and opt-in.
 - Every code change ships its tests in the same commit.
 - Before finishing: `cargo clippy -- -D warnings` and `cargo fmt --check` in `src-tauri`, and `pnpm build` (runs `tsc`) for the frontend.

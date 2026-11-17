@@ -12,14 +12,15 @@ Meelting is a local-first desktop app for macOS, Windows and Linux. You assemble
 
 ## Status
 
-Early development, **Phase 0** (validation spike). Working today:
+Early development, **Phase 1** (foundations). Working today:
 
 - Tauri 2 app shell with a React frontend.
+- Local SQLite storage, first launch (language and workspace), app shell and workspace switching, in Spanish and English.
 - Keychain commands: save, read the last four characters of, and delete a secret.
 - Run a command in a fresh `git worktree` with live PTY output (a spike, not the final task flow).
 - CI on macOS, Windows and Linux.
 
-Everything else (workspaces, teams, agents, rooms, agent execution, LLM providers, tools, approvals, Docker, i18n) is planned and not built yet. See the [roadmap](docs/product/roadmap.md).
+Everything else (teams, agents, rooms, agent execution, LLM providers, tools, approvals, Docker) is planned and not built yet. See the [roadmap](docs/product/roadmap.md).
 
 ## Tech stack
 
@@ -27,7 +28,8 @@ Everything else (workspaces, teams, agents, rooms, agent execution, LLM provider
 |---|---|
 | App shell | Tauri 2 |
 | Core | Rust (edition 2024) |
-| UI | React 19, TypeScript, Vite |
+| UI | React 19, TypeScript, Vite, Tailwind v4 |
+| Storage | SQLite (`sqlx`) |
 | Terminal | `portable-pty` (ConPTY on Windows) |
 | Git | `git` CLI via `tokio::process` |
 | Secrets | `keyring` (Keychain, Credential Manager, Secret Service) |

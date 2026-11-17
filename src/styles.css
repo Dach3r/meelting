@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("./assets/fonts/InterVariable.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Rubik";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("./assets/fonts/Rubik-Bold.woff2") format("woff2");
+}
+
+@theme {
+  --color-surface: #1d1d20;
+  --color-shell: #151517;
+  --color-rail: #0d0d0e;
+  --color-raised: #26262a;
+  --color-line: #3a3a40;
+  --color-ink: #f4f4f5;
+  --color-muted: #a9a9b1;
+  --color-primary: #34343a;
+  --color-accent: #cfcfd6;
+  --color-error: #ff8a80;
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-brand: "Rubik", ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: var(--color-rail);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+}

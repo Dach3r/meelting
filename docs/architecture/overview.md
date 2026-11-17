@@ -1,6 +1,6 @@
 # Arquitectura
 
-> **Estado:** Fase 0. Hoy existe el scaffold Tauri 2 (React 19 + TypeScript + Vite), el módulo `keychain` con los comandos `save_secret`, `secret_last_four` y `delete_secret`, y los spikes `run_in_worktree` (git worktree + PTY con salida en vivo) y `stream_completion` (streaming SSE desde un proveedor compatible con Chat Completions, como Ollama). La organización de carpetas está en [project-structure.md](project-structure.md). El resto de este documento describe la arquitectura **objetivo**; cada sección marca lo que ya existe.
+> **Estado:** Fase 1 en curso. Hoy existe el scaffold Tauri 2 (React 19 + TypeScript + Vite + Tailwind v4), SQLite con `profile` y `workspaces`, el primer arranque, el shell y el cambio de workspace, el módulo `keychain` con los comandos `save_secret`, `secret_last_four` y `delete_secret`, y los spikes `run_in_worktree` (git worktree + PTY con salida en vivo) y `stream_completion` (streaming SSE desde un proveedor compatible con Chat Completions, como Ollama). La organización de carpetas está en [project-structure.md](project-structure.md). El resto de este documento describe la arquitectura **objetivo**; cada sección marca lo que ya existe.
 >
 > Este producto reemplaza al SaaS Rails (repositorio `meelting`), congelado como referencia de diseño: modelo de dominio, estados, errores, textos, plantillas y specs como casos de prueba.
 
@@ -47,14 +47,14 @@
 |---|---|---|
 | Shell | Tauri 2 | ✅ scaffold |
 | Núcleo | Rust (edición 2024) | ✅ scaffold |
-| UI | React 19 + TypeScript + Vite; Tailwind v4 con los tokens Grafito | React/Vite ✅; Tailwind pendiente |
+| UI | React 19 + TypeScript + Vite; Tailwind v4 con los tokens Grafito | React/Vite/Tailwind ✅; i18n propio `es`/`en` ✅ |
 | Secretos | crate `keyring` 3 (Keychain, Credential Manager, Secret Service) | ✅ spike |
-| Datos | SQLite con `sqlx`, modo WAL, migraciones `sqlx migrate` | pendiente |
+| Datos | SQLite con `sqlx`, modo WAL, migraciones `sqlx migrate` | ✅ `profile` y `workspaces`; el resto de tablas con su fase |
 | HTTP/streaming | `reqwest` + SSE (`eventsource-stream`) | ✅ spike (Chat Completions); adaptadores por proveedor pendientes |
 | Terminal | `portable-pty` (ConPTY en Windows) | ✅ spike |
 | Git | CLI `git` por `tokio::process` | ✅ spike |
 | Docker | CLI `docker` por `tokio::process` (o `bollard`); opcional | pendiente |
-| Tests | `cargo test`, Vitest, WebDriver (`tauri-driver`) | pendiente |
+| Tests | `cargo test`, Vitest, WebDriver (`tauri-driver`) | `cargo test` y Vitest ✅; WebDriver pendiente |
 
 **Git y Docker se invocan como procesos, no con librerías:** `git2` (libgit2) no soporta `worktree` completo ni los hooks del usuario, y la CLI es lo que el usuario espera.
 
@@ -248,7 +248,7 @@ Pantallas: equipos (organigrama), contratar y editar agentes, catálogo, salas (
 | E2E | `tauri-driver` en CI | Crear workspace, contratar agente, enviar instrucción con proveedor simulado, aprobar un comando, descartar una tarea |
 | Proveedores reales | Opcionales, con variable de entorno | Nunca en CI por defecto; incluye Ollama |
 
-CI (`.github/workflows/ci.yml`), tres trabajos en paralelo: `lint` (Ubuntu: `rustfmt --check`, `clippy -D warnings` y `pnpm build`), `test` (`cargo test` en macOS, Windows y Ubuntu) y `bundle` (instaladores en los tres SO, solo en `main` o a mano, e imprime el tamaño de cada instalador). Los tests del frontend se agregan cuando existan. Los specs de Rails (`spec/services/llm`, `spec/models/agent_run_spec.rb`, `spec/catalogs`, `spec/requests`) se leen como lista de casos a portar: cada criterio de aceptación de [agent-execution.md](../product/agent-execution.md) debe tener una prueba equivalente. La política de cobertura (100 % en el dominio del núcleo, alta y medida en el resto) está pendiente de decisión.
+CI (`.github/workflows/ci.yml`), tres trabajos en paralelo: `lint` (Ubuntu: `rustfmt --check`, `clippy -D warnings`, `pnpm build` y `pnpm test`), `test` (`cargo test` en macOS, Windows y Ubuntu) y `bundle` (instaladores en los tres SO, solo en `main` o a mano, e imprime el tamaño de cada instalador). Los specs de Rails (`spec/services/llm`, `spec/models/agent_run_spec.rb`, `spec/catalogs`, `spec/requests`) se leen como lista de casos a portar: cada criterio de aceptación de [agent-execution.md](../product/agent-execution.md) debe tener una prueba equivalente. La política de cobertura (100 % en el dominio del núcleo, alta y medida en el resto) está pendiente de decisión.
 
 ## 12. Empaquetado y distribución
 
