@@ -50,7 +50,7 @@ export function OrgChart({ teams, zoom, onNewTeam, onNewAgent }: Props) {
                     count={team.agents.length}
                     expanded={!collapsed.has(team.id)}
                     onToggle={() => toggle(team.id)}
-                    addLabel={t("teams.newAgent")}
+                    addLabel={t("teams.hireAgent")}
                     onAdd={() => onNewAgent(team.id)}
                   />
                   {!collapsed.has(team.id) && (

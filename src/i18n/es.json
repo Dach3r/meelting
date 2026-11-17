@@ -49,6 +49,21 @@
       "description": "Descripción",
       "instructions": "Instrucciones",
       "submit": "Crear agente"
+    },
+    "hireAgent": "Contratar agente",
+    "catalog": {
+      "title": "Catálogo de agentes",
+      "team": "Equipo:",
+      "back": "Volver a equipos",
+      "custom": "Crear agente personalizado",
+      "details": "Ver detalles",
+      "hire": "Contratar"
+    },
+    "hire": {
+      "step": "Paso",
+      "back": "Atrás",
+      "next": "Continuar",
+      "submit": "Contratar"
     }
   },
   "home": {

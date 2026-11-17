@@ -49,6 +49,21 @@
       "description": "Description",
       "instructions": "Instructions",
       "submit": "Create agent"
+    },
+    "hireAgent": "Hire agent",
+    "catalog": {
+      "title": "Agent catalog",
+      "team": "Team:",
+      "back": "Back to teams",
+      "custom": "Create custom agent",
+      "details": "View details",
+      "hire": "Hire"
+    },
+    "hire": {
+      "step": "Step",
+      "back": "Back",
+      "next": "Continue",
+      "submit": "Hire"
     }
   },
   "home": {

@@ -21,6 +21,7 @@ export function AgentForm({ team, busy, errorMessage, onSubmit, onCancel }: Prop
   const [tab, setTab] = useState<Tab>("identity");
   const [draft, setDraft] = useState<AgentDraft>({
     team_id: team.id,
+    template_key: null,
     name: "",
     role: "",
     description: "",

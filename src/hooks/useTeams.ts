@@ -7,6 +7,7 @@ export type Team = { id: string; name: string; agents: Agent[] };
 
 export type AgentDraft = {
   team_id: string;
+  template_key: string | null;
   name: string;
   role: string;
   description: string;

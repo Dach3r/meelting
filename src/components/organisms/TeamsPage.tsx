@@ -1,11 +1,10 @@
 import { useState } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
-import type { AgentDraft, Team } from "../../hooks/useTeams";
+import type { Team } from "../../hooks/useTeams";
 import { Alert } from "../molecules/Alert";
 import { Modal } from "../molecules/Modal";
 import { TeamForm } from "../molecules/TeamForm";
 import { ZoomControls } from "../molecules/ZoomControls";
-import { AgentForm } from "./AgentForm";
 import { OrgChart } from "./OrgChart";
 
 type Props = {
@@ -14,7 +13,7 @@ type Props = {
   actionErrorMessage: string | null;
   busy: boolean;
   onCreateTeam: (name: string) => Promise<boolean>;
-  onCreateAgent: (draft: AgentDraft) => Promise<boolean>;
+  onHireAgent: (teamId: string) => void;
   onClearActionError: () => void;
 };
 
@@ -24,22 +23,21 @@ export function TeamsPage({
   actionErrorMessage,
   busy,
   onCreateTeam,
-  onCreateAgent,
+  onHireAgent,
   onClearActionError,
 }: Props) {
   const { t } = useI18n();
-  const [form, setForm] = useState<{ kind: "team" } | { kind: "agent"; teamId: string } | null>(null);
+  const [creatingTeam, setCreatingTeam] = useState(false);
   const [zoom, setZoom] = useState(1);
-  const agentTeam = form?.kind === "agent" ? teams.find((team) => team.id === form.teamId) : undefined;
 
-  function open(next: NonNullable<typeof form>) {
+  function openTeamForm() {
     onClearActionError();
-    setForm(next);
+    setCreatingTeam(true);
   }
 
   function close() {
     onClearActionError();
-    setForm(null);
+    setCreatingTeam(false);
   }
 
   if (errorMessage) {
@@ -57,28 +55,16 @@ export function TeamsPage({
           <ZoomControls zoom={zoom} onChange={setZoom} />
         </div>
       )}
-      {form?.kind === "team" && (
+      {creatingTeam && (
         <Modal title={t("teams.newTeam")} onClose={close}>
           <TeamForm busy={busy} errorMessage={actionErrorMessage} onSubmit={onCreateTeam} onCancel={close} />
-        </Modal>
-      )}
-      {agentTeam && (
-        <Modal title={`${t("teams.newAgent")} · ${agentTeam.name}`} onClose={close}>
-          <AgentForm
-            key={agentTeam.id}
-            team={agentTeam}
-            busy={busy}
-            errorMessage={actionErrorMessage}
-            onSubmit={onCreateAgent}
-            onCancel={close}
-          />
         </Modal>
       )}
       <OrgChart
         teams={teams}
         zoom={zoom}
-        onNewTeam={() => open({ kind: "team" })}
-        onNewAgent={(teamId) => open({ kind: "agent", teamId })}
+        onNewTeam={openTeamForm}
+        onNewAgent={onHireAgent}
       />
       {teams.length === 0 && (
         <div className="grid gap-1 text-center">

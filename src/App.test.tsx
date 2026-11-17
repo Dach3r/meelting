@@ -362,7 +362,7 @@ describe("workspace shell", () => {
     render(<App />);
 
     expect(await screen.findByRole("button", { name: "New team" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "New agent" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Hire agent" })).not.toBeInTheDocument();
   });
 
   it("creates an agent from the selected team", async () => {
@@ -375,15 +375,17 @@ describe("workspace shell", () => {
     ];
     invokeMock.mockImplementation(async (command) => {
       if (command === "list_teams") return teams;
+      if (command === "list_agent_templates") return [];
       if (command === "create_agent") return withAgent;
       return session({ locale: "en" });
     });
     const user = userEvent.setup();
     render(<App />);
 
-    const newAgentButtons = await screen.findAllByRole("button", { name: "New agent" });
-    expect(newAgentButtons).toHaveLength(2);
-    await user.click(newAgentButtons[0]);
+    const hireButtons = await screen.findAllByRole("button", { name: "Hire agent" });
+    expect(hireButtons).toHaveLength(2);
+    await user.click(hireButtons[0]);
+    await user.click(await screen.findByRole("button", { name: "Create custom agent" }));
     expect(screen.queryByLabelText("Team")).not.toBeInTheDocument();
     const submit = screen.getByRole("button", { name: "Create agent" });
     expect(submit).toBeDisabled();
@@ -397,6 +399,7 @@ describe("workspace shell", () => {
     expect(invokeMock).toHaveBeenCalledWith("create_agent", {
       draft: {
         team_id: "t1",
+        template_key: null,
         name: "Ana",
         role: "Developer",
         description: "",
@@ -407,6 +410,124 @@ describe("workspace shell", () => {
     });
     expect(await screen.findByText("Ana")).toBeInTheDocument();
     expect(screen.queryByLabelText("Role")).not.toBeInTheDocument();
+  });
+});
+
+describe("agent catalog", () => {
+  const templates = [
+    {
+      key: "product_owner",
+      name: "Product Owner",
+      role: "Product Owner",
+      description: "Orders priorities.",
+      instructions: "You are a Product Owner.\n\nHow you work:\n- Start with the problem.\n- Ask questions.",
+    },
+    {
+      key: "qa_engineer",
+      name: "QA Engineer",
+      role: "QA Engineer",
+      description: "Finds defects.",
+      instructions: "You are a QA Engineer.",
+    },
+  ];
+  const team = { id: "t1", name: "General", agents: [] };
+  const hired = [{ ...team, agents: [{ id: "a1", team_id: "t1", name: "Ana", role: "Product Owner" }] }];
+
+  function mockCatalog(createAgent: () => unknown = () => hired) {
+    invokeMock.mockImplementation(async (command) => {
+      if (command === "list_teams") return [team];
+      if (command === "list_agent_templates") return templates;
+      if (command === "create_agent") return createAgent();
+      return session({ locale: "en" });
+    });
+  }
+
+  async function openCatalog(user: ReturnType<typeof userEvent.setup>) {
+    await user.click(await screen.findByRole("button", { name: "Hire agent" }));
+  }
+
+  it("lists the templates of the team catalog and goes back to the teams", async () => {
+    mockCatalog();
+    const user = userEvent.setup();
+    render(<App />);
+
+    await openCatalog(user);
+
+    expect(await screen.findByRole("heading", { name: "Agent catalog" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Product Owner" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "QA Engineer" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Back to teams" }));
+    expect(screen.queryByRole("heading", { name: "Agent catalog" })).not.toBeInTheDocument();
+  });
+
+  it("shows the template instructions by section", async () => {
+    mockCatalog();
+    const user = userEvent.setup();
+    render(<App />);
+    await openCatalog(user);
+
+    await user.click(await screen.findByRole("button", { name: "View details Product Owner" }));
+
+    const dialog = within(screen.getByRole("dialog", { name: "Product Owner" }));
+    expect(dialog.getByRole("heading", { name: "How you work" })).toBeInTheDocument();
+    expect(dialog.getByText("Start with the problem.")).toBeInTheDocument();
+  });
+
+  it("hires from a template through the wizard", async () => {
+    mockCatalog();
+    const user = userEvent.setup();
+    render(<App />);
+    await openCatalog(user);
+
+    await user.click(await screen.findByRole("button", { name: "Hire Product Owner" }));
+    expect(screen.getByLabelText("Name")).toHaveValue("Product Owner");
+    await user.clear(screen.getByLabelText("Name"));
+    await user.type(screen.getByLabelText("Name"), "Ana");
+    await user.click(screen.getByRole("button", { name: "Continue" }));
+    expect(screen.getByLabelText("Role")).toHaveValue("Product Owner");
+    await user.click(screen.getByRole("button", { name: "Continue" }));
+    expect(screen.getByLabelText("Description")).toHaveValue("Orders priorities.");
+    await user.click(screen.getByRole("button", { name: "Continue" }));
+    expect(screen.getByLabelText("Instructions")).toHaveValue(templates[0].instructions);
+    await user.click(screen.getByRole("button", { name: "Continue" }));
+    expect(screen.getByRole("button", { name: "Hire" })).toBeDisabled();
+    await user.type(screen.getByLabelText("Provider"), "openai");
+    await user.type(screen.getByLabelText("Model"), "gpt-4o");
+    await user.click(screen.getByRole("button", { name: "Hire" }));
+
+    expect(invokeMock).toHaveBeenCalledWith("create_agent", {
+      draft: {
+        team_id: "t1",
+        template_key: "product_owner",
+        name: "Ana",
+        role: "Product Owner",
+        description: "Orders priorities.",
+        instructions: templates[0].instructions,
+        provider: "openai",
+        model: "gpt-4o",
+      },
+    });
+    expect(await screen.findByText("Ana")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Agent catalog" })).not.toBeInTheDocument();
+  });
+
+  it("reopens the wizard at the first step with the error when the core rejects", async () => {
+    mockCatalog(() => {
+      throw "invalid_agent";
+    });
+    const user = userEvent.setup();
+    render(<App />);
+    await openCatalog(user);
+
+    await user.click(await screen.findByRole("button", { name: "Hire QA Engineer" }));
+    for (let step = 0; step < 4; step++) await user.click(screen.getByRole("button", { name: "Continue" }));
+    await user.type(screen.getByLabelText("Provider"), "openai");
+    await user.type(screen.getByLabelText("Model"), "gpt-4o");
+    await user.click(screen.getByRole("button", { name: "Hire" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Check the fields");
+    expect(screen.getByLabelText("Name")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Agent catalog" })).toBeInTheDocument();
   });
 });
 
