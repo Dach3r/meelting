@@ -1,8 +1,6 @@
-import { Plus } from "lucide-react";
 import { useState } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
 import type { Team } from "../../hooks/useTeams";
-import { Button } from "../atoms/Button";
 import { OrgAgentCard } from "../molecules/OrgAgentCard";
 import { OrgCard } from "../molecules/OrgCard";
 
@@ -11,10 +9,11 @@ const rootId = "root";
 type Props = {
   teams: Team[];
   zoom: number;
+  onNewTeam: () => void;
   onNewAgent: (teamId: string) => void;
 };
 
-export function OrgChart({ teams, zoom, onNewAgent }: Props) {
+export function OrgChart({ teams, zoom, onNewTeam, onNewAgent }: Props) {
   const { t } = useI18n();
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
 
@@ -34,6 +33,8 @@ export function OrgChart({ teams, zoom, onNewAgent }: Props) {
           count={teams.length}
           expanded={!collapsed.has(rootId)}
           onToggle={() => toggle(rootId)}
+          addLabel={t("teams.newTeam")}
+          onAdd={onNewTeam}
         />
         {!collapsed.has(rootId) && (
           <>
@@ -49,6 +50,8 @@ export function OrgChart({ teams, zoom, onNewAgent }: Props) {
                     count={team.agents.length}
                     expanded={!collapsed.has(team.id)}
                     onToggle={() => toggle(team.id)}
+                    addLabel={t("teams.newAgent")}
+                    onAdd={() => onNewAgent(team.id)}
                   />
                   {!collapsed.has(team.id) && (
                     <ul className="org-stack">
@@ -57,18 +60,6 @@ export function OrgChart({ teams, zoom, onNewAgent }: Props) {
                           <OrgAgentCard seed={agent.id} name={agent.name} role={agent.role} />
                         </li>
                       ))}
-                      <li className="org-leaf">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="compact"
-                          className="h-14 w-40 border-dashed border-line!"
-                          onClick={() => onNewAgent(team.id)}
-                        >
-                          <Plus className="size-4" aria-hidden="true" />
-                          {t("teams.newAgent")}
-                        </Button>
-                      </li>
                     </ul>
                   )}
                 </li>
