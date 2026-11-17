@@ -1,6 +1,6 @@
 # Arquitectura
 
-> **Estado:** Fase 0. Hoy existe el scaffold Tauri 2 (React 19 + TypeScript + Vite), el módulo `keychain` con los comandos `save_secret`, `secret_last_four` y `delete_secret`, y el spike `run_in_worktree` (git worktree + PTY con salida en vivo). La organización de carpetas está en [project-structure.md](project-structure.md). El resto de este documento describe la arquitectura **objetivo**; cada sección marca lo que ya existe.
+> **Estado:** Fase 0. Hoy existe el scaffold Tauri 2 (React 19 + TypeScript + Vite), el módulo `keychain` con los comandos `save_secret`, `secret_last_four` y `delete_secret`, y los spikes `run_in_worktree` (git worktree + PTY con salida en vivo) y `stream_completion` (streaming SSE desde un proveedor compatible con Chat Completions, como Ollama). La organización de carpetas está en [project-structure.md](project-structure.md). El resto de este documento describe la arquitectura **objetivo**; cada sección marca lo que ya existe.
 >
 > Este producto reemplaza al SaaS Rails (repositorio `meelting`), congelado como referencia de diseño: modelo de dominio, estados, errores, textos, plantillas y specs como casos de prueba.
 
@@ -50,7 +50,7 @@
 | UI | React 19 + TypeScript + Vite; Tailwind v4 con los tokens Grafito | React/Vite ✅; Tailwind pendiente |
 | Secretos | crate `keyring` 3 (Keychain, Credential Manager, Secret Service) | ✅ spike |
 | Datos | SQLite con `sqlx`, modo WAL, migraciones `sqlx migrate` | pendiente |
-| HTTP/streaming | `reqwest` + SSE (`eventsource-stream`) | pendiente |
+| HTTP/streaming | `reqwest` + SSE (`eventsource-stream`) | ✅ spike (Chat Completions); adaptadores por proveedor pendientes |
 | Terminal | `portable-pty` (ConPTY en Windows) | ✅ spike |
 | Git | CLI `git` por `tokio::process` | ✅ spike |
 | Docker | CLI `docker` por `tokio::process` (o `bollard`); opcional | pendiente |

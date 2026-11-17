@@ -4,7 +4,7 @@
 
 ## Estado actual
 
-Fase 0 en curso: scaffold Tauri 2 (React + TypeScript + Vite), spike de keychain y spike de `git worktree` + PTY con salida en vivo. Pendientes: streaming a Ollama y a un proveedor en la nube, y validar los tres SO desde CI. Nada del producto está implementado todavía. Ver [../architecture/overview.md](../architecture/overview.md).
+Fase 0 en curso: scaffold Tauri 2 (React + TypeScript + Vite), spike de keychain y spike de `git worktree` + PTY con salida en vivo (validado en los tres SO desde CI) y spike de streaming SSE (Chat Completions, cubre Ollama y nubes compatibles; probado con servidor simulado, falta una prueba real con Ollama y con una nube). Pendientes: medir arranque en frío e instalador. Nada del producto está implementado todavía. Ver [../architecture/overview.md](../architecture/overview.md).
 
 ## Fase 0 — Spike de validación (1 semana)
 

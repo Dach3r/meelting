@@ -23,16 +23,20 @@ pub fn save(name: &str, secret: &str) -> Result<(), KeychainError> {
     Ok(entry(name)?.set_password(secret)?)
 }
 
-pub fn last_four(name: &str) -> Result<Option<String>, KeychainError> {
+pub fn read(name: &str) -> Result<Option<String>, KeychainError> {
     match entry(name)?.get_password() {
-        Ok(secret) => {
-            let chars: Vec<char> = secret.chars().collect();
-            let start = chars.len().saturating_sub(4);
-            Ok(Some(chars[start..].iter().collect()))
-        }
+        Ok(secret) => Ok(Some(secret)),
         Err(keyring::Error::NoEntry) => Ok(None),
         Err(error) => Err(error.into()),
     }
+}
+
+pub fn last_four(name: &str) -> Result<Option<String>, KeychainError> {
+    Ok(read(name)?.map(|secret| {
+        let chars: Vec<char> = secret.chars().collect();
+        let start = chars.len().saturating_sub(4);
+        chars[start..].iter().collect()
+    }))
 }
 
 pub fn remove(name: &str) -> Result<(), KeychainError> {
@@ -50,6 +54,7 @@ mod tests {
     fn round_trip() {
         let name = "test/spike-round-trip";
         save(name, "sk-test-abcd1234").unwrap();
+        assert_eq!(read(name).unwrap().as_deref(), Some("sk-test-abcd1234"));
         assert_eq!(last_four(name).unwrap().as_deref(), Some("1234"));
         remove(name).unwrap();
         assert_eq!(last_four(name).unwrap(), None);

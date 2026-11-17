@@ -31,12 +31,15 @@ src-tauri/src/
 ├── lib.rs                 Builder de Tauri y registro de comandos
 ├── commands/              Capa 1: comandos Tauri (delgados)
 │   ├── keychain.rs        ✅ save_secret, secret_last_four, delete_secret
-│   └── worktree.rs        ✅ run_in_worktree
+│   ├── worktree.rs        ✅ run_in_worktree
+│   └── completion.rs      ✅ stream_completion
 ├── services/              Capa 2: acciones de negocio (verbos)
-│   └── worktree_run.rs    ✅ crea un worktree y ejecuta un comando en él
+│   ├── worktree_run.rs    ✅ crea un worktree y ejecuta un comando en él
+│   └── completion_stream.rs ✅ lee la clave del keychain y hace streaming de una respuesta
 ├── system/                Capa 3: integración con el SO, sin reglas de negocio
 │   ├── git.rs             ✅ git por tokio::process (worktree add)
 │   ├── terminal.rs        ✅ PTY portable y lectura de salida
+│   ├── chat_completions.rs ✅ cliente HTTP con SSE (Chat Completions)
 │   └── keychain.rs        ✅ keychain del SO (crate keyring)
 ├── repositories/          pendiente: acceso a SQLite (Fase 1)
 ├── domain/                pendiente: modelos y lógica pura, sin I/O
@@ -58,7 +61,9 @@ src-tauri/src/
 - **Un error por módulo** con `thiserror`. Solo se implementa `Serialize` en el error que cruza hacia la UI (el del servicio o el de `keychain`), como cadena.
 - **Comandos de secretos sin servicio:** `commands/keychain.rs` llama a `system/keychain.rs` directamente porque aún no hay regla que orquestar. Cuando exista la verificación previa a guardar (Fase 3), pasa a un servicio.
 - **Servicios sin Tauri:** reciben `impl Fn` para salida y fin, de modo que se prueban sin ventana ni `AppHandle`.
-- **Eventos hacia la UI:** los emite el comando. Nombres actuales: `terminal-output` (texto) y `terminal-exit` (código de salida).
+- **Eventos hacia la UI:** los emite el comando. Nombres actuales: `terminal-output` (texto), `terminal-exit` (código de salida) y `llm-token` (fragmento de respuesta). El fin del streaming es el retorno del comando.
+- **Claves:** solo el servicio las lee del keychain (`system::keychain::read`); nunca viajan a la UI. Los errores del proveedor no incluyen su texto, solo el estado HTTP.
+- **Proveedores sin nombres en el código:** el cliente recibe `base_url`, `model` y, opcional, el nombre del secreto. Los adaptadores por proveedor llegan en la Fase 3.
 - **Pruebas junto al código** (`#[cfg(test)] mod tests`), con repositorios git temporales reales (`tempfile`) y sin APIs externas.
 - Nombres de archivo en `snake_case`; el servicio se nombra por la acción (`worktree_run`), no por el recurso.
 
@@ -71,10 +76,13 @@ src/
 ├── main.tsx               Monta <App /> en #root
 ├── App.tsx                Composición de pantalla (hoy: pantalla provisional)
 ├── hooks/                 Acceso al núcleo y estado asociado
-│   └── useWorktreeRun.ts  ✅ invoke run_in_worktree + eventos de terminal
+│   ├── useWorktreeRun.ts  ✅ invoke run_in_worktree + eventos de terminal
+│   ├── useCompletionStream.ts ✅ invoke stream_completion + evento llm-token
+│   └── useSecret.ts       ✅ guardar clave y mostrar sus últimos 4 caracteres
 └── components/            Atomic design (overview.md §8)
     └── organisms/
-        └── WorktreeRunner.tsx  ✅ formulario y salida en vivo
+        ├── WorktreeRunner.tsx  ✅ formulario y salida en vivo
+        └── CompletionStreamer.tsx ✅ formulario y respuesta en streaming
 ```
 
 | Carpeta | Responsabilidad |

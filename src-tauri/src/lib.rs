@@ -9,7 +9,8 @@ pub fn run() {
             commands::keychain::save_secret,
             commands::keychain::secret_last_four,
             commands::keychain::delete_secret,
-            commands::worktree::run_in_worktree
+            commands::worktree::run_in_worktree,
+            commands::completion::stream_completion
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

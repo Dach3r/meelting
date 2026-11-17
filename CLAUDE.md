@@ -4,7 +4,7 @@ AI workspace / virtual office: the user builds a virtual office with specialized
 
 ## Current scope
 
-Phase 0 only: Tauri 2 scaffold, a placeholder "Hello, world" screen (`src/App.tsx`), the keychain commands `save_secret`, `secret_last_four` and `delete_secret` (crate `keyring` 3) and the `run_in_worktree` spike (`git worktree` + PTY with live output). Everything else described in `docs/` (SQLite, workspaces, teams, agents, rooms, agent execution, LLM providers, local models, tools, Docker, approvals, integrations, i18n, Tailwind) is **planned, not built**; do not add it unless asked. Check the real code before assuming a feature exists.
+Phase 0 only: Tauri 2 scaffold, a placeholder "Hello, world" screen (`src/App.tsx`), the keychain commands `save_secret`, `secret_last_four` and `delete_secret` (crate `keyring` 3), the `run_in_worktree` spike (`git worktree` + PTY with live output) and the `stream_completion` spike (SSE streaming from an OpenAI-compatible Chat Completions endpoint, optional key from the keychain). Everything else described in `docs/` (SQLite, workspaces, teams, agents, rooms, agent execution, LLM providers, local models, tools, Docker, approvals, integrations, i18n, Tailwind) is **planned, not built**; do not add it unless asked. Check the real code before assuming a feature exists.
 
 ## Ground rules
 
