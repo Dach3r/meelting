@@ -28,7 +28,7 @@ La dependencia va siempre hacia abajo: `commands → services → system`. Ningu
 ```
 src-tauri/src/
 ├── main.rs                Arranque; solo llama a meelting_lib::run()
-├── lib.rs                 Builder de Tauri y registro de comandos
+├── lib.rs                 Builder de Tauri, plugin de estado de ventana y registro de comandos
 ├── commands/              Capa 1: comandos Tauri (delgados)
 │   ├── keychain.rs        ✅ save_secret, secret_last_four, delete_secret
 │   ├── worktree.rs        ✅ run_in_worktree

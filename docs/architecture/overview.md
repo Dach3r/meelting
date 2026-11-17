@@ -48,6 +48,7 @@
 | Shell | Tauri 2 | ✅ scaffold |
 | Núcleo | Rust (edición 2024) | ✅ scaffold |
 | UI | React 19 + TypeScript + Vite; Tailwind v4 con los tokens Grafito | React/Vite/Tailwind ✅; i18n propio `es`/`en` ✅ |
+| Ventana | `tauri-plugin-window-state`: recuerda tamaño, posición y estado maximizado entre arranques; sin permisos para la UI | ✅ |
 | Secretos | crate `keyring` 3 (Keychain, Credential Manager, Secret Service) | ✅ spike |
 | Datos | SQLite con `sqlx`, modo WAL, migraciones `sqlx migrate` | ✅ `profile` y `workspaces`; el resto de tablas con su fase |
 | HTTP/streaming | `reqwest` + SSE (`eventsource-stream`) | ✅ spike (Chat Completions); adaptadores por proveedor pendientes |
