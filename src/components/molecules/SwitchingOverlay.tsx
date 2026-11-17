@@ -14,7 +14,7 @@ export function SwitchingOverlay({ workspaceName, errorMessage, onDismiss }: Pro
   const { t } = useI18n();
 
   return (
-    <div className="absolute inset-0 z-50 grid animate-fade-in place-content-center justify-items-center gap-3 bg-rail/70 backdrop-blur-md motion-reduce:animate-none">
+    <div className="absolute inset-0 z-50 grid animate-fade-in place-content-center justify-items-center gap-3 bg-shell/70 backdrop-blur-md motion-reduce:animate-none">
       {errorMessage ? (
         <>
           <Alert message={errorMessage} />

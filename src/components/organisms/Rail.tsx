@@ -26,7 +26,7 @@ type Props = {
 export function Rail({ collapsed, onToggle, view, onSelectView }: Props) {
   const { t } = useI18n();
   return (
-    <aside className="flex flex-col gap-6 overflow-x-hidden overflow-y-auto py-3 pr-3 text-muted">
+    <aside className="flex flex-col gap-6 overflow-x-hidden overflow-y-auto py-3 pr-3 text-muted on-rail">
       <div className="flex px-4 pt-1 pb-2 group-data-collapsed/rail:justify-center group-data-collapsed/rail:px-0">
         <Logo />
       </div>
