@@ -11,6 +11,7 @@
     "title": "Crea tu workspace",
     "subtitle": "dale un nombre a tu oficina virtual",
     "nameLabel": "Nombre del workspace",
+    "placeholder": "Mi oficina",
     "submit": "Crear workspace",
     "cancel": "Cancelar"
   },

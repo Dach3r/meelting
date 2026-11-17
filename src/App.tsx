@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { NewWorkspaceCard } from "./components/organisms/NewWorkspaceCard";
+import { NewWorkspacePage } from "./components/organisms/NewWorkspacePage";
 import { Workspace } from "./components/templates/Workspace";
 import { useSession } from "./hooks/useSession";
 import { I18nProvider } from "./i18n/I18nProvider";
@@ -27,14 +27,14 @@ function App() {
   return (
     <I18nProvider locale={locale}>
       {!session ? (
-        <NewWorkspaceCard
+        <NewWorkspacePage
           busy={busy}
           errorMessage={errorMessage}
           language={{ locale: draftLocale, onChange: setDraftLocale }}
           onSubmit={(name) => completeFirstLaunch(draftLocale, name)}
         />
       ) : creating ? (
-        <NewWorkspaceCard
+        <NewWorkspacePage
           busy={busy}
           errorMessage={errorMessage}
           onSubmit={async (name) => {

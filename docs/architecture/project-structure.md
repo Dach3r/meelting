@@ -96,9 +96,9 @@ src/
 │   └── useSession.ts      ✅ invoke load_session, complete_first_launch, create_workspace, switch_workspace
 ├── test/setup.ts          Configuración de Vitest (jest-dom)
 └── components/            Atomic design (overview.md §8)
-    ├── atoms/             Button, Input, Label, Logo
-    ├── molecules/         Alert, FormField, IslandMenu, LocaleSwitcher, NavItem, WorkspaceSwitcher
-    ├── organisms/         NewWorkspaceCard, Rail, Topbar
+    ├── atoms/             Button, Logo
+    ├── molecules/         Alert, IslandMenu, LocaleSwitcher, NavItem, WorkspaceSwitcher
+    ├── organisms/         NewWorkspacePage, Rail, Topbar
     └── templates/         Workspace (riel + topbar + contenido)
 ```
 
