@@ -9,7 +9,7 @@ export function Logo() {
           strokeLinecap="round"
         />
       </svg>
-      <span className="lowercase">meelting</span>
+      <span className="lowercase group-data-collapsed/rail:hidden">meelting</span>
     </span>
   );
 }

@@ -128,6 +128,23 @@ describe("workspace shell", () => {
     expect(trigger).toHaveAttribute("aria-expanded", "false");
   });
 
+  it("collapses the sidebar and remembers it", async () => {
+    invokeMock.mockResolvedValue(session({ locale: "en" }));
+    const user = userEvent.setup();
+    const { container, unmount } = render(<App />);
+
+    const toggle = await screen.findByRole("button", { name: "Collapse" });
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    await user.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(container.querySelector("[data-collapsed]")).not.toBeNull();
+
+    unmount();
+    render(<App />);
+    expect(await screen.findByRole("button", { name: "Collapse" })).toHaveAttribute("aria-expanded", "false");
+    localStorage.clear();
+  });
+
   it("marks only Teams as the current page and the rest as coming soon", async () => {
     invokeMock.mockResolvedValue(session({ locale: "en" }));
     render(<App />);

@@ -25,6 +25,9 @@
       "apiKeys": "Claves de IA",
       "settings": "Configuración"
     },
+    "rail": {
+      "collapse": "Contraer"
+    },
     "workspace": {
       "label": "Workspace",
       "switch": "Cambiar de workspace",

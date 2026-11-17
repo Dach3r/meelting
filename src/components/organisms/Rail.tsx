@@ -1,4 +1,4 @@
-import { Activity, KeyRound, ListChecks, Plug, Settings, Users, Video } from "lucide-react";
+import { Activity, ChevronsLeft, ChevronsRight, KeyRound, ListChecks, Plug, Settings, Users, Video } from "lucide-react";
 import { useI18n } from "../../i18n/I18nProvider";
 import { Logo } from "../atoms/Logo";
 import { NavItem } from "../molecules/NavItem";
@@ -13,11 +13,16 @@ const items = [
   { key: "settings", icon: Settings },
 ];
 
-export function Rail() {
+type Props = {
+  collapsed: boolean;
+  onToggle: () => void;
+};
+
+export function Rail({ collapsed, onToggle }: Props) {
   const { t } = useI18n();
   return (
-    <aside className="flex w-64 shrink-0 flex-col gap-6 overflow-y-auto py-3 pr-3 text-muted">
-      <div className="flex px-4 pt-1 pb-2">
+    <aside className="flex flex-col gap-6 overflow-x-hidden overflow-y-auto py-3 pr-3 text-muted">
+      <div className="flex px-4 pt-1 pb-2 group-data-collapsed/rail:justify-center group-data-collapsed/rail:px-0">
         <Logo />
       </div>
       <nav aria-label={t("home.nav.label")} className="grid content-start gap-2">
@@ -25,6 +30,20 @@ export function Rail() {
           <NavItem key={item.key} label={t(`home.nav.${item.key}`)} icon={item.icon} current={item.current} />
         ))}
       </nav>
+      <button
+        type="button"
+        aria-expanded={!collapsed}
+        aria-label={t("home.rail.collapse")}
+        onClick={onToggle}
+        className="mt-auto flex h-14 shrink-0 cursor-pointer items-center gap-4 rounded-2xl px-4 text-base font-semibold hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink group-data-collapsed/rail:justify-center group-data-collapsed/rail:px-0"
+      >
+        {collapsed ? (
+          <ChevronsRight className="size-6 shrink-0" aria-hidden="true" />
+        ) : (
+          <ChevronsLeft className="size-6 shrink-0" aria-hidden="true" />
+        )}
+        <span className="whitespace-nowrap group-data-collapsed/rail:hidden">{t("home.rail.collapse")}</span>
+      </button>
     </aside>
   );
 }

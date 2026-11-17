@@ -25,6 +25,9 @@
       "apiKeys": "AI keys",
       "settings": "Settings"
     },
+    "rail": {
+      "collapse": "Collapse"
+    },
     "workspace": {
       "label": "Workspace",
       "switch": "Switch workspace",
