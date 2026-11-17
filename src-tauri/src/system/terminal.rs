@@ -1,7 +1,10 @@
 use portable_pty::{CommandBuilder, PtySize, native_pty_system};
-use std::io::Read;
+use std::io::{Read, Write};
 use std::path::Path;
 use std::sync::mpsc;
+
+const CURSOR_POSITION_REQUEST: &str = "\x1b[6n";
+const CURSOR_POSITION_REPLY: &str = "\x1b[1;1R";
 
 #[derive(Debug, thiserror::Error)]
 #[error("terminal failed: {0}")]
@@ -42,6 +45,11 @@ pub fn spawn(
     let mut child = pair.slave.spawn_command(builder).map_err(failed)?;
     drop(pair.slave);
     let mut reader = pair.master.try_clone_reader().map_err(failed)?;
+    let mut writer = if cfg!(windows) {
+        Some(pair.master.take_writer().map_err(failed)?)
+    } else {
+        None
+    };
 
     let (waiter_master, reader_master) = if cfg!(windows) {
         (Some(pair.master), None)
@@ -62,7 +70,14 @@ pub fn spawn(
             if read == 0 {
                 break;
             }
-            on_output(String::from_utf8_lossy(&buffer[..read]).into_owned());
+            let text = String::from_utf8_lossy(&buffer[..read]).into_owned();
+            if let Some(writer) = writer.as_mut()
+                && text.contains(CURSOR_POSITION_REQUEST)
+            {
+                let _ = writer.write_all(CURSOR_POSITION_REPLY.as_bytes());
+                let _ = writer.flush();
+            }
+            on_output(text);
         }
         on_exit(code_rx.recv().unwrap_or(1));
     });
