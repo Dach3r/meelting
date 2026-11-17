@@ -50,7 +50,6 @@ export function OrgChart({ teams, zoom, onNewAgent }: Props) {
                     expanded={!collapsed.has(team.id)}
                     onToggle={() => toggle(team.id)}
                   />
-                  {team.agents.length === 0 && <p className="mt-2 w-49 text-center text-sm text-muted">{t("teams.noAgents")}</p>}
                   {!collapsed.has(team.id) && (
                     <ul className="org-stack">
                       {team.agents.map((agent) => (

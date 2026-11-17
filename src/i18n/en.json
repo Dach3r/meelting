@@ -18,7 +18,6 @@
     "cancel": "Cancel"
   },
   "teams": {
-    "noAgents": "No agents in this team yet.",
     "newTeam": "New team",
     "newAgent": "New agent",
     "teamName": "Team name",
