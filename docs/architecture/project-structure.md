@@ -94,7 +94,7 @@ La UI llama al núcleo **solo** con `invoke` y `listen` de `@tauri-apps/api`, y 
 ```
 src/
 ├── main.tsx               Monta <App /> en #root
-├── styles.css             Tailwind v4 y tokens Grafito (@theme), fuentes Inter y Rubik, y las clases de conectores del organigrama (org-*)
+├── styles.css             Tailwind v4, tokens Grafito (@theme) con variante light según el sistema (prefers-color-scheme), fuentes Inter y Rubik, y las clases de conectores del organigrama (org-*)
 ├── App.tsx                Elige entre la página de nuevo workspace (primer arranque o «crear otro») y el shell según la sesión
 ├── assets/fonts/          Inter y Rubik (woff2)
 ├── i18n/                  es.json, en.json, translate.ts (texto y errores) e I18nProvider

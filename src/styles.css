@@ -53,9 +53,24 @@
   }
 }
 
+@media (prefers-color-scheme: light) {
+  :root {
+    --color-surface: #ffffff;
+    --color-shell: #f4f4f5;
+    --color-rail: #e9e9ec;
+    --color-raised: #f0f0f2;
+    --color-line: #d4d4da;
+    --color-ink: #0d0d0e;
+    --color-muted: #5f5f68;
+    --color-primary: #e2e2e7;
+    --color-accent: #3a3a40;
+    --color-error: #c62828;
+  }
+}
+
 @layer base {
   html {
-    color-scheme: dark;
+    color-scheme: light dark;
   }
 
   body {
