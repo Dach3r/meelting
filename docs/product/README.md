@@ -2,7 +2,7 @@
 
 **Categoría:** AI Workspace / Virtual AI Office / Multi-Agent Collaboration
 **Plataforma:** aplicación de escritorio local-first (Tauri 2) para macOS, Windows y Linux
-**Etapa:** Fase 0 — scaffold Tauri 2 con spikes de keychain, `git worktree` + PTY y streaming SSE
+**Etapa:** Fase 0 completada (scaffold Tauri 2 con spikes de keychain, `git worktree` + PTY y streaming SSE); Fase 1 sin empezar
 
 > **Tu equipo de inteligencia artificial trabajando contigo, en una oficina virtual.**
 

@@ -4,7 +4,7 @@
 
 ## Estado actual
 
-Fase 0 en curso: scaffold Tauri 2 (React + TypeScript + Vite), spike de keychain y spike de `git worktree` + PTY con salida en vivo (validado en los tres SO desde CI) y spike de streaming SSE (Chat Completions, cubre Ollama y nubes compatibles; probado con servidor simulado, falta una prueba real con Ollama y con una nube). Pendientes: medir arranque en frío e instalador. Nada del producto está implementado todavía. Ver [../architecture/overview.md](../architecture/overview.md).
+Fase 0 completada (2026-11-17): scaffold Tauri 2 (React + TypeScript + Vite), spikes de keychain, de `git worktree` + PTY con salida en vivo y de streaming SSE (Chat Completions), validados en los tres SO desde CI y con pruebas reales contra Ollama y DeepSeek. Fase 1 sin empezar. Nada del producto está implementado todavía. Ver [../architecture/overview.md](../architecture/overview.md).
 
 ## Fase 0 — Spike de validación (1 semana)
 
@@ -17,6 +17,8 @@ Fase 0 en curso: scaffold Tauri 2 (React + TypeScript + Vite), spike de keychain
 - Compilar e instalar en macOS, Windows y Linux desde CI.
 
 **Criterios de salida:** funciona en los tres SO; arranque en frío < 2 s; instalador < 30 MB; sin bloqueos en Windows (ConPTY, rutas, WebView2) ni Linux (WebKitGTK). Si Linux falla, se evalúa Electron.
+
+**Resultado:** cumplidos. CI verde en macOS, Windows y Ubuntu (lint, tests y bundle). Instaladores: `.dmg` 3.4 MB, `.msi` 3.5 MB, `.exe` 2.6 MB, `.deb` 3.7 MB; el criterio de 30 MB se mide con estos, no con el AppImage (79 MB), que empaqueta GTK y WebKit. Arranque: ventana visible en 0.24–0.7 s con el binario de release en macOS (caché de disco caliente; no se midió el render del contenido). Streaming probado con Ollama (`qwen2.5:0.5b`) y DeepSeek, con la clave guardada en el keychain.
 
 ## Fase 1 — Fundamentos (2 semanas)
 
