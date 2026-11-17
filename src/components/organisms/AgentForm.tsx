@@ -13,6 +13,8 @@ type Props = {
   onCancel: () => void;
 };
 
+const groupTitle = "text-xs font-semibold uppercase tracking-wider text-muted";
+
 export function AgentForm({ team, busy, errorMessage, onSubmit, onCancel }: Props) {
   const { t } = useI18n();
   const [draft, setDraft] = useState<AgentDraft>({
@@ -33,17 +35,30 @@ export function AgentForm({ team, busy, errorMessage, onSubmit, onCancel }: Prop
   }
 
   return (
-    <form onSubmit={submit} className="grid gap-4">
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field label={t("teams.agent.name")} value={draft.name} onChange={set("name")} maxLength={80} autoFocus />
-        <Field label={t("teams.agent.role")} value={draft.role} onChange={set("role")} maxLength={80} />
-        <Field label={t("teams.agent.provider")} value={draft.provider} onChange={set("provider")} />
-        <Field label={t("teams.agent.model")} value={draft.model} onChange={set("model")} />
+    <form onSubmit={submit}>
+      <div className="grid gap-6 p-6">
+        <section className="grid gap-4">
+          <h3 className={groupTitle}>{t("teams.agent.identity")}</h3>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label={t("teams.agent.name")} value={draft.name} onChange={set("name")} maxLength={80} autoFocus />
+            <Field label={t("teams.agent.role")} value={draft.role} onChange={set("role")} maxLength={80} />
+          </div>
+          <Field label={t("teams.agent.description")} value={draft.description} onChange={set("description")} maxLength={500} multiline />
+        </section>
+        <section className="grid gap-4">
+          <h3 className={groupTitle}>{t("teams.agent.engine")}</h3>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label={t("teams.agent.provider")} value={draft.provider} onChange={set("provider")} />
+            <Field label={t("teams.agent.model")} value={draft.model} onChange={set("model")} />
+          </div>
+        </section>
+        <section className="grid gap-4">
+          <h3 className={groupTitle}>{t("teams.agent.behavior")}</h3>
+          <Field label={t("teams.agent.instructions")} value={draft.instructions} onChange={set("instructions")} maxLength={10000} multiline />
+        </section>
+        {errorMessage && <Alert message={errorMessage} />}
       </div>
-      <Field label={t("teams.agent.description")} value={draft.description} onChange={set("description")} maxLength={500} multiline />
-      <Field label={t("teams.agent.instructions")} value={draft.instructions} onChange={set("instructions")} maxLength={10000} multiline />
-      {errorMessage && <Alert message={errorMessage} />}
-      <div className="flex justify-end gap-3">
+      <div className="flex justify-end gap-3 border-t border-line bg-surface/50 px-6 py-4">
         <Button type="button" variant="ghost" size="compact" onClick={onCancel}>
           {t("teams.cancel")}
         </Button>

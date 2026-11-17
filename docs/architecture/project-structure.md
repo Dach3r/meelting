@@ -106,7 +106,7 @@ src/
 │   └── useTeams.ts        ✅ invoke list_teams, create_team, create_agent
 ├── test/setup.ts          Configuración de Vitest (jest-dom)
 └── components/            Atomic design (overview.md §8)
-    ├── atoms/             Avatar, Button, Field, Logo
+    ├── atoms/             Avatar, Button, Field, Icons, Logo
     ├── molecules/         Alert, IslandMenu, LocaleSwitcher, Modal, NavItem, OrgAgentCard, OrgCard, SegmentedControl, SwitchingOverlay, TeamForm, ThemeSwitcher, WorkspaceSwitcher, ZoomControls
     ├── organisms/         AgentForm, NewWorkspacePage, OrgChart, Rail, SettingsPage, TeamsPage, Topbar
     └── templates/         Workspace (riel + topbar + contenido)

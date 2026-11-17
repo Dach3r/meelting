@@ -25,6 +25,8 @@
     "teamName": "Nombre del equipo",
     "createTeam": "Crear equipo",
     "cancel": "Cancelar",
+    "close": "Cerrar",
+    "newTeamHint": "Agrupa a los agentes que trabajan juntos.",
     "chart": {
       "you": "Tú",
       "supervisor": "Supervisor",
@@ -38,6 +40,9 @@
     },
     "agent": {
       "team": "Equipo",
+      "identity": "Identidad",
+      "engine": "Modelo de lenguaje",
+      "behavior": "Comportamiento",
       "name": "Nombre",
       "role": "Rol",
       "provider": "Proveedor",

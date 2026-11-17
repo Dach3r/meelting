@@ -21,10 +21,12 @@ export function TeamForm({ busy, errorMessage, onSubmit, onCancel }: Props) {
   }
 
   return (
-    <form onSubmit={submit} className="grid gap-4">
-      <Field label={t("teams.teamName")} value={name} onChange={setName} maxLength={80} autoFocus />
-      {errorMessage && <Alert message={errorMessage} />}
-      <div className="flex justify-end gap-3">
+    <form onSubmit={submit}>
+      <div className="grid gap-4 p-6">
+        <Field label={t("teams.teamName")} value={name} onChange={setName} maxLength={80} autoFocus />
+        {errorMessage && <Alert message={errorMessage} />}
+      </div>
+      <div className="flex justify-end gap-3 border-t border-line bg-surface/50 px-6 py-4">
         <Button type="button" variant="ghost" size="compact" onClick={onCancel}>
           {t("teams.cancel")}
         </Button>

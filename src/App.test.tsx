@@ -328,6 +328,18 @@ describe("workspace shell", () => {
     expect(screen.queryByLabelText("Team name")).not.toBeInTheDocument();
   });
 
+  it("closes the team form from the close button of the modal", async () => {
+    mockCore(session({ locale: "en" }));
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "New team" }));
+    expect(screen.getByRole("dialog", { name: "New team" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Close" }));
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
   it("keeps the team form open and shows the error when creating fails", async () => {
     invokeMock.mockImplementation(async (command) => {
       if (command === "list_teams") return [];

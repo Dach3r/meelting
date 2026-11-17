@@ -25,6 +25,8 @@
     "teamName": "Team name",
     "createTeam": "Create team",
     "cancel": "Cancel",
+    "close": "Close",
+    "newTeamHint": "Group the agents that work together.",
     "chart": {
       "you": "You",
       "supervisor": "Supervisor",
@@ -38,6 +40,9 @@
     },
     "agent": {
       "team": "Team",
+      "identity": "Identity",
+      "engine": "Language model",
+      "behavior": "Behavior",
       "name": "Name",
       "role": "Role",
       "provider": "Provider",
