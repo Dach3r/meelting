@@ -1,6 +1,8 @@
+pub mod agent_create;
 pub mod completion_stream;
 pub mod first_launch;
 pub mod session_load;
+pub mod team_create;
 pub mod teams_list;
 pub mod workspace_create;
 pub mod workspace_switch;

@@ -10,6 +10,36 @@ pub async fn list<'e>(
         .await
 }
 
+pub async fn insert<'e>(
+    executor: impl SqliteExecutor<'e>,
+    id: &str,
+    workspace_id: &str,
+    name: &str,
+) -> Result<(), sqlx::Error> {
+    sqlx::query(
+        "INSERT INTO teams (id, workspace_id, name, created_at, updated_at) \
+         VALUES (?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))",
+    )
+    .bind(id)
+    .bind(workspace_id)
+    .bind(name)
+    .execute(executor)
+    .await?;
+    Ok(())
+}
+
+pub async fn exists<'e>(
+    executor: impl SqliteExecutor<'e>,
+    workspace_id: &str,
+    team_id: &str,
+) -> Result<bool, sqlx::Error> {
+    sqlx::query_scalar("SELECT EXISTS (SELECT 1 FROM teams WHERE id = ? AND workspace_id = ?)")
+        .bind(team_id)
+        .bind(workspace_id)
+        .fetch_one(executor)
+        .await
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -34,5 +64,21 @@ mod tests {
                 ("t2".to_string(), "Design".to_string())
             ]
         );
+    }
+
+    #[tokio::test]
+    async fn inserts_a_team_and_checks_it_belongs_to_the_workspace() {
+        let (pool, _dir) = open_for_test().await;
+        sqlx::query("INSERT INTO workspaces VALUES ('w1', 'A', 'x', 'x'), ('w2', 'B', 'x', 'x')")
+            .execute(&pool)
+            .await
+            .unwrap();
+
+        insert(&pool, "t1", "w1", "General").await.unwrap();
+
+        assert!(exists(&pool, "w1", "t1").await.unwrap());
+        assert!(!exists(&pool, "w2", "t1").await.unwrap());
+        assert!(!exists(&pool, "w1", "missing").await.unwrap());
+        assert!(insert(&pool, "t2", "w1", "  ").await.is_err());
     }
 }

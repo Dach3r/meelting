@@ -11,6 +11,10 @@ pub enum SessionError {
     InvalidName,
     #[error("workspace_not_found")]
     WorkspaceNotFound,
+    #[error("team_not_found")]
+    TeamNotFound,
+    #[error("invalid_agent")]
+    InvalidAgent,
     #[error("not_set_up")]
     NotSetUp,
 }
