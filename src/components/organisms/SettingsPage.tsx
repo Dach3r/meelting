@@ -45,7 +45,7 @@ export function SettingsPage({ locale, theme, busy, errorMessage, onChangeLocale
           );
         })}
       </nav>
-      <div className="grid w-full max-w-3xl content-start gap-6">
+      <div className="grid w-full content-start gap-6">
         {errorMessage && <Alert message={errorMessage} />}
         <div>
           <h2 className="text-xl font-bold text-ink">{t(`settings.categories.${category}.title`)}</h2>
