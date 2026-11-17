@@ -2,6 +2,7 @@ export type SegmentedOption<T extends string> = {
   value: T;
   label: string;
   lang?: string;
+  pending?: boolean;
 };
 
 export function SegmentedControl<T extends string>({
@@ -30,6 +31,7 @@ export function SegmentedControl<T extends string>({
           className={`cursor-pointer rounded-full px-3 py-1 tracking-wider disabled:cursor-not-allowed ${option.value === value ? "bg-ink font-semibold text-surface" : "font-bold text-muted enabled:hover:text-ink"}`}
         >
           {option.label}
+          {option.pending && <span className="ml-2 inline-block size-1.5 rounded-full bg-accent align-middle" />}
         </button>
       ))}
     </nav>

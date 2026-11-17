@@ -8,6 +8,7 @@ const variants = {
 const sizes = {
   default: "min-h-16 w-full rounded-2xl px-6 text-lg",
   compact: "min-h-11 rounded-xl px-4 text-sm",
+  pill: "min-h-11 rounded-full px-5 text-sm",
 };
 
 type Props = ButtonHTMLAttributes<HTMLButtonElement> & {

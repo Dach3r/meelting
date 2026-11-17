@@ -389,6 +389,7 @@ describe("workspace shell", () => {
     expect(submit).toBeDisabled();
     await user.type(screen.getByLabelText("Name"), "Ana");
     await user.type(screen.getByLabelText("Role"), "Developer");
+    await user.click(screen.getByRole("button", { name: "Model" }));
     await user.type(screen.getByLabelText("Provider"), "openai");
     await user.type(screen.getByLabelText("Model"), "gpt-4o");
     await user.click(submit);

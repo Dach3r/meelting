@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
 import type { AgentDraft, Team } from "../../hooks/useTeams";
 import { Alert } from "../molecules/Alert";
-import { BotIcon, UsersIcon } from "../atoms/Icons";
 import { Modal } from "../molecules/Modal";
 import { TeamForm } from "../molecules/TeamForm";
 import { ZoomControls } from "../molecules/ZoomControls";
@@ -59,12 +58,12 @@ export function TeamsPage({
         </div>
       )}
       {form?.kind === "team" && (
-        <Modal icon={<UsersIcon />} title={t("teams.newTeam")} subtitle={t("teams.newTeamHint")} onClose={close}>
+        <Modal title={t("teams.newTeam")} onClose={close}>
           <TeamForm busy={busy} errorMessage={actionErrorMessage} onSubmit={onCreateTeam} onCancel={close} />
         </Modal>
       )}
       {agentTeam && (
-        <Modal icon={<BotIcon />} title={t("teams.newAgent")} subtitle={agentTeam.name} onClose={close}>
+        <Modal title={`${t("teams.newAgent")} · ${agentTeam.name}`} onClose={close}>
           <AgentForm
             key={agentTeam.id}
             team={agentTeam}

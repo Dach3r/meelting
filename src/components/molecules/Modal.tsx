@@ -3,15 +3,14 @@ import { useI18n } from "../../i18n/I18nProvider";
 import { CloseIcon } from "../atoms/Icons";
 
 type Props = {
-  icon: ReactNode;
   title: string;
-  subtitle: string;
   onClose: () => void;
   children: ReactNode;
 };
 
-export function Modal({ icon, title, subtitle, onClose, children }: Props) {
+export function Modal({ title, onClose, children }: Props) {
   const { t } = useI18n();
+
   useEffect(() => {
     function closeOnEscape(event: KeyboardEvent) {
       if (event.key === "Escape") onClose();
@@ -31,19 +30,15 @@ export function Modal({ icon, title, subtitle, onClose, children }: Props) {
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="max-h-full w-full max-w-2xl overflow-y-auto rounded-2xl border border-line bg-raised"
+        className="max-h-full w-full max-w-2xl overflow-y-auto rounded-[28px] bg-surface"
       >
-        <div className="flex items-center gap-4 px-6 pt-5">
-          <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary text-accent">{icon}</span>
-          <div className="min-w-0 flex-1">
-            <h2 className="text-lg font-bold text-ink">{title}</h2>
-            <p className="truncate text-sm text-muted">{subtitle}</p>
-          </div>
+        <div className="flex items-center justify-between px-6 pt-6">
+          <h2 className="pl-1 text-xl font-bold text-ink">{title}</h2>
           <button
             type="button"
             aria-label={t("teams.close")}
             onClick={onClose}
-            className="grid size-9 cursor-pointer place-items-center rounded-xl text-muted transition-colors hover:bg-surface hover:text-ink focus-visible:outline-2 focus-visible:outline-ink"
+            className="grid size-10 cursor-pointer place-items-center rounded-full bg-raised text-muted transition-colors hover:bg-hi hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
           >
             <CloseIcon />
           </button>

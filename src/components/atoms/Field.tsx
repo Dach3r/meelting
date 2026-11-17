@@ -8,13 +8,13 @@ type Props = Omit<InputHTMLAttributes<HTMLInputElement>, "onChange"> & {
 };
 
 const classes =
-  "w-full min-w-0 rounded-xl border border-line bg-surface px-4 py-3 text-base text-ink outline-none transition-colors placeholder:text-muted focus:border-accent focus:ring-3 focus:ring-accent/20";
+  "w-full min-w-0 rounded-[18px] bg-raised px-4 py-3 text-base text-ink outline-none transition-colors placeholder:text-muted focus:bg-hi";
 
 export function Field({ label, value, onChange, multiline = false, ...rest }: Props) {
   const id = useId();
   return (
     <div className="grid gap-2">
-      <label htmlFor={id} className="text-sm font-medium text-muted">
+      <label htmlFor={id} className="pl-3 text-sm font-medium text-muted">
         {label}
       </label>
       {multiline ? (
