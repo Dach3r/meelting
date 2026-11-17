@@ -21,7 +21,7 @@ export function TeamForm({ busy, errorMessage, onSubmit, onCancel }: Props) {
   }
 
   return (
-    <form onSubmit={submit} className="grid gap-4 rounded-2xl border border-line bg-raised p-5">
+    <form onSubmit={submit} className="grid gap-4">
       <Field label={t("teams.teamName")} value={name} onChange={setName} maxLength={80} autoFocus />
       {errorMessage && <Alert message={errorMessage} />}
       <div className="flex justify-end gap-3">

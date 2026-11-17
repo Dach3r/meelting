@@ -33,10 +33,7 @@ export function AgentForm({ team, busy, errorMessage, onSubmit, onCancel }: Prop
   }
 
   return (
-    <form onSubmit={submit} className="grid gap-4 rounded-2xl border border-line bg-surface p-5">
-      <h3 className="font-semibold">
-        {t("teams.newAgent")} · {team.name}
-      </h3>
+    <form onSubmit={submit} className="grid gap-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label={t("teams.agent.name")} value={draft.name} onChange={set("name")} maxLength={80} autoFocus />
         <Field label={t("teams.agent.role")} value={draft.role} onChange={set("role")} maxLength={80} />

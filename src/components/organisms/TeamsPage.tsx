@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
 import type { AgentDraft, Team } from "../../hooks/useTeams";
 import { Alert } from "../molecules/Alert";
+import { Modal } from "../molecules/Modal";
 import { TeamForm } from "../molecules/TeamForm";
 import { ZoomControls } from "../molecules/ZoomControls";
 import { AgentForm } from "./AgentForm";
@@ -57,12 +58,12 @@ export function TeamsPage({
         </div>
       )}
       {form?.kind === "team" && (
-        <div className="w-full max-w-4xl">
+        <Modal title={t("teams.newTeam")} onClose={close}>
           <TeamForm busy={busy} errorMessage={actionErrorMessage} onSubmit={onCreateTeam} onCancel={close} />
-        </div>
+        </Modal>
       )}
       {agentTeam && (
-        <div className="w-full max-w-4xl">
+        <Modal title={`${t("teams.newAgent")} · ${agentTeam.name}`} onClose={close}>
           <AgentForm
             key={agentTeam.id}
             team={agentTeam}
@@ -71,7 +72,7 @@ export function TeamsPage({
             onSubmit={onCreateAgent}
             onCancel={close}
           />
-        </div>
+        </Modal>
       )}
       <OrgChart
         teams={teams}
