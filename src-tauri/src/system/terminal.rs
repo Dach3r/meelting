@@ -1,6 +1,7 @@
 use portable_pty::{CommandBuilder, PtySize, native_pty_system};
 use std::io::Read;
 use std::path::Path;
+use std::sync::mpsc;
 
 #[derive(Debug, thiserror::Error)]
 #[error("terminal failed: {0}")]
@@ -42,8 +43,20 @@ pub fn spawn(
     drop(pair.slave);
     let mut reader = pair.master.try_clone_reader().map_err(failed)?;
 
+    let (waiter_master, reader_master) = if cfg!(windows) {
+        (Some(pair.master), None)
+    } else {
+        (None, Some(pair.master))
+    };
+    let (code_tx, code_rx) = mpsc::channel();
+
     std::thread::spawn(move || {
-        let _master = pair.master;
+        let code = child.wait().map_or(1, |status| status.exit_code());
+        drop(waiter_master);
+        let _ = code_tx.send(code);
+    });
+    std::thread::spawn(move || {
+        let _master = reader_master;
         let mut buffer = [0u8; 4096];
         while let Ok(read) = reader.read(&mut buffer) {
             if read == 0 {
@@ -51,8 +64,7 @@ pub fn spawn(
             }
             on_output(String::from_utf8_lossy(&buffer[..read]).into_owned());
         }
-        let code = child.wait().map_or(1, |status| status.exit_code());
-        on_exit(code);
+        on_exit(code_rx.recv().unwrap_or(1));
     });
     Ok(())
 }
