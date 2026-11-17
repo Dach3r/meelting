@@ -1,15 +1,17 @@
 use crate::domain::locale::Locale;
 use crate::domain::profile::Profile;
+use crate::domain::theme::Theme;
 use sqlx::SqliteExecutor;
 
 pub async fn get<'e>(executor: impl SqliteExecutor<'e>) -> Result<Option<Profile>, sqlx::Error> {
-    let row: Option<(String, Option<String>)> =
-        sqlx::query_as("SELECT locale, current_workspace_id FROM profile")
+    let row: Option<(String, String, Option<String>)> =
+        sqlx::query_as("SELECT locale, theme, current_workspace_id FROM profile")
             .fetch_optional(executor)
             .await?;
-    Ok(row.and_then(|(locale, current_workspace_id)| {
-        Locale::parse(&locale).map(|locale| Profile {
-            locale,
+    Ok(row.and_then(|(locale, theme, current_workspace_id)| {
+        Some(Profile {
+            locale: Locale::parse(&locale)?,
+            theme: Theme::parse(&theme)?,
             current_workspace_id,
         })
     }))
@@ -44,6 +46,30 @@ pub async fn set_current_workspace<'e>(
     Ok(())
 }
 
+pub async fn set_locale<'e>(
+    executor: impl SqliteExecutor<'e>,
+    locale: Locale,
+) -> Result<(), sqlx::Error> {
+    sqlx::query(
+        "UPDATE profile SET locale = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')",
+    )
+    .bind(locale.as_str())
+    .execute(executor)
+    .await?;
+    Ok(())
+}
+
+pub async fn set_theme<'e>(
+    executor: impl SqliteExecutor<'e>,
+    theme: Theme,
+) -> Result<(), sqlx::Error> {
+    sqlx::query("UPDATE profile SET theme = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')")
+        .bind(theme.as_str())
+        .execute(executor)
+        .await?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -57,7 +83,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn stores_locale_and_current_workspace() {
+    async fn stores_locale_theme_and_current_workspace() {
         let (pool, _dir) = open_for_test().await;
         workspaces::insert(&pool, "01", "Acme").await.unwrap();
 
@@ -67,6 +93,7 @@ mod tests {
             get(&pool).await.unwrap(),
             Some(Profile {
                 locale: Locale::Es,
+                theme: Theme::System,
                 current_workspace_id: Some("01".into())
             })
         );
@@ -83,6 +110,20 @@ mod tests {
 
         let profile = get(&pool).await.unwrap().unwrap();
         assert_eq!(profile.current_workspace_id, Some("02".into()));
+    }
+
+    #[tokio::test]
+    async fn changes_locale_and_theme() {
+        let (pool, _dir) = open_for_test().await;
+        workspaces::insert(&pool, "01", "Acme").await.unwrap();
+        create(&pool, Locale::En, "01").await.unwrap();
+
+        set_locale(&pool, Locale::Es).await.unwrap();
+        set_theme(&pool, Theme::Dark).await.unwrap();
+
+        let profile = get(&pool).await.unwrap().unwrap();
+        assert_eq!(profile.locale, Locale::Es);
+        assert_eq!(profile.theme, Theme::Dark);
     }
 
     #[tokio::test]

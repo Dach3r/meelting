@@ -34,6 +34,7 @@ pub async fn run(pool: &SqlitePool) -> Result<Option<Session>, SessionError> {
     };
     Ok(Some(Session {
         locale: profile.locale,
+        theme: profile.theme,
         current_workspace_id,
         workspaces: workspaces::list(pool).await?,
     }))

@@ -1,10 +1,11 @@
 use crate::domain::locale::Locale;
 use crate::domain::session::Session;
 use crate::domain::team::{AgentDraft, Team};
+use crate::domain::theme::Theme;
 use crate::services::session_load::SessionError;
 use crate::services::{
-    agent_create, first_launch, session_load, team_create, teams_list, workspace_create,
-    workspace_switch,
+    agent_create, first_launch, locale_change, session_load, team_create, teams_list, theme_change,
+    workspace_create, workspace_switch,
 };
 use sqlx::SqlitePool;
 use tauri::State;
@@ -58,4 +59,20 @@ pub async fn create_agent(
     draft: AgentDraft,
 ) -> Result<Vec<Team>, SessionError> {
     agent_create::run(&pool, draft).await
+}
+
+#[tauri::command]
+pub async fn change_locale(
+    pool: State<'_, SqlitePool>,
+    locale: Locale,
+) -> Result<Session, SessionError> {
+    locale_change::run(&pool, locale).await
+}
+
+#[tauri::command]
+pub async fn change_theme(
+    pool: State<'_, SqlitePool>,
+    theme: Theme,
+) -> Result<Session, SessionError> {
+    theme_change::run(&pool, theme).await
 }

@@ -33,7 +33,7 @@ src-tauri/src/
 │   ├── keychain.rs        ✅ save_secret, secret_last_four, delete_secret
 │   ├── worktree.rs        ✅ run_in_worktree
 │   ├── completion.rs      ✅ stream_completion
-│   └── session.rs         ✅ load_session, complete_first_launch, create_workspace, switch_workspace, list_teams, create_team, create_agent
+│   └── session.rs         ✅ load_session, complete_first_launch, create_workspace, switch_workspace, list_teams, create_team, create_agent, change_locale, change_theme
 ├── services/              Capa 2: acciones de negocio (verbos)
 │   ├── worktree_run.rs    ✅ crea un worktree y ejecuta un comando en él
 │   ├── completion_stream.rs ✅ lee la clave del keychain y hace streaming de una respuesta
@@ -42,6 +42,8 @@ src-tauri/src/
 │   ├── workspace_create.rs ✅ crea un workspace y lo deja como actual
 │   ├── workspace_switch.rs ✅ cambia el workspace actual
 │   ├── teams_list.rs      ✅ equipos del workspace actual con sus agentes
+│   ├── locale_change.rs   ✅ guarda el idioma del perfil
+│   ├── theme_change.rs    ✅ guarda el tema del perfil
 │   ├── team_create.rs     ✅ crea un equipo y devuelve la lista actualizada
 │   └── agent_create.rs    ✅ valida y crea un agente personalizado y devuelve la lista actualizada
 ├── system/                Capa 3: integración con el SO, sin reglas de negocio
@@ -57,6 +59,7 @@ src-tauri/src/
 │   └── agents.rs          ✅ consultas de la tabla agents
 ├── domain/                Modelos y lógica pura, sin I/O
 │   ├── locale.rs          ✅ idioma es/en
+│   ├── theme.rs           ✅ tema system/light/dark
 │   ├── profile.rs         ✅ perfil local
 │   ├── session.rs         ✅ perfil + workspaces que recibe la UI
 │   ├── team.rs            ✅ equipo y agente (resumen) que recibe la UI; AgentDraft y su validación
