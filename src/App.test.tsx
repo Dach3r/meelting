@@ -111,6 +111,23 @@ describe("workspace shell", () => {
     expect(await screen.findByRole("button", { name: "Switch workspace" })).toHaveTextContent("Globex");
   });
 
+  it("closes the switcher when clicking outside or pressing Escape", async () => {
+    invokeMock.mockResolvedValue(session({ locale: "en" }));
+    const user = userEvent.setup();
+    render(<App />);
+
+    const trigger = await screen.findByRole("button", { name: "Switch workspace" });
+    await user.click(trigger);
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+
+    await user.click(document.body);
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+
+    await user.click(trigger);
+    await user.keyboard("{Escape}");
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+  });
+
   it("marks only Teams as the current page and the rest as coming soon", async () => {
     invokeMock.mockResolvedValue(session({ locale: "en" }));
     render(<App />);
