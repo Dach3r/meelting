@@ -2,7 +2,7 @@ import type { ButtonHTMLAttributes } from "react";
 
 const variants = {
   primary: "border-ink bg-ink text-surface enabled:hover:bg-ink/85",
-  ghost: "border-transparent bg-transparent text-muted enabled:hover:bg-raised enabled:hover:text-ink",
+  ghost: "border-transparent bg-transparent text-muted enabled:hover:bg-pill-hover enabled:hover:text-ink",
 };
 
 const sizes = {

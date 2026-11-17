@@ -37,7 +37,7 @@ export function SettingsPage({ locale, theme, busy, errorMessage, onChangeLocale
               type="button"
               aria-current={item === category ? "true" : undefined}
               onClick={() => setCategory(item)}
-              className={`flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ink ${item === category ? "bg-raised font-semibold text-ink" : "font-medium text-muted hover:bg-raised hover:text-ink"}`}
+              className={`flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ink ${item === category ? "bg-pill-hover font-semibold text-ink" : "font-medium text-muted hover:bg-pill-hover hover:text-ink"}`}
             >
               <Icon className="size-4 shrink-0" aria-hidden />
               {t(`settings.categories.${item}.title`)}
@@ -51,7 +51,7 @@ export function SettingsPage({ locale, theme, busy, errorMessage, onChangeLocale
           <h2 className="text-xl font-bold text-ink">{t(`settings.categories.${category}.title`)}</h2>
           <p className="text-sm text-muted">{t(`settings.categories.${category}.description`)}</p>
         </div>
-        <div className="rounded-2xl bg-raised">
+        <div className="rounded-2xl bg-pill-hover">
           {category === "general" && (
             <SettingsRow title={t("settings.language.title")} description={t("settings.language.description")}>
               <LocaleSwitcher value={locale} onChange={onChangeLocale} disabled={busy} />
