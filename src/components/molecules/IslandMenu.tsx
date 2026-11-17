@@ -32,7 +32,9 @@ export function IslandMenu({ label, trigger, children }: Props) {
       <svg className="absolute size-0" aria-hidden="true" focusable="false">
         <filter id={filterId} colorInterpolationFilters="sRGB">
           <feGaussianBlur in="SourceGraphic" stdDeviation="9" result="blur" />
-          <feColorMatrix in="blur" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 -9" />
+          <feColorMatrix in="blur" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 20 -9" result="shape" />
+          <feFlood className="[flood-color:var(--color-surface)] transition-[flood-color] group-hover/island:[flood-color:var(--color-raised)] group-data-open/island:[flood-color:var(--color-raised)]" result="paint" />
+          <feComposite in="paint" in2="shape" operator="in" />
         </filter>
       </svg>
       <div
