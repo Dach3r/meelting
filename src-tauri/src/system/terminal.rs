@@ -1,17 +1,10 @@
 use portable_pty::{CommandBuilder, PtySize, native_pty_system};
-use serde::Serialize;
 use std::io::Read;
 use std::path::Path;
 
 #[derive(Debug, thiserror::Error)]
 #[error("terminal failed: {0}")]
 pub struct TerminalError(String);
-
-impl Serialize for TerminalError {
-    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        serializer.serialize_str(&self.to_string())
-    }
-}
 
 fn failed(error: impl std::fmt::Display) -> TerminalError {
     TerminalError(error.to_string())

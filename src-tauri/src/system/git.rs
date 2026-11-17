@@ -1,23 +1,16 @@
-use serde::Serialize;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 use tokio::process::Command;
 
 #[derive(Debug, thiserror::Error)]
-pub enum WorktreeError {
+pub enum GitError {
     #[error("git unavailable")]
-    GitUnavailable(#[from] std::io::Error),
+    Unavailable(#[from] std::io::Error),
     #[error("git failed: {0}")]
-    GitFailed(String),
+    Failed(String),
 }
 
-impl Serialize for WorktreeError {
-    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        serializer.serialize_str(&self.to_string())
-    }
-}
-
-pub async fn create(repo: &Path, root: &Path) -> Result<PathBuf, WorktreeError> {
+pub async fn add_worktree(repo: &Path, root: &Path) -> Result<PathBuf, GitError> {
     let nanos = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map_or(0, |elapsed| elapsed.as_nanos());
@@ -32,7 +25,7 @@ pub async fn create(repo: &Path, root: &Path) -> Result<PathBuf, WorktreeError> 
     if output.status.success() {
         Ok(path)
     } else {
-        Err(WorktreeError::GitFailed(
+        Err(GitError::Failed(
             String::from_utf8_lossy(&output.stderr).trim().to_string(),
         ))
     }
@@ -61,8 +54,8 @@ mod tests {
         git(repo.path(), &["init"]).await;
         git(repo.path(), &["commit", "--allow-empty", "-m", "init"]).await;
 
-        let first = create(repo.path(), root.path()).await.unwrap();
-        let second = create(repo.path(), root.path()).await.unwrap();
+        let first = add_worktree(repo.path(), root.path()).await.unwrap();
+        let second = add_worktree(repo.path(), root.path()).await.unwrap();
 
         assert!(first.join(".git").exists());
         assert!(second.join(".git").exists());
@@ -74,8 +67,8 @@ mod tests {
         let not_repo = tempfile::tempdir().unwrap();
         let root = tempfile::tempdir().unwrap();
 
-        let result = create(not_repo.path(), root.path()).await;
+        let result = add_worktree(not_repo.path(), root.path()).await;
 
-        assert!(matches!(result, Err(WorktreeError::GitFailed(_))));
+        assert!(matches!(result, Err(GitError::Failed(_))));
     }
 }
