@@ -4,7 +4,7 @@ AI workspace / virtual office: the user builds a virtual office with specialized
 
 ## Current scope
 
-Phase 0 only: Tauri 2 scaffold, a placeholder "Hello, world" screen (`src/App.tsx`) and the `keychain` Rust module with the commands `save_secret`, `secret_last_four` and `delete_secret` (crate `keyring` 3). Everything else described in `docs/` (SQLite, workspaces, teams, agents, rooms, agent execution, LLM providers, local models, tools, terminal, Docker, approvals, integrations, i18n, Tailwind) is **planned, not built**; do not add it unless asked. Check the real code before assuming a feature exists.
+Phase 0 only: Tauri 2 scaffold, a placeholder "Hello, world" screen (`src/App.tsx`), the keychain commands `save_secret`, `secret_last_four` and `delete_secret` (crate `keyring` 3) and the `run_in_worktree` spike (`git worktree` + PTY with live output). Everything else described in `docs/` (SQLite, workspaces, teams, agents, rooms, agent execution, LLM providers, local models, tools, Docker, approvals, integrations, i18n, Tailwind) is **planned, not built**; do not add it unless asked. Check the real code before assuming a feature exists.
 
 ## Ground rules
 
@@ -13,16 +13,17 @@ Phase 0 only: Tauri 2 scaffold, a placeholder "Hello, world" screen (`src/App.ts
 - No over-engineering: with two or three cases use a direct conditional, not a generic abstraction. No speculative fields, layers or "just in case" functions.
 - **Keep the code clean: no dead code.** Every function, command, constant, variable, component, hook or module you write must be used by the application (a test alone does not count as a use of production code). If something stops being used, delete it in the same change. Do not add code "for later".
 - **Never create or edit SQL migrations, or change tables/columns, without presenting the proposal (columns, types, names) and getting explicit approval first.**
+- Folder layout and where new code goes: `docs/architecture/project-structure.md`. Keep it in sync when you add, move or remove a module.
 - Read `docs/` before changing behavior: `docs/product/` (vision, roadmap, users, virtual office, integrations, metrics; `feature-template.md` defines how to propose features) and `docs/architecture/overview.md` (stack, layers, data model, agent engine).
 - Product decisions not yet defined: present alternatives, risks and a recommendation; do not assume.
 
 ## Architecture
 
-- Layers in the Rust core: Tauri commands (thin: validate arguments, call a service, return the result; no business rules or SQL) → services (business actions, verbs) → repositories (SQLite access) → pure domain (models, prompt building, provider normalization, path jail) kept free of OS I/O so it can be tested without it. Catalogs are read-only collections embedded in the app (`agent_templates/*.yml`, `llm.yml`); a catalog never orchestrates, an action that uses one is a service. See `docs/architecture/overview.md`.
-- Secrets live in the OS keychain through `src-tauri/src/keychain.rs`; the UI never reads a full secret back, only its last four characters.
+- Layers in the Rust core (`src-tauri/src`): `commands/` (thin Tauri commands: validate arguments, call a service, return the result; no business rules or SQL) → `services/` (business actions, verbs; no Tauri types, they take callbacks) → `system/` (OS integration: `git`, PTY, keychain; no business rules) and `repositories/` (SQLite access, planned) → pure domain (models, prompt building, provider normalization, path jail) kept free of OS I/O so it can be tested without it. Catalogs are read-only collections embedded in the app (`agent_templates/*.yml`, `llm.yml`); a catalog never orchestrates, an action that uses one is a service. See `docs/architecture/overview.md`.
+- Secrets live in the OS keychain through `src-tauri/src/system/keychain.rs`; the UI never reads a full secret back, only its last four characters.
 - The core talks to the UI through Tauri commands and events (`emit`). Declare Tauri capabilities minimal: the webview gets no direct `fs` or `shell` access, only the app's own commands.
 - Git and Docker are invoked as child processes through `tokio::process`, not with libraries.
-- Frontend: React function components and hooks, TypeScript `strict`. Components follow the atomic design hierarchy of the Rails project. Call the core only through `invoke` from `@tauri-apps/api/core`.
+- Frontend: React function components and hooks, TypeScript `strict`. Components follow the atomic design hierarchy of the Rails project. Call the core only through `invoke`/`listen` from `@tauri-apps/api`, and only inside `src/hooks/`; components never call the core directly.
 - Validations are mirrored in the database when possible (unique indexes, foreign keys, `CHECK` constraints). Cross-table workspace integrity is validated in services.
 
 ## Conventions

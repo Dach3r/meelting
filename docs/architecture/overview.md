@@ -1,6 +1,6 @@
 # Arquitectura
 
-> **Estado:** Fase 0. Hoy existe el scaffold Tauri 2 (React 19 + TypeScript + Vite) y un módulo `keychain` con los comandos `save_secret`, `secret_last_four` y `delete_secret`. El resto de este documento describe la arquitectura **objetivo**; cada sección marca lo que ya existe.
+> **Estado:** Fase 0. Hoy existe el scaffold Tauri 2 (React 19 + TypeScript + Vite), el módulo `keychain` con los comandos `save_secret`, `secret_last_four` y `delete_secret`, y el spike `run_in_worktree` (git worktree + PTY con salida en vivo). La organización de carpetas está en [project-structure.md](project-structure.md). El resto de este documento describe la arquitectura **objetivo**; cada sección marca lo que ya existe.
 >
 > Este producto reemplaza al SaaS Rails (repositorio `meelting`), congelado como referencia de diseño: modelo de dominio, estados, errores, textos, plantillas y specs como casos de prueba.
 
@@ -51,8 +51,8 @@
 | Secretos | crate `keyring` 3 (Keychain, Credential Manager, Secret Service) | ✅ spike |
 | Datos | SQLite con `sqlx`, modo WAL, migraciones `sqlx migrate` | pendiente |
 | HTTP/streaming | `reqwest` + SSE (`eventsource-stream`) | pendiente |
-| Terminal | `portable-pty` (ConPTY en Windows) | pendiente |
-| Git | CLI `git` por `tokio::process` | pendiente |
+| Terminal | `portable-pty` (ConPTY en Windows) | ✅ spike |
+| Git | CLI `git` por `tokio::process` | ✅ spike |
 | Docker | CLI `docker` por `tokio::process` (o `bollard`); opcional | pendiente |
 | Tests | `cargo test`, Vitest, WebDriver (`tauri-driver`) | pendiente |
 
@@ -60,14 +60,17 @@
 
 ## 3. Capas del núcleo
 
-- **Comandos Tauri** (`#[tauri::command]`): delgados. Validan argumentos, llaman a un servicio y devuelven el resultado. Sin reglas de negocio ni SQL.
-- **Servicios**: acciones de negocio (verbos): contratar agente, crear sala, enviar instrucción, crear tarea. Reciben el workspace actual y validan la integridad entre tablas.
+- **Comandos Tauri** (`#[tauri::command]`, en `commands/`): delgados. Validan argumentos, llaman a un servicio y devuelven el resultado. Sin reglas de negocio ni SQL.
+- **Servicios** (`services/`): acciones de negocio (verbos): contratar agente, crear sala, enviar instrucción, crear tarea. Reciben el workspace actual y validan la integridad entre tablas.
 - **Repositorios**: acceso a SQLite; las transiciones de `AgentRun` son funciones atómicas en una transacción.
 - **Catálogos**: colecciones de solo lectura embebidas en la app (`agent_templates/*.yml`, `llm.yml`), leídas con `serde_yaml`. Un catálogo nunca orquesta: la acción que lo usa es un servicio.
+- **Integración con el SO** (`system/`): procesos hijo (`git`), PTY y keychain; sin reglas de negocio.
 - **Dominio puro** (modelos, `BuildPrompt`, normalización de proveedores, path jail) separado del código de integración con el SO, para poder testearlo sin I/O.
 - **Eventos** (`emit`) del núcleo a la UI: `agent_run:token`, `agent_run:status`, `message:created`, `tool_call:output`.
 
 El webview **no recibe acceso directo a `fs` ni `shell`**: las capabilities de Tauri se declaran mínimas, solo los comandos propios.
+
+Estructura de carpetas, responsabilidades y dónde ubicar código nuevo: [project-structure.md](project-structure.md).
 
 ## 4. Mapa desde el producto Rails
 

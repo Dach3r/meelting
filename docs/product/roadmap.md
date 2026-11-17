@@ -4,7 +4,7 @@
 
 ## Estado actual
 
-Fase 0 en curso: scaffold Tauri 2 (React + TypeScript + Vite) con un spike de keychain. Nada del producto está implementado todavía. Ver [../architecture/overview.md](../architecture/overview.md).
+Fase 0 en curso: scaffold Tauri 2 (React + TypeScript + Vite), spike de keychain y spike de `git worktree` + PTY con salida en vivo. Pendientes: streaming a Ollama y a un proveedor en la nube, y validar los tres SO desde CI. Nada del producto está implementado todavía. Ver [../architecture/overview.md](../architecture/overview.md).
 
 ## Fase 0 — Spike de validación (1 semana)
 

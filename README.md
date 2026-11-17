@@ -1,11 +1,27 @@
-# Tauri + React + Typescript
+# Meelting Desktop
 
-This template should help get you started developing with Tauri, React and Typescript in Vite.
+Espacio de trabajo con IA: el usuario arma una oficina virtual con agentes especializados que colaboran y ejecutan tareas reales de código en `git worktree` aislados, bajo su supervisión. Aplicación de escritorio 100 % local (sin servidor ni cuenta) para macOS, Windows y Linux.
 
-## Recommended IDE Setup
+Tauri 2 (núcleo Rust) + React 19 + TypeScript + Vite. Gestor de paquetes: `pnpm`.
 
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+## Desarrollo
 
-## License
+```
+pnpm install
+pnpm tauri dev     # app completa
+pnpm dev           # solo frontend en el navegador (sin APIs de Tauri)
+pnpm tauri build   # instalador
+```
 
-[FSL-1.1-MIT](LICENSE): source available, each version becomes MIT two years after its release.
+Requiere Node, el toolchain de Rust y, en macOS, las Xcode Command Line Tools. Node y Rust deben coincidir con la arquitectura de la máquina.
+
+Antes de commitear, desde `src-tauri`: `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings` y `cargo test`; desde la raíz: `pnpm build`.
+
+## Documentación
+
+- [Producto](docs/product/README.md): visión, roadmap, usuarios, oficina virtual.
+- [Arquitectura](docs/architecture/overview.md) y [estructura del proyecto](docs/architecture/project-structure.md).
+
+## Licencia
+
+[FSL-1.1-MIT](LICENSE): código disponible; cada versión pasa a MIT dos años después de su publicación.
