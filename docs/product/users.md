@@ -30,7 +30,7 @@ Debe ser rápido y evitar configuraciones innecesarias.
 
 ### 2. Ajustes
 
-Una sola página con secciones desplegables, una abierta a la vez: **idioma** (`es` / `en`) y **workspace** (renombrar; mismas reglas que al crearlo). Docker, shell y proveedor local se añaden con sus fases. Exportar y borrar los datos locales vive aquí (Fase 7). Eliminar un workspace es una decisión abierta (ver [../architecture/overview.md](../architecture/overview.md#13-decisiones-abiertas)).
+Una página con las categorías a la izquierda y los ajustes de la categoría elegida a la derecha, cada uno como una fila con su control. Hoy: **General** (idioma `es` / `en`) y **Apariencia** (tema). Cada ajuste nuevo es una fila más dentro de su categoría; una categoría nueva se suma a la lista lateral. Más adelante, **workspace** (renombrar; mismas reglas que al crearlo). Docker, shell y proveedor local se añaden con sus fases. Exportar y borrar los datos locales vive aquí (Fase 7). Eliminar un workspace es una decisión abierta (ver [../architecture/overview.md](../architecture/overview.md#13-decisiones-abiertas)).
 
 ### 3. Dashboard principal
 

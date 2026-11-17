@@ -419,11 +419,27 @@ describe("settings", () => {
     await user.click(await screen.findByRole("button", { name: "Settings" }));
 
     expect(screen.getByRole("heading", { name: "Language" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Theme" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Theme" })).not.toBeInTheDocument();
     const nav = within(screen.getByRole("navigation", { name: "Main navigation" }));
     expect(nav.getByText("Settings").closest("[aria-current]")).toHaveAttribute("aria-current", "page");
     await user.click(nav.getByRole("button", { name: "Teams" }));
     expect(screen.queryByRole("heading", { name: "Language" })).not.toBeInTheDocument();
+  });
+
+  it("switches between setting categories", async () => {
+    mockCore(session({ locale: "en" }));
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "Settings" }));
+    const categories = within(screen.getByRole("navigation", { name: "Settings categories" }));
+    expect(categories.getByRole("button", { name: "General" })).toHaveAttribute("aria-current", "true");
+
+    await user.click(categories.getByRole("button", { name: "Appearance" }));
+
+    expect(screen.getByRole("heading", { name: "Theme" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Language" })).not.toBeInTheDocument();
+    expect(categories.getByRole("button", { name: "Appearance" })).toHaveAttribute("aria-current", "true");
   });
 
   it("changes the language and shows the app in it", async () => {
@@ -453,6 +469,7 @@ describe("settings", () => {
 
     await waitFor(() => expect(document.documentElement.dataset.theme).toBe("system"));
     await user.click(await screen.findByRole("button", { name: "Settings" }));
+    await user.click(screen.getByRole("button", { name: "Appearance" }));
     await user.click(screen.getByRole("button", { name: "Dark" }));
 
     expect(invokeMock).toHaveBeenCalledWith("change_theme", { theme: "dark" });
@@ -470,6 +487,7 @@ describe("settings", () => {
     render(<App />);
 
     await user.click(await screen.findByRole("button", { name: "Settings" }));
+    await user.click(screen.getByRole("button", { name: "Appearance" }));
     await user.click(screen.getByRole("button", { name: "Light" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("The local database failed. Try again.");

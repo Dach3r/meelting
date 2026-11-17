@@ -82,6 +82,18 @@
     }
   },
   "settings": {
+    "title": "Settings",
+    "categories": {
+      "label": "Settings categories",
+      "general": {
+        "title": "General",
+        "description": "Basic app preferences."
+      },
+      "appearance": {
+        "title": "Appearance",
+        "description": "How Meelting looks."
+      }
+    },
     "language": {
       "title": "Language",
       "description": "Choose the language of the app."
