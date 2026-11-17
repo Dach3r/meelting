@@ -4,8 +4,11 @@ import type { Locale } from "../i18n/translate";
 
 export type Workspace = { id: string; name: string };
 
+export type Theme = "system" | "light" | "dark";
+
 export type Session = {
   locale: Locale;
+  theme: Theme;
   current_workspace_id: string;
   workspaces: Workspace[];
 };
@@ -43,6 +46,8 @@ export function useSession() {
   const createWorkspace = (name: string) => run("create_workspace", { name });
   const switchWorkspace = (workspaceId: string) =>
     run("switch_workspace", { workspaceId });
+  const changeLocale = (locale: Locale) => run("change_locale", { locale });
+  const changeTheme = (theme: Theme) => run("change_theme", { theme });
 
   return {
     session,
@@ -53,5 +58,7 @@ export function useSession() {
     completeFirstLaunch,
     createWorkspace,
     switchWorkspace,
+    changeLocale,
+    changeTheme,
   };
 }

@@ -1,30 +1,30 @@
 import { useI18n } from "../../i18n/I18nProvider";
 import type { Locale } from "../../i18n/translate";
+import { SegmentedControl } from "./SegmentedControl";
 
-const locales: Locale[] = ["es", "en"];
+const options = (["es", "en"] as const).map((locale) => ({
+  value: locale,
+  label: locale.toUpperCase(),
+  lang: locale,
+}));
 
 export function LocaleSwitcher({
   value,
   onChange,
+  disabled,
 }: {
   value: Locale;
   onChange: (locale: Locale) => void;
+  disabled?: boolean;
 }) {
   const { t } = useI18n();
   return (
-    <nav aria-label={t("locale.label")} className="flex w-fit items-center gap-1 rounded-full bg-shell p-1 text-sm">
-      {locales.map((locale) => (
-        <button
-          key={locale}
-          type="button"
-          lang={locale}
-          aria-current={locale === value ? "true" : undefined}
-          onClick={() => onChange(locale)}
-          className={`cursor-pointer rounded-full px-3 py-1 tracking-wider ${locale === value ? "bg-ink font-semibold text-surface" : "font-bold text-muted hover:text-ink"}`}
-        >
-          {locale.toUpperCase()}
-        </button>
-      ))}
-    </nav>
+    <SegmentedControl
+      label={t("locale.label")}
+      options={options}
+      value={value}
+      onChange={onChange}
+      disabled={disabled}
+    />
   );
 }

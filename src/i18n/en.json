@@ -1,5 +1,7 @@
 {
-  "locale": { "label": "Language" },
+  "locale": {
+    "label": "Language"
+  },
   "errors": {
     "invalid_name": "Enter a name of up to 80 characters.",
     "workspace_not_found": "That workspace no longer exists.",
@@ -73,6 +75,19 @@
     "empty": {
       "title": "Your office is ready",
       "body": "Create your first team to start adding agents."
+    }
+  },
+  "settings": {
+    "language": {
+      "title": "Language",
+      "description": "Choose the language of the app."
+    },
+    "theme": {
+      "title": "Theme",
+      "description": "Follow the system or pick a fixed appearance.",
+      "system": "System",
+      "light": "Light",
+      "dark": "Dark"
     }
   }
 }

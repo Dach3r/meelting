@@ -1,5 +1,7 @@
 {
-  "locale": { "label": "Idioma" },
+  "locale": {
+    "label": "Idioma"
+  },
   "errors": {
     "invalid_name": "Escribe un nombre de hasta 80 caracteres.",
     "workspace_not_found": "Ese workspace ya no existe.",
@@ -73,6 +75,19 @@
     "empty": {
       "title": "Tu oficina está lista",
       "body": "Crea tu primer equipo para empezar a sumar agentes."
+    }
+  },
+  "settings": {
+    "language": {
+      "title": "Idioma",
+      "description": "Elige el idioma de la app."
+    },
+    "theme": {
+      "title": "Tema",
+      "description": "Sigue al sistema o elige una apariencia fija.",
+      "system": "Sistema",
+      "light": "Claro",
+      "dark": "Oscuro"
     }
   }
 }

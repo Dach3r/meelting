@@ -97,18 +97,18 @@ La UI llama al núcleo **solo** con `invoke` y `listen` de `@tauri-apps/api`, y 
 ```
 src/
 ├── main.tsx               Monta <App /> en #root
-├── styles.css             Tailwind v4, tokens Grafito (@theme) con variante light según el sistema (prefers-color-scheme), fuentes Inter y Rubik, y las clases de conectores del organigrama (org-*)
+├── styles.css             Tailwind v4, tokens Grafito (@theme) con light-dark() y `html[data-theme]` para forzar claro u oscuro (por defecto sigue al sistema), fuentes Inter y Rubik, y las clases de conectores del organigrama (org-*)
 ├── App.tsx                Elige entre la página de nuevo workspace (primer arranque o «crear otro») y el shell según la sesión
 ├── assets/fonts/          Inter y Rubik (woff2)
 ├── i18n/                  es.json, en.json, translate.ts (texto y errores) e I18nProvider
 ├── hooks/                 Acceso al núcleo y estado asociado
-│   ├── useSession.ts      ✅ invoke load_session, complete_first_launch, create_workspace, switch_workspace
+│   ├── useSession.ts      ✅ invoke load_session, complete_first_launch, create_workspace, switch_workspace, change_locale, change_theme
 │   └── useTeams.ts        ✅ invoke list_teams, create_team, create_agent
 ├── test/setup.ts          Configuración de Vitest (jest-dom)
 └── components/            Atomic design (overview.md §8)
     ├── atoms/             Avatar, Button, Field, Logo
-    ├── molecules/         Alert, IslandMenu, LocaleSwitcher, Modal, NavItem, OrgAgentCard, OrgCard, SwitchingOverlay, TeamForm, WorkspaceSwitcher, ZoomControls
-    ├── organisms/         AgentForm, NewWorkspacePage, OrgChart, Rail, TeamsPage, Topbar
+    ├── molecules/         Alert, IslandMenu, LocaleSwitcher, Modal, NavItem, OrgAgentCard, OrgCard, SegmentedControl, SwitchingOverlay, TeamForm, ThemeSwitcher, WorkspaceSwitcher, ZoomControls
+    ├── organisms/         AgentForm, NewWorkspacePage, OrgChart, Rail, SettingsPage, TeamsPage, Topbar
     └── templates/         Workspace (riel + topbar + contenido)
 ```
 

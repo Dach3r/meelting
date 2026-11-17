@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { NewWorkspacePage } from "./components/organisms/NewWorkspacePage";
 import { Workspace } from "./components/templates/Workspace";
 import { useSession } from "./hooks/useSession";
@@ -16,6 +16,8 @@ function App() {
     completeFirstLaunch,
     createWorkspace,
     switchWorkspace,
+    changeLocale,
+    changeTheme,
   } = useSession();
   const {
     teams,
@@ -28,6 +30,11 @@ function App() {
   } = useTeams(session?.current_workspace_id ?? null);
   const [draftLocale, setDraftLocale] = useState<Locale>("en");
   const [creating, setCreating] = useState(false);
+
+  const theme = session?.theme ?? "system";
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+  }, [theme]);
 
   if (!loaded) return null;
 
@@ -67,6 +74,10 @@ function App() {
           onCreateTeam={createTeam}
           onCreateAgent={createAgent}
           onClearTeamsActionError={clearTeamsActionError}
+          locale={session.locale}
+          theme={session.theme}
+          onChangeLocale={changeLocale}
+          onChangeTheme={changeTheme}
           currentId={session.current_workspace_id}
           busy={busy}
           errorMessage={errorMessage}

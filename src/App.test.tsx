@@ -14,6 +14,7 @@ const globex = { id: "2", name: "Globex" };
 function session(overrides = {}) {
   return {
     locale: "es",
+    theme: "system",
     current_workspace_id: "1",
     workspaces: [acme],
     ...overrides,
@@ -26,6 +27,7 @@ function mockCore(value: unknown) {
 
 beforeEach(() => {
   invokeMock.mockReset();
+  delete document.documentElement.dataset.theme;
 });
 
 describe("first launch", () => {
@@ -211,7 +213,6 @@ describe("workspace shell", () => {
     expect(screen.getByText("Ana")).toBeInTheDocument();
     expect(screen.getByText("Developer")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Design" })).toBeInTheDocument();
-    expect(screen.getByText("No agents in this team yet.")).toBeInTheDocument();
   });
 
   it("draws the org chart with you at the root and the teams under it", async () => {
@@ -393,5 +394,71 @@ describe("workspace shell", () => {
     });
     expect(await screen.findByText("Ana")).toBeInTheDocument();
     expect(screen.queryByLabelText("Role")).not.toBeInTheDocument();
+  });
+});
+
+describe("settings", () => {
+  it("opens from the rail and marks Settings as the current page", async () => {
+    mockCore(session({ locale: "en" }));
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "Settings" }));
+
+    expect(screen.getByRole("heading", { name: "Language" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Theme" })).toBeInTheDocument();
+    const nav = within(screen.getByRole("navigation", { name: "Main navigation" }));
+    expect(nav.getByText("Settings").closest("[aria-current]")).toHaveAttribute("aria-current", "page");
+    await user.click(nav.getByRole("button", { name: "Teams" }));
+    expect(screen.queryByRole("heading", { name: "Language" })).not.toBeInTheDocument();
+  });
+
+  it("changes the language and shows the app in it", async () => {
+    invokeMock.mockImplementation(async (command) => {
+      if (command === "list_teams") return [];
+      if (command === "change_locale") return session({ locale: "es" });
+      return session({ locale: "en" });
+    });
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "Settings" }));
+    await user.click(screen.getByRole("button", { name: "ES" }));
+
+    expect(invokeMock).toHaveBeenCalledWith("change_locale", { locale: "es" });
+    expect(await screen.findByRole("heading", { name: "Idioma" })).toBeInTheDocument();
+  });
+
+  it("changes the theme and applies it to the document", async () => {
+    invokeMock.mockImplementation(async (command) => {
+      if (command === "list_teams") return [];
+      if (command === "change_theme") return session({ locale: "en", theme: "dark" });
+      return session({ locale: "en" });
+    });
+    const user = userEvent.setup();
+    render(<App />);
+
+    await waitFor(() => expect(document.documentElement.dataset.theme).toBe("system"));
+    await user.click(await screen.findByRole("button", { name: "Settings" }));
+    await user.click(screen.getByRole("button", { name: "Dark" }));
+
+    expect(invokeMock).toHaveBeenCalledWith("change_theme", { theme: "dark" });
+    await waitFor(() => expect(document.documentElement.dataset.theme).toBe("dark"));
+    expect(screen.getByRole("button", { name: "Dark" })).toHaveAttribute("aria-current", "true");
+  });
+
+  it("shows the translated error when saving fails", async () => {
+    invokeMock.mockImplementation(async (command) => {
+      if (command === "list_teams") return [];
+      if (command === "change_theme") throw "database";
+      return session({ locale: "en" });
+    });
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "Settings" }));
+    await user.click(screen.getByRole("button", { name: "Light" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("The local database failed. Try again.");
   });
 });

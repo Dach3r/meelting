@@ -1,24 +1,29 @@
+import type { LucideIcon } from "lucide-react";
 import { Activity, ChevronsLeft, ChevronsRight, KeyRound, ListChecks, Plug, Settings, Users, Video } from "lucide-react";
 import { useI18n } from "../../i18n/I18nProvider";
 import { Logo } from "../atoms/Logo";
 import { NavItem } from "../molecules/NavItem";
 
-const items = [
-  { key: "teams", icon: Users, current: true },
+export type View = "teams" | "settings";
+
+const items: { key: string; icon: LucideIcon; view?: View }[] = [
+  { key: "teams", icon: Users, view: "teams" },
   { key: "rooms", icon: Video },
   { key: "tasks", icon: ListChecks },
   { key: "activity", icon: Activity },
   { key: "integrations", icon: Plug },
   { key: "apiKeys", icon: KeyRound },
-  { key: "settings", icon: Settings },
+  { key: "settings", icon: Settings, view: "settings" },
 ];
 
 type Props = {
   collapsed: boolean;
   onToggle: () => void;
+  view: View;
+  onSelectView: (view: View) => void;
 };
 
-export function Rail({ collapsed, onToggle }: Props) {
+export function Rail({ collapsed, onToggle, view, onSelectView }: Props) {
   const { t } = useI18n();
   return (
     <aside className="flex flex-col gap-6 overflow-x-hidden overflow-y-auto py-3 pr-3 text-muted">
@@ -27,7 +32,13 @@ export function Rail({ collapsed, onToggle }: Props) {
       </div>
       <nav aria-label={t("home.nav.label")} className="grid content-start gap-2">
         {items.map((item) => (
-          <NavItem key={item.key} label={t(`home.nav.${item.key}`)} icon={item.icon} current={item.current} />
+          <NavItem
+            key={item.key}
+            label={t(`home.nav.${item.key}`)}
+            icon={item.icon}
+            current={item.view === view}
+            onSelect={item.view ? () => onSelectView(item.view!) : undefined}
+          />
         ))}
       </nav>
       <button

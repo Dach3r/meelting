@@ -1,8 +1,11 @@
 import { useState } from "react";
+import type { Theme } from "../../hooks/useSession";
+import type { Locale } from "../../i18n/translate";
 import type { AgentDraft, Team } from "../../hooks/useTeams";
 import type { WorkspaceSwitcherProps } from "../molecules/WorkspaceSwitcher";
 import { SwitchingOverlay } from "../molecules/SwitchingOverlay";
-import { Rail } from "../organisms/Rail";
+import { Rail, type View } from "../organisms/Rail";
+import { SettingsPage } from "../organisms/SettingsPage";
 import { TeamsPage } from "../organisms/TeamsPage";
 import { Topbar } from "../organisms/Topbar";
 
@@ -25,6 +28,10 @@ type WorkspaceProps = WorkspaceSwitcherProps & {
   onCreateTeam: (name: string) => Promise<boolean>;
   onCreateAgent: (draft: AgentDraft) => Promise<boolean>;
   onClearTeamsActionError: () => void;
+  locale: Locale;
+  theme: Theme;
+  onChangeLocale: (locale: Locale) => void;
+  onChangeTheme: (theme: Theme) => void;
   errorMessage: string | null;
   onDismissError: () => void;
 };
@@ -37,12 +44,17 @@ export function Workspace({
   onCreateTeam,
   onCreateAgent,
   onClearTeamsActionError,
+  locale,
+  theme,
+  onChangeLocale,
+  onChangeTheme,
   errorMessage,
   onDismissError,
   ...props
 }: WorkspaceProps) {
   const [collapsed, setCollapsed] = useState(storedCollapsed);
   const [animated, setAnimated] = useState(false);
+  const [view, setView] = useState<View>("teams");
   const [switching, setSwitching] = useState<{ name: string; failed: boolean } | null>(null);
 
   async function switchWorkspace(workspaceId: string) {
@@ -72,21 +84,32 @@ export function Workspace({
       data-collapsed={collapsed || undefined}
       className={`group/rail relative grid h-dvh grid-cols-[19rem_minmax(0,1fr)] gap-3 overflow-hidden bg-rail p-6 data-collapsed:grid-cols-[4.5rem_minmax(0,1fr)] data-collapsed:pl-3 ${animated ? "transition-[grid-template-columns] duration-300 ease-in-out" : ""}`}
     >
-      <Rail collapsed={collapsed} onToggle={toggle} />
+      <Rail collapsed={collapsed} onToggle={toggle} view={view} onSelectView={setView} />
       <div className="flex min-h-0 min-w-0 flex-col overflow-hidden rounded-3xl bg-shell">
         <Topbar {...props} onSwitch={switchWorkspace} />
         <main className="flex min-h-0 flex-1 flex-col px-8 pb-8">
           <div className="bg-dots flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl bg-surface">
             <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-8">
-              <TeamsPage
-                teams={teams}
-                errorMessage={teamsErrorMessage}
-                actionErrorMessage={teamsActionErrorMessage}
-                busy={teamsBusy}
-                onCreateTeam={onCreateTeam}
-                onCreateAgent={onCreateAgent}
-                onClearActionError={onClearTeamsActionError}
-              />
+              {view === "settings" ? (
+                <SettingsPage
+                  locale={locale}
+                  theme={theme}
+                  busy={props.busy}
+                  errorMessage={errorMessage}
+                  onChangeLocale={onChangeLocale}
+                  onChangeTheme={onChangeTheme}
+                />
+              ) : (
+                <TeamsPage
+                  teams={teams}
+                  errorMessage={teamsErrorMessage}
+                  actionErrorMessage={teamsActionErrorMessage}
+                  busy={teamsBusy}
+                  onCreateTeam={onCreateTeam}
+                  onCreateAgent={onCreateAgent}
+                  onClearActionError={onClearTeamsActionError}
+                />
+              )}
             </div>
           </div>
         </main>
