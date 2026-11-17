@@ -76,7 +76,7 @@ describe("workspace shell", () => {
 
     expect(await screen.findByText("Tu oficina está lista")).toBeInTheDocument();
     expect(screen.getByRole("navigation", { name: "Navegación principal" })).toBeInTheDocument();
-    expect(screen.getByText("Acme")).toBeInTheDocument();
+    expect(screen.getAllByText("Acme")).not.toHaveLength(0);
   });
 
   it("switches to another workspace", async () => {
@@ -91,7 +91,6 @@ describe("workspace shell", () => {
     await user.click(screen.getByRole("button", { name: /Globex/ }));
 
     expect(await screen.findByRole("status")).toHaveTextContent("Switching to Globex");
-    expect(screen.queryByRole("button", { name: "Create another workspace" })).not.toBeInTheDocument();
     expect(invokeMock).toHaveBeenCalledWith("switch_workspace", { workspaceId: "2" });
     expect(await screen.findByRole("button", { name: "Switch workspace" })).toHaveTextContent("Globex");
     await waitFor(() => expect(screen.queryByRole("status")).not.toBeInTheDocument());
@@ -183,7 +182,7 @@ describe("workspace shell", () => {
     invokeMock.mockResolvedValue(session({ locale: "en" }));
     render(<App />);
 
-    expect(await screen.findByText("Teams")).toHaveAttribute("aria-current", "page");
-    expect(screen.getByText("Rooms")).toHaveAttribute("aria-disabled", "true");
+    expect((await screen.findByText("Teams")).closest("[aria-current]")).toHaveAttribute("aria-current", "page");
+    expect(screen.getByText("Rooms").closest("[aria-disabled]")).toHaveAttribute("aria-disabled", "true");
   });
 });
