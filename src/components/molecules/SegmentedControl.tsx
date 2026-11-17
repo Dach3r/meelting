@@ -19,7 +19,7 @@ export function SegmentedControl<T extends string>({
   disabled?: boolean;
 }) {
   return (
-    <nav aria-label={label} className="flex w-fit items-center gap-1 rounded-full bg-shell p-1 text-sm">
+    <nav aria-label={label} className="flex w-fit items-center gap-1 rounded-full bg-pill p-1 text-sm">
       {options.map((option) => (
         <button
           key={option.value}
