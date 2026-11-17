@@ -16,20 +16,25 @@ function storedCollapsed() {
   }
 }
 
-export function Workspace(props: WorkspaceSwitcherProps) {
+type WorkspaceProps = WorkspaceSwitcherProps & {
+  errorMessage: string | null;
+  onDismissError: () => void;
+};
+
+export function Workspace({ errorMessage, onDismissError, ...props }: WorkspaceProps) {
   const { t } = useI18n();
   const [collapsed, setCollapsed] = useState(storedCollapsed);
   const [animated, setAnimated] = useState(false);
-  const [switchingTo, setSwitchingTo] = useState<string | null>(null);
+  const [switching, setSwitching] = useState<{ name: string; failed: boolean } | null>(null);
 
   async function switchWorkspace(workspaceId: string) {
     const target = props.workspaces.find((workspace) => workspace.id === workspaceId);
-    setSwitchingTo(target?.name ?? "");
+    setSwitching({ name: target?.name ?? "", failed: false });
     const [switched] = await Promise.all([
       props.onSwitch(workspaceId),
       new Promise((resolve) => setTimeout(resolve, minSwitchMs)),
     ]);
-    setSwitchingTo(null);
+    setSwitching(switched ? null : { name: target?.name ?? "", failed: true });
     return switched;
   }
 
@@ -63,7 +68,16 @@ export function Workspace(props: WorkspaceSwitcherProps) {
           </div>
         </main>
       </div>
-      {switchingTo !== null && <SwitchingOverlay workspaceName={switchingTo} />}
+      {switching && (
+        <SwitchingOverlay
+          workspaceName={switching.name}
+          errorMessage={switching.failed ? errorMessage : null}
+          onDismiss={() => {
+            setSwitching(null);
+            onDismissError();
+          }}
+        />
+      )}
     </div>
   );
 }

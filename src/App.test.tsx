@@ -97,6 +97,24 @@ describe("workspace shell", () => {
     await waitFor(() => expect(screen.queryByRole("status")).not.toBeInTheDocument());
   });
 
+  it("shows the error in the overlay when switching fails and lets the user dismiss it", async () => {
+    invokeMock.mockImplementation(async (command) => {
+      if (command === "load_session") return session({ locale: "en", workspaces: [acme, globex] });
+      throw "workspace_not_found";
+    });
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "Switch workspace" }));
+    await user.click(screen.getByRole("button", { name: /Globex/ }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("That workspace no longer exists.");
+    await user.click(screen.getByRole("button", { name: "Close" }));
+
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Switch workspace" })).toHaveTextContent("Acme");
+  });
+
   it("creates another workspace from its own page", async () => {
     invokeMock.mockImplementation(async (command) => {
       if (command === "load_session") return session({ locale: "en" });

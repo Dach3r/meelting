@@ -37,7 +37,8 @@
       "label": "Workspace",
       "switch": "Switch workspace",
       "create": "Create another workspace",
-      "switching": "Switching to"
+      "switching": "Switching to",
+      "dismiss": "Close"
     },
     "empty": {
       "title": "Your office is ready",

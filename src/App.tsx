@@ -50,6 +50,8 @@ function App() {
           workspaces={session.workspaces}
           currentId={session.current_workspace_id}
           busy={busy}
+          errorMessage={errorMessage}
+          onDismissError={clearError}
           onSwitch={switchWorkspace}
           onNewWorkspace={() => {
             clearError();
