@@ -115,9 +115,9 @@ Reglas generales:
 | Tabla | Columnas | Notas |
 |---|---|---|
 | `profile` (una fila) | `id` (`'singleton'`), `locale` (`es`/`en`), `current_workspace_id`, timestamps | Reemplaza `users`. Nombre y apellido se añaden cuando haya UI que los pida |
-| `workspaces` | `id`, `name` (1–80), timestamps | Sin posición en el lienzo: solo equipos y agentes se dibujan |
-| `teams` | `id`, `workspace_id`, `name` (1–80), `canvas_x`, `canvas_y`, timestamps | |
-| `agents` | `id`, `workspace_id`, `team_id`, `template_key`, `name` (1–80), `role` (1–80), `description`, `instructions`, `provider`, `model`, `canvas_x`, `canvas_y`, timestamps | `team_id` `ON DELETE RESTRICT`; `provider`/`model` no vacíos |
+| `workspaces` | `id`, `name` (1–80), timestamps | |
+| `teams` | `id`, `workspace_id`, `name` (1–80), timestamps | Única `(id, workspace_id)` para la clave foránea compuesta de `agents` |
+| `agents` | `id`, `workspace_id`, `team_id`, `template_key`, `name` (1–80), `role` (1–80), `description`, `instructions`, `provider`, `model`, timestamps | FK compuesta `(team_id, workspace_id)` `ON DELETE RESTRICT`; `provider`/`model` no vacíos |
 | `rooms` | `id`, `workspace_id`, `name` (1–80), timestamps | |
 | `room_agents` | `id`, `room_id`, `agent_id`, timestamps | Única `(room_id, agent_id)` |
 | `messages` | `id`, `room_id`, `agent_id` (NULL = usuario), `body`, timestamps | `body` no vacío |

@@ -56,9 +56,9 @@ Se puede contratar la misma plantilla varias veces.
 
 Detalle completo en [../architecture/overview.md](../architecture/overview.md#modelo-de-datos).
 
-**`agents`:** `id` (UUID v7), `workspace_id`, `team_id` (FK `ON DELETE RESTRICT`), `template_key` (NULL si es personalizado), `name` (1–80), `role` (1–80), `description` (≤ 500), `instructions` (≤ 10 000), `provider` y `model` (no vacíos), `canvas_x`, `canvas_y`, timestamps.
+**`agents`:** `id` (UUID v7), `workspace_id`, `team_id` (FK `ON DELETE RESTRICT`), `template_key` (NULL si es personalizado), `name` (1–80), `role` (1–80), `description` (≤ 500), `instructions` (≤ 10 000), `provider` y `model` (no vacíos), timestamps. `(team_id, workspace_id)` es clave foránea compuesta hacia `teams`.
 
-**`teams`:** `id`, `workspace_id`, `name` (1–80), `canvas_x`, `canvas_y`, timestamps.
+**`teams`:** `id`, `workspace_id`, `name` (1–80), timestamps.
 
 **Validaciones:** se reflejan en la base con `CHECK`; `provider` y `model` se validan contra `llm.yml` solo al crear o cuando cambian (un agente cuyo modelo salió del catálogo sigue siendo editable y avisa que debe elegir otro).
 
