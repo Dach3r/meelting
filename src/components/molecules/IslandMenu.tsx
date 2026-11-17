@@ -33,7 +33,7 @@ export function IslandMenu({ label, trigger, children }: Props) {
         <filter id={filterId} colorInterpolationFilters="sRGB">
           <feGaussianBlur in="SourceGraphic" stdDeviation="9" result="blur" />
           <feColorMatrix in="blur" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 20 -9" result="shape" />
-          <feFlood className="[flood-color:var(--color-pill)] group-hover/island:[flood-color:var(--color-pill-hover)] group-data-open/island:[flood-color:var(--color-pill-hover)]" result="paint" />
+          <feFlood className="[flood-color:var(--color-pill)] group-hover/island:[flood-color:var(--color-pill-hover)] group-data-open/island:[flood-color:var(--color-pill-open)]" result="paint" />
           <feComposite in="paint" in2="shape" operator="in" />
         </filter>
       </svg>
@@ -42,8 +42,8 @@ export function IslandMenu({ label, trigger, children }: Props) {
         aria-hidden="true"
       />
       <div className="pointer-events-none absolute inset-0" style={{ filter: `url(#${filterId})` }} aria-hidden="true">
-        <div className="absolute inset-x-0 top-0 h-14 rounded-full bg-pill transition-colors group-hover/island:bg-pill-hover group-data-open/island:rounded-t-[1.75rem] group-data-open/island:rounded-b-none group-data-open/island:bg-pill-hover sm:h-15 sm:group-data-open/island:rounded-t-[1.875rem]" />
-        <div className="absolute inset-x-0 top-8 bottom-0 rounded-4xl bg-pill-hover opacity-0 transition-opacity duration-300 group-data-open/island:opacity-100" />
+        <div className="absolute inset-x-0 top-0 h-14 rounded-full bg-pill transition-colors group-hover/island:bg-pill-hover group-data-open/island:rounded-t-[1.75rem] group-data-open/island:rounded-b-none group-data-open/island:bg-pill-open sm:h-15 sm:group-data-open/island:rounded-t-[1.875rem]" />
+        <div className="absolute inset-x-0 top-8 bottom-0 rounded-4xl bg-pill-open opacity-0 transition-opacity duration-300 group-data-open/island:opacity-100" />
       </div>
       <button
         type="button"

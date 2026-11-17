@@ -23,6 +23,7 @@
   --color-raised: light-dark(#f3f4f6, #26262a);
   --color-pill: light-dark(#ffffff, #26262a);
   --color-pill-hover: light-dark(#f3f4f6, #303036);
+  --color-pill-open: light-dark(#ffffff, #303036);
   --color-hi: light-dark(#e8eaee, #303036);
   --color-line: light-dark(#d1d5db, #3a3a40);
   --color-ink: light-dark(#111827, #f4f4f5);
