@@ -1,6 +1,6 @@
 # Estructura del proyecto
 
-> **Estado:** Fase 0. Solo existen los módulos listados aquí como «✅». Lo marcado «pendiente» es la ubicación **prevista**; no se crea la carpeta hasta que haya código que la use (sin código muerto).
+> **Estado:** Fase 1 en curso. Solo existen los módulos listados aquí como «✅». Lo marcado «pendiente» es la ubicación **prevista**; no se crea la carpeta hasta que haya código que la use (sin código muerto).
 
 Reglas de capas y convenciones: [overview.md](overview.md) §3 y §5.
 
@@ -32,17 +32,29 @@ src-tauri/src/
 ├── commands/              Capa 1: comandos Tauri (delgados)
 │   ├── keychain.rs        ✅ save_secret, secret_last_four, delete_secret
 │   ├── worktree.rs        ✅ run_in_worktree
-│   └── completion.rs      ✅ stream_completion
+│   ├── completion.rs      ✅ stream_completion
+│   └── session.rs         ✅ load_session, complete_first_launch, create_workspace, switch_workspace
 ├── services/              Capa 2: acciones de negocio (verbos)
 │   ├── worktree_run.rs    ✅ crea un worktree y ejecuta un comando en él
-│   └── completion_stream.rs ✅ lee la clave del keychain y hace streaming de una respuesta
+│   ├── completion_stream.rs ✅ lee la clave del keychain y hace streaming de una respuesta
+│   ├── session_load.rs    ✅ carga el perfil y los workspaces; define SessionError
+│   ├── first_launch.rs    ✅ crea el perfil y el primer workspace en una transacción
+│   ├── workspace_create.rs ✅ crea un workspace y lo deja como actual
+│   └── workspace_switch.rs ✅ cambia el workspace actual
 ├── system/                Capa 3: integración con el SO, sin reglas de negocio
 │   ├── git.rs             ✅ git por tokio::process (worktree add)
 │   ├── terminal.rs        ✅ PTY portable y lectura de salida
 │   ├── chat_completions.rs ✅ cliente HTTP con SSE (Chat Completions)
 │   └── keychain.rs        ✅ keychain del SO (crate keyring)
-├── repositories/          pendiente: acceso a SQLite (Fase 1)
-├── domain/                pendiente: modelos y lógica pura, sin I/O
+├── repositories/          Acceso a SQLite (sqlx); las migraciones viven en src-tauri/migrations
+│   ├── database.rs        ✅ abre el pool (WAL, claves foráneas) y aplica migraciones
+│   ├── profile.rs         ✅ consultas de la tabla profile
+│   └── workspaces.rs      ✅ consultas de la tabla workspaces
+├── domain/                Modelos y lógica pura, sin I/O
+│   ├── locale.rs          ✅ idioma es/en
+│   ├── profile.rs         ✅ perfil local
+│   ├── session.rs         ✅ perfil + workspaces que recibe la UI
+│   └── workspace.rs       ✅ workspace y validación del nombre
 └── catalogs/              pendiente: agent_templates/*.yml y llm.yml embebidos
 ```
 
@@ -53,13 +65,15 @@ src-tauri/src/
 | `commands` | Recibe argumentos de la UI, resuelve lo propio de Tauri (`AppHandle`, rutas de la app), llama a un servicio, emite eventos y devuelve el resultado | Reglas de negocio, SQL, procesos |
 | `services` | Orquesta una acción completa y define su error serializable para la UI | Conocer Tauri (`AppHandle`, eventos): recibe *callbacks*, no emisores |
 | `system` | Habla con el SO: procesos hijo, PTY, keychain. Cada módulo tiene su error propio | Decidir qué hacer ni serializar errores hacia la UI |
-| `repositories` *(pendiente)* | Consultas SQLite y transiciones atómicas | Reglas entre tablas (van en servicios) |
-| `domain` *(pendiente)* | Lógica pura testeable sin I/O (prompt, normalización, path jail) | Tocar disco, red o procesos |
+| `repositories` | Consultas SQLite y transiciones atómicas | Reglas entre tablas (van en servicios) |
+| `domain` | Lógica pura testeable sin I/O (prompt, normalización, path jail) | Tocar disco, red o procesos |
 
 ### Convenciones del núcleo
 
 - **Un error por módulo** con `thiserror`. Solo se implementa `Serialize` en el error que cruza hacia la UI (el del servicio o el de `keychain`), como cadena.
 - **Comandos de secretos sin servicio:** `commands/keychain.rs` llama a `system/keychain.rs` directamente porque aún no hay regla que orquestar. Cuando exista la verificación previa a guardar (Fase 3), pasa a un servicio.
+- **Errores hacia la UI como código:** `SessionError` se serializa como un código estable (`invalid_name`, `workspace_not_found`, `not_set_up`, `database`); la UI lo traduce. No viaja el detalle de la base de datos.
+- **Base de datos:** el pool se abre en `setup` (`app_data_dir()/meelting.db`) y se registra como estado de Tauri; los comandos lo reciben con `State<SqlitePool>`. Los repositorios aceptan cualquier `SqliteExecutor` para poder usarse dentro de transacciones.
 - **Servicios sin Tauri:** reciben `impl Fn` para salida y fin, de modo que se prueban sin ventana ni `AppHandle`.
 - **Eventos hacia la UI:** los emite el comando. Nombres actuales: `terminal-output` (texto), `terminal-exit` (código de salida) y `llm-token` (fragmento de respuesta). El fin del streaming es el retorno del comando.
 - **Claves:** solo el servicio las lee del keychain (`system::keychain::read`); nunca viajan a la UI. Los errores del proveedor no incluyen su texto, solo el estado HTTP.

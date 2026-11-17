@@ -1,16 +1,33 @@
 mod commands;
+mod domain;
+mod repositories;
 mod services;
 mod system;
+
+use tauri::Manager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .setup(|app| {
+            let data_dir = app.path().app_data_dir()?;
+            std::fs::create_dir_all(&data_dir)?;
+            let pool = tauri::async_runtime::block_on(repositories::database::open(
+                &data_dir.join("meelting.db"),
+            ))?;
+            app.manage(pool);
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             commands::keychain::save_secret,
             commands::keychain::secret_last_four,
             commands::keychain::delete_secret,
             commands::worktree::run_in_worktree,
-            commands::completion::stream_completion
+            commands::completion::stream_completion,
+            commands::session::load_session,
+            commands::session::complete_first_launch,
+            commands::session::create_workspace,
+            commands::session::switch_workspace
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -114,8 +114,8 @@ Reglas generales:
 
 | Tabla | Columnas | Notas |
 |---|---|---|
-| `profile` (una fila) | `id`, `first_name`, `last_name`, `locale` (`es`/`en`), `current_workspace_id` | Reemplaza `users` |
-| `workspaces` | `id`, `name` (1–80), `canvas_x`, `canvas_y`, timestamps | |
+| `profile` (una fila) | `id` (`'singleton'`), `locale` (`es`/`en`), `current_workspace_id`, timestamps | Reemplaza `users`. Nombre y apellido se añaden cuando haya UI que los pida |
+| `workspaces` | `id`, `name` (1–80), timestamps | Sin posición en el lienzo: solo equipos y agentes se dibujan |
 | `teams` | `id`, `workspace_id`, `name` (1–80), `canvas_x`, `canvas_y`, timestamps | |
 | `agents` | `id`, `workspace_id`, `team_id`, `template_key`, `name` (1–80), `role` (1–80), `description`, `instructions`, `provider`, `model`, `canvas_x`, `canvas_y`, timestamps | `team_id` `ON DELETE RESTRICT`; `provider`/`model` no vacíos |
 | `rooms` | `id`, `workspace_id`, `name` (1–80), timestamps | |

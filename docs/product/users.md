@@ -14,11 +14,11 @@
 
 No hay registro, login ni cuenta. Al abrir la app por primera vez:
 
-1. Elegir idioma (`es` / `en`) y, opcionalmente, nombre y apellido para el perfil local.
-2. Crear el primer workspace: nombre obligatorio, máximo 80 caracteres; los nombres pueden repetirse.
+1. Elegir idioma (`es` / `en`).
+2. Crear el primer workspace: nombre obligatorio, máximo 80 caracteres; los nombres pueden repetirse. El perfil y el workspace se guardan juntos al terminar.
 3. La app abre **Equipos**: organigrama con "Tú" en la raíz y el equipo "General".
 
-Criterio de completitud: el primer arranque termina cuando `profile.current_workspace_id` apunta a un workspace existente. Si el usuario cierra la app a mitad del flujo, lo retoma al volver a abrirla.
+Criterio de completitud: el primer arranque termina cuando `profile.current_workspace_id` apunta a un workspace existente. Si el usuario cierra la app a mitad del flujo, no se guarda nada y lo retoma desde el principio al volver a abrirla.
 
 Reglas:
 
@@ -30,7 +30,7 @@ Debe ser rápido y evitar configuraciones innecesarias.
 
 ### 2. Ajustes
 
-Una sola página con secciones desplegables, una abierta a la vez: **general** (nombre y apellido del perfil local), **idioma** (`es` / `en`) y **workspace** (renombrar; mismas reglas que al crearlo). Docker, shell y proveedor local se añaden con sus fases. Exportar y borrar los datos locales vive aquí (Fase 7). Eliminar un workspace es una decisión abierta (ver [../architecture/overview.md](../architecture/overview.md#13-decisiones-abiertas)).
+Una sola página con secciones desplegables, una abierta a la vez: **idioma** (`es` / `en`) y **workspace** (renombrar; mismas reglas que al crearlo). Docker, shell y proveedor local se añaden con sus fases. Exportar y borrar los datos locales vive aquí (Fase 7). Eliminar un workspace es una decisión abierta (ver [../architecture/overview.md](../architecture/overview.md#13-decisiones-abiertas)).
 
 ### 3. Dashboard principal
 
