@@ -89,7 +89,7 @@ La UI llama al núcleo **solo** con `invoke` y `listen` de `@tauri-apps/api`, y 
 src/
 ├── main.tsx               Monta <App /> en #root
 ├── styles.css             Tailwind v4 y tokens Grafito (@theme), fuentes Inter y Rubik
-├── App.tsx                Elige entre primer arranque y shell según la sesión
+├── App.tsx                Elige entre la página de nuevo workspace (primer arranque o «crear otro») y el shell según la sesión
 ├── assets/fonts/          Inter y Rubik (woff2)
 ├── i18n/                  es.json, en.json, translate.ts (texto y errores) e I18nProvider
 ├── hooks/                 Acceso al núcleo y estado asociado
@@ -98,7 +98,7 @@ src/
 └── components/            Atomic design (overview.md §8)
     ├── atoms/             Button, Input, Label, Logo
     ├── molecules/         Alert, FormField, IslandMenu, LocaleSwitcher, NavItem, WorkspaceSwitcher
-    ├── organisms/         FirstLaunchCard, Rail, Topbar
+    ├── organisms/         NewWorkspaceCard, Rail, Topbar
     └── templates/         Workspace (riel + topbar + contenido)
 ```
 

@@ -94,7 +94,7 @@ describe("workspace shell", () => {
     expect(await screen.findByRole("button", { name: "Switch workspace" })).toHaveTextContent("Globex");
   });
 
-  it("creates another workspace from the switcher", async () => {
+  it("creates another workspace from its own page", async () => {
     invokeMock.mockImplementation(async (command) => {
       if (command === "load_session") return session({ locale: "en" });
       return session({ locale: "en", current_workspace_id: "2", workspaces: [acme, globex] });
@@ -105,10 +105,23 @@ describe("workspace shell", () => {
     await user.click(await screen.findByRole("button", { name: "Switch workspace" }));
     await user.click(screen.getByRole("button", { name: "Create another workspace" }));
     await user.type(screen.getByLabelText("Workspace name"), "Globex");
-    await user.click(screen.getByRole("button", { name: "Create" }));
+    await user.click(screen.getByRole("button", { name: "Create workspace" }));
 
     expect(invokeMock).toHaveBeenCalledWith("create_workspace", { name: "Globex" });
     expect(await screen.findByRole("button", { name: "Switch workspace" })).toHaveTextContent("Globex");
+  });
+
+  it("goes back from the new workspace page without creating", async () => {
+    invokeMock.mockResolvedValue(session({ locale: "en" }));
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "Switch workspace" }));
+    await user.click(screen.getByRole("button", { name: "Create another workspace" }));
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+
+    expect(await screen.findByRole("button", { name: "Switch workspace" })).toHaveTextContent("Acme");
+    expect(invokeMock).not.toHaveBeenCalledWith("create_workspace", expect.anything());
   });
 
   it("closes the switcher when clicking outside or pressing Escape", async () => {

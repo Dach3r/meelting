@@ -1,18 +1,14 @@
-import { Building2, Check, ChevronsUpDown, Plus } from "lucide-react";
-import { useState } from "react";
+import { Check, ChevronsUpDown, Plus } from "lucide-react";
 import { useI18n } from "../../i18n/I18nProvider";
-import { Button } from "../atoms/Button";
 import type { Workspace } from "../../hooks/useSession";
-import { FormField } from "./FormField";
 import { IslandMenu } from "./IslandMenu";
 
 export type WorkspaceSwitcherProps = {
   workspaces: Workspace[];
   currentId: string;
   busy: boolean;
-  errorMessage: string | null;
   onSwitch: (workspaceId: string) => Promise<boolean>;
-  onCreate: (name: string) => Promise<boolean>;
+  onNewWorkspace: () => void;
 };
 
 function Initial({ name }: { name: string }) {
@@ -27,13 +23,10 @@ export function WorkspaceSwitcher({
   workspaces,
   currentId,
   busy,
-  errorMessage,
   onSwitch,
-  onCreate,
+  onNewWorkspace,
 }: WorkspaceSwitcherProps) {
   const { t } = useI18n();
-  const [creating, setCreating] = useState(false);
-  const [name, setName] = useState("");
   const current = workspaces.find((workspace) => workspace.id === currentId);
 
   return (
@@ -76,43 +69,14 @@ export function WorkspaceSwitcher({
               </button>
             ),
           )}
-          {creating ? (
-            <form
-              onSubmit={async (event) => {
-                event.preventDefault();
-                if (await onCreate(name)) {
-                  setName("");
-                  setCreating(false);
-                  close();
-                }
-              }}
-              className="grid gap-3 p-2"
-            >
-              <FormField
-                label={t("home.workspace.nameLabel")}
-                icon={Building2}
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                maxLength={80}
-                autoFocus
-                autoComplete="organization"
-                error={errorMessage}
-              />
-              {errorMessage && <p className="text-sm text-error">{errorMessage}</p>}
-              <Button type="submit" size="compact" disabled={busy || name.trim() === ""}>
-                {t("home.workspace.submit")}
-              </Button>
-            </form>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setCreating(true)}
-              className="flex w-full cursor-pointer items-center gap-3 rounded-xl px-3 py-3.5 text-sm text-muted hover:bg-primary hover:text-ink focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ink"
-            >
-              <Plus className="size-4" aria-hidden="true" />
-              {t("home.workspace.create")}
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={onNewWorkspace}
+            className="flex w-full cursor-pointer items-center gap-3 rounded-xl px-3 py-3.5 text-sm text-muted hover:bg-primary hover:text-ink focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ink"
+          >
+            <Plus className="size-4" aria-hidden="true" />
+            {t("home.workspace.create")}
+          </button>
         </>
       )}
     </IslandMenu>

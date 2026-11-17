@@ -9,14 +9,14 @@ import { FormField } from "../molecules/FormField";
 import { LocaleSwitcher } from "../molecules/LocaleSwitcher";
 
 type Props = {
-  locale: Locale;
   busy: boolean;
   errorMessage: string | null;
-  onLocaleChange: (locale: Locale) => void;
   onSubmit: (workspaceName: string) => void;
+  language?: { locale: Locale; onChange: (locale: Locale) => void };
+  onCancel?: () => void;
 };
 
-export function FirstLaunchCard({ locale, busy, errorMessage, onLocaleChange, onSubmit }: Props) {
+export function NewWorkspaceCard({ busy, errorMessage, onSubmit, language, onCancel }: Props) {
   const { t } = useI18n();
   const [name, setName] = useState("");
 
@@ -30,15 +30,15 @@ export function FirstLaunchCard({ locale, busy, errorMessage, onLocaleChange, on
       <form onSubmit={submit} className="grid w-full max-w-md gap-6 rounded-3xl bg-rail p-8">
         <div className="flex items-center justify-between">
           <Logo />
-          <LocaleSwitcher value={locale} onChange={onLocaleChange} />
+          {language && <LocaleSwitcher value={language.locale} onChange={language.onChange} />}
         </div>
         <div className="grid gap-1">
-          <h1 className="text-2xl font-bold">{t("firstLaunch.title")}</h1>
-          <p className="text-muted">{t("firstLaunch.subtitle")}</p>
+          <h1 className="text-2xl font-bold">{t("newWorkspace.title")}</h1>
+          <p className="text-muted">{t("newWorkspace.subtitle")}</p>
         </div>
         {errorMessage && <Alert message={errorMessage} />}
         <FormField
-          label={t("firstLaunch.nameLabel")}
+          label={t("newWorkspace.nameLabel")}
           value={name}
           onChange={(event) => setName(event.target.value)}
           maxLength={80}
@@ -46,10 +46,17 @@ export function FirstLaunchCard({ locale, busy, errorMessage, onLocaleChange, on
           autoComplete="organization"
           error={errorMessage}
         />
-        <Button type="submit" disabled={busy || name.trim() === ""}>
-          <Building2 className="size-5" aria-hidden="true" />
-          {t("firstLaunch.submit")}
-        </Button>
+        <div className="grid gap-2">
+          <Button type="submit" disabled={busy || name.trim() === ""}>
+            <Building2 className="size-5" aria-hidden="true" />
+            {t("newWorkspace.submit")}
+          </Button>
+          {onCancel && (
+            <Button type="button" variant="ghost" onClick={onCancel}>
+              {t("newWorkspace.cancel")}
+            </Button>
+          )}
+        </div>
       </form>
     </main>
   );

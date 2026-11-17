@@ -7,11 +7,12 @@
     "database": "Falló la base de datos local. Inténtalo de nuevo.",
     "unknown": "Algo salió mal. Inténtalo de nuevo."
   },
-  "firstLaunch": {
+  "newWorkspace": {
     "title": "Crea tu workspace",
     "subtitle": "dale un nombre a tu oficina virtual",
     "nameLabel": "Nombre del workspace",
-    "submit": "Crear workspace"
+    "submit": "Crear workspace",
+    "cancel": "Cancelar"
   },
   "home": {
     "soon": "Disponible pronto",
@@ -34,9 +35,7 @@
     "workspace": {
       "label": "Workspace",
       "switch": "Cambiar de workspace",
-      "create": "Crear otro workspace",
-      "nameLabel": "Nombre del workspace",
-      "submit": "Crear"
+      "create": "Crear otro workspace"
     },
     "empty": {
       "title": "Tu oficina está lista",

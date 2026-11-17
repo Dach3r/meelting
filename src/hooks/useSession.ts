@@ -37,6 +37,7 @@ export function useSession() {
     }
   }, []);
 
+  const clearError = () => setErrorKey(null);
   const completeFirstLaunch = (locale: Locale, workspaceName: string) =>
     run("complete_first_launch", { locale, workspaceName });
   const createWorkspace = (name: string) => run("create_workspace", { name });
@@ -48,6 +49,7 @@ export function useSession() {
     loaded,
     busy,
     errorKey,
+    clearError,
     completeFirstLaunch,
     createWorkspace,
     switchWorkspace,

@@ -7,11 +7,12 @@
     "database": "The local database failed. Try again.",
     "unknown": "Something went wrong. Try again."
   },
-  "firstLaunch": {
+  "newWorkspace": {
     "title": "Create your workspace",
     "subtitle": "give your virtual office a name",
     "nameLabel": "Workspace name",
-    "submit": "Create workspace"
+    "submit": "Create workspace",
+    "cancel": "Cancel"
   },
   "home": {
     "soon": "Coming soon",
@@ -34,9 +35,7 @@
     "workspace": {
       "label": "Workspace",
       "switch": "Switch workspace",
-      "create": "Create another workspace",
-      "nameLabel": "Workspace name",
-      "submit": "Create"
+      "create": "Create another workspace"
     },
     "empty": {
       "title": "Your office is ready",

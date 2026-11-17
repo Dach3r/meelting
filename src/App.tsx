@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FirstLaunchCard } from "./components/organisms/FirstLaunchCard";
+import { NewWorkspaceCard } from "./components/organisms/NewWorkspaceCard";
 import { Workspace } from "./components/templates/Workspace";
 import { useSession } from "./hooks/useSession";
 import { I18nProvider } from "./i18n/I18nProvider";
@@ -11,11 +11,13 @@ function App() {
     loaded,
     busy,
     errorKey,
+    clearError,
     completeFirstLaunch,
     createWorkspace,
     switchWorkspace,
   } = useSession();
   const [draftLocale, setDraftLocale] = useState<Locale>("en");
+  const [creating, setCreating] = useState(false);
 
   if (!loaded) return null;
 
@@ -24,22 +26,35 @@ function App() {
 
   return (
     <I18nProvider locale={locale}>
-      {session ? (
+      {!session ? (
+        <NewWorkspaceCard
+          busy={busy}
+          errorMessage={errorMessage}
+          language={{ locale: draftLocale, onChange: setDraftLocale }}
+          onSubmit={(name) => completeFirstLaunch(draftLocale, name)}
+        />
+      ) : creating ? (
+        <NewWorkspaceCard
+          busy={busy}
+          errorMessage={errorMessage}
+          onSubmit={async (name) => {
+            if (await createWorkspace(name)) setCreating(false);
+          }}
+          onCancel={() => {
+            clearError();
+            setCreating(false);
+          }}
+        />
+      ) : (
         <Workspace
           workspaces={session.workspaces}
           currentId={session.current_workspace_id}
           busy={busy}
-          errorMessage={errorMessage}
           onSwitch={switchWorkspace}
-          onCreate={createWorkspace}
-        />
-      ) : (
-        <FirstLaunchCard
-          locale={draftLocale}
-          busy={busy}
-          errorMessage={errorMessage}
-          onLocaleChange={setDraftLocale}
-          onSubmit={(name) => completeFirstLaunch(draftLocale, name)}
+          onNewWorkspace={() => {
+            clearError();
+            setCreating(true);
+          }}
         />
       )}
     </I18nProvider>
