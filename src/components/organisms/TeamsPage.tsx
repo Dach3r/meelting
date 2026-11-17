@@ -53,15 +53,12 @@ export function TeamsPage({
 
   return (
     <div className="grid w-full content-start gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold">{t("teams.title")}</h1>
-        <div className="flex items-center gap-3">
-          {teams.length > 0 && <ZoomControls zoom={zoom} onChange={setZoom} />}
-          <Button type="button" size="compact" onClick={() => open({ kind: "team" })}>
-            <Plus className="size-4" aria-hidden="true" />
-            {t("teams.newTeam")}
-          </Button>
-        </div>
+      <div className="flex flex-wrap items-center justify-end gap-3">
+        {teams.length > 0 && <ZoomControls zoom={zoom} onChange={setZoom} />}
+        <Button type="button" size="compact" onClick={() => open({ kind: "team" })}>
+          <Plus className="size-4" aria-hidden="true" />
+          {t("teams.newTeam")}
+        </Button>
       </div>
       {form?.kind === "team" && (
         <div className="w-full max-w-4xl">
