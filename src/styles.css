@@ -67,6 +67,11 @@
 }
 
 @layer components {
+  .bg-dots {
+    background-image: radial-gradient(color-mix(in srgb, var(--color-ink) 10%, transparent) 1.2px, transparent 1.2px);
+    background-size: 22px 22px;
+  }
+
   .org-stem {
     width: 2px;
     height: 24px;

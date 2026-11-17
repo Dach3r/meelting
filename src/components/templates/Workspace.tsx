@@ -76,7 +76,7 @@ export function Workspace({
       <div className="flex min-h-0 min-w-0 flex-col overflow-hidden rounded-3xl bg-shell">
         <Topbar {...props} onSwitch={switchWorkspace} />
         <main className="flex min-h-0 flex-1 flex-col px-8 pb-8">
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl bg-surface">
+          <div className="bg-dots flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl bg-surface">
             <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-8">
               <TeamsPage
                 teams={teams}
