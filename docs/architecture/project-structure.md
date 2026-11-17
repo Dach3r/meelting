@@ -33,14 +33,15 @@ src-tauri/src/
 │   ├── keychain.rs        ✅ save_secret, secret_last_four, delete_secret
 │   ├── worktree.rs        ✅ run_in_worktree
 │   ├── completion.rs      ✅ stream_completion
-│   └── session.rs         ✅ load_session, complete_first_launch, create_workspace, switch_workspace
+│   └── session.rs         ✅ load_session, complete_first_launch, create_workspace, switch_workspace, list_teams
 ├── services/              Capa 2: acciones de negocio (verbos)
 │   ├── worktree_run.rs    ✅ crea un worktree y ejecuta un comando en él
 │   ├── completion_stream.rs ✅ lee la clave del keychain y hace streaming de una respuesta
 │   ├── session_load.rs    ✅ carga el perfil y los workspaces; define SessionError
 │   ├── first_launch.rs    ✅ crea el perfil y el primer workspace en una transacción
 │   ├── workspace_create.rs ✅ crea un workspace y lo deja como actual
-│   └── workspace_switch.rs ✅ cambia el workspace actual
+│   ├── workspace_switch.rs ✅ cambia el workspace actual
+│   └── teams_list.rs      ✅ equipos del workspace actual con sus agentes
 ├── system/                Capa 3: integración con el SO, sin reglas de negocio
 │   ├── git.rs             ✅ git por tokio::process (worktree add)
 │   ├── terminal.rs        ✅ PTY portable y lectura de salida
@@ -49,11 +50,14 @@ src-tauri/src/
 ├── repositories/          Acceso a SQLite (sqlx); las migraciones viven en src-tauri/migrations
 │   ├── database.rs        ✅ abre el pool (WAL, claves foráneas) y aplica migraciones
 │   ├── profile.rs         ✅ consultas de la tabla profile
-│   └── workspaces.rs      ✅ consultas de la tabla workspaces
+│   ├── workspaces.rs      ✅ consultas de la tabla workspaces
+│   ├── teams.rs           ✅ consultas de la tabla teams
+│   └── agents.rs          ✅ consultas de la tabla agents
 ├── domain/                Modelos y lógica pura, sin I/O
 │   ├── locale.rs          ✅ idioma es/en
 │   ├── profile.rs         ✅ perfil local
 │   ├── session.rs         ✅ perfil + workspaces que recibe la UI
+│   ├── team.rs            ✅ equipo y agente (resumen) que recibe la UI
 │   └── workspace.rs       ✅ workspace y validación del nombre
 └── catalogs/              pendiente: agent_templates/*.yml y llm.yml embebidos
 ```
@@ -93,12 +97,13 @@ src/
 ├── assets/fonts/          Inter y Rubik (woff2)
 ├── i18n/                  es.json, en.json, translate.ts (texto y errores) e I18nProvider
 ├── hooks/                 Acceso al núcleo y estado asociado
-│   └── useSession.ts      ✅ invoke load_session, complete_first_launch, create_workspace, switch_workspace
+│   ├── useSession.ts      ✅ invoke load_session, complete_first_launch, create_workspace, switch_workspace
+│   └── useTeams.ts        ✅ invoke list_teams del workspace actual
 ├── test/setup.ts          Configuración de Vitest (jest-dom)
 └── components/            Atomic design (overview.md §8)
     ├── atoms/             Button, Logo
     ├── molecules/         Alert, IslandMenu, LocaleSwitcher, NavItem, SwitchingOverlay, WorkspaceSwitcher
-    ├── organisms/         NewWorkspacePage, Rail, Topbar
+    ├── organisms/         NewWorkspacePage, Rail, TeamsPage, Topbar
     └── templates/         Workspace (riel + topbar + contenido)
 ```
 

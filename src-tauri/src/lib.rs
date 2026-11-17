@@ -27,7 +27,8 @@ pub fn run() {
             commands::session::load_session,
             commands::session::complete_first_launch,
             commands::session::create_workspace,
-            commands::session::switch_workspace
+            commands::session::switch_workspace,
+            commands::session::list_teams
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

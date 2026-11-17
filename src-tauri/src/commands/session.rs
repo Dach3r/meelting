@@ -1,7 +1,8 @@
 use crate::domain::locale::Locale;
 use crate::domain::session::Session;
+use crate::domain::team::Team;
 use crate::services::session_load::SessionError;
-use crate::services::{first_launch, session_load, workspace_create, workspace_switch};
+use crate::services::{first_launch, session_load, teams_list, workspace_create, workspace_switch};
 use sqlx::SqlitePool;
 use tauri::State;
 
@@ -33,4 +34,9 @@ pub async fn switch_workspace(
     workspace_id: String,
 ) -> Result<Session, SessionError> {
     workspace_switch::run(&pool, &workspace_id).await
+}
+
+#[tauri::command]
+pub async fn list_teams(pool: State<'_, SqlitePool>) -> Result<Vec<Team>, SessionError> {
+    teams_list::run(&pool).await
 }
