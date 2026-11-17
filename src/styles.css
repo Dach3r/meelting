@@ -18,7 +18,7 @@
 
 @theme {
   --color-surface: light-dark(#ffffff, #1d1d20);
-  --color-shell: light-dark(#f3f4f6, #151517);
+  --color-shell: light-dark(#e5e7eb, #151517);
   --color-rail: light-dark(#0d0d0e, #0d0d0e);
   --color-raised: light-dark(#f3f4f6, #26262a);
   --color-line: light-dark(#d1d5db, #3a3a40);
