@@ -25,6 +25,9 @@
       "apiKeys": "AI keys",
       "settings": "Settings"
     },
+    "topbar": {
+      "search": "Search the workspace"
+    },
     "rail": {
       "collapse": "Collapse"
     },

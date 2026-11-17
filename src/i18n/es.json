@@ -25,6 +25,9 @@
       "apiKeys": "Claves de IA",
       "settings": "Configuración"
     },
+    "topbar": {
+      "search": "Buscar en el workspace"
+    },
     "rail": {
       "collapse": "Contraer"
     },
