@@ -1,6 +1,6 @@
 # Estructura del proyecto
 
-> **Estado:** Fase 1 en curso. Solo existen los módulos listados aquí como «✅». Lo marcado «pendiente» es la ubicación **prevista**; no se crea la carpeta hasta que haya código que la use (sin código muerto).
+> **Estado:** Fase 1 completada. Solo existen los módulos listados aquí como «✅». Lo marcado «pendiente» es la ubicación **prevista**; no se crea la carpeta hasta que haya código que la use (sin código muerto).
 
 Reglas de capas y convenciones: [overview.md](overview.md) §3 y §5.
 

@@ -4,7 +4,7 @@
 
 ## Estado actual
 
-Fase 0 completada (2026-11-17): scaffold Tauri 2 (React + TypeScript + Vite), spikes de keychain, de `git worktree` + PTY con salida en vivo y de streaming SSE (Chat Completions), validados en los tres SO desde CI y con pruebas reales contra Ollama y DeepSeek. Fase 1 en curso: SQLite con `profile` y `workspaces`, primer arranque (idioma y workspace), shell (riel + topbar), cambio y creación de workspace, tokens Grafito e i18n `es`/`en`. Teams, agentes, salas y ejecución siguen sin construir. Ver [../architecture/overview.md](../architecture/overview.md).
+Fase 0 completada (2026-11-17): scaffold Tauri 2 (React + TypeScript + Vite), spikes de keychain, de `git worktree` + PTY con salida en vivo y de streaming SSE (Chat Completions), validados en los tres SO desde CI y con pruebas reales contra Ollama y DeepSeek. Fase 1 completada (2026-11-17): SQLite con `profile` y `workspaces`, primer arranque (idioma y workspace), shell (riel + topbar), cambio y creación de workspace, tokens Grafito e i18n `es`/`en`. Teams, agentes, salas y ejecución siguen sin construir. Ver [../architecture/overview.md](../architecture/overview.md).
 
 ## Fase 0 — Spike de validación (1 semana)
 
@@ -27,7 +27,7 @@ Fase 0 completada (2026-11-17): scaffold Tauri 2 (React + TypeScript + Vite), sp
 - Tokens de diseño Grafito, atoms y molecules base, i18n `es`/`en`.
 - Primer arranque (idioma y workspace), shell (riel + topbar) y cambio de workspace.
 
-**Resultado esperado:** crear y cambiar de workspace con persistencia y ambos idiomas.
+**Resultado:** cumplido. Crear y cambiar de workspace con persistencia y ambos idiomas; CI verde, `clippy`, `rustfmt`, tests de Rust (45) y de frontend (15).
 
 ## Fase 2 — Equipos y agentes (2 semanas)
 
