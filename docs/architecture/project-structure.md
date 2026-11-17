@@ -97,7 +97,7 @@ src/
 ├── test/setup.ts          Configuración de Vitest (jest-dom)
 └── components/            Atomic design (overview.md §8)
     ├── atoms/             Button, Logo
-    ├── molecules/         Alert, IslandMenu, LocaleSwitcher, NavItem, WorkspaceSwitcher
+    ├── molecules/         Alert, IslandMenu, LocaleSwitcher, NavItem, SwitchingOverlay, WorkspaceSwitcher
     ├── organisms/         NewWorkspacePage, Rail, Topbar
     └── templates/         Workspace (riel + topbar + contenido)
 ```

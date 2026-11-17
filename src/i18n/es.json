@@ -36,7 +36,8 @@
     "workspace": {
       "label": "Workspace",
       "switch": "Cambiar de workspace",
-      "create": "Crear otro workspace"
+      "create": "Crear otro workspace",
+      "switching": "Cambiando a"
     },
     "empty": {
       "title": "Tu oficina está lista",

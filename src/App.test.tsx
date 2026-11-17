@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
@@ -90,8 +90,10 @@ describe("workspace shell", () => {
     await user.click(await screen.findByRole("button", { name: "Switch workspace" }));
     await user.click(screen.getByRole("button", { name: /Globex/ }));
 
+    expect(await screen.findByRole("status")).toHaveTextContent("Switching to Globex");
     expect(invokeMock).toHaveBeenCalledWith("switch_workspace", { workspaceId: "2" });
     expect(await screen.findByRole("button", { name: "Switch workspace" })).toHaveTextContent("Globex");
+    await waitFor(() => expect(screen.queryByRole("status")).not.toBeInTheDocument());
   });
 
   it("creates another workspace from its own page", async () => {
