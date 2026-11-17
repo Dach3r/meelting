@@ -2,6 +2,7 @@ import { useState } from "react";
 import { NewWorkspacePage } from "./components/organisms/NewWorkspacePage";
 import { Workspace } from "./components/templates/Workspace";
 import { useSession } from "./hooks/useSession";
+import { useTeams } from "./hooks/useTeams";
 import { I18nProvider } from "./i18n/I18nProvider";
 import { translateError, type Locale } from "./i18n/translate";
 
@@ -16,6 +17,7 @@ function App() {
     createWorkspace,
     switchWorkspace,
   } = useSession();
+  const { teams, errorKey: teamsErrorKey } = useTeams(session?.current_workspace_id ?? null);
   const [draftLocale, setDraftLocale] = useState<Locale>("en");
   const [creating, setCreating] = useState(false);
 
@@ -23,6 +25,7 @@ function App() {
 
   const locale = session?.locale ?? draftLocale;
   const errorMessage = errorKey ? translateError(locale, errorKey) : null;
+  const teamsErrorMessage = teamsErrorKey ? translateError(locale, teamsErrorKey) : null;
 
   return (
     <I18nProvider locale={locale}>
@@ -48,6 +51,8 @@ function App() {
       ) : (
         <Workspace
           workspaces={session.workspaces}
+          teams={teams}
+          teamsErrorMessage={teamsErrorMessage}
           currentId={session.current_workspace_id}
           busy={busy}
           errorMessage={errorMessage}

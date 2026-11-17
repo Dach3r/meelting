@@ -15,6 +15,10 @@
     "submit": "Create workspace",
     "cancel": "Cancel"
   },
+  "teams": {
+    "title": "Teams",
+    "noAgents": "No agents in this team yet."
+  },
   "home": {
     "soon": "Coming soon",
     "nav": {
@@ -42,7 +46,7 @@
     },
     "empty": {
       "title": "Your office is ready",
-      "body": "Teams and agents arrive in the next phase."
+      "body": "Your teams and agents will appear here."
     }
   }
 }

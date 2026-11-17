@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { useI18n } from "../../i18n/I18nProvider";
+import type { Team } from "../../hooks/useTeams";
 import type { WorkspaceSwitcherProps } from "../molecules/WorkspaceSwitcher";
 import { SwitchingOverlay } from "../molecules/SwitchingOverlay";
 import { Rail } from "../organisms/Rail";
+import { TeamsPage } from "../organisms/TeamsPage";
 import { Topbar } from "../organisms/Topbar";
 
 const storageKey = "sidebar";
@@ -17,12 +18,13 @@ function storedCollapsed() {
 }
 
 type WorkspaceProps = WorkspaceSwitcherProps & {
+  teams: Team[];
+  teamsErrorMessage: string | null;
   errorMessage: string | null;
   onDismissError: () => void;
 };
 
-export function Workspace({ errorMessage, onDismissError, ...props }: WorkspaceProps) {
-  const { t } = useI18n();
+export function Workspace({ teams, teamsErrorMessage, errorMessage, onDismissError, ...props }: WorkspaceProps) {
   const [collapsed, setCollapsed] = useState(storedCollapsed);
   const [animated, setAnimated] = useState(false);
   const [switching, setSwitching] = useState<{ name: string; failed: boolean } | null>(null);
@@ -60,10 +62,7 @@ export function Workspace({ errorMessage, onDismissError, ...props }: WorkspaceP
         <main className="flex min-h-0 flex-1 flex-col px-8 pb-8">
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl bg-surface">
             <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-8">
-              <div className="mx-auto grid min-h-0 w-full max-w-4xl flex-1 place-content-center gap-1 text-center">
-                <h1 className="text-2xl font-bold">{t("home.empty.title")}</h1>
-                <p className="text-muted">{t("home.empty.body")}</p>
-              </div>
+              <TeamsPage teams={teams} errorMessage={teamsErrorMessage} />
             </div>
           </div>
         </main>

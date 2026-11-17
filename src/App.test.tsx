@@ -20,6 +20,10 @@ function session(overrides = {}) {
   };
 }
 
+function mockCore(value: unknown) {
+  invokeMock.mockImplementation(async (command) => (command === "list_teams" ? [] : value));
+}
+
 beforeEach(() => {
   invokeMock.mockReset();
 });
@@ -56,6 +60,7 @@ describe("first launch", () => {
 
   it("shows the translated error returned by the core", async () => {
     invokeMock.mockImplementation(async (command) => {
+      if (command === "list_teams") return [];
       if (command === "load_session") return null;
       throw "invalid_name";
     });
@@ -71,7 +76,7 @@ describe("first launch", () => {
 
 describe("workspace shell", () => {
   it("opens the saved session in the saved language", async () => {
-    invokeMock.mockResolvedValue(session());
+    mockCore(session());
     render(<App />);
 
     expect(await screen.findByText("Tu oficina está lista")).toBeInTheDocument();
@@ -81,6 +86,7 @@ describe("workspace shell", () => {
 
   it("switches to another workspace", async () => {
     invokeMock.mockImplementation(async (command) => {
+      if (command === "list_teams") return [];
       if (command === "load_session") return session({ locale: "en", workspaces: [acme, globex] });
       return session({ locale: "en", current_workspace_id: "2", workspaces: [acme, globex] });
     });
@@ -98,6 +104,7 @@ describe("workspace shell", () => {
 
   it("shows the error in the overlay when switching fails and lets the user dismiss it", async () => {
     invokeMock.mockImplementation(async (command) => {
+      if (command === "list_teams") return [];
       if (command === "load_session") return session({ locale: "en", workspaces: [acme, globex] });
       throw "workspace_not_found";
     });
@@ -116,6 +123,7 @@ describe("workspace shell", () => {
 
   it("creates another workspace from its own page", async () => {
     invokeMock.mockImplementation(async (command) => {
+      if (command === "list_teams") return [];
       if (command === "load_session") return session({ locale: "en" });
       return session({ locale: "en", current_workspace_id: "2", workspaces: [acme, globex] });
     });
@@ -132,7 +140,7 @@ describe("workspace shell", () => {
   });
 
   it("goes back from the new workspace page without creating", async () => {
-    invokeMock.mockResolvedValue(session({ locale: "en" }));
+    mockCore(session({ locale: "en" }));
     const user = userEvent.setup();
     render(<App />);
 
@@ -145,7 +153,7 @@ describe("workspace shell", () => {
   });
 
   it("closes the switcher when clicking outside or pressing Escape", async () => {
-    invokeMock.mockResolvedValue(session({ locale: "en" }));
+    mockCore(session({ locale: "en" }));
     const user = userEvent.setup();
     render(<App />);
 
@@ -162,7 +170,7 @@ describe("workspace shell", () => {
   });
 
   it("collapses the sidebar and remembers it", async () => {
-    invokeMock.mockResolvedValue(session({ locale: "en" }));
+    mockCore(session({ locale: "en" }));
     const user = userEvent.setup();
     const { container, unmount } = render(<App />);
 
@@ -179,10 +187,45 @@ describe("workspace shell", () => {
   });
 
   it("marks only Teams as the current page and the rest as coming soon", async () => {
-    invokeMock.mockResolvedValue(session({ locale: "en" }));
+    mockCore(session({ locale: "en" }));
     render(<App />);
 
     expect((await screen.findByText("Teams")).closest("[aria-current]")).toHaveAttribute("aria-current", "page");
     expect(screen.getByText("Rooms").closest("[aria-disabled]")).toHaveAttribute("aria-disabled", "true");
+  });
+
+  it("lists the teams of the workspace with their agents", async () => {
+    invokeMock.mockImplementation(async (command) =>
+      command === "list_teams"
+        ? [
+            { id: "t1", name: "General", agents: [{ id: "a1", team_id: "t1", name: "Ana", role: "Developer" }] },
+            { id: "t2", name: "Design", agents: [] },
+          ]
+        : session({ locale: "en" }),
+    );
+    render(<App />);
+
+    expect(await screen.findByRole("heading", { name: "General" })).toBeInTheDocument();
+    expect(screen.getByText("Ana")).toBeInTheDocument();
+    expect(screen.getByText("Developer")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Design" })).toBeInTheDocument();
+    expect(screen.getByText("No agents in this team yet.")).toBeInTheDocument();
+  });
+
+  it("shows the empty state when the workspace has no teams", async () => {
+    mockCore(session({ locale: "en" }));
+    render(<App />);
+
+    expect(await screen.findByText("Your teams and agents will appear here.")).toBeInTheDocument();
+  });
+
+  it("shows the translated error when the teams fail to load", async () => {
+    invokeMock.mockImplementation(async (command) => {
+      if (command === "list_teams") throw "database";
+      return session({ locale: "en" });
+    });
+    render(<App />);
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("The local database failed. Try again.");
   });
 });

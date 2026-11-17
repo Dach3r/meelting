@@ -15,6 +15,10 @@
     "submit": "Crear workspace",
     "cancel": "Cancelar"
   },
+  "teams": {
+    "title": "Equipos",
+    "noAgents": "Este equipo aún no tiene agentes."
+  },
   "home": {
     "soon": "Disponible pronto",
     "nav": {
@@ -42,7 +46,7 @@
     },
     "empty": {
       "title": "Tu oficina está lista",
-      "body": "Los equipos y agentes llegan en la siguiente fase."
+      "body": "Tus equipos y agentes aparecerán aquí."
     }
   }
 }
