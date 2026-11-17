@@ -2,7 +2,7 @@
 
 **Categoría:** AI Workspace / Virtual AI Office / Multi-Agent Collaboration
 **Plataforma:** aplicación de escritorio local-first (Tauri 2) para macOS, Windows y Linux
-**Etapa:** Fase 0 — scaffold Tauri 2 con spike de keychain
+**Etapa:** Fase 0 — scaffold Tauri 2 con spikes de keychain, `git worktree` + PTY y streaming SSE
 
 > **Tu equipo de inteligencia artificial trabajando contigo, en una oficina virtual.**
 
@@ -36,7 +36,7 @@ Cada documento distingue entre:
 - **Visión:** dirección del producto, sin compromiso de entrega.
 - **Hipótesis:** por validar.
 
-**Hoy está implementado:** scaffold Tauri 2 (React + TypeScript + Vite) con un spike para guardar y leer una clave en el keychain del SO. Todo lo demás es planificado.
+**Hoy está implementado:** scaffold Tauri 2 (React + TypeScript + Vite) con tres spikes: keychain del SO (guardar, leer los últimos 4 caracteres y borrar una clave), `git worktree` + PTY con salida en vivo, y streaming SSE desde un endpoint compatible con Chat Completions (Ollama o nube). Todo lo demás es planificado.
 
 ## Principio fundamental
 

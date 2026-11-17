@@ -271,6 +271,7 @@ CI (`.github/workflows/ci.yml`), tres trabajos en paralelo: `lint` (Ubuntu: `rus
 | 7 | Autoactualización | Opcional vía GitHub Releases firmados |
 | 8 | Soporte mínimo de SO | macOS 12+, Windows 10+ (WebView2), Ubuntu 22.04+ |
 | 9 | Concurrencia de tareas | 2 por workspace |
+| 10 | Eliminar un workspace (Rails solo permitía cancelar la cuenta) | Permitirlo desde Ajustes con confirmación; borra equipos, agentes, salas y claves del keychain. Falta aprobación |
 
 ## 14. Riesgos
 

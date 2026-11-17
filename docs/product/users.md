@@ -28,14 +28,18 @@ Reglas:
 
 Debe ser rápido y evitar configuraciones innecesarias.
 
-### 2. Dashboard principal
+### 2. Ajustes
+
+Una sola página con secciones desplegables, una abierta a la vez: **general** (nombre y apellido del perfil local), **idioma** (`es` / `en`) y **workspace** (renombrar; mismas reglas que al crearlo). Docker, shell y proveedor local se añaden con sus fases. Exportar y borrar los datos locales vive aquí (Fase 7). Eliminar un workspace es una decisión abierta (ver [../architecture/overview.md](../architecture/overview.md#13-decisiones-abiertas)).
+
+### 3. Dashboard principal
 
 Ver [virtual-office.md](virtual-office.md#dashboard).
 
-### 3. Sala de trabajo con agentes
+### 4. Sala de trabajo con agentes
 
 Experiencia central y diferencial. El usuario selecciona o inicia una sala e interactúa con agentes especializados. Ver [virtual-office.md](virtual-office.md).
 
-### 4. Tarea sobre un repositorio (planificado, Fase 4–5)
+### 5. Tarea sobre un repositorio (planificado, Fase 4–5)
 
 Desde una sala, el usuario crea una tarea eligiendo agente, carpeta de repositorio y rama base. El agente trabaja en un `git worktree` aislado; el usuario aprueba los comandos que requieren permiso y revisa el diff al terminar.

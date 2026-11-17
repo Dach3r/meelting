@@ -23,9 +23,9 @@
 - Miembros humanos adicionales.
 
 ## Flujo funcional
-1. El usuario abre **Salas** y ve sus salas o un estado vacío.
+1. El usuario abre **Salas** y ve sus salas o un estado vacío. El listado va ordenado por actividad reciente (último mensaje; la creación si no tiene mensajes): la primera se destaca con su estado, sus agentes y una vista previa de sus últimos 3 mensajes, y el resto aparece como tarjetas con estado y última actividad.
 2. Crea una sala: nombre y, opcionalmente, agentes.
-3. Entra a la sala y ve a los participantes como tarjetas y la conversación a un costado.
+3. Entra a la sala y ve a los participantes como tarjetas y la conversación a un costado, junto a un panel de pantalla compartida vacío (futuro panel de tarea). Con agentes, el compositor ofrece «Pedir a»; sin agentes no muestra selector y la sala sugiere asignarlos.
 4. Escribe un mensaje: se guarda y aparece en la conversación.
 5. Elimina la sala con confirmación; se eliminan también sus mensajes y participaciones.
 
