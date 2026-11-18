@@ -2,7 +2,7 @@ import { useId } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
 import { formatAgentCount, formatDateTime } from "../../i18n/translate";
 import type { Room } from "../../hooks/useRooms";
-import { Avatar, hueOf } from "../atoms/Avatar";
+import { Avatar } from "../atoms/Avatar";
 import { Button } from "../atoms/Button";
 
 const SEATS = 3;
@@ -12,13 +12,8 @@ export function RoomCard({ room, onOpen }: { room: Room; onOpen: () => void }) {
   const nameId = useId();
   const seated = room.agents.slice(0, SEATS);
   const extra = room.agents.length - seated.length;
-  const hue = hueOf(room.name);
-  const shape = `hsl(${hue} 60% 60% / 0.14)`;
   return (
-    <li className="relative isolate flex flex-col gap-3 overflow-hidden rounded-[20px] border border-line bg-raised p-3">
-      <span aria-hidden className="pointer-events-none absolute -top-10 -right-8 -z-10 size-36 rounded-full" style={{ backgroundColor: shape }} />
-      <span aria-hidden className="pointer-events-none absolute -bottom-12 left-1/3 -z-10 size-28 rounded-full border-[14px]" style={{ borderColor: shape }} />
-      <span aria-hidden className="pointer-events-none absolute -bottom-5 -left-5 -z-10 size-20 rotate-12 rounded-2xl" style={{ backgroundColor: shape }} />
+    <li className="board-dots flex flex-col gap-3 rounded-[20px] border border-line bg-shell p-3">
       <ul aria-label={t("rooms.participants")} className="grid grid-cols-3 gap-1.5">
         {seated.map((agent) => (
           <li key={agent.id} className="relative grid h-26 place-items-center rounded-xl bg-surface">
