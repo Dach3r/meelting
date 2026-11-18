@@ -35,6 +35,12 @@ export function TeamPicker({ teams, currentId, value, onChange }: Props) {
     }
   }
 
+  function agentsAvailable(count: number) {
+    if (count === 0) return t("teams.agent.teamAgentsNone");
+    if (count === 1) return t("teams.agent.teamAgentsOne");
+    return `${t("teams.agent.teamAgentsLead")} ${count} ${t("teams.agent.teamAgentsMany")}`;
+  }
+
   return (
     <div className="flex flex-1 flex-col gap-3">
       <div className="grid gap-3">
@@ -44,9 +50,7 @@ export function TeamPicker({ teams, currentId, value, onChange }: Props) {
             <Avatar seed={current.name} label={current.name} className="size-10 rounded-xl text-base" />
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-ink">{current.name}</p>
-              <p className="text-xs text-muted">
-                {t("teams.chart.agents")}: {current.agents.length}
-              </p>
+              <p className="text-xs text-muted">{agentsAvailable(current.agents.length)}</p>
             </div>
           </div>
         )}

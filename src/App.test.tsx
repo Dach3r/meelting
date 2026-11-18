@@ -762,6 +762,7 @@ describe("workspace shell", () => {
       await user.click(within(dialog).getByRole("tab", { name: "Team" }));
 
       expect(within(dialog).getByText("Now")).toBeInTheDocument();
+      expect(within(dialog).getByText("You have one agent available")).toBeInTheDocument();
       const general = within(dialog).getByRole("option", { name: /General/ });
       expect(general).toHaveAttribute("aria-selected", "true");
       expect(general).toHaveTextContent("Current");
