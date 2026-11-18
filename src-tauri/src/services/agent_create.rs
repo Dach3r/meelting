@@ -102,6 +102,7 @@ mod tests {
             .id
             .clone();
         let mut invalid = draft(&team_id);
+        invalid.provider = "openai".into();
         invalid.model = "gpt-5".into();
 
         assert!(matches!(

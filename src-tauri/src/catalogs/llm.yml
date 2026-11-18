@@ -9,13 +9,13 @@
   name: OpenAI
   location: cloud
   models:
-    - gpt-5
-    - gpt-5-mini
+    - gpt-6.1-sol
+    - gpt-6.1-terra
 - key: groq
   name: Groq
   location: cloud
   models:
-    - llama-3.3-70b-versatile
+    - openai/gpt-oss-120b
 - key: ollama
   name: Ollama
   location: local

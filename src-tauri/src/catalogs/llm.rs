@@ -97,7 +97,17 @@ mod tests {
     #[test]
     fn knows_which_pairs_exist() {
         assert!(exists("anthropic", "claude-sonnet-5-5"));
-        assert!(!exists("anthropic", "gpt-5"));
+        assert!(!exists("anthropic", "gpt-6.1-sol"));
         assert!(!exists("nobody", "claude-sonnet-5-5"));
+    }
+
+    #[test]
+    fn offers_the_replacements_of_retired_models_for_new_agents() {
+        assert!(exists("openai", "gpt-6.1-sol"));
+        assert!(exists("openai", "gpt-6.1-terra"));
+        assert!(exists("groq", "openai/gpt-oss-120b"));
+        assert!(!exists("openai", "gpt-5"));
+        assert!(!exists("openai", "gpt-5-mini"));
+        assert!(!exists("groq", "llama-3.3-70b-versatile"));
     }
 }
