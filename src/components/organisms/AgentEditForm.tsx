@@ -111,6 +111,7 @@ export function AgentEditForm({ agent, teams, busy, errorMessage, onSubmit, onCl
           {current.key === "team" && (
             <SelectField
               label={t("teams.agent.team")}
+              hideLabel
               searchPlaceholder={t("teams.agent.teamSearch")}
               emptyMessage={t("teams.agent.teamEmpty")}
               value={teams.find((team) => team.id === draft.team_id)?.name ?? ""}

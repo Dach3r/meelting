@@ -16,9 +16,10 @@ type Props = {
   groups: SelectGroup[];
   onChange: (value: string, groupId: string) => void;
   autoFocus?: boolean;
+  hideLabel?: boolean;
 };
 
-export function SelectField({ label, searchPlaceholder, emptyMessage, value, groups, onChange, autoFocus }: Props) {
+export function SelectField({ label, searchPlaceholder, emptyMessage, value, groups, onChange, autoFocus, hideLabel }: Props) {
   const id = useId();
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(() => Math.max(groups.flatMap((group) => group.options).indexOf(value), 0));
@@ -45,7 +46,7 @@ export function SelectField({ label, searchPlaceholder, emptyMessage, value, gro
   let index = -1;
   return (
     <div className="grid gap-2">
-      <span id={`${id}-label`} className="text-sm font-medium text-muted">
+      <span id={`${id}-label`} className={hideLabel ? "sr-only" : "text-sm font-medium text-muted"}>
         {label}
       </span>
       <div className="overflow-hidden rounded-2xl border border-line bg-raised" onKeyDown={onKeyDown}>
