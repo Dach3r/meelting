@@ -31,6 +31,7 @@ type WorkspaceProps = WorkspaceSwitcherProps & {
   onLoadAgent: (agentId: string) => Promise<AgentDetail | null>;
   onUpdateAgent: (agentId: string, edit: AgentEdit) => Promise<boolean>;
   onDeleteAgent: (agentId: string) => Promise<boolean>;
+  onMoveNode: (nodeId: string, x: number, y: number) => void;
   onClearTeamsActionError: () => void;
   locale: Locale;
   theme: Theme;
@@ -50,6 +51,7 @@ export function Workspace({
   onLoadAgent,
   onUpdateAgent,
   onDeleteAgent,
+  onMoveNode,
   onClearTeamsActionError,
   locale,
   theme,
@@ -133,6 +135,7 @@ export function Workspace({
                   onLoadAgent={onLoadAgent}
                   onUpdateAgent={onUpdateAgent}
                   onDeleteAgent={onDeleteAgent}
+                  onMoveNode={onMoveNode}
                   onClearActionError={onClearTeamsActionError}
                 />
               )}

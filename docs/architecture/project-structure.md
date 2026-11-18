@@ -33,7 +33,7 @@ src-tauri/src/
 │   ├── keychain.rs        ✅ save_secret, secret_last_four, delete_secret
 │   ├── worktree.rs        ✅ run_in_worktree
 │   ├── completion.rs      ✅ stream_completion
-│   └── session.rs         ✅ load_session, complete_first_launch, create_workspace, switch_workspace, list_teams, create_team, create_agent, get_agent, update_agent, delete_agent, list_agent_templates, list_agent_roles, list_llm_providers, change_locale, change_theme
+│   └── session.rs         ✅ load_session, complete_first_launch, create_workspace, switch_workspace, list_teams, create_team, create_agent, get_agent, update_agent, delete_agent, save_canvas_positions, list_agent_templates, list_agent_roles, list_llm_providers, change_locale, change_theme
 ├── services/              Capa 2: acciones de negocio (verbos)
 │   ├── worktree_run.rs    ✅ crea un worktree y ejecuta un comando en él
 │   ├── completion_stream.rs ✅ lee la clave del keychain y hace streaming de una respuesta
@@ -49,6 +49,7 @@ src-tauri/src/
 │   ├── agent_get.rs       ✅ detalle completo de un agente del workspace actual
 │   ├── agent_update.rs    ✅ valida y edita nombre, rol, descripción, instrucciones y equipo de un agente
 │   ├── agent_delete.rs    ✅ elimina un agente del workspace actual y devuelve la lista actualizada
+│   ├── canvas_positions_save.rs ✅ guarda las posiciones del organigrama de equipos y agentes del workspace actual
 │   ├── agent_roles_list.rs ✅ roles predefinidos del catálogo, agrupados por área
 │   ├── agent_templates_list.rs ✅ plantillas del catálogo en el idioma del perfil
 │   └── llm_providers_list.rs ✅ proveedores y modelos del catálogo
@@ -61,6 +62,7 @@ src-tauri/src/
 │   ├── database.rs        ✅ abre el pool (WAL, claves foráneas) y aplica migraciones
 │   ├── profile.rs         ✅ consultas de la tabla profile
 │   ├── workspaces.rs      ✅ consultas de la tabla workspaces
+│   ├── canvas_positions.rs ✅ consultas de la tabla canvas_positions
 │   ├── teams.rs           ✅ consultas de la tabla teams
 │   └── agents.rs          ✅ consultas de la tabla agents
 ├── domain/                Modelos y lógica pura, sin I/O
@@ -109,19 +111,19 @@ La UI llama al núcleo **solo** con `invoke` y `listen` de `@tauri-apps/api`, y 
 ```
 src/
 ├── main.tsx               Monta <App /> en #root
-├── styles.css             Tailwind v4, tokens Grafito (@theme) con light-dark() y `html[data-theme]` para forzar claro u oscuro (por defecto sigue al sistema), fuentes Inter y Rubik, y las clases de conectores del organigrama (org-*)
+├── styles.css             Tailwind v4, tokens Grafito (@theme) con light-dark() y `html[data-theme]` para forzar claro u oscuro (por defecto sigue al sistema), fuentes Inter y Rubik, y las clases de disposición del organigrama (org-*)
 ├── App.tsx                Elige entre la página de nuevo workspace (primer arranque o «crear otro») y el shell según la sesión
 ├── assets/fonts/          Inter y Rubik (woff2)
 ├── i18n/                  es.json, en.json, translate.ts (texto y errores) e I18nProvider
 ├── hooks/                 Acceso al núcleo y estado asociado
 │   ├── useSession.ts      ✅ invoke load_session, complete_first_launch, create_workspace, switch_workspace, change_locale, change_theme
-│   ├── useTeams.ts        ✅ invoke list_teams, create_team, create_agent, get_agent, update_agent, delete_agent
+│   ├── useTeams.ts        ✅ invoke list_teams, create_team, create_agent, get_agent, update_agent, delete_agent, save_canvas_positions (con debounce de 500 ms)
 │   ├── useAgentTemplates.ts ✅ invoke list_agent_templates (recarga al cambiar el idioma)
 │   └── useAgentRoles.ts   ✅ invoke list_agent_roles
 ├── test/setup.ts          Configuración de Vitest (jest-dom)
 └── components/            Atomic design (overview.md §8)
     ├── atoms/             Avatar, Button, CardSelect, Field, Icons, Logo
-    ├── molecules/         AgentDrawer, AgentTemplateDetail, Alert, IslandMenu, LocaleSwitcher, Modal, NavItem, OrgAgentCard, OrgCard, SegmentedControl, SettingsRow, SwitchingOverlay, TeamForm, ThemeSwitcher, WorkspaceSwitcher, ZoomControls
+    ├── molecules/         AgentDrawer, AgentTemplateDetail, Alert, IslandMenu, LocaleSwitcher, Modal, NavItem, OrgAgentCard, OrgCard, OrgNode, SegmentedControl, SettingsRow, SwitchingOverlay, TeamForm, ThemeSwitcher, WorkspaceSwitcher, ZoomControls
     ├── organisms/         AgentCatalogPage, AgentForm, NewWorkspacePage, OrgChart, Rail, SettingsPage, TeamsPage, Topbar
     └── templates/         Workspace (riel + topbar + contenido)
 ```

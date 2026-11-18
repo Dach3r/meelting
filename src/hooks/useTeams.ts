@@ -1,9 +1,13 @@
 import { invoke } from "@tauri-apps/api/core";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-export type Agent = { id: string; team_id: string; name: string; role: string };
+export type Agent = { id: string; team_id: string; name: string; role: string; x: number; y: number };
 
-export type Team = { id: string; name: string; agents: Agent[] };
+export type Team = { id: string; name: string; x: number; y: number; agents: Agent[] };
+
+type Position = { node_id: string; x: number; y: number };
+
+const saveDelayMs = 500;
 
 export type AgentDraft = {
   team_id: string;
@@ -57,6 +61,31 @@ export function useTeams(workspaceId: string | null) {
     }
   }, []);
 
+  const pendingPositions = useRef(new Map<string, Position>());
+  const saveTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  const savePositions = useCallback(() => {
+    clearTimeout(saveTimer.current);
+    const positions = [...pendingPositions.current.values()];
+    pendingPositions.current.clear();
+    if (positions.length > 0) invoke("save_canvas_positions", { positions }).catch(() => {});
+  }, []);
+
+  useEffect(() => savePositions, [savePositions]);
+
+  const moveNode = (nodeId: string, x: number, y: number) => {
+    setTeams((current) =>
+      current.map((team) =>
+        team.id === nodeId
+          ? { ...team, x, y }
+          : { ...team, agents: team.agents.map((agent) => (agent.id === nodeId ? { ...agent, x, y } : agent)) },
+      ),
+    );
+    pendingPositions.current.set(nodeId, { node_id: nodeId, x, y });
+    clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(savePositions, saveDelayMs);
+  };
+
   const createTeam = (name: string) => run("create_team", { name });
   const createAgent = (draft: AgentDraft) => run("create_agent", { draft });
   const updateAgent = (agentId: string, edit: AgentEdit) => run("update_agent", { agentId, edit });
@@ -72,5 +101,5 @@ export function useTeams(workspaceId: string | null) {
   };
   const clearActionError = () => setActionErrorKey(null);
 
-  return { teams, errorKey, actionErrorKey, busy, createTeam, createAgent, updateAgent, deleteAgent, loadAgent, clearActionError };
+  return { teams, errorKey, actionErrorKey, busy, createTeam, createAgent, updateAgent, deleteAgent, moveNode, loadAgent, clearActionError };
 }

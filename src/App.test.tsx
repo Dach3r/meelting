@@ -312,6 +312,88 @@ describe("workspace shell", () => {
     expect(card).toHaveAttribute("aria-pressed", "false");
   });
 
+  describe("dragging cards", () => {
+    function mockTeams() {
+      invokeMock.mockImplementation(async (command) =>
+        command === "list_teams"
+          ? [
+              {
+                id: "t1",
+                name: "General",
+                x: 10,
+                y: 5,
+                agents: [{ id: "a1", team_id: "t1", name: "Ada", role: "Backend dev", x: 0, y: 0 }],
+              },
+            ]
+          : command === "save_canvas_positions"
+            ? undefined
+            : session({ locale: "en" }),
+      );
+    }
+
+    it("moves a card with the pointer and saves its position after a pause", async () => {
+      mockTeams();
+      const user = userEvent.setup();
+      render(<App />);
+
+      const card = await screen.findByRole("button", { name: "General" });
+      const node = card.closest("li") as HTMLElement;
+      expect(node.style.transform).toBe("translate(10px, 5px)");
+      await user.pointer([
+        { keys: "[MouseLeft>]", target: card, coords: { clientX: 0, clientY: 0 } },
+        { coords: { clientX: 20, clientY: 30 } },
+        { coords: { clientX: 40, clientY: 25 } },
+        { keys: "[/MouseLeft]" },
+      ]);
+
+      expect(node.style.transform).toBe("translate(50px, 30px)");
+      expect(card).toHaveAttribute("aria-pressed", "false");
+      expect(invokeMock).not.toHaveBeenCalledWith("save_canvas_positions", expect.anything());
+      await waitFor(
+        () =>
+          expect(invokeMock).toHaveBeenCalledWith("save_canvas_positions", {
+            positions: [{ node_id: "t1", x: 50, y: 30 }],
+          }),
+        { timeout: 2000 },
+      );
+    });
+
+    it("moves an agent on its own and keeps selecting it with a plain click", async () => {
+      mockTeams();
+      const user = userEvent.setup();
+      render(<App />);
+
+      const card = await screen.findByRole("button", { name: "Ada" });
+      await user.click(card);
+      expect(card).toHaveAttribute("aria-pressed", "true");
+      await user.pointer([
+        { keys: "[MouseLeft>]", target: card, coords: { clientX: 0, clientY: 0 } },
+        { coords: { clientX: 15, clientY: 12 } },
+        { keys: "[/MouseLeft]" },
+      ]);
+
+      expect(card.closest("li")?.style.transform).toBe("translate(15px, 12px)");
+      expect(screen.getByRole("button", { name: "General" }).closest("li")?.style.transform).toBe(
+        "translate(10px, 5px)",
+      );
+    });
+
+    it("does not drag when the pointer starts on the toggle button", async () => {
+      mockTeams();
+      const user = userEvent.setup();
+      render(<App />);
+
+      const toggle = await screen.findByRole("button", { name: "Show or hide General" });
+      await user.pointer([
+        { keys: "[MouseLeft>]", target: toggle, coords: { clientX: 0, clientY: 0 } },
+        { coords: { clientX: 40, clientY: 40 } },
+        { keys: "[/MouseLeft]" },
+      ]);
+
+      expect(toggle.closest("li")?.style.transform).toBe("translate(10px, 5px)");
+    });
+  });
+
   it("shows the selected agent in a drawer and closes it", async () => {
     invokeMock.mockImplementation(async (command) =>
       command === "list_teams"

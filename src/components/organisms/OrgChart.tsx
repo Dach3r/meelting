@@ -1,11 +1,45 @@
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
 import type { Team } from "../../hooks/useTeams";
 import { AgentDrawer } from "../molecules/AgentDrawer";
 import { OrgAgentCard } from "../molecules/OrgAgentCard";
 import { OrgCard } from "../molecules/OrgCard";
+import { OrgNode } from "../molecules/OrgNode";
 
 const rootId = "root";
+const agentTrunkInsetPx = 24;
+
+type Edge = { from: string; to: string; toAgent: boolean };
+
+function relativeBox(container: HTMLElement, element: HTMLElement) {
+  const base = container.getBoundingClientRect();
+  const box = element.getBoundingClientRect();
+  const scale = base.width / container.offsetWidth || 1;
+  return {
+    left: (box.left - base.left) / scale,
+    top: (box.top - base.top) / scale,
+    width: box.width / scale,
+    height: box.height / scale,
+  };
+}
+
+function edgePath(container: HTMLElement, cards: Map<string, HTMLElement>, edge: Edge) {
+  const fromElement = cards.get(edge.from);
+  const toElement = cards.get(edge.to);
+  if (!fromElement || !toElement) return null;
+  const from = relativeBox(container, fromElement);
+  const to = relativeBox(container, toElement);
+  const startY = from.top + from.height;
+  if (edge.toAgent) {
+    const startX = from.left + agentTrunkInsetPx;
+    const endY = to.top + to.height / 2;
+    return `M ${startX} ${startY} C ${startX} ${endY} ${startX} ${endY} ${to.left} ${endY}`;
+  }
+  const startX = from.left + from.width / 2;
+  const endX = to.left + to.width / 2;
+  const middleY = (startY + to.top) / 2;
+  return `M ${startX} ${startY} C ${startX} ${middleY} ${endX} ${middleY} ${endX} ${to.top}`;
+}
 
 type Props = {
   teams: Team[];
@@ -14,18 +48,45 @@ type Props = {
   onNewAgent: (teamId: string) => void;
   onEditAgent: (agentId: string) => void;
   onDeleteAgent: (agentId: string) => void;
+  onMoveNode: (nodeId: string, x: number, y: number) => void;
 };
 
-export function OrgChart({ teams, zoom, onNewTeam, onNewAgent, onEditAgent, onDeleteAgent }: Props) {
+export function OrgChart({ teams, zoom, onNewTeam, onNewAgent, onEditAgent, onDeleteAgent, onMoveNode }: Props) {
   const { t } = useI18n();
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [paths, setPaths] = useState<string[]>([]);
+  const content = useRef<HTMLDivElement>(null);
+  const cards = useRef(new Map<string, HTMLElement>());
+  function registerCard(id: string) {
+    return (element: HTMLElement | null) => {
+      if (element) cards.current.set(id, element);
+      else cards.current.delete(id);
+    };
+  }
   function selection(id: string) {
     return { selected: selectedId === id, onSelect: () => setSelectedId(selectedId === id ? null : id) };
   }
 
   const drawerTeam = teams.find((team) => team.agents.some((agent) => agent.id === selectedId));
   const drawerAgent = drawerTeam?.agents.find((agent) => agent.id === selectedId);
+
+  const edges: Edge[] = [];
+  if (!collapsed.has(rootId)) {
+    for (const team of teams) {
+      edges.push({ from: rootId, to: team.id, toAgent: false });
+      if (!collapsed.has(team.id)) {
+        for (const agent of team.agents) edges.push({ from: team.id, to: agent.id, toAgent: true });
+      }
+    }
+  }
+
+  useLayoutEffect(() => {
+    const container = content.current;
+    if (!container) return;
+    const next = edges.flatMap((edge) => edgePath(container, cards.current, edge) ?? []);
+    setPaths((current) => (current.join("|") === next.join("|") ? current : next));
+  });
 
   function toggle(id: string) {
     const next = new Set(collapsed);
@@ -40,7 +101,13 @@ export function OrgChart({ teams, zoom, onNewTeam, onNewAgent, onEditAgent, onDe
         onClick={() => !drawerAgent && setSelectedId(null)}
         className="absolute inset-0 flex overflow-auto"
       >
-        <div style={{ zoom }} className="m-auto flex w-max flex-col items-center px-16 pb-40 pt-20">
+        <div ref={content} style={{ zoom }} className="relative m-auto flex w-max flex-col items-center px-16 pb-40 pt-20">
+          <svg className="pointer-events-none absolute left-0 top-0 overflow-visible" width="1" height="1" aria-hidden="true">
+            {paths.map((path) => (
+              <path key={path} d={path} fill="none" stroke="var(--color-line)" strokeWidth="2" />
+            ))}
+          </svg>
+          <div ref={registerCard(rootId)}>
           <OrgCard
             seed={rootId}
             name={t("teams.chart.you")}
@@ -52,12 +119,19 @@ export function OrgChart({ teams, zoom, onNewTeam, onNewAgent, onEditAgent, onDe
             onAdd={onNewTeam}
             {...selection(rootId)}
           />
+          </div>
           {!collapsed.has(rootId) && (
-            <>
-              <span className="org-stem" />
-              <ul className="org-children">
-                {teams.map((team) => (
-                  <li key={team.id} className="org-branch">
+            <ul className="org-children">
+              {teams.map((team) => (
+                <OrgNode
+                  key={team.id}
+                  className="org-branch"
+                  x={team.x}
+                  y={team.y}
+                  zoom={zoom}
+                  onMove={(x, y) => onMoveNode(team.id, x, y)}
+                  registerCard={registerCard(team.id)}
+                  card={
                     <OrgCard
                       seed={team.id}
                       name={team.name}
@@ -70,24 +144,34 @@ export function OrgChart({ teams, zoom, onNewTeam, onNewAgent, onEditAgent, onDe
                       onAdd={() => onNewAgent(team.id)}
                       {...selection(team.id)}
                     />
-                    {!collapsed.has(team.id) && (
-                      <ul className="org-stack">
-                        {team.agents.map((agent) => (
-                          <li key={agent.id} className="org-leaf">
+                  }
+                >
+                  {!collapsed.has(team.id) && (
+                    <ul className="org-stack">
+                      {team.agents.map((agent) => (
+                        <OrgNode
+                          key={agent.id}
+                          className="org-leaf"
+                          x={agent.x}
+                          y={agent.y}
+                          zoom={zoom}
+                          onMove={(x, y) => onMoveNode(agent.id, x, y)}
+                          registerCard={registerCard(agent.id)}
+                          card={
                             <OrgAgentCard
                               seed={agent.id}
                               name={agent.name}
                               role={agent.role}
                               {...selection(agent.id)}
                             />
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </>
+                          }
+                        />
+                      ))}
+                    </ul>
+                  )}
+                </OrgNode>
+              ))}
+            </ul>
           )}
         </div>
       </div>

@@ -1,6 +1,6 @@
 # Catálogo de agentes IA
 
-> **Estado:** en curso (Fase 2). Ya existen: listar equipos y agentes, crear equipos (solo nombre), el catálogo de 25 plantillas (YAML es/en embebido) con buscador y filtro por categoría, el detalle de cada plantilla, contratar con un asistente por pasos, crear agentes personalizados eligiendo el modelo de `llm.yml` (en la nube o en el equipo, con buscador) y un organigrama en forma de tablero ("Tú" → equipos → agentes sobre un lienzo de puntos, con tarjetas, contraer y mostrar equipos y agentes, selección de tarjetas con manijas, panel lateral con los datos del agente seleccionado, con editar y eliminar con confirmación, y zoom flotante). Pendiente: «Contratar ahora con los datos de la plantilla» (requiere un proveedor y modelo por defecto de `llm.yml`), advertencia de proveedor sin clave, detección de modelos locales, arrastrar tarjetas, minimapa, fijados, estado de cada agente y el equipo «General» inicial. Comportamiento portado del producto Rails, donde ya estaba implementado.
+> **Estado:** en curso (Fase 2). Ya existen: listar equipos y agentes, crear equipos (solo nombre), el catálogo de 25 plantillas (YAML es/en embebido) con buscador y filtro por categoría, el detalle de cada plantilla, contratar con un asistente por pasos, crear agentes personalizados eligiendo el modelo de `llm.yml` (en la nube o en el equipo, con buscador) y un organigrama en forma de tablero ("Tú" → equipos → agentes sobre un lienzo de puntos, con tarjetas, contraer y mostrar equipos y agentes, selección de tarjetas con manijas, arrastre libre de equipos y agentes con posiciones persistidas (los agentes siguen a su equipo y las líneas son SVG), panel lateral con los datos del agente seleccionado, con editar y eliminar con confirmación, y zoom flotante). Pendiente: «Contratar ahora con los datos de la plantilla» (requiere un proveedor y modelo por defecto de `llm.yml`), advertencia de proveedor sin clave, detección de modelos locales, minimapa, fijados, estado de cada agente y el equipo «General» inicial. Comportamiento portado del producto Rails, donde ya estaba implementado.
 
 **Problema:** el workspace nace vacío; el usuario no puede construir su equipo, que es la base de la oficina virtual.
 **Objetivo:** que el usuario contrate agentes desde un catálogo de plantillas, los personalice y los gestione como el equipo persistente de su workspace. Cada agente tiene su propio proveedor y modelo de IA y trabaja cuando el usuario le dirige una instrucción en una sala ([agent-execution.md](agent-execution.md)).
@@ -17,7 +17,7 @@
 - Tabla `agents` perteneciente a un workspace, con copia de los valores de la plantilla.
 - Secciones separadas: **Catálogo de agentes** y **Equipos**.
 - Contratar desde el catálogo, crear agentes personalizados sin plantilla, ver, editar y eliminar.
-- Equipos como pantalla de inicio, con organigrama arrastrable: equipos que agrupan agentes bajo "Tú" (todo agente pertenece a un equipo), mover agentes entre equipos arrastrando su tarjeta.
+- Equipos como pantalla de inicio, con organigrama arrastrable: equipos que agrupan agentes bajo "Tú" (todo agente pertenece a un equipo), arrastrar libremente equipos y agentes (los agentes siguen a su equipo); el equipo de un agente se cambia al editarlo.
 - Selector de proveedor y modelo por agente, incluido el proveedor `local`.
 
 **Excluye**
@@ -35,7 +35,7 @@
 6. Desde Equipos puede ver, editar o eliminar (con confirmación) cada agente.
 7. La ficha del agente lista las salas en las que participa o un estado vacío.
 
-**Equipos:** se crean, se renombran y se eliminan (solo sin agentes). Cada workspace nace con un equipo «General». Un agente se mueve de equipo desde su edición o arrastrando su tarjeta.
+**Equipos:** se crean, se renombran y se eliminan (solo sin agentes). Cada workspace nace con un equipo «General». Un agente se mueve de equipo desde su edición.
 
 **Agente personalizado:** desde Equipos, «Crear agente personalizado» abre un formulario de tres pasos (Identidad, Modelo, Instrucciones) y crea un agente con `template_key` nulo. El rol se elige de una lista cerrada de roles predefinidos (`catalogs/agent_roles.yml`), agrupados por área (Producto, Ingeniería, Datos, Diseño y soporte, Negocio) en una lista siempre abierta con buscador y teclado (flechas, Enter); el núcleo rechaza cualquier rol que no esté en ella, también al contratar desde una plantilla.
 
@@ -86,7 +86,7 @@ El contenido localizado vive solo en el YAML; los textos de interfaz van en los 
 | `list_agent_templates`, `get_agent_template(key)` | Catálogo en el idioma activo |
 | `list_teams`, `create_team`, `update_team`, `delete_team` | Equipos del workspace actual |
 | `list_agents`, `get_agent`, `create_agent`, `update_agent`, `delete_agent` | Agentes del workspace actual |
-| `move_agent(agent_id, team_id)`, `save_canvas_positions` | Organigrama |
+| `save_canvas_positions(positions)` | Organigrama: guarda el desplazamiento de equipos y agentes (ignora nodos desconocidos) |
 
 El frontend no accede a SQLite directamente; los comandos son delgados y llaman a servicios del núcleo.
 

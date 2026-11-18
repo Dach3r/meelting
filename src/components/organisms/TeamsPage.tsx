@@ -19,6 +19,7 @@ type Props = {
   onLoadAgent: (agentId: string) => Promise<AgentDetail | null>;
   onUpdateAgent: (agentId: string, edit: AgentEdit) => Promise<boolean>;
   onDeleteAgent: (agentId: string) => Promise<boolean>;
+  onMoveNode: (nodeId: string, x: number, y: number) => void;
   onClearActionError: () => void;
 };
 
@@ -32,6 +33,7 @@ export function TeamsPage({
   onLoadAgent,
   onUpdateAgent,
   onDeleteAgent,
+  onMoveNode,
   onClearActionError,
 }: Props) {
   const { t } = useI18n();
@@ -112,8 +114,14 @@ export function TeamsPage({
         </Modal>
       )}
       <div className="board-dots relative min-h-112 flex-1 overflow-hidden rounded-2xl border border-line bg-surface">
-        <OrgChart teams={teams} zoom={zoom} onNewTeam={openTeamForm} onNewAgent={onHireAgent} onEditAgent={editAgent}
+        <OrgChart
+          teams={teams}
+          zoom={zoom}
+          onNewTeam={openTeamForm}
+          onNewAgent={onHireAgent}
+          onEditAgent={editAgent}
           onDeleteAgent={askToDelete}
+          onMoveNode={onMoveNode}
         />
         {teams.length > 0 && (
           <div className="absolute bottom-4 left-4">

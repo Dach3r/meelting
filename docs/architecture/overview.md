@@ -119,6 +119,7 @@ Reglas generales:
 | `workspaces` | `id`, `name` (1–80), timestamps | |
 | `teams` | `id`, `workspace_id`, `name` (1–80), timestamps | Única `(id, workspace_id)` para la clave foránea compuesta de `agents` |
 | `agents` | `id`, `workspace_id`, `team_id`, `template_key`, `name` (1–80), `role` (1–80), `description`, `instructions`, `provider`, `model`, timestamps | FK compuesta `(team_id, workspace_id)` `ON DELETE RESTRICT`; `provider`/`model` no vacíos |
+| `canvas_positions` | `workspace_id`, `node_id`, `x`, `y` | PK `(workspace_id, node_id)`; `node_id` es un equipo o agente; `x`,`y` son el desplazamiento respecto a la disposición automática del organigrama; se borra con el workspace y al eliminar el agente |
 | `rooms` | `id`, `workspace_id`, `name` (1–80), timestamps | |
 | `room_agents` | `id`, `room_id`, `agent_id`, timestamps | Única `(room_id, agent_id)` |
 | `messages` | `id`, `room_id`, `agent_id` (NULL = usuario), `body`, timestamps | `body` no vacío |
