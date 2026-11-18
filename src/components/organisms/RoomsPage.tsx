@@ -88,18 +88,6 @@ export function RoomsPage({ agents }: { agents: Agent[] }) {
           {rooms.map((room) => (
             <RoomCard key={room.id} room={room} onOpen={() => setOpenRoomId(room.id)} />
           ))}
-          <li className="flex">
-            <button
-              type="button"
-              onClick={openForm}
-              className="flex min-h-48 w-full cursor-pointer flex-col items-center justify-center gap-2.5 rounded-[20px] border border-dashed border-line text-sm text-muted transition-colors hover:bg-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
-            >
-              <span className="grid size-11 place-items-center rounded-full bg-raised text-ink">
-                <Plus aria-hidden className="size-5" />
-              </span>
-              {t("rooms.new")}
-            </button>
-          </li>
         </ul>
       )}
     </div>

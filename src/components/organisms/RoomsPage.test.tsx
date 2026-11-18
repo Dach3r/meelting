@@ -87,7 +87,6 @@ describe("rooms list", () => {
     expect(dailyCard.getByRole("button", { name: "Enter room" })).toBeInTheDocument();
     const retroCard = within(rooms.getByRole("heading", { name: "Retro" }).closest("li")!);
     expect(retroCard.getByText("No agents", { exact: false })).toBeInTheDocument();
-    expect(rooms.getByRole("button", { name: "New room" })).toBeInTheDocument();
   });
 
   it("seats up to three agents in each other room and counts the rest", async () => {
@@ -102,17 +101,6 @@ describe("rooms list", () => {
     expect(card.getByText("Cleo")).toBeInTheDocument();
     expect(card.queryByText("Dan")).not.toBeInTheDocument();
     expect(card.getByText("+2", { exact: false })).toBeInTheDocument();
-  });
-
-  it("opens the create form from the new room tile", async () => {
-    core({ list_rooms: () => ({ rooms: [daily], featured_messages: [] }) });
-    const user = userEvent.setup();
-    renderPage();
-
-    const rooms = within(await screen.findByRole("list", { name: "Rooms" }));
-    await user.click(rooms.getByRole("button", { name: "New room" }));
-
-    expect(screen.getByRole("dialog", { name: "New room" })).toBeInTheDocument();
   });
 
   it("shows the translated error when the rooms fail to load", async () => {
