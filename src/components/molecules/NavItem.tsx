@@ -21,8 +21,21 @@ export function NavItem({
     </>
   );
   if (current) {
+    const currentClasses = `${classes} bg-ink/12 text-ink`;
+    if (onSelect) {
+      return (
+        <button
+          type="button"
+          aria-current="page"
+          onClick={onSelect}
+          className={`${currentClasses} w-full cursor-pointer focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ink`}
+        >
+          {content}
+        </button>
+      );
+    }
     return (
-      <span aria-current="page" className={`${classes} bg-ink/12 text-ink`}>
+      <span aria-current="page" className={currentClasses}>
         {content}
       </span>
     );

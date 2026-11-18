@@ -504,6 +504,18 @@ describe("agent catalog", () => {
     await user.click(await screen.findByRole("button", { name: "Hire agent" }));
   }
 
+  it("returns to the teams from the Teams item of the rail while in the catalog", async () => {
+    mockCatalog();
+    const user = userEvent.setup();
+    render(<App />);
+
+    await openCatalog(user);
+    expect(await screen.findByRole("heading", { name: "Agent catalog" })).toBeInTheDocument();
+    const nav = within(screen.getByRole("navigation", { name: "Main navigation" }));
+    await user.click(nav.getByRole("button", { name: "Teams" }));
+    expect(screen.queryByRole("heading", { name: "Agent catalog" })).not.toBeInTheDocument();
+  });
+
   it("lists the templates of the team catalog and goes back to the teams", async () => {
     mockCatalog();
     const user = userEvent.setup();
