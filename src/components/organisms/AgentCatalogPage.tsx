@@ -1,4 +1,4 @@
-import { Briefcase, ChartColumn, Code, Package, PenLine, Search, type LucideIcon } from "lucide-react";
+import { Briefcase, ChartColumn, ChevronRight, Code, LayoutGrid, Package, PenLine, Search, type LucideIcon } from "lucide-react";
 import { useState } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
 import { useAgentRoles } from "../../hooks/useAgentRoles";
@@ -75,42 +75,51 @@ export function AgentCatalogPage({ team, busy, actionErrorMessage, onCreateAgent
   return (
     <div className="grid w-full content-start gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-xl font-bold">{t("teams.catalog.title")}</h2>
-          <p className="text-muted">{`${t("teams.catalog.team")} ${team.name}`}</p>
-        </div>
-        <div className="flex gap-3">
-          <Button variant="ghost" size="pill" onClick={onBack}>
-            {t("teams.catalog.back")}
-          </Button>
-          <Button size="pill" onClick={() => open({ kind: "custom" })}>
-            {t("teams.catalog.custom")}
-          </Button>
-        </div>
+        <nav aria-label={t("teams.catalog.breadcrumb")}>
+          <ol className="flex items-center gap-2 text-sm text-muted">
+            <li>
+              <button type="button" onClick={onBack} className="cursor-pointer hover:text-ink">
+                {t("home.nav.teams")}
+              </button>
+            </li>
+            <ChevronRight aria-hidden className="size-3.5 opacity-60" />
+            <li>{team.name}</li>
+            <ChevronRight aria-hidden className="size-3.5 opacity-60" />
+            <li aria-current="page" className="font-semibold text-ink">
+              {t("teams.catalog.crumb")}
+            </li>
+          </ol>
+        </nav>
+        <Button size="pill" onClick={() => open({ kind: "custom" })}>
+          {t("teams.catalog.custom")}
+        </Button>
+      </div>
+      <hr className="border-line" />
+      <div>
+        <h2 className="text-xl font-bold">{t("teams.catalog.title")}</h2>
+        <p className="text-muted">{`${t("teams.catalog.team")} ${team.name}`}</p>
       </div>
       {errorKey && <Alert message={translateError(locale, errorKey)} />}
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="relative min-w-60 flex-1">
-          <Search aria-hidden className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted" />
-          <input
-            type="search"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder={t("teams.catalog.search")}
-            aria-label={t("teams.catalog.search")}
-            className="w-full rounded-full border border-line bg-raised py-2.5 pr-4 pl-10 text-ink outline-none placeholder:text-muted focus:border-accent"
-          />
-        </div>
-        <SegmentedControl
-          label={t("teams.catalog.categories")}
-          value={category}
-          onChange={setCategory}
-          options={[
-            { value: "all", label: t("teams.catalog.all") },
-            ...rolesByGroup.map(({ group }) => ({ value: group, label: t(`teams.agent.roleGroups.${group}`) })),
-          ]}
+      <div className="relative">
+        <Search aria-hidden className="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-muted" />
+        <input
+          type="search"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder={t("teams.catalog.search")}
+          aria-label={t("teams.catalog.search")}
+          className="w-full rounded-xl border border-line bg-surface py-4 pr-4 pl-12 text-base text-ink outline-none transition-colors placeholder:text-muted focus:bg-raised"
         />
       </div>
+      <SegmentedControl
+        label={t("teams.catalog.categories")}
+        value={category}
+        onChange={setCategory}
+        options={[
+          { value: "all", label: t("teams.catalog.all"), icon: LayoutGrid },
+          ...rolesByGroup.map(({ group }) => ({ value: group, label: t(`teams.agent.roleGroups.${group}`), icon: roleGroupIcons[group] })),
+        ]}
+      />
       {visibleTemplates.length === 0 && templates.length > 0 && <p className="py-6 text-center text-muted">{t("teams.catalog.empty")}</p>}
       {sections.map(({ group, items }) => {
         const GroupIcon = roleGroupIcons[group];

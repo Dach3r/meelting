@@ -83,9 +83,10 @@
     },
     "hireAgent": "Hire agent",
     "catalog": {
-      "title": "Agent catalog",
-      "team": "Team:",
-      "back": "Back to teams",
+      "title": "Hire your next agent",
+      "crumb": "Agent catalog",
+      "breadcrumb": "Breadcrumb",
+      "team": "Ready-made templates for team",
       "custom": "Create custom agent",
       "search": "Search templates",
       "all": "All",

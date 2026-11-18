@@ -507,10 +507,10 @@ describe("agent catalog", () => {
     render(<App />);
 
     await openCatalog(user);
-    expect(await screen.findByRole("heading", { name: "Agent catalog" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Hire your next agent" })).toBeInTheDocument();
     const nav = within(screen.getByRole("navigation", { name: "Main navigation" }));
     await user.click(nav.getByRole("button", { name: "Teams" }));
-    expect(screen.queryByRole("heading", { name: "Agent catalog" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Hire your next agent" })).not.toBeInTheDocument();
   });
 
   it("lists the templates of the team catalog and goes back to the teams", async () => {
@@ -520,11 +520,11 @@ describe("agent catalog", () => {
 
     await openCatalog(user);
 
-    expect(await screen.findByRole("heading", { name: "Agent catalog" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Hire your next agent" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Product Owner" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "QA Engineer" })).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Back to teams" }));
-    expect(screen.queryByRole("heading", { name: "Agent catalog" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Teams" }));
+    expect(screen.queryByRole("heading", { name: "Hire your next agent" })).not.toBeInTheDocument();
   });
 
   it("groups the templates in one row per area and hides empty areas", async () => {
@@ -633,7 +633,7 @@ describe("agent catalog", () => {
       },
     });
     expect(await screen.findByText("Ana")).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Agent catalog" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Hire your next agent" })).not.toBeInTheDocument();
   });
 
   it("picks a model by where it runs and filters it with the search", async () => {
@@ -679,7 +679,7 @@ describe("agent catalog", () => {
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Check the fields");
     expect(screen.getByRole("button", { name: "Hire" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Agent catalog" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Hire your next agent" })).toBeInTheDocument();
   });
 });
 

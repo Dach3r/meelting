@@ -1,6 +1,9 @@
+import type { LucideIcon } from "lucide-react";
+
 export type SegmentedOption<T extends string> = {
   value: T;
   label: string;
+  icon?: LucideIcon;
   lang?: string;
   pending?: boolean;
 };
@@ -20,7 +23,7 @@ export function SegmentedControl<T extends string>({
 }) {
   return (
     <nav aria-label={label} className="flex w-fit items-center gap-1 rounded-full bg-pill p-1 text-sm">
-      {options.map((option) => (
+      {options.map(({ icon: Icon, ...option }) => (
         <button
           key={option.value}
           type="button"
@@ -28,8 +31,9 @@ export function SegmentedControl<T extends string>({
           disabled={disabled}
           aria-current={option.value === value ? "true" : undefined}
           onClick={() => onChange(option.value)}
-          className={`cursor-pointer rounded-full px-3 py-1 tracking-wider disabled:cursor-not-allowed ${option.value === value ? "bg-ink font-semibold text-surface" : "font-bold text-muted enabled:hover:text-ink"}`}
+          className={`inline-flex cursor-pointer items-center gap-2 rounded-full px-3 py-1 tracking-wider disabled:cursor-not-allowed ${option.value === value ? "bg-ink font-semibold text-surface" : "font-bold text-muted enabled:hover:text-ink"}`}
         >
+          {Icon && <Icon aria-hidden className="size-4" />}
           {option.label}
           {option.pending && <span className="ml-2 inline-block size-1.5 rounded-full bg-accent align-middle" />}
         </button>
