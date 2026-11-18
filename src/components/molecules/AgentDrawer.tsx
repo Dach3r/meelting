@@ -57,7 +57,7 @@ export function AgentDrawer({ seed, name, role, teamName, onEdit, onDelete, onCl
             <Pencil aria-hidden className="size-4" />
             {t("teams.agent.edit")}
           </Button>
-          <Button type="button" variant="ghost" size="pill" onClick={onDelete}>
+          <Button type="button" variant="danger" size="pill" onClick={onDelete}>
             <Trash2 aria-hidden className="size-4" />
             {t("teams.agent.delete")}
           </Button>
