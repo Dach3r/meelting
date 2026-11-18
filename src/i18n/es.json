@@ -48,6 +48,13 @@
       "model": "Modelo",
       "description": "Descripción",
       "instructions": "Instrucciones",
+      "identityTitle": "¿Quién es este agente?",
+      "engineTitle": "¿Con qué modelo trabaja?",
+      "behaviorTitle": "¿Cómo trabaja?",
+      "stepCurrent": "En curso",
+      "stepDone": "Listo",
+      "stepRequired": "Obligatorio",
+      "stepOptional": "Opcional",
       "submit": "Crear agente"
     },
     "hireAgent": "Contratar agente",

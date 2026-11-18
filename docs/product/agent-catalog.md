@@ -37,7 +37,7 @@
 
 **Equipos:** se crean, se renombran y se eliminan (solo sin agentes). Cada workspace nace con un equipo «General». Un agente se mueve de equipo desde su edición o arrastrando su tarjeta.
 
-**Agente personalizado:** desde Equipos, «Crear agente personalizado» abre el formulario vacío y crea un agente con `template_key` nulo.
+**Agente personalizado:** desde Equipos, «Crear agente personalizado» abre un formulario de tres pasos (Identidad, Modelo, Instrucciones) y crea un agente con `template_key` nulo.
 
 **Idioma:** al contratar se copian los valores del idioma activo; el agente guardado no cambia si luego cambia el idioma de la interfaz.
 

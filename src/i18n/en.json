@@ -48,6 +48,13 @@
       "model": "Model",
       "description": "Description",
       "instructions": "Instructions",
+      "identityTitle": "Who is this agent?",
+      "engineTitle": "Which model does it use?",
+      "behaviorTitle": "How does it work?",
+      "stepCurrent": "In progress",
+      "stepDone": "Done",
+      "stepRequired": "Required",
+      "stepOptional": "Optional",
       "submit": "Create agent"
     },
     "hireAgent": "Hire agent",

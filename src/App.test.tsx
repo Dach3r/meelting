@@ -387,14 +387,16 @@ describe("workspace shell", () => {
     await user.click(hireButtons[0]);
     await user.click(await screen.findByRole("button", { name: "Create custom agent" }));
     expect(screen.queryByLabelText("Team")).not.toBeInTheDocument();
-    const submit = screen.getByRole("button", { name: "Create agent" });
-    expect(submit).toBeDisabled();
+    const next = screen.getByRole("button", { name: "Continue" });
+    expect(next).toBeDisabled();
     await user.type(screen.getByLabelText("Name"), "Ana");
     await user.type(screen.getByLabelText("Role"), "Developer");
-    await user.click(screen.getByRole("button", { name: "Model" }));
+    await user.click(next);
+    expect(screen.getByRole("button", { name: "Continue" })).toBeDisabled();
     await user.type(screen.getByLabelText("Provider"), "openai");
     await user.type(screen.getByLabelText("Model"), "gpt-4o");
-    await user.click(submit);
+    await user.click(screen.getByRole("button", { name: "Continue" }));
+    await user.click(screen.getByRole("button", { name: "Create agent" }));
 
     expect(invokeMock).toHaveBeenCalledWith("create_agent", {
       draft: {
