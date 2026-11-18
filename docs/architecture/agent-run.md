@@ -1,6 +1,6 @@
 # AgentRun: propuesta técnica de la Fase 3
 
-> **Estado:** propuesta, **revisión 2, pendiente de aprobación final**. Nada de este documento está implementado y ninguna migración está creada. La dirección arquitectónica está aprobada (2026-11-18); el esquema (A1, A13) y la estructura de `llm.yml` (A8) esperan una revisión final. Producto: [agent-execution.md](../product/agent-execution.md). Decisiones: [decisions.md](../product/decisions.md). Relación con las reuniones: [conversation-engine.md](conversation-engine.md).
+> **Estado:** propuesta, **revisión 3**. Nada de este documento está implementado y ninguna migración está creada. La dirección arquitectónica y la mayoría de las decisiones están aprobadas (2026-11-18, ver §16). El SQL íntegro (A1, A13) y el YAML íntegro (A8) esperan su validación final antes de implementar. Producto: [agent-execution.md](../product/agent-execution.md). Decisiones: [decisions.md](../product/decisions.md). Relación con las reuniones: [conversation-engine.md](conversation-engine.md).
 >
 > **Existe hoy:** salas, participantes, mensajes del usuario y el evento `message:created`; el catálogo `llm.yml` (proveedores, ubicación, modelos y `base_url` de los locales); el keychain con `save_secret`, `secret_last_four` y `delete_secret`; el spike `stream_completion` (Chat Completions con SSE, sin reintentos ni persistencia y sin uso desde la UI).
 
@@ -51,7 +51,8 @@ CREATE TABLE agent_runs (
         'rate_limited', 'timeout', 'provider_unavailable',
         'provider_not_configured', 'model_unavailable', 'provider_auth_failed',
         'provider_billing', 'provider_rejected', 'content_filtered',
-        'output_truncated', 'invalid_response', 'cancelled', 'expired'
+        'output_truncated', 'invalid_response', 'context_too_large',
+        'cancelled', 'expired'
     )),
     attempts INTEGER NOT NULL DEFAULT 0 CHECK (attempts BETWEEN 0 AND 3),
     provider TEXT NOT NULL CHECK (length(trim(provider)) > 0),
@@ -64,8 +65,12 @@ CREATE TABLE agent_runs (
     CHECK ((status = 'failed') = (error_kind IS NOT NULL)),
     CHECK ((status = 'succeeded') = (response_message_id IS NOT NULL)),
     CHECK ((status IN ('succeeded', 'failed')) = (finished_at IS NOT NULL)),
-    CHECK (status <> 'running' OR started_at IS NOT NULL),
+    CHECK ((attempts > 0) = (started_at IS NOT NULL)),
+    CHECK (status NOT IN ('running', 'succeeded') OR attempts > 0),
     CHECK (status <> 'queued' OR attempts < 3),
+    CHECK (started_at IS NULL OR started_at >= created_at),
+    CHECK (finished_at IS NULL OR finished_at >= created_at),
+    CHECK (finished_at IS NULL OR started_at IS NULL OR finished_at >= started_at),
     CHECK (response_message_id IS NULL OR response_message_id <> request_message_id),
     FOREIGN KEY (room_id, agent_id) REFERENCES room_agents (room_id, agent_id) ON DELETE NO ACTION,
     FOREIGN KEY (request_message_id, room_id) REFERENCES messages (id, room_id) ON DELETE NO ACTION,
@@ -91,48 +96,71 @@ CREATE INDEX agent_runs_room_id_agent_id ON agent_runs (room_id, agent_id);
 | Idempotencia | Única `(room_id, client_request_id)`; UUID en minúsculas | Mismo id en la misma sala: rechazado |
 | Una ejecución activa por agente y sala | Índice parcial único | Dos activas: rechazado |
 | No hay `queued` sin intentos disponibles | `CHECK (status <> 'queued' OR attempts < 3)` | `queued` con 3 intentos: rechazado |
-| Coherencia de estado, error, respuesta y fechas | `CHECK` de §2.2 | — |
+| Coherencia de estado, error y respuesta | `failed` ⇔ `error_kind`; `succeeded` ⇔ `response_message_id`; final ⇔ `finished_at` | `failed` sin error, `queued` con error, `succeeded` sin respuesta, `failed` con respuesta, `running` con `finished_at`, `error_kind` desconocido: rechazados |
+| Coherencia de intentos y fechas | `attempts > 0` ⇔ `started_at`; `running` y `succeeded` con al menos un intento; `queued` con menos de 3; `created_at ≤ started_at ≤ finished_at` | `running` sin intentos, intentos sin `started_at` y viceversa, `queued` con 3, 4 intentos, fechas invertidas: rechazados |
 
-**Borrados** (verificados en el mismo SQLite temporal):
+**Verificación** (2026-11-18, SQLite 3.51 temporal, fuera del repositorio): las tres migraciones se aplican sobre una base con todas las migraciones actuales y datos existentes (dos workspaces, salas, participantes y mensajes de usuario y de agentes) sin errores, y `PRAGMA foreign_key_check` e `integrity_check` quedan limpios. Una matriz de 45 casos cubre todas las filas de esta tabla, los borrados y la guarda de transición; todos dan el resultado esperado. Los índices de `messages` no pueden fallar sobre datos existentes porque `id` ya es único. Las mismas pruebas se portan a `cargo test` al implementar.
+
+**Borrados** (verificados):
 - **Eliminar una sala** borra en la misma sentencia sus participaciones, mensajes y ejecuciones (cascada desde `rooms`). Las FK `NO ACTION` hacia `messages` se comprueban al final de la sentencia y pasan porque todo desaparece junto. Resultado: 0 ejecuciones y 0 mensajes de esa sala.
 - **Eliminar un agente** con ejecuciones falla (FK hacia `room_agents`), aunque no tenga mensajes, como pide [agent-execution.md](../product/agent-execution.md). El servicio lo traduce a un error propio (`agent_has_activity`) en lugar del `database` actual.
+- Quitar de la sala a un agente con ejecuciones también falla (hoy no hay operación que lo haga).
 - Un agente sin mensajes ni ejecuciones se sigue eliminando como hoy.
+- Borrar todas las salas de un workspace deja `agent_runs` vacía para ellas (cascada).
 - Los mensajes no se borran uno a uno; si alguien lo intentara, la base lo impide mientras una ejecución los referencie.
 
 **Índices:** `agent_runs_room_id_agent_id` da a la FK hacia `room_agents` un índice completo (el parcial no sirve para eso), igual que `messages_room_id_agent_id`. La expiración al arrancar (`WHERE status IN ('queued','running')`) recorre solo el índice parcial: comprobado con `EXPLAIN QUERY PLAN`. Las ejecuciones de los mensajes cargados se leen por `request_message_id` (índice único).
 
 **Lo que no se porta de Rails** (sin consumidor): `user_id`, `updated_at`, `finish_reason` (se deriva del estado y del `error_kind`), `response_model`, `cached_input_tokens` y `provider_request_id`. Si una pantalla los necesita, se proponen con su `add_<columna>_to_agent_runs`.
 
-**Evolución prevista, sin diseñarla ahora:** en R2 (varias ejecuciones por intervención) habrá que sustituir los índices únicos de `request_message_id` y `client_request_id`: es una migración solo de índices. «Pasar» (P7) exigiría reconstruir la tabla por el `CHECK` de `succeeded`.
+**Dependencia con el motor conversacional (sin estructuras anticipadas):** la restricción de una ejecución por mensaje vale para el MVP dirigido. Cuando una intervención pueda originar varias ejecuciones (R2), habrá que revisar en una propuesta propia: los índices únicos de `request_message_id` y `client_request_id` (migración solo de índices), el contrato de `send_instruction` (quién crea las ejecuciones siguientes y con qué id), la autorización (solo el coordinador, a partir de una intervención del usuario) y, si se aprueba «pasar» (P7), el `CHECK` de `succeeded`, que obliga a reconstruir la tabla.
 
-## 3. Contrato de `send_instruction` (A2)
+## 3. Contrato de `send_instruction` e idempotencia (A2)
 
 Comando nuevo. `send_message` no cambia: sigue siendo el mensaje sin destinatario.
 
-**Entrada:** `room_id`, `agent_id`, `body`, `client_request_id` (obligatorio).
-**Salida:** `{ message, run }`: el mensaje del usuario y la ejecución.
+**Entrada:** `room_id`, `agent_id`, `body`, `client_request_id` (obligatorio, generado por el cliente).
+**Salida:** `{ message, run, partial }`: el mensaje del usuario, la ejecución y, si está activa, la instantánea de su buffer (§5); si no, `partial` es nulo.
 
-**Pasos**, en una sola transacción `BEGIN IMMEDIATE` (los escritores se serializan, así que la comprobación y la inserción son atómicas):
+**Pasos**, en una sola transacción `BEGIN IMMEDIATE` (los escritores se serializan: comprobar e insertar es atómico):
 
-1. `client_request_id` debe ser un UUID canónico en minúsculas; si no, `invalid_client_request_id` y nada se guarda. Esto sustituye la regla de Rails que generaba un id nuevo cuando faltaba: un id inventado por el núcleo no da idempotencia.
+1. `client_request_id` debe ser un UUID canónico en minúsculas; si no, `invalid_client_request_id`.
 2. Normalizar `body` con las reglas del usuario (recorte, 1–4000 puntos de código); si no es válido, `invalid_message`.
-3. La sala debe ser del workspace actual: si no, `room_not_found`.
+3. La sala debe ser del workspace actual; si no, `room_not_found`.
 4. **Repetición:** si existe una ejecución con `(room_id, client_request_id)`:
-   - si su agente y el cuerpo de su mensaje de solicitud coinciden con los recibidos (cuerpo ya normalizado), se devuelven ese mensaje y esa ejecución **en su estado actual**. No se escribe nada, no se emite ningún evento y no se lanza ninguna ejecución;
-   - si no coinciden, `client_request_conflict` y nada se guarda.
-5. El agente debe participar en la sala: si no, `agent_not_found`.
-6. Si el agente ya tiene una ejecución activa en la sala: `agent_busy` y nada se guarda.
-7. Insertar el mensaje del usuario y la ejecución `queued` (con `provider` y `model` copiados del agente), y actualizar `rooms.updated_at`.
-8. **Después del commit:** emitir `message:created` y `agent_run:status`, y entregar la ejecución al planificador (§8).
+   - mismo agente y mismo cuerpo normalizado → se devuelven el mensaje, la ejecución **en su estado actual** y su instantánea. No se escribe nada, no se emite ningún evento, no se lanza ninguna ejecución ni llamada al proveedor;
+   - agente o cuerpo distintos → `client_request_conflict`.
+5. El agente debe participar en la sala; si no, `agent_not_found`.
+6. Si el agente tiene una ejecución activa en la sala → `agent_busy`.
+7. Insertar el mensaje del usuario y la ejecución `queued` (con `provider` y `model` copiados del agente) y actualizar `rooms.updated_at`.
+8. **Después del commit:** emitir `message:created` y `agent_run:status` y entregar la ejecución al planificador (§8).
 
-**Garantías:** una petición repetida con el mismo `client_request_id` nunca crea otro mensaje, otra ejecución, otra respuesta ni otra llamada al proveedor. Esto vale aunque la ejecución original esté en curso, haya terminado o haya expirado tras un reinicio. Una ejecución fallida no se reintenta así: el usuario envía una instrucción nueva, con id nuevo.
+En los pasos 1–6 no se guarda nada.
 
-**Contrato con la UI:**
-- El hook genera un `client_request_id` por envío y lo **reutiliza** si reintenta el mismo envío porque la invocación falló o no respondió.
-- Genera uno nuevo cuando el usuario cambia el texto o el agente, o cuando el envío anterior obtuvo respuesta.
-- Ante `client_request_conflict` genera un id nuevo; no reenvía automáticamente.
+### Casos explícitos
 
-**Errores nuevos** del núcleo: `invalid_client_request_id`, `client_request_conflict`, `agent_busy`, `agent_has_activity`, todos con su texto en `es`/`en`.
+| Caso | Qué pasa |
+|---|---|
+| La invocación se queda sin respuesta (timeout del IPC) pero la transacción se confirmó | La UI reintenta **con el mismo id**. Llega al paso 4 y recibe el mensaje y la ejecución originales con su estado y su instantánea; no hay segunda ejecución ni segunda llamada. Mientras tanto, los eventos del paso 8 ya pudieron llegar: la UI deduplica por `id` |
+| La invocación falló antes del commit | El reintento con el mismo id crea el mensaje y la ejecución por primera vez |
+| Cómo recupera la UI una ejecución existente | Con la respuesta repetida de `send_instruction` (mismo id) o con `get_room` al abrir la sala. En ambos casos aplica la instantánea y sigue con los eventos (§5) |
+| La ejecución original terminó en error o expiró | La repetición con el mismo id devuelve la ejecución `failed` con su `error_kind`. **Nunca** la reactiva ni crea otra |
+| Nuevo intento manual tras un fallo o una expiración | Es una **instrucción nueva**: el usuario la envía desde el compositor y la UI genera un **`client_request_id` nuevo**. Se crean un mensaje y una ejecución nuevos; la ejecución fallida queda como está |
+| Mismo id con otro agente u otro texto | `client_request_conflict`; la UI no reenvía sola |
+
+### Ciclo de vida del id en la UI
+
+- El id pertenece a un **envío** del compositor: se genera al pulsar «Enviar» y se guarda junto al texto y el agente de ese envío.
+- Los reintentos **automáticos** de la UI (fallo o timeout de la invocación) reutilizan ese id. Por eso no pueden crear una segunda ejecución por accidente.
+- El id se descarta solo cuando el núcleo respondió (éxito o error de negocio). El siguiente envío, también el de un reintento manual, genera uno nuevo.
+- Si el usuario cambia el texto o el agente antes de que haya respuesta, es otro envío, con otro id.
+
+**Errores del comando:**
+- **Aprobados:** `client_request_conflict` y `agent_has_activity` (este último, de `delete_agent`).
+- **Propuestos:** `invalid_client_request_id` y `agent_busy`. `agent_busy` ya figuraba en las reglas de [agent-execution.md](../product/agent-execution.md), pero no existe en el código.
+- **Reutilizados:** `invalid_message`, `room_not_found` y `agent_not_found`.
+
+Todos son códigos estables con texto en `es`/`en`. Los errores de SQLite y los textos de los proveedores nunca llegan a la UI.
 
 ## 4. Estados, transiciones y cancelación
 
@@ -152,16 +180,21 @@ stateDiagram-v2
 - **Guardas:** cada transición es un `UPDATE … WHERE id = ? AND status = ?` en el repositorio. Si no cambia ninguna fila, la transición no ocurrió y la tarea se detiene sin efectos. `succeeded` y `failed` son finales: ninguna transición sale de ellos, así que una ejecución cancelada o terminada **no puede volver a `running`**.
 - **Éxito atómico:** en una misma transacción se inserta el mensaje del agente, se pasa la ejecución de `running` a `succeeded` con `response_message_id` y los tokens, y se actualiza `rooms.updated_at`. Si la guarda falla (cancelada entretanto), *rollback*: no queda mensaje. Los eventos `message:created` y `agent_run:status` se emiten **solo después del commit**.
 - **Cancelación** — `cancel_agent_run(run_id)` (A5):
-  1. si la ejecución pertenece a una sala del workspace actual, se pasa a `failed` / `cancelled` con la guarda `status IN ('queued','running')`;
-  2. tras el commit se emite `agent_run:status` y se dispara su `CancellationToken`;
-  3. la tarea aborta la petición HTTP (`select!` entre el stream, el temporizador y el token), y su transición final no encuentra fila.
+  1. Una sola sentencia actualiza la ejecución solo si su sala pertenece al **workspace actual** y está activa:
+     `UPDATE agent_runs SET status = 'failed', error_kind = 'cancelled', finished_at = … WHERE id = ? AND status IN ('queued','running') AND room_id IN (SELECT id FROM rooms WHERE workspace_id = ?)`.
+  2. Si cambió una fila: tras el commit se emite `agent_run:status` y se dispara su `CancellationToken`. La tarea, esté donde esté, sale y libera lo que tenga:
+     - si espera plaza (§8), abandona la cola;
+     - si espera un reintento, despierta y no vuelve a pedir plaza;
+     - si llama al proveedor, aborta la petición HTTP y libera la plaza.
+     El buffer se borra.
+  3. Si no cambió ninguna fila (ya terminada, inexistente o de otro workspace), devuelve éxito sin efecto. La respuesta es idéntica en los tres casos, así que no revela si existe una ejecución en otro workspace, y no toca nada fuera del workspace actual.
   
-  Cancelar una ejecución terminada, inexistente o de otro workspace es un éxito sin efecto. Como el éxito y la cancelación compiten por la misma guarda, nunca hay mensaje duplicado ni mensaje de una ejecución cancelada.
+  Un evento, token o resultado tardío no reactiva nada: todas las transiciones llevan guarda, y el emisor de tokens comprueba el token de cancelación antes de emitir.
 - **Eliminar la sala:** se disparan los tokens de sus ejecuciones activas y la cascada las borra.
 - **Salir de la sala o cambiar de workspace:** la ejecución continúa.
 - **Arranque de la app** (A7): toda ejecución `queued` o `running` pasa a `failed` / `expired`, antes de abrir la ventana. La cola y los buffers vivían en memoria y no se recuperan.
 
-## 5. Streaming y recuperación
+## 5. Streaming y recuperación (A3)
 
 | Evento | Carga | Cuándo |
 |---|---|---|
@@ -169,97 +202,149 @@ stateDiagram-v2
 | `agent_run:token` | `run_id`, `room_id`, `attempt`, `seq`, `text` | Durante `running`, con tokens agrupados cada ≤ 50 ms |
 | `message:created` ✅ | El mensaje del agente | Después del commit del éxito |
 
-**Buffer temporal en el núcleo (A3).** Un registro en memoria de las ejecuciones activas, definido en `services/` sin tipos de Tauri y gestionado como `State`. Por ejecución guarda:
-- el intento actual y el último `seq` emitido;
-- el texto acumulado de **ese** intento, como máximo 256 KiB por L1;
-- el token de cancelación;
-- el contexto congelado (§6).
+**Buffer temporal en el núcleo.** Un registro en memoria de las ejecuciones aceptadas por el planificador. Está definido en `services/` sin tipos de Tauri y se gestiona como `State`.
 
-Ciclo de vida del buffer:
-- **Se crea** cuando el planificador acepta la ejecución.
-- **Se vacía** al empezar cada intento: `seq` vuelve a 0 y el texto del intento anterior se descarta, nunca se mezcla.
-- **Se borra** después del commit de la transición final.
-- **Nunca se escribe en SQLite** ni se convierte en mensaje.
+Por ejecución guarda:
+- `room_id`;
+- el intento actual y el último `seq`;
+- el texto del intento actual;
+- el contexto congelado (§6);
+- el token de cancelación.
 
-**Recuperación al reabrir la sala:**
-1. La UI se suscribe a los eventos **antes** de llamar a `get_room`.
-2. `get_room` lee primero las instantáneas del buffer (`run_id`, `attempt`, `seq`, `text`) y después la base. Devuelve, además de lo actual, las ejecuciones de los mensajes cargados y esas instantáneas.
-3. Desde ahí, la UI aplica un token solo si:
-   - es del mismo intento con `seq` mayor que el de la instantánea, o
-   - es de un intento posterior (en ese caso, reinicia el texto).
-4. Ignora los tokens de ejecuciones que ya estén en estado final.
-5. Si la base ya muestra la ejecución terminada, descarta la instantánea y muestra el mensaje.
+Condiciones:
+- **Tamaño acotado:** el texto nunca pasa de 256 KiB, porque L1 se comprueba antes de añadir cada fragmento. Como mucho hay 5 ejecuciones generando a la vez (§8); las que esperan tienen el texto vacío.
+- **Limpieza:** la entrada se borra tras el commit de la transición final (éxito, fallo, cancelación o duración máxima), y también si la sala se elimina.
+- **Intentos separados:** al empezar un intento se vacía el texto y `seq` vuelve a 0. Los fragmentos de intentos anteriores ya no existen.
+- **Sin persistencia:** el texto parcial nunca se escribe en SQLite ni se convierte en mensaje.
+
+**Aislamiento:**
+- Las instantáneas solo salen por `get_room` y por la repetición de `send_instruction`. Ambos validan antes que la sala es del workspace actual y devuelven únicamente las ejecuciones de **esa** sala.
+- Los eventos llevan `room_id`, y la UI descarta los de cualquier sala que no sea la abierta.
+- Los eventos no llevan claves, prompts, instrucciones de otros agentes ni textos del proveedor; solo el texto que el propio agente genera para esa sala.
+- Todo es del mismo usuario local: el aislamiento evita mezclar workspaces en la vista y que un comando actúe sobre otro workspace.
+
+**Reconciliación al abrir la sala:**
+1. La UI se suscribe a `agent_run:status`, `agent_run:token` y `message:created` **antes** de llamar a `get_room`, y guarda en espera lo que llegue durante la carga.
+2. `get_room` toma primero las instantáneas del buffer (`run_id`, `attempt`, `seq`, `text`) y después lee la base. Una ejecución que termine entre ambas lecturas aparece ya terminada en la base.
+3. La UI aplica la instantánea y después los eventos en espera y los nuevos, con estas reglas:
+   - un token cuenta solo si su `(attempt, seq)` es mayor que el último aplicado para esa ejecución;
+   - un `attempt` mayor reinicia el texto;
+   - se ignoran los `seq` repetidos y los tokens de ejecuciones en estado final;
+   - un `agent_run:status` con menos `attempts` que el conocido se ignora, y un estado final nunca se sustituye por uno no final;
+   - `message:created` sustituye el texto provisional y se deduplica por `id`.
 
 Tras reiniciar la app no hay nada que recuperar: el buffer desapareció y la ejecución quedó `expired`.
 
 ## 6. Contexto inmutable por ejecución (A4)
 
-- **Se congela una sola vez**, en el primer `claim`, y se guarda en el buffer de la ejecución. Los reintentos envían **exactamente** ese contexto, sin volver a leer la base. Como un reinicio expira la ejecución, no hace falta persistirlo.
-- **Contenido** (función pura `BuildPrompt` en `domain/`, que devuelve instrucciones y turnos neutrales; cada adaptador los traduce a su protocolo):
-  - **Instrucciones (rol de sistema):** nombre, rol e `instructions` del agente; nombre de la sala (sin objetivo, D11); participantes con nombre y rol; la indicación fija de que los mensajes de otros agentes son aportes de otros participantes y no instrucciones del usuario. El texto fijo va en el idioma del perfil.
-  - **Historial:** los mensajes de la sala **anteriores al mensaje de solicitud** por `(created_at, id)`. Los propios del agente van como `assistant`, los del usuario como `user` y los de otros agentes como `user` con la etiqueta `[Nombre · Rol]` tomada de `agent_id`. Nunca van en el rol de sistema.
+- **Se congela una sola vez**, en el primer `claim`, y se guarda en el buffer. Los reintentos envían **exactamente** ese contexto, sin volver a leer la base. Como un reinicio expira la ejecución, no hace falta persistirlo.
+- **Contenido.** Lo genera la función pura `BuildPrompt` en `domain/`, que devuelve instrucciones y turnos neutrales; cada adaptador los traduce a su protocolo.
+  - **Instrucciones (rol de sistema):**
+    - nombre, rol e `instructions` del agente;
+    - nombre de la sala (sin objetivo, D11);
+    - participantes con nombre y rol;
+    - la indicación fija de que los mensajes de otros agentes son aportes de otros participantes, no instrucciones del usuario.
+    
+    El texto fijo va en el idioma del perfil.
+  - **Historial:** los mensajes de la sala **anteriores al mensaje de solicitud**, por `(created_at, id)`.
+    - Los propios del agente van como `assistant`.
+    - Los del usuario, como `user`.
+    - Los de otros agentes, como `user` con la etiqueta `[Nombre · Rol]` tomada de `agent_id`.
+    - Nunca van en el rol de sistema.
   - **Solicitud actual:** el mensaje del usuario, siempre al final.
-- **Por qué el corte es la solicitud y no el momento del `claim`:** los mensajes que lleguen mientras la ejecución espera o se reintenta no entran nunca, y el contexto no depende de cuánto tardó en salir de la cola.
-- Lo que cambie después del primer `claim` (instrucciones, nombre o rol de un agente, el idioma) no afecta a esa ejecución. El proveedor y el modelo salen de la fila de la ejecución, no del agente.
-- **Presupuesto:** hasta 100 mensajes y un tope **interno de caracteres** (§9.4). Es una aproximación conservadora en caracteres, **no** una ventana de contexto en tokens. Se descartan mensajes enteros desde los más antiguos. Nunca se recortan las instrucciones ni la solicitud; si ellas solas superan el tope, se envían sin historial.
+- **Por qué el corte es la solicitud:** los mensajes que llegan mientras la ejecución espera o se reintenta nunca entran.
+- Lo que cambie después del primer `claim` no afecta a esa ejecución: instrucciones, nombre o rol de un agente, el idioma. El proveedor y el modelo salen de la fila de la ejecución.
+- **Presupuesto interno de Meelting:** 24 000 caracteres en la nube, 8000 en local, y como máximo 100 mensajes de historial. Es una aproximación conservadora en caracteres, **no** una ventana de contexto en tokens. Cuenta **todo** lo que se envía: instrucciones, marco, historial y solicitud.
+  1. **Contexto mínimo:** instrucciones, marco y solicitud actual. Nunca se recorta.
+  2. **Historial:** se añade desde el mensaje más reciente hacia atrás, en mensajes enteros, mientras quepa.
+  3. Si el contexto mínimo solo **no cabe**, la ejecución falla con el error controlado `failed` / `context_too_large`, permanente y sin llamada al proveedor. Nunca se envía un prompt incompleto en silencio.
+  
+  Caso real: `instructions` admite hasta 10 000 caracteres y el mensaje del usuario hasta 4000, así que un agente local con instrucciones largas puede superar los 8000. La UI lo explica con un texto traducido.
 - **Normalización:** turnos consecutivos del mismo rol se unen; el historial empieza por un turno `user`.
-- **Aislamiento:** solo mensajes de la propia sala; ni otras salas ni otros workspaces; las instrucciones de un agente nunca se envían a otro; el nombre del workspace no se envía.
+- **Aislamiento:** solo mensajes de la propia sala, ni de otras salas ni de otros workspaces. Las instrucciones de un agente nunca se envían a otro. El nombre del workspace no se envía.
 
 ## 7. Reintentos y timeouts (A6)
 
 **Reintentos:**
-- Máximo 3 intentos en total, incluido el primero; el cliente HTTP no reintenta (`max_retries = 0`).
-- Se reintentan **solo** los errores transitorios: `rate_limited`, `timeout` por conexión o inactividad, `provider_unavailable` y el corte del stream a mitad de respuesta. Los demás fallan de inmediato.
-- Espera de 2 s tras el primer intento y 8 s tras el segundo, o `retry-after` si llega. Si `retry-after` supera 60 s, se falla con `rate_limited` en vez de esperar.
-- La ejecución conserva su plaza de concurrencia (§8) durante la espera, que como mucho dura 60 s; así no vuelve a la cola detrás de otras.
+- Máximo 3 intentos en total, incluido el primero. El cliente HTTP no reintenta (`max_retries = 0`).
+- Se reintentan **solo** los errores transitorios:
+  - `rate_limited`;
+  - `timeout` por conexión o por inactividad;
+  - `provider_unavailable`;
+  - un corte del stream a mitad de la respuesta.
+  
+  Los demás fallan de inmediato.
+- Espera de 2 s tras el primer intento y de 8 s tras el segundo, o `retry-after` si llega. Si `retry-after` supera 60 s, la ejecución falla con `rate_limited`.
+- Durante la espera, la ejecución está en `queued` con `attempts > 0` y **sin plaza** de concurrencia (§8).
 
-**Tres timeouts distintos:**
+**Timeouts.** Son valores iniciales, se evaluarán con pruebas reales y no son garantías de rendimiento.
 
 | Timeout | Qué mide | Nube | Local | Al vencer |
 |---|---|---|---|---|
 | Conexión | Establecer la conexión TCP/TLS | 10 s | 10 s | `provider_unavailable`, transitorio |
-| Inactividad | Tiempo sin recibir ningún evento del stream, incluido el primero (con la carga del modelo) | 45 s | 120 s | `timeout`, transitorio |
-| Duración máxima | Reloj desde el primer `claim` hasta el final, sumando intentos y esperas; **no** incluye el tiempo en cola por concurrencia | 15 min | 45 min | `timeout`, **sin reintento** |
+| Inactividad | Tiempo sin recibir ningún evento del stream, incluido el primero (y la carga del modelo) | 45 s | 120 s | `timeout`, transitorio |
+| Duración máxima | Reloj desde el **inicio del primer intento** (primer `claim`), **sumando** intentos, esperas de reintento y esperas de plaza posteriores. **No** cuenta la espera en cola antes del primer intento | 15 min | 45 min | `failed` / `timeout`, **sin más intentos** |
 
-**Por qué hay duración máxima.** Un proveedor que sigue enviando eventos, por ejemplo `ping` de Anthropic o fragmentos vacíos, nunca dispara la inactividad. El techo de tokens y L1 no lo cubren si no llega texto.
+- La duración máxima es la cota de un proveedor que sigue enviando eventos sin texto, como los `ping` de Anthropic.
+- Antes de cada espera de reintento, si la espera no cabe en el presupuesto restante, la ejecución termina con `timeout` sin esperar.
+- Cada intento se lanza con el plazo restante como techo.
 
-**Por qué estos valores, que son iniciales y se ajustan midiendo:**
-- **Local:** 45 min dejan generar el máximo local de 4096 tokens a unos 2 tokens/s (≈ 34 min) más la carga del modelo. No impide usar modelos lentos.
-- **Nube:** 15 min cubren de sobra el máximo de salida con razonamiento.
+**Por qué estos valores:**
+- **Local:** 45 min alcanzan para generar los 2048 tokens del tope local incluso a 1 token/s (≈ 34 min), más la carga del modelo, así que no se impide usar modelos lentos.
+- **Nube:** 15 min sobran para el máximo de salida con razonamiento.
 
 El usuario puede cancelar en cualquier momento.
 
 ## 8. Concurrencia (A9)
 
-- **Una ejecución activa por agente y sala:** índice parcial en la base y `agent_busy` en el servicio.
-- **Planificador en el núcleo:** dos semáforos `tokio` (justos, en orden de llegada). La ejecución adquiere la plaza **antes** del `claim` y la libera tras la transición final. Mientras espera sigue en `queued` con `attempts = 0`, y la UI lo muestra como «En cola». Si se cancela mientras espera, sale de la cola sin llamar al proveedor. La UI no limita nada; solo refleja estados.
-- **Nube:** 4 ejecuciones simultáneas en total, sumando todos los proveedores. Los límites propios de cada proveedor se respetan con `retry-after`.
-- **Local: 1 plaza compartida por todos los proveedores locales y todos sus modelos.** Alcances evaluados:
+- **Una ejecución activa por agente y sala.** La base la impone con el índice parcial, que cuenta `queued` y `running`, y el servicio la traduce a `agent_busy`. Se sigue cumpliendo durante la espera de reintento: la ejecución sigue `queued` y ocupa su lugar en el índice, aunque haya soltado la plaza.
+- **Planificador en el núcleo:** dos semáforos `tokio`, que atienden en orden de llegada:
+  - **local:** 1 plaza, global dentro de esta instancia de Meelting y compartida por Ollama, LM Studio y todos sus modelos. No controla lo que consuman otros procesos o aplicaciones de la máquina;
+  - **nube:** 4 plazas para todos los proveedores juntos.
+- **Límites configurables internamente:** los valores viven en una estructura de límites del dominio, con los valores por defecto de este documento. El planificador la recibe al crearse, y las pruebas la construyen con otros valores. No hay interfaz de configuración.
 
-| Alcance | Problema |
-|---|---|
-| Por modelo | No se conoce la concurrencia que admite cada modelo local |
-| Por proveedor o instancia (Ollama y LM Studio por separado, que aquí es lo mismo porque cada uno tiene una URL fija) | Ambos corren en la misma máquina y comparten CPU, GPU y memoria. Dos modelos grandes a la vez pueden agotar la memoria |
-| **Por máquina (recomendado)** | Conservador: una ejecución de Ollama hace esperar a una de LM Studio. Es correcto mientras no se mida lo contrario |
+**Ciclo de una ejecución:**
+1. **Antes del primer intento:** espera plaza en `queued` con `attempts = 0` («En cola»).
+2. **Con plaza:** hace `claim` y llama al proveedor.
+3. **Error transitorio:**
+   1. hace `requeue` en la base (`running → queued`);
+   2. **suelta la plaza**;
+   3. espera el backoff o el `retry-after`;
+   4. vuelve a pedir plaza, entrando al final de la cola en el orden en que la pide; los reintentos no tienen prioridad;
+   5. cuando la obtiene, hace `claim` y empieza el siguiente intento.
+4. **Transición final:** suelta la plaza y borra el buffer.
 
-  Ollama y LM Studio pueden atender peticiones en paralelo según su configuración (I), pero eso depende del modelo y del hardware del usuario. Hacerlo configurable queda para cuando haya mediciones; no se añade ahora.
-- **Mutex:** el registro se protege con un `Mutex` que nunca se mantiene durante un `await`.
-- **Limitación conocida:** si la app se cierra después de que el proveedor respondió y antes del commit, la ejecución expira y repetir la instrucción genera otra llamada. La idempotencia es local.
+**Cancelación en cualquier punto.** La tarea espera con `select!` entre su trabajo y el token de cancelación:
+- esperando plaza: sale de la cola sin haberla tenido;
+- en el backoff: despierta y no pide plaza;
+- llamando al proveedor: aborta la petición y suelta la plaza.
+
+La plaza se libera siempre al salir de su ámbito, también ante un error inesperado de la tarea, porque el permiso del semáforo se suelta al destruirse.
+
+**Limitación conocida:** si la app se cierra después de que el proveedor respondió y antes del commit, la ejecución expira y repetir la instrucción genera otra llamada. La idempotencia es local.
 
 ## 9. Proveedores y catálogo `llm.yml` (A8)
+
+Todos los datos de esta sección se contrastaron el 2026-11-18 con la documentación oficial y, donde la documentación no alcanza, con los repositorios oficiales: los SDK de OpenAI y Groq y el código de Ollama y LM Studio. Se marca **(I)** lo que no está documentado oficialmente.
 
 ### 9.1 Cuatro niveles de configuración
 
 | Nivel | Dónde vive | Contenido en la v1 |
 |---|---|---|
-| 1. Protocolo | Código del adaptador (`system/`) | Ruta del endpoint, autenticación, cabeceras de versión, forma de la petición y de los eventos, nombre del parámetro de tokens de salida |
-| 2. Proveedor | `llm.yml` | `key`, `name`, `location`, `protocol`, `base_url` |
-| 3. Modelo | `llm.yml`, por modelo | `max_output_tokens`: los tokens de salida que Meelting pide a **ese** modelo. Debe ser menor o igual que el máximo documentado por el proveedor |
-| 4. Límites internos de Meelting | Constantes del dominio, por `location` | Timeouts, duración máxima, concurrencia, reintentos, presupuesto de caracteres de `BuildPrompt`, L1 y salida para modelos locales |
+| 1. Protocolo | Código del adaptador (`system/`) | Ruta del endpoint, autenticación, versión de API, forma de la petición y de los eventos, traducción de finales y errores |
+| 2. Proveedor | `llm.yml` | `key`, `name`, `location`, `protocol`, `base_url` y, solo en Chat Completions, `output_tokens_param` |
+| 3. Modelo | `llm.yml`, por modelo | `max_output_tokens`: el máximo de salida **documentado por el proveedor para ese modelo** |
+| 4. Límites internos de Meelting | Constantes del dominio por `location`, en una estructura de límites inyectable (§8) | Tope de salida pedido, presupuesto de `BuildPrompt`, timeouts, duración máxima, concurrencia, intentos y L1 |
 
-- **Nada del nivel 4 va en el catálogo:** son políticas de Meelting, no hechos del proveedor.
-- **Ventana de contexto en tokens:** no se declara porque la v1 no la usa. `BuildPrompt` trabaja con un presupuesto de caracteres que no la sustituye. Si algún día se cuentan tokens, se declarará por modelo.
-- **Si un proveedor requiere clave:** se deduce de `location`. La nube requiere clave del keychain; lo local, no.
+- **Lo que se pide al modelo:** el mínimo entre su máximo documentado (nivel 3) y el tope interno (nivel 4). Así el catálogo guarda un hecho verificable y Meelting decide cuánto pide.
+- **Por qué `output_tokens_param` va en el catálogo:**
+  - Groq documenta `max_completion_tokens` y marca `max_tokens` como obsoleto.
+  - Ollama solo admite `max_tokens` e **ignora en silencio** `max_completion_tokens` (su estructura de petición no tiene ese campo).
+  - LM Studio documenta solo `max_tokens`.
+  
+  Mandar el mismo nombre a los tres quitaría el tope sin aviso en Ollama o dependería de un parámetro obsoleto en Groq. Es un dato real de cada proveedor.
+- **No se declara:** ventana de contexto en tokens, `effort`, temperatura ni otras capacidades, porque nada las usa. Por la versión de API elegida, Anthropic además rechaza `temperature`, `top_p` y `top_k`.
+- **Clave obligatoria:** se deduce de `location`; la nube lleva clave del keychain y lo local, no.
 
 ### 9.2 YAML propuesto
 
@@ -271,11 +356,11 @@ El usuario puede cancelar en cualquier momento.
   base_url: https://api.anthropic.com/v1
   models:
     - key: claude-sonnet-5-5
-      max_output_tokens: 8192
+      max_output_tokens: 128000
     - key: claude-opus-5-5
-      max_output_tokens: 8192
+      max_output_tokens: 128000
     - key: claude-haiku-5-5
-      max_output_tokens: 8192
+      max_output_tokens: 128000
 - key: openai
   name: OpenAI
   location: cloud
@@ -283,62 +368,54 @@ El usuario puede cancelar en cualquier momento.
   base_url: https://api.openai.com/v1
   models:
     - key: gpt-5
-      max_output_tokens: 16000
+      max_output_tokens: 128000
     - key: gpt-5-mini
-      max_output_tokens: 16000
+      max_output_tokens: 128000
 - key: groq
   name: Groq
   location: cloud
   protocol: chat_completions
   base_url: https://api.groq.com/openai/v1
+  output_tokens_param: max_completion_tokens
   models:
     - key: llama-3.3-70b-versatile
-      max_output_tokens: 8192
+      max_output_tokens: 32768
 - key: ollama
   name: Ollama
   location: local
   protocol: chat_completions
   base_url: http://localhost:11434/v1
+  output_tokens_param: max_tokens
 - key: lmstudio
   name: LM Studio
   location: local
   protocol: chat_completions
   base_url: http://localhost:1234/v1
+  output_tokens_param: max_tokens
 ```
 
-**Qué es realmente necesario en la v1:**
-- **`protocol`:** elige el adaptador; Groq, Ollama y LM Studio comparten uno.
-- **`base_url` en la nube:** Groq y OpenAI tienen URLs distintas.
-- **`max_output_tokens` por modelo:** Anthropic lo exige y D10 pide acotar la respuesta con parámetros de generación.
-
-Sobre los valores:
-- 8192 es el valor que ya usaba Rails para todos los modelos.
-- OpenAI lleva 16 000 porque en sus modelos de razonamiento los tokens de razonamiento cuentan dentro de ese máximo.
-- **Cada valor se contrasta con la documentación oficial del modelo antes de implementar.**
-
-**Los modelos locales no se declaran:** se descubren en `localhost`. Usan el máximo interno de 4096 tokens de salida. Si el modelo admite menos, el servidor corta y la ejecución termina en `output_truncated`, nunca en un texto cortado guardado.
-
-**Impacto en el código** (cuando se apruebe):
-- `models` pasa de una lista de nombres a objetos `{ key, max_output_tokens }`.
-- `catalogs/llm.rs` y `exists()` se adaptan.
-- `list_llm_providers` sigue entregando a la UI solo los nombres de los modelos, así que el frontend no cambia.
-- Añadir más adelante un proveedor con un protocolo existente es solo una entrada en el catálogo.
-
-### 9.3 Protocolos
-
-| Protocolo | Proveedores | Petición | Final y uso |
+| Modelo | Máximo de salida | Fuente | Estado del modelo |
 |---|---|---|---|
-| `anthropic_messages` | `anthropic` | `POST /messages`, `x-api-key`, `anthropic-version`, `system`, `messages`, `max_tokens`, `stream: true` | `content_block_delta` (`text_delta`) aporta texto; `message_delta.stop_reason`: `end_turn`/`stop_sequence` → éxito, `max_tokens` → `output_truncated`, `refusal` → `content_filtered`; uso en `message_start` y `message_delta` |
-| `openai_responses` | `openai` | `POST /responses`, `Authorization: Bearer`, `instructions`, `input`, `max_output_tokens`, `store: false`, `stream: true` | `response.output_text.delta` aporta texto; `response.completed` → éxito con uso; `response.incomplete` (`max_output_tokens` → `output_truncated`, `content_filter` → `content_filtered`); `response.failed` y `error` → error por código |
-| `chat_completions` | `groq`, `ollama`, `lmstudio` | `POST /chat/completions`, `messages` con `system`, `stream: true`, tope de salida; `Bearer` solo en la nube | `choices[].delta.content` aporta texto; `finish_reason` `stop`/`length`/`content_filter`; `[DONE]` cierra; uso si el servidor lo informa |
+| `claude-sonnet-5-5`, `claude-opus-5-5`, `claude-haiku-5-5` | 128 000 (Messages API síncrona, sin cabeceras beta) | [Models overview](https://platform.claude.com/docs/en/about-claude/models/overview) | Activos; retirada no antes de septiembre u octubre de 2027 ([deprecations](https://platform.claude.com/docs/en/about-claude/model-deprecations)) |
+| `gpt-5`, `gpt-5-mini` | 128 000, incluido el razonamiento | [gpt-5](https://developers.openai.com/api/docs/models/gpt-5), [gpt-5-mini](https://developers.openai.com/api/docs/models/gpt-5-mini) | **Obsoletos; se apagan el 2026-12-11.** Reemplazos recomendados: `gpt-6.1-sol` y `gpt-6.1-terra` ([deprecations](https://developers.openai.com/api/docs/deprecations)) |
+| `llama-3.3-70b-versatile` | 32 768 (ventana de 131 072) | [Groq model](https://console.groq.com/docs/model/llama-3.3-70b-versatile) | **Apagado el 2026-08-16** en los planes gratuito y de desarrollo; sigue en contratos empresariales. Reemplazos: `openai/gpt-oss-120b` o `qwen/qwen3.6-27b` ([deprecations](https://console.groq.com/docs/deprecations)) |
 
-**Por verificar antes de implementar (I), sin añadir campos al catálogo:**
-- si Ollama y LM Studio aceptan `max_completion_tokens`, que Groq documenta en lugar de `max_tokens`. Si no lo aceptan, el adaptador usa un condicional directo según la ubicación;
-- si los tres informan el uso en streaming con `stream_options.include_usage`. Si no, los tokens quedan nulos.
+**Problema del catálogo actual, que no es de A8.** El YAML conserva los modelos que ya existen en el código, porque cambiarlos es otra decisión (§16, A8b). Con estos modelos:
+- las ejecuciones de agentes con `gpt-5` o `gpt-5-mini` fallarán con `model_unavailable` desde el 2026-12-11;
+- las de `llama-3.3-70b-versatile` ya fallarían hoy en los planes no empresariales;
+- y como el proveedor y el modelo de un agente no se pueden cambiar (D12), esos agentes quedarían inutilizables.
 
-Se fija con pruebas `wiremock` y se confirma con las pruebas reales opcionales.
+### 9.3 Protocolos (verificados)
 
-**Errores HTTP:**
+| Protocolo | Petición | Texto | Final | Uso de tokens |
+|---|---|---|---|---|
+| `anthropic_messages` (`anthropic`) | `POST /messages`; `Authorization: Bearer <clave>` (la documentación marca `x-api-key` como alternativa heredada); `anthropic-version: 2026-10-21`, fijada en el adaptador; `system`, `messages`, `max_tokens` (obligatorio), `stream: true` | `content_block_delta` con `text_delta` | `message_delta.stop_reason`: `end_turn`/`stop_sequence` → éxito; `max_tokens` y `model_context_window_exceeded` → `output_truncated`; `refusal` → `content_filtered`; `tool_use` y `pause_turn` (sin herramientas, no deberían llegar) → `invalid_response` | Entrada en `message_start.message.usage`; salida **acumulada** en `message_delta.usage` (se toma el último valor) |
+| `openai_responses` (`openai`) | `POST /responses`; `Authorization: Bearer`; `instructions`, `input`, `max_output_tokens` (mínimo 16, incluye el razonamiento), `store: false`, `stream: true` | `response.output_text.delta` (`delta`) | `response.completed` → éxito; `response.incomplete` con `incomplete_details.reason`: `max_output_tokens` → `output_truncated`, `content_filter` → `content_filtered`, otro → `invalid_response`; `response.failed` y `error` → error por `code` | `response.usage` dentro del evento final (deducido del esquema oficial (I)) |
+| `chat_completions` (`groq`, `ollama`, `lmstudio`) | `POST /chat/completions`; `Bearer` solo en la nube; `messages` con `system`; el parámetro `output_tokens_param` del catálogo; `stream: true`; `stream_options: { include_usage: true }` | `choices[].delta.content` | `finish_reason`: `stop` → éxito; `length` → `output_truncated`; `tool_calls` → `invalid_response`. Ninguno de los tres documenta un final de filtro de contenido. `[DONE]` cierra | Ollama y LM Studio (desde 0.3.18): último fragmento con `usage` y `choices` vacío. Groq: no está en su documentación; su SDK oficial lo trae en `usage` o en `x_groq.usage` del último fragmento, así que se leen ambos (I). Si no llega, los tokens quedan nulos |
+
+- **Eventos del stream:** los `ping` de Anthropic reinician la inactividad y no aportan texto, y los eventos desconocidos se ignoran, como pide su documentación.
+- **Errores en el stream:** un evento `error` de tipo `overloaded_error` (equivalente al HTTP 529) → `provider_unavailable`.
+- **Errores HTTP:**
 
 | Código | `error_kind` |
 |---|---|
@@ -347,24 +424,39 @@ Se fija con pruebas `wiremock` y se confirma con las pruebas reales opcionales.
 | 404 de modelo | `model_unavailable` |
 | 408 | `timeout` |
 | 429 | `rate_limited` |
-| 5xx | `provider_unavailable` |
+| 5xx y 529 | `provider_unavailable` |
 | Resto | `provider_rejected` |
 
-- Conexión rechazada en `localhost` → `provider_unavailable`, con el texto «Ollama no está en ejecución» o el de LM Studio.
-- Errores en el cuerpo, como una cuota agotada, se clasifican por su código, nunca por su texto.
+- **Conexión rechazada en `localhost`** → `provider_unavailable`, con el texto «Ollama no está en ejecución» o el de LM Studio.
+- **Errores en el cuerpo** (p. ej. cuota agotada de OpenAI) se clasifican por su código, nunca por su texto.
+- **Pendiente de confirmar con `wiremock` y con las pruebas reales opcionales:** si Groq acepta `stream_options` (su SDK no lo declara) y la forma exacta del fragmento de uso de LM Studio.
 
 ### 9.4 Límites internos (nivel 4)
 
-| Límite | Nube | Local |
-|---|---|---|
-| Tokens de salida | Los del modelo en el catálogo | 4096 |
-| Presupuesto de `BuildPrompt` | 24 000 caracteres y 100 mensajes | 8000 caracteres y 100 mensajes |
-| Conexión / inactividad / duración máxima | 10 s / 45 s / 15 min | 10 s / 120 s / 45 min |
-| Ejecuciones simultáneas | 4 | 1 compartida |
-| L1, texto por respuesta | 256 KiB | 256 KiB |
-| Intentos | 3 | 3 |
+| Límite | Nube | Local | Estado |
+|---|---|---|---|
+| Tokens de salida pedidos | mín(máximo del modelo, **16 000**) | **2048** | Propuesto |
+| Presupuesto de `BuildPrompt` | 24 000 caracteres y 100 mensajes | 8000 caracteres y 100 mensajes | Aprobado |
+| Conexión / inactividad / duración máxima | 10 s / 45 s / 15 min | 10 s / 120 s / 45 min | Aprobado |
+| Ejecuciones simultáneas | 4 | 1 compartida | Aprobado |
+| L1, texto por respuesta | 256 KiB | 256 KiB | Aprobado |
+| Intentos | 3 | 3 | Aprobado |
 
-**Riesgo del presupuesto local.** 8000 caracteres son unos 2000–2700 tokens y caben en las ventanas pequeñas habituales de los servidores locales. Aun así, algunos servidores recortan el prompt en silencio si su ventana configurada es menor (I). Se mide con modelos reales en la primera etapa.
+**Tope de salida en la nube: 16 000.**
+- Se queda muy por debajo de L1 (≈ 64 KiB frente a 256 KiB) y de la duración máxima.
+- En OpenAI deja sitio al razonamiento.
+- Pedir los 128 000 del modelo haría que L1 o la duración máxima cortaran antes que el modelo.
+
+**Tope local: 2048, antes 4096.** Ollama asigna por defecto **4096 tokens de contexto** en equipos con menos de 24 GiB de VRAM, y esa ventana cubre **prompt y respuesta juntos**:
+- 8000 caracteres son unos 2300–2700 tokens;
+- con 4096 de salida, el total superaría la ventana;
+- con 2048, el total queda cerca de 4096.
+
+**Recorte silencioso del lado local:**
+- **Ollama:** cuando el prompt no cabe, Ollama recorta en silencio los mensajes antiguos y conserva el sistema y el último mensaje. La API compatible con OpenAI no permite desactivarlo ni fijar la ventana; solo se cambia con `OLLAMA_CONTEXT_LENGTH`, un Modelfile o el ajuste de la app.
+- **LM Studio:** el comportamiento al desbordar depende de su `contextOverflowPolicy`, cuyo valor por defecto no está documentado (I).
+
+Meelting no puede detectar estos recortes. Se documenta, y la primera etapa mide con modelos reales si 8000 caracteres y 2048 tokens bastan.
 
 ## 10. L1: límite de seguridad de 256 KiB (aprobado)
 
@@ -391,14 +483,19 @@ No se añade ningún flujo temporal. Se usa el mecanismo de credenciales que ya 
 
 - **CI:** siempre `wiremock`; nunca claves ni APIs reales.
 - **Pruebas reales opcionales:** pruebas `#[ignore]` que leen la clave de una variable de entorno (`MEELTING_ANTHROPIC_API_KEY`, `MEELTING_OPENAI_API_KEY`, `MEELTING_GROQ_API_KEY`) y llaman directamente al adaptador. No tocan el keychain ni la app.
-- **Prueba manual en la app**, con `pnpm tauri dev`:
-  1. Abrir las herramientas de desarrollo del webview, disponibles solo en compilaciones de depuración.
+- **Prueba manual en la app. Procedimiento exclusivo de desarrollo**, nunca documentado para usuarios ni disponible en una compilación de producción. Se hace con `pnpm tauri dev`:
+  1. Abrir las herramientas de desarrollo del webview. Solo existen en compilaciones de depuración.
   2. Obtener el id del workspace con `load_session`.
-  3. Invocar el comando existente `save_secret` con el nombre `<workspace_id>/<provider>` y la clave pedida con `prompt()`, para que no quede en el historial de la consola.
-  4. Para retirarla, usar `delete_secret`.
+  3. Invocar el comando existente `save_secret` con el nombre `<workspace_id>/<provider>`.
+     - La clave se pide con `prompt()` dentro de la propia llamada, para que no aparezca en el código escrito en la consola ni en su historial.
+     - No se asigna a variables ni se imprime.
+     - El comando no la devuelve.
+  4. Comprobar el resultado con `secret_last_four`, que solo muestra los 4 últimos caracteres.
+  5. Retirarla con `delete_secret`.
   
-  En macOS también sirve `security add-generic-password -s meelting -a <workspace_id>/<provider> -w`. En Windows y Linux, el formato que usa el crate `keyring` se confirma al implementar (I).
-- Sin clave, un agente de la nube falla con `provider_not_configured`, y los agentes locales funcionan igual.
+  En macOS también sirve `security add-generic-password -s meelting -a <workspace_id>/<provider> -w`: con `-w` al final la pide de forma interactiva y no queda en el historial de la shell. En Windows y Linux, el formato del crate `keyring` se confirma al implementar (I).
+- **Nada del núcleo registra la clave**: ni logs, ni eventos, ni errores (§11).
+- Sin clave, un agente de la nube falla con `provider_not_configured` y los locales funcionan igual.
 
 ## 13. Organización del código
 
@@ -418,30 +515,45 @@ El spike `stream_completion` y su servicio se eliminan en el mismo cambio que lo
 
 ## 14. Pruebas
 
-- **Esquema** (SQLite temporal), una prueba por regla de §2.3:
-  - solicitud y respuesta de otra sala, respuesta de otro agente o del usuario, respuesta reutilizada;
-  - cada `CHECK` y cada índice;
-  - borrar la sala (sin restos), borrar un agente con ejecuciones (`agent_has_activity`) y sin ellas;
-  - los índices de `messages` se crean sobre datos existentes.
-- **Repositorio:** transiciones con guarda; ningún estado final vuelve a `running`; `succeed` sin fila no deja mensaje; expiración de `queued` y `running`.
+- **Esquema** (`cargo test` con SQLite temporal; se portan los 45 casos ya verificados):
+  - cada FK de §2.3 (solicitud y respuesta de otra sala o workspace, respuesta de otro agente o del usuario, agente no participante);
+  - unicidad de `request_message_id`, `response_message_id` y `(room_id, client_request_id)`;
+  - el índice parcial;
+  - cada `CHECK` de estado, error, fechas e intentos;
+  - borrar la sala, también con una ejecución activa (sin restos);
+  - borrar un agente con ejecuciones y sin mensajes (`agent_has_activity`), y sin actividad (se borra);
+  - las migraciones sobre una base con datos.
+- **Repositorio:**
+  - transiciones con guarda;
+  - ningún estado final vuelve a `running`;
+  - `succeed` sin fila no deja mensaje;
+  - la cancelación con otro `workspace_id` no cambia nada;
+  - expiración de `queued` y `running`.
 - **`send_instruction`:**
   - atomicidad: si falla la inserción de la ejecución, tampoco queda el mensaje;
-  - repetición con el mismo id, en serie y en paralelo: un mensaje, una ejecución y una sola llamada al proveedor simulado;
-  - repetición durante, después y tras la expiración;
-  - `client_request_conflict` por agente o cuerpo distintos;
+  - repetición con el mismo id en serie y **en paralelo** (N invocaciones simultáneas): un mensaje, una ejecución y una sola llamada al proveedor simulado;
+  - repetición durante la ejecución (devuelve la instantánea), después del éxito, tras un fallo y tras la expiración, sin reactivar nada;
+  - `client_request_conflict` por agente o por cuerpo distintos;
   - id inválido, `agent_busy`, agente no participante o de otro workspace;
   - la solicitud siempre es del usuario.
-- **Ejecución:**
-  - cancelación idempotente y en carrera con el éxito: nunca dos mensajes ni mensaje cancelado;
+- **Ejecución y planificador:**
+  - cancelación idempotente y en carrera con el éxito: nunca dos mensajes ni mensaje de una cancelada;
+  - cancelar en cola, durante el backoff y durante el stream libera la plaza: la siguiente ejecución arranca;
+  - una ejecución en backoff no ocupa plaza: otra local arranca mientras espera;
+  - durante el backoff el mismo agente sigue ocupado en esa sala (`agent_busy`);
+  - el orden de llegada se respeta, con los reintentos al final de la cola;
+  - 1 plaza local compartida entre Ollama y LM Studio, 4 en la nube, con límites inyectados en las pruebas;
+  - duración máxima contada desde el primer intento, incluidos backoff y espera de plaza, sin más intentos al agotarse;
+  - una espera que no cabe en el presupuesto termina en `timeout`;
   - eventos solo después del commit;
-  - el reintento reinicia el buffer y usa exactamente el mismo contexto aunque lleguen mensajes nuevos o se edite el agente;
-  - L1 corta durante el streaming;
-  - inactividad, duración máxima sin reintento y `retry-after`;
-  - concurrencia: 1 local compartida entre Ollama y LM Studio, 4 en la nube, cancelación en cola.
-- **`BuildPrompt`:** corte en la solicitud, etiquetas, nada de otros agentes como sistema, presupuesto, unión de turnos, primer turno `user`.
+  - el reintento vacía el buffer y reutiliza exactamente el mismo contexto aunque lleguen mensajes nuevos o se edite el agente;
+  - el buffer se borra en cada final, también al eliminar la sala;
+  - L1 corta durante el streaming sin superar 256 KiB;
+  - `get_room` solo devuelve instantáneas de su sala y del workspace actual.
+- **`BuildPrompt`:** corte en la solicitud, etiquetas, nada de otros agentes como sistema, presupuesto que cuenta todo, historial desde el más reciente, `context_too_large` cuando el mínimo no cabe, unión de turnos, primer turno `user`.
 - **Adaptadores con `wiremock`, por protocolo:** texto en orden, cada final, uso, cada código HTTP, stream cortado, JSON inválido, `ping` sin texto hasta la duración máxima, cancelación a mitad del stream.
 - **Reales opcionales:** Ollama o LM Studio; con clave en variable de entorno, cada proveedor en la nube.
-- **Frontend (Vitest):** reutilizar el `client_request_id` al reintentar, texto provisional y su reemplazo, reintento que reinicia el texto, eventos fuera de orden, reabrir la sala con el buffer, cancelar, «En cola», errores por `error_kind`.
+- **Frontend (Vitest):** el mismo `client_request_id` en reintentos automáticos y uno nuevo tras una respuesta; recuperación tras un timeout del IPC; texto provisional y su reemplazo; nuevo intento que reinicia el texto; eventos fuera de orden o recibidos durante la carga; descartar eventos de otras salas; cancelar; «En cola»; errores por `error_kind` y por código de comando.
 - **E2E (`tauri-driver`):** instrucción a un agente con un proveedor simulado.
 
 ## 15. Criterios de aceptación
@@ -450,6 +562,8 @@ Los de [agent-execution.md](../product/agent-execution.md), más:
 - [ ] Con solo Ollama o LM Studio y sin internet, un agente local responde en vivo y la respuesta queda guardada.
 - [ ] Repetir `send_instruction` con el mismo id no crea nada ni llama otra vez al proveedor; con parámetros distintos devuelve `client_request_conflict`.
 - [ ] Una respuesta cortada (proveedor o L1) no crea mensaje y muestra un error traducido.
+- [ ] Si el contexto mínimo no cabe en el presupuesto, la ejecución falla con `context_too_large` sin llamar al proveedor.
+- [ ] Una ejecución en espera de reintento no impide que otra local arranque, y el agente sigue ocupado en su sala.
 - [ ] Una respuesta de más de 4000 caracteres se guarda completa.
 - [ ] Cancelar durante el streaming detiene la petición, no crea mensaje y libera al agente; cancelar dos veces no falla.
 - [ ] Reabrir la sala durante una ejecución muestra el texto del intento actual y sigue en vivo.
@@ -461,41 +575,44 @@ Los de [agent-execution.md](../product/agent-execution.md), más:
 
 ## 16. Decisiones A1–A13
 
-Estados: **Aprobada** (en la revisión del 2026-11-18), **Dirección aprobada** (falta aprobar el detalle descrito aquí), **Pendiente**.
+Estados:
+- **Aprobada:** consta así en la revisión 2 del responsable (2026-11-18).
+- **Pendiente:** falta su aprobación expresa. No se infiere ninguna aprobación.
 
 | # | Decisión recomendada | Justificación | Riesgos | Impacto en AgentRun | Base de datos | Estado |
 |---|---|---|---|---|---|---|
-| A1 | Esquema `agent_runs` de §2.2 con FK compuestas hacia `messages` y `room_agents` | La base impide mensajes de otra sala, respuestas de otro agente y respuestas reutilizadas | El origen del usuario de la solicitud depende del servicio; cambiar los `CHECK` más adelante obliga a copiar la tabla | Es la tabla del motor | Migración `create_agent_runs` | Pendiente (revisión final) |
-| A2 | `send_instruction` con el contrato de §3: id obligatorio, repetición sin efectos, conflicto explícito; `send_message` intacto | Idempotencia real y atómica sin romper el contrato de las salas | La UI debe reutilizar bien el id; se abandona la regla de Rails de generar uno nuevo | Única entrada para crear ejecuciones | Índice `(room_id, client_request_id)` (aprobado) | Dirección aprobada; contrato pendiente |
-| A3 | Buffer temporal en memoria por ejecución, recuperable con `get_room` | Reabrir la sala muestra el progreso sin guardar parciales | Carreras entre la instantánea y los eventos, resueltas con `attempt`/`seq` y el orden de suscripción | Registro de ejecuciones y respuesta de `get_room` | Ninguno | Dirección aprobada; contrato pendiente |
-| A4 | Contexto congelado en el primer `claim`, en memoria; historial hasta la solicitud | Reintentos idénticos; nada de mensajes nuevos | Memoria por ejecución activa (acotada por el presupuesto) | `BuildPrompt` se ejecuta una vez por ejecución | Ninguno | Dirección aprobada; estrategia pendiente |
-| A5 | `cancel_agent_run` idempotente con guarda y token | Cancelar nunca duplica ni deja mensajes | Ninguno relevante | Comando nuevo | Ninguno | Aprobada |
-| A6 | Tres timeouts (conexión 10 s; inactividad 45/120 s; duración máxima 15/45 min sin reintento) | Distingue cuelgues de lentitud y corta flujos infinitos sin impedir modelos lentos | Valores iniciales sin medir | Temporizadores en el bucle | Ninguno | Inactividad aprobada como inicial; duración máxima pendiente |
-| A7 | Expirar `queued` y `running` al arrancar | La cola y el buffer no sobreviven al cierre | Se pierde trabajo en curso al cerrar (documentado) | Servicio de arranque | Ninguno | Aprobada |
-| A8 | `llm.yml` con `protocol`, `base_url` y `max_output_tokens` por modelo; límites internos fuera del catálogo | Separa protocolo, proveedor, modelo y políticas de Meelting | Valores por contrastar con la documentación oficial; cambia la forma de `models` | Selección de adaptador y tope de salida | Ninguno (YAML) | Protocolos aprobados; estructura pendiente |
-| A9 | Semáforos en el núcleo: 1 plaza local compartida por máquina, 4 en la nube | Los locales comparten recursos; la UI no puede garantizar límites | Un proveedor local espera al otro; sin mediciones | Planificador antes del `claim` | Ninguno | Punto de partida aprobado; alcance local pendiente |
-| A10 | Límites diarios fuera del primer corte | Necesitan `settings` | Sin freno de coste diario (solo concurrencia y cancelación) | Ninguno | Ninguno | Aprobada |
-| A11 | Sin `llm_providers_configured`; la pantalla de claves después; pruebas de la nube según §12 | Sin flujos temporales; mismas claves que usará la pantalla | La prueba manual requiere herramientas de desarrollo | Lee el keychain al ejecutar | Ninguno | Pantalla posterior aprobada; estrategia de prueba pendiente |
-| A12 | Eliminar el spike `stream_completion` al sustituirlo | Evita código muerto | Ninguno (la UI no lo usa) | Su código se reutiliza en `chat_completions` | Ninguno | Pendiente |
-| A13 | Índices únicos `messages (id, room_id)` y `messages (id, room_id, agent_id)` | SQLite los exige para las FK compuestas | Dos índices más por mensaje | Habilita la integridad de A1 | Dos migraciones solo de índices | Pendiente (revisión final) |
+| A1 | Esquema `agent_runs` íntegro de §2.2: FK compuestas a `messages` y `room_agents`, `request_message_id` y `response_message_id` únicos, `CHECK` de estado, error, fechas e intentos, e índices | La base impide cruces de sala, agente o workspace y estados incoherentes; 45 casos verificados | El origen del usuario depende del servicio; cambiar un `CHECK` obliga a copiar la tabla; R2 cambiará índices | Tabla del motor | Migración `create_agent_runs` | Enfoque aprobado; **SQL íntegro pendiente de validación** |
+| A1b | `error_kind` nuevo `context_too_large` (incluido en el SQL de A1) | Error controlado cuando el contexto mínimo no cabe (§6), en lugar de un prompt incompleto | Instrucciones largas con modelos locales fallarán: es lo pedido, se explica en la UI | `BuildPrompt` y textos `es`/`en` | Parte del `CHECK` de A1 | **Pendiente** |
+| A2 | `send_instruction` con el contrato de §3: id obligatorio del cliente, repetición sin efectos que devuelve el estado actual, `client_request_conflict`, nuevo intento manual = id nuevo | Idempotencia atómica ante timeouts del IPC; ningún reintento automático crea otra ejecución | Depende de que la UI respete el ciclo de vida del id (con pruebas) | Única entrada para crear ejecuciones | Índice `(room_id, client_request_id)` | Id obligatorio, repetición y conflicto **aprobados**; errores `invalid_client_request_id` y `agent_busy` **pendientes** |
+| A3 | Buffer en memoria por ejecución, acotado por L1, limpio al finalizar o cancelar, vacío en cada intento y recuperable con `get_room` y con la repetición | Progreso visible sin guardar parciales | Carreras con la carga, resueltas por `(attempt, seq)` y la suscripción previa (§5) | Registro de ejecuciones; `get_room` y `send_instruction` devuelven la instantánea | Ninguno | Aprobada |
+| A4 | Contexto congelado en el primer `claim`, reutilizado en los reintentos, con historial hasta la solicitud y presupuesto que lo cuenta todo | Reintentos idénticos y nada de mensajes nuevos | Memoria por ejecución activa (acotada) | `BuildPrompt` corre una vez | Ninguno | Aprobada |
+| A5 | `cancel_agent_run` idempotente, filtrado por workspace en la misma sentencia, que libera plaza, buffer y petición HTTP | Nunca actúa fuera del workspace ni deja mensajes | Ninguno relevante | Comando nuevo | Ninguno | Aprobada |
+| A6 | Conexión 10 s; inactividad 45/120 s; duración máxima 15/45 min desde el primer intento, sumando reintentos y esperas, terminando en `failed/timeout` | Distingue cuelgues, lentitud y flujos infinitos | Valores iniciales, no garantías | Temporizadores en el bucle | Ninguno | Aprobada (valores iniciales) |
+| A7 | Expirar `queued` y `running` al arrancar | La cola y el buffer no sobreviven al cierre | Se pierde el trabajo en curso al cerrar | Servicio de arranque | Ninguno | Aprobada |
+| A8 | Estructura de `llm.yml` de §9: `protocol`, `base_url`, `output_tokens_param` en Chat Completions y `max_output_tokens` documentado por modelo; límites internos fuera del catálogo | Separa los cuatro niveles; evita que Ollama ignore el tope; valores verificados en fuentes oficiales | Cambia la forma de `models` (la UI sigue recibiendo nombres) | Selección de adaptador, parámetro y tope de salida | Ninguno (YAML) | Estructura conceptual aprobada; **YAML íntegro pendiente** |
+| A8b | Qué hacer con los modelos retirados del catálogo: `gpt-5` y `gpt-5-mini` (se apagan el 2026-12-11) y `llama-3.3-70b-versatile` (apagado en planes no empresariales) | Sin esta decisión, esos agentes fallarán con `model_unavailable` y no se pueden reasignar (D12) | Ver §17 | Agentes de OpenAI y Groq | Ninguno | **Pendiente: decisión nueva** |
+| A8c | Topes internos de salida: nube mín(máximo del modelo, 16 000); local 2048 | Coherentes con L1, con la duración máxima y con la ventana de 4096 de Ollama | 2048 puede quedarse corto con modelos locales grandes; se mide | Valor pedido al proveedor | Ninguno | **Pendiente** |
+| A9 | Semáforos en el núcleo: 1 plaza local global en la instancia (Ollama + LM Studio), 4 en la nube; plaza **liberada durante el backoff**; orden de llegada; límites en una estructura inyectable sin UI | Recursos compartidos; la espera no bloquea a otros; el límite por agente y sala sigue vigente | Un reintento vuelve al final de la cola y puede agotar su duración máxima esperando | Planificador | Ninguno | Aprobada (con el ajuste de liberar la plaza) |
+| A10 | Límites diarios fuera del primer corte | Necesitan `settings` | Sin freno de coste diario | Ninguno | Ninguno | Aprobada |
+| A11 | Keychain existente; CI con `wiremock`; pruebas reales con variables de entorno; procedimiento manual solo de desarrollo y sin registrar secretos (§12); sin interfaz temporal | Las claves de ahora valdrán para la pantalla definitiva | Error humano en el procedimiento manual | Lee el keychain al ejecutar | Ninguno | Aprobada |
+| A12 | Eliminar el spike `stream_completion` (comando, servicio y pruebas) al sustituirlo, reutilizando su parser SSE en `chat_completions` | Sin código muerto | Ninguno | Base del adaptador Chat Completions | Ninguno | Aprobada |
+| A13 | Índices únicos `messages (id, room_id)` y `messages (id, room_id, agent_id)` | SQLite los exige para las FK compuestas; no pueden fallar con datos existentes | Dos índices más por mensaje | Habilita A1 | Dos migraciones solo de índices | Enfoque aprobado; **SQL íntegro pendiente de validación** |
 
-**Cubiertas por decisiones anteriores:**
-- D9: cinco proveedores y tres protocolos.
-- D10: sin límite de 4000 caracteres para los agentes, respuesta cortada sin mensaje y sin cambios de columnas en `messages`.
-- D11: sin objetivo de sala.
-- D12: proveedor y modelo del agente fijos.
-- D13: voz fuera del alcance.
-- L1: aprobada.
+**Errores de la UI:**
+- **Aprobados:** `client_request_conflict` y `agent_has_activity`.
+- **Pendientes:** `invalid_client_request_id`, `agent_busy` y `context_too_large`.
+
+**Cubiertas por decisiones anteriores:** D9 (proveedores), D10 (4000 caracteres solo para el usuario), D11 (sin objetivo de sala), D12 (proveedor y modelo fijos), D13 (voz fuera), D14 (dirección de `AgentRun`) y D15 (L1).
 
 ## 17. Riesgos pendientes
 
 | Riesgo | Mitigación | Evidencia necesaria |
 |---|---|---|
+| Modelos del catálogo retirados o a punto de retirarse (A8b) | Decidir antes de implementar: actualizar el catálogo y revisar D12 | Decisión del responsable; máximos de los reemplazos verificados |
 | Solicitud que no es del usuario | Solo `send_instruction` crea ejecuciones; prueba dedicada | Prueba del servicio |
-| Parámetros de los servidores compatibles (tope de salida, uso en streaming) | Verificación previa y `wiremock` | Documentación oficial y prueba real opcional |
-| Valores de `max_output_tokens` del catálogo | Contraste con la documentación oficial de cada modelo | Revisión antes de editar `llm.yml` |
-| Presupuesto local y recorte silencioso del servidor | 8000 caracteres conservadores | Medición con modelos reales |
-| Timeouts y duración máxima | Valores iniciales | Medición en la primera etapa |
-| Una plaza local demasiado restrictiva | Empezar conservador | Uso real con dos agentes locales |
-| Cierre entre la respuesta del proveedor y el commit | Documentado como limitación | — |
-| R2 cambiará índices de `agent_runs` y P7 la reconstruiría | Migraciones de índices; «pasar» decidido aparte | Decisiones de R2 |
+| Groq: `stream_options` y lugar del uso | Leer `usage` y `x_groq.usage`; tokens nulos si no llegan | `wiremock` y prueba real opcional |
+| Recorte silencioso del contexto en Ollama y política desconocida de LM Studio | Presupuesto local conservador y tope de salida de 2048 | Medición con modelos reales |
+| Timeouts, duración máxima y plaza local | Valores iniciales inyectables | Medición en la primera etapa |
+| Un reintento que espera plaza y agota su duración máxima | Documentado; el usuario ve `timeout` | Prueba del planificador |
+| Cierre entre la respuesta del proveedor y el commit | Limitación documentada | — |
+| Evolución a R2 (varias ejecuciones por intervención) | Propuesta propia de índices, contrato y autorización (§2.3) | Decisiones de R2 |
