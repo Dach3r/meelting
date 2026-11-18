@@ -1,4 +1,4 @@
-use crate::domain::team::{Agent, AgentDraft};
+use crate::domain::team::{Agent, AgentDetail, AgentDraft, AgentEdit};
 use sqlx::SqliteExecutor;
 
 pub async fn list<'e>(
@@ -45,6 +45,70 @@ pub async fn insert<'e>(
     .execute(executor)
     .await?;
     Ok(())
+}
+
+type DetailRow = (
+    String,
+    String,
+    Option<String>,
+    String,
+    String,
+    String,
+    String,
+    String,
+    String,
+);
+
+pub async fn get<'e>(
+    executor: impl SqliteExecutor<'e>,
+    workspace_id: &str,
+    id: &str,
+) -> Result<Option<AgentDetail>, sqlx::Error> {
+    let row: Option<DetailRow> = sqlx::query_as(
+        "SELECT id, team_id, template_key, name, role, description, instructions, provider, model \
+         FROM agents WHERE id = ? AND workspace_id = ?",
+    )
+    .bind(id)
+    .bind(workspace_id)
+    .fetch_optional(executor)
+    .await?;
+    Ok(row.map(
+        |(id, team_id, template_key, name, role, description, instructions, provider, model)| {
+            AgentDetail {
+                id,
+                team_id,
+                template_key,
+                name,
+                role,
+                description,
+                instructions,
+                provider,
+                model,
+            }
+        },
+    ))
+}
+
+pub async fn update<'e>(
+    executor: impl SqliteExecutor<'e>,
+    workspace_id: &str,
+    id: &str,
+    edit: &AgentEdit,
+) -> Result<bool, sqlx::Error> {
+    let result = sqlx::query(
+        "UPDATE agents SET team_id = ?, name = ?, role = ?, description = ?, instructions = ?, \
+         updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ? AND workspace_id = ?",
+    )
+    .bind(&edit.team_id)
+    .bind(&edit.name)
+    .bind(&edit.role)
+    .bind(&edit.description)
+    .bind(&edit.instructions)
+    .bind(id)
+    .bind(workspace_id)
+    .execute(executor)
+    .await?;
+    Ok(result.rows_affected() > 0)
 }
 
 #[cfg(test)]
@@ -139,5 +203,58 @@ mod tests {
                 .await
                 .unwrap();
         assert_eq!(template_key.as_deref(), Some("product_owner"));
+    }
+
+    #[tokio::test]
+    async fn updates_the_editable_fields_and_keeps_the_engine() {
+        let (pool, _dir) = open_for_test().await;
+        for sql in [
+            "INSERT INTO workspaces VALUES ('w1', 'A', 'x', 'x')",
+            "INSERT INTO teams VALUES ('t1', 'w1', 'General', 'x', 'x'), ('t2', 'w1', 'Other', 'x', 'x')",
+            "INSERT INTO agents VALUES ('a1', 'w1', 't1', 'qa_engineer', 'Ana', 'QA', '', '', 'openai', 'gpt', 'x', 'x')",
+        ] {
+            sqlx::query(sql).execute(&pool).await.unwrap();
+        }
+        let edit = AgentEdit {
+            team_id: "t2".into(),
+            name: "Bea".into(),
+            role: "Developer".into(),
+            description: "Writes code".into(),
+            instructions: "Be careful".into(),
+        };
+
+        assert!(update(&pool, "w1", "a1", &edit).await.unwrap());
+
+        let agent = get(&pool, "w1", "a1").await.unwrap().unwrap();
+        assert_eq!(agent.team_id, "t2");
+        assert_eq!(agent.name, "Bea");
+        assert_eq!(agent.instructions, "Be careful");
+        assert_eq!(agent.template_key.as_deref(), Some("qa_engineer"));
+        assert_eq!(
+            (agent.provider.as_str(), agent.model.as_str()),
+            ("openai", "gpt")
+        );
+    }
+
+    #[tokio::test]
+    async fn does_not_touch_agents_of_another_workspace() {
+        let (pool, _dir) = open_for_test().await;
+        for sql in [
+            "INSERT INTO workspaces VALUES ('w1', 'A', 'x', 'x'), ('w2', 'B', 'x', 'x')",
+            "INSERT INTO teams VALUES ('t2', 'w2', 'Other', 'x', 'x')",
+            "INSERT INTO agents VALUES ('a2', 'w2', 't2', NULL, 'Bob', 'QA', '', '', 'openai', 'gpt', 'x', 'x')",
+        ] {
+            sqlx::query(sql).execute(&pool).await.unwrap();
+        }
+        let edit = AgentEdit {
+            team_id: "t2".into(),
+            name: "Hacked".into(),
+            role: "QA".into(),
+            description: String::new(),
+            instructions: String::new(),
+        };
+
+        assert_eq!(get(&pool, "w1", "a2").await.unwrap(), None);
+        assert!(!update(&pool, "w1", "a2", &edit).await.unwrap());
     }
 }

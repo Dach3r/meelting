@@ -9,6 +9,19 @@ pub struct Agent {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct AgentDetail {
+    pub id: String,
+    pub team_id: String,
+    pub template_key: Option<String>,
+    pub name: String,
+    pub role: String,
+    pub description: String,
+    pub instructions: String,
+    pub provider: String,
+    pub model: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct Team {
     pub id: String,
     pub name: String,
@@ -43,14 +56,50 @@ impl AgentDraft {
             provider: self.provider.trim().to_string(),
             model: self.model.trim().to_string(),
         };
-        let valid = (1..=TEXT_MAX_CHARS).contains(&draft.name.chars().count())
-            && (1..=TEXT_MAX_CHARS).contains(&draft.role.chars().count())
-            && draft.description.chars().count() <= DESCRIPTION_MAX_CHARS
-            && draft.instructions.chars().count() <= INSTRUCTIONS_MAX_CHARS
-            && !draft.provider.is_empty()
+        let valid = identity_is_valid(
+            &draft.name,
+            &draft.role,
+            &draft.description,
+            &draft.instructions,
+        ) && !draft.provider.is_empty()
             && !draft.model.is_empty();
         valid.then_some(draft)
     }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+pub struct AgentEdit {
+    pub team_id: String,
+    pub name: String,
+    pub role: String,
+    pub description: String,
+    pub instructions: String,
+}
+
+impl AgentEdit {
+    pub fn normalize(self) -> Option<Self> {
+        let edit = Self {
+            team_id: self.team_id,
+            name: self.name.trim().to_string(),
+            role: self.role.trim().to_string(),
+            description: self.description.trim().to_string(),
+            instructions: self.instructions.trim().to_string(),
+        };
+        identity_is_valid(
+            &edit.name,
+            &edit.role,
+            &edit.description,
+            &edit.instructions,
+        )
+        .then_some(edit)
+    }
+}
+
+fn identity_is_valid(name: &str, role: &str, description: &str, instructions: &str) -> bool {
+    (1..=TEXT_MAX_CHARS).contains(&name.chars().count())
+        && (1..=TEXT_MAX_CHARS).contains(&role.chars().count())
+        && description.chars().count() <= DESCRIPTION_MAX_CHARS
+        && instructions.chars().count() <= INSTRUCTIONS_MAX_CHARS
 }
 
 #[cfg(test)]
@@ -120,6 +169,27 @@ mod tests {
         assert_eq!(long_name.normalize(), None);
         assert_eq!(long_description.normalize(), None);
         assert_eq!(long_instructions.normalize(), None);
+    }
+
+    #[test]
+    fn normalizes_an_edit_with_the_same_limits() {
+        let edit = |name: &str, description: String| AgentEdit {
+            team_id: "t1".into(),
+            name: name.into(),
+            role: "Developer".into(),
+            description,
+            instructions: String::new(),
+        };
+
+        assert_eq!(
+            edit("  Ana ", String::new()).normalize().unwrap().name,
+            "Ana"
+        );
+        assert_eq!(edit(" ", String::new()).normalize(), None);
+        assert_eq!(
+            edit("Ana", "a".repeat(DESCRIPTION_MAX_CHARS + 1)).normalize(),
+            None
+        );
     }
 
     #[test]

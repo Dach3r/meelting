@@ -22,9 +22,8 @@ export function OrgChart({ teams, zoom, onNewTeam, onNewAgent }: Props) {
     return { selected: selectedId === id, onSelect: () => setSelectedId(selectedId === id ? null : id) };
   }
 
-  const [drawerAgentId, setDrawerAgentId] = useState<string | null>(null);
-  const drawerTeam = teams.find((team) => team.agents.some((agent) => agent.id === drawerAgentId));
-  const drawerAgent = drawerTeam?.agents.find((agent) => agent.id === drawerAgentId);
+  const drawerTeam = teams.find((team) => team.agents.some((agent) => agent.id === selectedId));
+  const drawerAgent = drawerTeam?.agents.find((agent) => agent.id === selectedId);
 
   function toggle(id: string) {
     const next = new Set(collapsed);
@@ -36,7 +35,7 @@ export function OrgChart({ teams, zoom, onNewTeam, onNewAgent }: Props) {
     <>
       <div
         data-testid="board"
-        onClick={() => setSelectedId(null)}
+        onClick={() => !drawerAgent && setSelectedId(null)}
         className="absolute inset-0 flex overflow-auto"
       >
         <div style={{ zoom }} className="m-auto flex w-max flex-col items-center px-16 pb-40 pt-20">
@@ -77,11 +76,7 @@ export function OrgChart({ teams, zoom, onNewTeam, onNewAgent }: Props) {
                               seed={agent.id}
                               name={agent.name}
                               role={agent.role}
-                              selected={selectedId === agent.id}
-                              onSelect={() => {
-                                selection(agent.id).onSelect();
-                                setDrawerAgentId(agent.id);
-                              }}
+                              {...selection(agent.id)}
                             />
                           </li>
                         ))}
@@ -100,7 +95,7 @@ export function OrgChart({ teams, zoom, onNewTeam, onNewAgent }: Props) {
           name={drawerAgent.name}
           role={drawerAgent.role}
           teamName={drawerTeam.name}
-          onClose={() => setDrawerAgentId(null)}
+          onClose={() => setSelectedId(null)}
         />
       )}
     </>
