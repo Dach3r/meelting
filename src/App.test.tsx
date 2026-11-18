@@ -295,14 +295,14 @@ describe("workspace shell", () => {
     expect(zoomOut).toBeDisabled();
   });
 
-  it("selects a card on the board and clears the selection from the background", async () => {
+  it("selects the root card and clears the selection from the background", async () => {
     invokeMock.mockImplementation(async (command) =>
       command === "list_teams" ? [{ id: "t1", name: "General", agents: [] }] : session({ locale: "en" }),
     );
     const user = userEvent.setup();
     render(<App />);
 
-    const card = await screen.findByRole("button", { name: "General" });
+    const card = await screen.findByRole("button", { name: "You" });
     expect(card).toHaveAttribute("aria-pressed", "false");
     await user.click(card);
     expect(card).toHaveAttribute("aria-pressed", "true");
@@ -310,6 +310,27 @@ describe("workspace shell", () => {
     expect(card).toHaveAttribute("aria-pressed", "false");
     await user.click(card);
     await user.click(card);
+    expect(card).toHaveAttribute("aria-pressed", "false");
+  });
+
+  it("shows the selected team in a drawer with its agent count and hire action", async () => {
+    invokeMock.mockImplementation(async (command) =>
+      command === "list_teams"
+        ? [{ id: "t1", name: "General", agents: [{ id: "a1", team_id: "t1", name: "Ada", role: "Backend dev" }] }]
+        : session({ locale: "en" }),
+    );
+    const user = userEvent.setup();
+    render(<App />);
+
+    expect(screen.queryByRole("complementary", { name: "General" })).toBeNull();
+    const card = await screen.findByRole("button", { name: "General" });
+    await user.click(card);
+    const drawer = screen.getByRole("complementary", { name: "General" });
+    expect(within(drawer).getByText("Team")).toBeInTheDocument();
+    expect(within(drawer).getByText("1")).toBeInTheDocument();
+    expect(within(drawer).getByRole("button", { name: "Hire agent" })).toBeInTheDocument();
+    await user.click(within(drawer).getByRole("button", { name: "Close" }));
+    expect(screen.queryByRole("complementary", { name: "General" })).toBeNull();
     expect(card).toHaveAttribute("aria-pressed", "false");
   });
 

@@ -1,17 +1,15 @@
-import { Briefcase, Pencil, Trash2, Users, X } from "lucide-react";
+import { X, type LucideIcon } from "lucide-react";
+import type { ReactNode } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
 import { Avatar, hueOf } from "../atoms/Avatar";
-import { Button } from "../atoms/Button";
 
-type Props = { seed: string; name: string; role: string; teamName: string; onEdit: () => void; onDelete: () => void; onClose: () => void };
+type Row = { Icon: LucideIcon; label: string; value: string };
 
-export function AgentDrawer({ seed, name, role, teamName, onEdit, onDelete, onClose }: Props) {
+type Props = { seed: string; name: string; subtitle: string; rows: Row[]; actions: ReactNode; onClose: () => void };
+
+export function OrgDrawer({ seed, name, subtitle, rows, actions, onClose }: Props) {
   const { t } = useI18n();
   const hue = hueOf(seed);
-  const rows = [
-    { Icon: Users, label: t("teams.agent.team"), value: teamName },
-    { Icon: Briefcase, label: t("teams.agent.role"), value: role },
-  ];
   return (
     <aside
       aria-label={name}
@@ -36,7 +34,7 @@ export function AgentDrawer({ seed, name, role, teamName, onEdit, onDelete, onCl
           <Avatar seed={seed} label={name} className="relative size-20 rounded-full text-3xl ring-4 ring-surface" />
           <div className="min-w-0 leading-tight">
             <h3 className="truncate text-xl font-bold tracking-tight text-ink">{name}</h3>
-            <p className="mt-1 truncate text-sm font-medium text-muted">{role}</p>
+            <p className="mt-1 truncate text-sm font-medium text-muted">{subtitle}</p>
           </div>
         </div>
         <dl className="grid gap-2">
@@ -52,16 +50,7 @@ export function AgentDrawer({ seed, name, role, teamName, onEdit, onDelete, onCl
             </div>
           ))}
         </dl>
-        <div className="mt-auto grid gap-2">
-          <Button type="button" size="pill" onClick={onEdit}>
-            <Pencil aria-hidden className="size-4" />
-            {t("teams.agent.edit")}
-          </Button>
-          <Button type="button" variant="danger" size="pill" onClick={onDelete}>
-            <Trash2 aria-hidden className="size-4" />
-            {t("teams.agent.delete")}
-          </Button>
-        </div>
+        <div className="mt-auto grid gap-2">{actions}</div>
       </div>
     </aside>
   );

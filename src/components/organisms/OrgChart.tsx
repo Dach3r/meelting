@@ -1,7 +1,9 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
 import type { Team } from "../../hooks/useTeams";
-import { AgentDrawer } from "../molecules/AgentDrawer";
+import { Briefcase, Pencil, Trash2, UserPlus, Users } from "lucide-react";
+import { Button } from "../atoms/Button";
+import { OrgDrawer } from "../molecules/OrgDrawer";
 import { OrgAgentCard } from "../molecules/OrgAgentCard";
 import { OrgCard } from "../molecules/OrgCard";
 import { OrgNode } from "../molecules/OrgNode";
@@ -68,8 +70,9 @@ export function OrgChart({ teams, zoom, onNewTeam, onNewAgent, onEditAgent, onDe
     return { selected: selectedId === id, onSelect: () => setSelectedId(selectedId === id ? null : id) };
   }
 
-  const drawerTeam = teams.find((team) => team.agents.some((agent) => agent.id === selectedId));
+  const drawerTeam = teams.find((team) => team.id === selectedId || team.agents.some((agent) => agent.id === selectedId));
   const drawerAgent = drawerTeam?.agents.find((agent) => agent.id === selectedId);
+  const drawerOpen = Boolean(drawerTeam);
 
   const edges: Edge[] = [];
   if (!collapsed.has(rootId)) {
@@ -111,7 +114,7 @@ export function OrgChart({ teams, zoom, onNewTeam, onNewAgent, onEditAgent, onDe
     <>
       <div
         data-testid="board"
-        onClick={() => !drawerAgent && setSelectedId(null)}
+        onClick={() => !drawerOpen && setSelectedId(null)}
         className="absolute inset-0 flex overflow-auto"
       >
         <div ref={content} style={{ zoom }} className="relative m-auto flex w-max flex-col items-center px-16 pb-40 pt-20">
@@ -189,13 +192,41 @@ export function OrgChart({ teams, zoom, onNewTeam, onNewAgent, onEditAgent, onDe
         </div>
       </div>
       {drawerTeam && drawerAgent && (
-        <AgentDrawer
+        <OrgDrawer
           seed={drawerAgent.id}
           name={drawerAgent.name}
-          role={drawerAgent.role}
-          teamName={drawerTeam.name}
-          onEdit={() => onEditAgent(drawerAgent.id)}
-          onDelete={() => onDeleteAgent(drawerAgent.id)}
+          subtitle={drawerAgent.role}
+          rows={[
+            { Icon: Users, label: t("teams.agent.team"), value: drawerTeam.name },
+            { Icon: Briefcase, label: t("teams.agent.role"), value: drawerAgent.role },
+          ]}
+          actions={
+            <>
+              <Button type="button" size="pill" onClick={() => onEditAgent(drawerAgent.id)}>
+                <Pencil aria-hidden className="size-4" />
+                {t("teams.agent.edit")}
+              </Button>
+              <Button type="button" variant="danger" size="pill" onClick={() => onDeleteAgent(drawerAgent.id)}>
+                <Trash2 aria-hidden className="size-4" />
+                {t("teams.agent.delete")}
+              </Button>
+            </>
+          }
+          onClose={() => setSelectedId(null)}
+        />
+      )}
+      {drawerTeam && !drawerAgent && (
+        <OrgDrawer
+          seed={drawerTeam.id}
+          name={drawerTeam.name}
+          subtitle={t("teams.chart.team")}
+          rows={[{ Icon: Users, label: t("teams.chart.agents"), value: String(drawerTeam.agents.length) }]}
+          actions={
+            <Button type="button" size="pill" onClick={() => onNewAgent(drawerTeam.id)}>
+              <UserPlus aria-hidden className="size-4" />
+              {t("teams.hireAgent")}
+            </Button>
+          }
           onClose={() => setSelectedId(null)}
         />
       )}
