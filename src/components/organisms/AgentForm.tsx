@@ -79,7 +79,7 @@ export function AgentForm({ team, busy, errorMessage, onSubmit, onCancel }: Prop
           ))}
         </ol>
       </div>
-      <div className="flex flex-col gap-10 p-6 sm:p-10">
+      <div className="flex flex-col gap-10 p-6 sm:px-10 sm:pt-10 sm:pb-6">
         <div className="grid gap-2">
           <h3 className="text-2xl font-bold text-ink">{t(`teams.agent.${current}Title`)}</h3>
           <p className="text-sm text-muted">{t(`teams.agent.${current}Subtitle`)}</p>
