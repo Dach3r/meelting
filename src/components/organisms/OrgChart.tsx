@@ -2,6 +2,7 @@ import { useLayoutEffect, useRef, useState } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
 import type { Team } from "../../hooks/useTeams";
 import { Briefcase, Pencil, Trash2, UserPlus, Users } from "lucide-react";
+import { Avatar } from "../atoms/Avatar";
 import { Button } from "../atoms/Button";
 import { OrgDrawer } from "../molecules/OrgDrawer";
 import { OrgAgentCard } from "../molecules/OrgAgentCard";
@@ -228,7 +229,27 @@ export function OrgChart({ teams, zoom, onNewTeam, onNewAgent, onEditAgent, onDe
             </Button>
           }
           onClose={() => setSelectedId(null)}
-        />
+        >
+          {drawerTeam.agents.length > 0 && (
+            <ul aria-label={t("teams.chart.agents")} className="grid max-h-56 gap-1 overflow-y-auto overscroll-contain">
+              {drawerTeam.agents.map((agent) => (
+                <li key={agent.id}>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedId(agent.id)}
+                    className="flex w-full cursor-pointer items-center gap-3 rounded-xl p-2 text-left transition-colors hover:bg-hi focus-visible:outline-2 focus-visible:outline-ink"
+                  >
+                    <Avatar seed={agent.id} label={agent.name} className="size-8 shrink-0 rounded-full text-xs" />
+                    <span className="min-w-0 leading-tight">
+                      <span className="block truncate text-sm font-semibold text-ink">{agent.name}</span>
+                      <span className="block truncate text-xs text-muted">{agent.role}</span>
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </OrgDrawer>
       )}
     </>
   );

@@ -5,9 +5,9 @@ import { Avatar, hueOf } from "../atoms/Avatar";
 
 type Row = { Icon: LucideIcon; label: string; value: string };
 
-type Props = { seed: string; name: string; subtitle: string; rows: Row[]; actions: ReactNode; onClose: () => void };
+type Props = { seed: string; name: string; subtitle: string; rows: Row[]; children?: ReactNode; actions: ReactNode; onClose: () => void };
 
-export function OrgDrawer({ seed, name, subtitle, rows, actions, onClose }: Props) {
+export function OrgDrawer({ seed, name, subtitle, rows, children, actions, onClose }: Props) {
   const { t } = useI18n();
   const hue = hueOf(seed);
   return (
@@ -50,6 +50,7 @@ export function OrgDrawer({ seed, name, subtitle, rows, actions, onClose }: Prop
             </div>
           ))}
         </dl>
+        {children}
         <div className="mt-auto grid gap-2">{actions}</div>
       </div>
     </aside>

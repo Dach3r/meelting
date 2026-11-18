@@ -334,6 +334,33 @@ describe("workspace shell", () => {
     expect(card).toHaveAttribute("aria-pressed", "false");
   });
 
+  it("lists the team agents in its drawer and opens one from the list", async () => {
+    invokeMock.mockImplementation(async (command) =>
+      command === "list_teams"
+        ? [
+            {
+              id: "t1",
+              name: "General",
+              agents: [
+                { id: "a1", team_id: "t1", name: "Ada", role: "Backend dev" },
+                { id: "a2", team_id: "t1", name: "Bea", role: "QA engineer" },
+              ],
+            },
+          ]
+        : session({ locale: "en" }),
+    );
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "General" }));
+    const list = within(screen.getByRole("complementary", { name: "General" })).getByRole("list", { name: "Agents" });
+    expect(within(list).getAllByRole("listitem")).toHaveLength(2);
+    await user.click(within(list).getByRole("button", { name: /Bea/ }));
+
+    const drawer = screen.getByRole("complementary", { name: "Bea" });
+    expect(within(drawer).getByRole("button", { name: "Edit agent" })).toBeInTheDocument();
+  });
+
   describe("dragging cards", () => {
     function mockTeams() {
       invokeMock.mockImplementation(async (command) =>
