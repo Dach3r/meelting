@@ -10,6 +10,7 @@ const invokeMock = vi.mocked(invoke);
 
 const acme = { id: "1", name: "Acme" };
 const globex = { id: "2", name: "Globex" };
+const roles = ["Product Owner", "Software Developer", "QA Engineer"];
 
 function session(overrides = {}) {
   return {
@@ -376,6 +377,7 @@ describe("workspace shell", () => {
     invokeMock.mockImplementation(async (command) => {
       if (command === "list_teams") return teams;
       if (command === "list_agent_templates") return [];
+      if (command === "list_agent_roles") return roles;
       if (command === "create_agent") return withAgent;
       return session({ locale: "en" });
     });
@@ -390,7 +392,7 @@ describe("workspace shell", () => {
     const next = screen.getByRole("button", { name: "Continue" });
     expect(next).toBeDisabled();
     await user.type(screen.getByLabelText("Name"), "Ana");
-    await user.type(screen.getByLabelText("Role"), "Developer");
+    await user.selectOptions(screen.getByLabelText("Role"), "Software Developer");
     await user.click(next);
     expect(screen.getByRole("button", { name: "Continue" })).toBeDisabled();
     await user.type(screen.getByLabelText("Provider"), "openai");
@@ -403,7 +405,7 @@ describe("workspace shell", () => {
         team_id: "t1",
         template_key: null,
         name: "Ana",
-        role: "Developer",
+        role: "Software Developer",
         description: "",
         instructions: "",
         provider: "openai",
@@ -439,6 +441,7 @@ describe("agent catalog", () => {
     invokeMock.mockImplementation(async (command) => {
       if (command === "list_teams") return [team];
       if (command === "list_agent_templates") return templates;
+      if (command === "list_agent_roles") return roles;
       if (command === "create_agent") return createAgent();
       return session({ locale: "en" });
     });

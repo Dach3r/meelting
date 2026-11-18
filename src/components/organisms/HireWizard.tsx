@@ -4,11 +4,13 @@ import type { AgentTemplate } from "../../hooks/useAgentTemplates";
 import type { AgentDraft, Team } from "../../hooks/useTeams";
 import { Button } from "../atoms/Button";
 import { Field } from "../atoms/Field";
+import { SelectField } from "../atoms/SelectField";
 import { Alert } from "../molecules/Alert";
 
 type Props = {
   team: Team;
   template: AgentTemplate;
+  roles: string[];
   busy: boolean;
   errorMessage: string | null;
   onSubmit: (draft: AgentDraft) => Promise<boolean>;
@@ -17,7 +19,7 @@ type Props = {
 
 const steps = ["name", "role", "description", "instructions", "engine"] as const;
 
-export function HireWizard({ team, template, busy, errorMessage, onSubmit, onCancel }: Props) {
+export function HireWizard({ team, template, roles, busy, errorMessage, onSubmit, onCancel }: Props) {
   const { t } = useI18n();
   const [step, setStep] = useState(0);
   const [draft, setDraft] = useState<AgentDraft>({
@@ -63,7 +65,14 @@ export function HireWizard({ team, template, busy, errorMessage, onSubmit, onCan
           <Field label={t("teams.agent.name")} value={draft.name} onChange={set("name")} maxLength={80} autoFocus />
         )}
         {current === "role" && (
-          <Field label={t("teams.agent.role")} value={draft.role} onChange={set("role")} maxLength={80} autoFocus />
+          <SelectField
+            label={t("teams.agent.role")}
+            placeholder={t("teams.agent.rolePlaceholder")}
+            value={draft.role}
+            options={roles}
+            onChange={set("role")}
+            autoFocus
+          />
         )}
         {current === "description" && (
           <Field

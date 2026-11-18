@@ -9,7 +9,7 @@ type Props = Omit<InputHTMLAttributes<HTMLInputElement>, "onChange"> & {
   icon?: LucideIcon;
 };
 
-const classes =
+export const fieldClasses =
   "w-full min-w-0 rounded-xl bg-raised px-4 py-4 text-base text-ink outline-none transition-colors placeholder:text-muted focus:bg-hi";
 
 export function Field({ label, value, onChange, multiline = false, icon: Icon, ...rest }: Props) {
@@ -26,7 +26,7 @@ export function Field({ label, value, onChange, multiline = false, icon: Icon, .
           onChange={(event) => onChange(event.target.value)}
           rows={4}
           maxLength={rest.maxLength}
-          className={classes}
+          className={fieldClasses}
         />
       ) : (
         <div className="relative">
@@ -35,7 +35,7 @@ export function Field({ label, value, onChange, multiline = false, icon: Icon, .
             id={id}
             value={value}
             onChange={(event) => onChange(event.target.value)}
-            className={`${classes} ${Icon ? "pl-12" : ""}`}
+            className={`${fieldClasses} ${Icon ? "pl-12" : ""}`}
             {...rest}
           />
         </div>

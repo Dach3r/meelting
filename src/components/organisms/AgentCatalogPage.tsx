@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
+import { useAgentRoles } from "../../hooks/useAgentRoles";
 import { useAgentTemplates, type AgentTemplate } from "../../hooks/useAgentTemplates";
 import type { AgentDraft, Team } from "../../hooks/useTeams";
 import { translateError } from "../../i18n/translate";
@@ -25,6 +26,7 @@ type Dialog = { kind: "detail" | "hire"; template: AgentTemplate } | { kind: "cu
 export function AgentCatalogPage({ team, busy, actionErrorMessage, onCreateAgent, onClearActionError, onBack }: Props) {
   const { t, locale } = useI18n();
   const { templates, errorKey } = useAgentTemplates(locale);
+  const roles = useAgentRoles();
   const [dialog, setDialog] = useState<Dialog>(null);
 
   function open(next: NonNullable<Dialog>) {
@@ -104,6 +106,7 @@ export function AgentCatalogPage({ team, busy, actionErrorMessage, onCreateAgent
             key={dialog.template.key}
             team={team}
             template={dialog.template}
+            roles={roles}
             busy={busy}
             errorMessage={actionErrorMessage}
             onSubmit={create}
@@ -113,7 +116,7 @@ export function AgentCatalogPage({ team, busy, actionErrorMessage, onCreateAgent
       )}
       {dialog?.kind === "custom" && (
         <Modal title={`${t("teams.newAgent")} · ${team.name}`} onClose={close} bare>
-          <AgentForm team={team} busy={busy} errorMessage={actionErrorMessage} onSubmit={create} onCancel={close} />
+          <AgentForm team={team} roles={roles} busy={busy} errorMessage={actionErrorMessage} onSubmit={create} onCancel={close} />
         </Modal>
       )}
     </div>

@@ -44,6 +44,7 @@
       "behavior": "Instrucciones",
       "name": "Nombre",
       "role": "Rol",
+      "rolePlaceholder": "Selecciona un rol",
       "provider": "Proveedor",
       "model": "Modelo",
       "description": "Descripción",

@@ -37,7 +37,7 @@
 
 **Equipos:** se crean, se renombran y se eliminan (solo sin agentes). Cada workspace nace con un equipo «General». Un agente se mueve de equipo desde su edición o arrastrando su tarjeta.
 
-**Agente personalizado:** desde Equipos, «Crear agente personalizado» abre un formulario de tres pasos (Identidad, Modelo, Instrucciones) y crea un agente con `template_key` nulo.
+**Agente personalizado:** desde Equipos, «Crear agente personalizado» abre un formulario de tres pasos (Identidad, Modelo, Instrucciones) y crea un agente con `template_key` nulo. El rol se elige de una lista cerrada de roles predefinidos (`catalogs/agent_roles.yml`); el núcleo rechaza cualquier rol que no esté en ella, también al contratar desde una plantilla.
 
 **Idioma:** al contratar se copian los valores del idioma activo; el agente guardado no cambia si luego cambia el idioma de la interfaz.
 

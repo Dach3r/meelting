@@ -4,10 +4,12 @@ import { useI18n } from "../../i18n/I18nProvider";
 import type { AgentDraft, Team } from "../../hooks/useTeams";
 import { Button } from "../atoms/Button";
 import { Field } from "../atoms/Field";
+import { SelectField } from "../atoms/SelectField";
 import { Alert } from "../molecules/Alert";
 
 type Props = {
   team: Team;
+  roles: string[];
   busy: boolean;
   errorMessage: string | null;
   onSubmit: (draft: AgentDraft) => Promise<boolean>;
@@ -16,7 +18,7 @@ type Props = {
 
 const steps = ["identity", "engine", "behavior"] as const;
 
-export function AgentForm({ team, busy, errorMessage, onSubmit, onCancel }: Props) {
+export function AgentForm({ team, roles, busy, errorMessage, onSubmit, onCancel }: Props) {
   const { t } = useI18n();
   const [step, setStep] = useState(0);
   const [draft, setDraft] = useState<AgentDraft>({
@@ -88,7 +90,14 @@ export function AgentForm({ team, busy, errorMessage, onSubmit, onCancel }: Prop
           {current === "identity" && (
             <>
               <Field label={t("teams.agent.name")} value={draft.name} onChange={set("name")} maxLength={80} icon={User} autoFocus />
-              <Field label={t("teams.agent.role")} value={draft.role} onChange={set("role")} maxLength={80} icon={Briefcase} />
+              <SelectField
+                label={t("teams.agent.role")}
+                placeholder={t("teams.agent.rolePlaceholder")}
+                value={draft.role}
+                options={roles}
+                onChange={set("role")}
+                icon={Briefcase}
+              />
             </>
           )}
           {current === "engine" && (
