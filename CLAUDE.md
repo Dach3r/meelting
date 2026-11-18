@@ -4,14 +4,15 @@ AI workspace / virtual office: the user builds a virtual office with specialized
 
 ## Current scope
 
-Phases 0–2 complete; Phase 3 in progress (rooms built, `AgentRun` next). Built today:
+Phases 0–2 complete; Phase 3 in progress (rooms and `AgentRun` built). Built today:
 
 - **Foundations and workspaces:** Tauri 2 scaffold; local SQLite (`sqlx`, migrations `workspaces`, `profile`, `add_theme_to_profile`); first launch, UI shell (rail, topbar, workspace switcher) with Tailwind v4 Grafito tokens and `es`/`en` i18n; settings page. Commands `load_session`, `complete_first_launch`, `create_workspace`, `switch_workspace`, `change_locale`, `change_theme`.
 - **Teams, agents and org chart:** migrations `teams`, `agents`, `canvas_positions`, `add_id_workspace_id_index_to_agents`; the embedded agent template catalog, the role catalog and the `llm.yml` provider/model catalog (Anthropic, OpenAI, Groq in the cloud; Ollama, LM Studio local); hire form with the cloud/local model picker and local model detection; edit and delete agents (`update_agent` cannot change provider or model); draggable org chart with persisted positions. Commands `list_teams`, `create_team`, `create_agent`, `get_agent`, `update_agent`, `delete_agent`, `save_canvas_positions`, `reset_canvas_positions`, `list_agent_templates`, `list_agent_roles`, `list_llm_providers`, `detect_local_models`.
 - **Rooms, participants and messages:** migrations `rooms`, `room_agents`, `messages`; user messages only (4000-character limit applies to user messages only), event `message:created`. Commands `list_rooms`, `create_room`, `get_room`, `delete_room`, `send_message`.
-- **Phase 0 core:** keychain commands `save_secret`, `secret_last_four`, `delete_secret` (crate `keyring` 3); the `run_in_worktree` spike (`git worktree` + PTY with live output) and the `stream_completion` spike (SSE from an OpenAI-compatible Chat Completions endpoint).
+- **Agent runs (`AgentRun`):** migrations `add_id_room_id_index_to_messages`, `add_id_room_id_agent_id_index_to_messages`, `create_agent_runs`; the execution engine (persisted states, streaming, retries, cancellation, expiry at startup, one local and four cloud slots) with adapters for Anthropic Messages, OpenAI Responses and Chat Completions (Groq, Ollama, LM Studio); «Ask» in the room composer with live text. Commands `send_instruction`, `cancel_agent_run`; events `agent_run:status`, `agent_run:token`. Design: `docs/architecture/agent-run.md`.
+- **Phase 0 core:** keychain commands `save_secret`, `secret_last_four`, `delete_secret` (crate `keyring` 3); the `run_in_worktree` spike (`git worktree` + PTY with live output).
 
-**Next:** `AgentRun` (agent execution with streaming, cancellation and adapters for the five catalog providers). Its technical proposal, `docs/architecture/agent-run.md`, and its `agent_runs` migration are pending approval: do not implement before it is approved.
+**Next:** explicit change of an agent's provider and model (decision D18, a small delivery separate from the engine), then the «AI keys» screen.
 
 **Documented, not built:** conversational meetings (Track R) and voice (STT, TTS, agent voices); tasks, worktrees, tools, approvals, Docker, integrations, AI keys screen, daily limits. Do not add them unless asked. Approved and pending decisions live in `docs/product/decisions.md`.
 

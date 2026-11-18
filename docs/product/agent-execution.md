@@ -1,6 +1,6 @@
 # Ejecución de agentes
 
-> **Estado:** planificado (Fases 3 y 5), no implementado. Comportamiento portado del producto Rails y ampliado con streaming, proveedores locales, cancelación, tareas con worktree y herramientas. Las reglas marcadas como decisión aprobada están en [decisions.md](decisions.md); el diseño técnico de la Fase 3 es una **propuesta pendiente de aprobación** en [agent-run.md](../architecture/agent-run.md). Hoy solo existe el spike `stream_completion` (Chat Completions con SSE).
+> **Estado:** Fase 3 construida en su primer corte (`AgentRun`: «Pedir a», ejecución con estados persistidos, streaming, reintentos, cancelación y expiración al arrancar, para los cinco proveedores del catálogo); la pantalla «Claves de IA», los límites diarios y la Fase 5 (tareas con worktree y herramientas) siguen planificados. Comportamiento portado del producto Rails y ampliado con streaming, proveedores locales y cancelación. Decisiones en [decisions.md](decisions.md); diseño técnico aprobado en [agent-run.md](../architecture/agent-run.md).
 
 **Problema:** el usuario tiene agentes y salas, pero los agentes no hacen nada.
 **Objetivo:** que el usuario dirija una instrucción a un agente de una sala y reciba su respuesta, generada por un proveedor de IA (en la nube o local), de forma asíncrona, persistente, cancelable y observable en vivo. En una segunda etapa, que el agente trabaje sobre un repositorio real dentro de un worktree aislado.
@@ -37,33 +37,33 @@
 7. Si el usuario sale de la sala, la ejecución continúa; la respuesta queda en la conversación cuando vuelva.
 
 ## Criterios de aceptación
-- [ ] Solo se puede dirigir una instrucción a un agente participante de la sala; un agente ajeno o de otro workspace falla sin guardar nada.
-- [ ] La instrucción queda guardada aunque la ejecución falle.
-- [ ] La respuesta es un mensaje persistente con el agente como autor; se emite a la UI en vivo.
-- [ ] Los estados se ven en vivo y sobreviven a cerrar y reabrir la app.
-- [ ] Los errores transitorios se reintentan (máximo 3 intentos, espera creciente, respetando `retry-after`); los permanentes fallan de inmediato con un mensaje claro.
-- [ ] Una ejecución no se procesa dos veces ni crea dos respuestas; hay una sola ejecución activa por agente y sala (`client_request_id` único e índice parcial).
-- [ ] Al iniciar la app, toda ejecución `running` huérfana pasa a `failed` con `error_kind = expired`.
-- [ ] Cada agente usa su proveedor y modelo; cada ejecución conserva los que copió al crearse (hoy no se pueden cambiar en un agente, D12).
-- [ ] Si falta la clave de un proveedor, solo falla ese proveedor con `provider_not_configured`.
-- [ ] La clave nunca llega a la UI, a los logs ni a los eventos; no se registran prompts ni razonamiento.
+- [x] Solo se puede dirigir una instrucción a un agente participante de la sala; un agente ajeno o de otro workspace falla sin guardar nada.
+- [x] La instrucción queda guardada aunque la ejecución falle.
+- [x] La respuesta es un mensaje persistente con el agente como autor; se emite a la UI en vivo.
+- [x] Los estados se ven en vivo y sobreviven a cerrar y reabrir la app.
+- [x] Los errores transitorios se reintentan (máximo 3 intentos, espera creciente, respetando `retry-after`); los permanentes fallan de inmediato con un mensaje claro.
+- [x] Una ejecución no se procesa dos veces ni crea dos respuestas; hay una sola ejecución activa por agente y sala (`client_request_id` único e índice parcial).
+- [x] Al iniciar la app, toda ejecución `running` huérfana pasa a `failed` con `error_kind = expired`.
+- [x] Cada agente usa su proveedor y modelo; cada ejecución conserva los que copió al crearse (hoy no se pueden cambiar en un agente, D12).
+- [x] Si falta la clave de un proveedor, solo falla ese proveedor con `provider_not_configured`.
+- [x] La clave nunca llega a la UI, a los logs ni a los eventos; no se registran prompts ni razonamiento.
 - [ ] Con solo el proveedor local, la app funciona sin conexión a internet.
-- [ ] Cancelar una ejecución la termina y libera al agente.
-- [ ] Estados vacíos, errores y confirmaciones en `es` y `en`.
+- [x] Cancelar una ejecución la termina y libera al agente.
+- [x] Estados vacíos, errores y confirmaciones en `es` y `en`.
 
 ## Reglas de negocio
-- **Proveedor y modelo:** cada agente tiene `provider` y `model` (por defecto `anthropic` / `claude-sonnet-5-5`), elegidos entre los de `llm.yml`. Se pueden elegir proveedores sin clave: el agente muestra una advertencia y la ejecución falla con `provider_not_configured`. Si un modelo sale del catálogo, el agente sigue siendo editable y sus ejecuciones fallan con `model_unavailable`. Los proveedores locales (`ollama`, `lmstudio`) no declaran modelos: se descubren con `GET /v1/models`. Hoy el proveedor y el modelo de un agente no se pueden cambiar después de crearlo (D12).
-- **Historia fija:** el run copia `provider` y `model` del agente al crearse y no se sobrescriben; `response_model` guarda lo que reportó el proveedor.
+- **Proveedor y modelo:** cada agente tiene `provider` y `model` (por defecto `anthropic` / `claude-sonnet-5-5`), elegidos entre los de `llm.yml`. Se pueden elegir proveedores sin clave: el agente muestra una advertencia y la ejecución falla con `provider_not_configured`. Si un modelo sale del catálogo, el agente sigue siendo editable y sus ejecuciones fallan con `model_unavailable`. Los proveedores locales (`ollama`, `lmstudio`) no declaran modelos: se descubren con `GET /v1/models`. Hoy el proveedor y el modelo de un agente no se pueden cambiar después de crearlo (D12); el cambio explícito está aprobado como entrega aparte (D18). Los agentes con un modelo retirado del catálogo (`gpt-5`, `gpt-5-mini`, `llama-3.3-70b-versatile`) conservan sus datos y sus ejecuciones fallan con `model_unavailable` sin llamar al proveedor.
+- **Historia fija:** el run copia `provider` y `model` del agente al crearse y no se sobrescriben.
 - **Contexto:** instrucciones del agente, nombre de la sala (no existe columna de objetivo, D11) y mensajes de esa sala anteriores a la instrucción, congelados al empezar la ejecución y reutilizados en los reintentos, hasta 100 mensajes y un tope interno de caracteres (menor para los modelos locales; es una aproximación, no la ventana en tokens). Los mensajes de otros se envían con su nombre.
-- **Generación:** la extensión de la respuesta se controla con el parámetro de tokens de salida que admite cada proveedor, con el valor que declara el catálogo para el modelo; otros parámetros (p. ej. `effort`) solo si el catálogo los declara. Sin `temperature`. Solo se persiste el texto final; el texto parcial vive en memoria durante el streaming y el razonamiento se descarta. Hoy `llm.yml` no declara límites: añadirlos forma parte de la propuesta de [agent-run.md](../architecture/agent-run.md).
+- **Generación:** la extensión de la respuesta se controla con el parámetro de tokens de salida que admite cada proveedor, con el valor que declara el catálogo para el modelo; otros parámetros (p. ej. `effort`) solo si el catálogo los declara. Sin `temperature`. Solo se persiste el texto final; el texto parcial vive en memoria durante el streaming y el razonamiento se descarta. `llm.yml` declara el máximo de salida documentado de cada modelo de la nube y Meelting pide el menor entre ese máximo y su tope interno (16 000 en la nube, 2048 en local).
 - **Timeouts:** conexión, inactividad (45 s en la nube como en Rails, más en local) y duración máxima de la ejecución; son límites internos de Meelting, no del catálogo. Valores propuestos en [agent-run.md](../architecture/agent-run.md).
-- **Idempotencia:** el compositor genera un `client_request_id` (UUID) por envío y lo reutiliza al reintentar ese mismo envío; si ya existe una ejecución con el mismo `(sala, client_request_id)` se devuelven su mensaje y su ejecución sin crear nada ni llamar al proveedor. Propuesto (pendiente, [agent-run.md §3](../architecture/agent-run.md#3-contrato-de-send_instruction-a2)): el id es obligatorio, y el mismo id con otro agente u otro texto devuelve `client_request_conflict`, en lugar de la regla de Rails que generaba uno nuevo. Si el agente ya tiene una ejecución activa en la sala, la instrucción se rechaza con `agent_busy` y no se guarda nada.
+- **Idempotencia:** el compositor genera un `client_request_id` (UUID) por envío y lo reutiliza al reintentar ese mismo envío; si ya existe una ejecución con el mismo `(sala, client_request_id)` se devuelven su mensaje y su ejecución sin crear nada ni llamar al proveedor. El id es obligatorio, y el mismo id con otro agente u otro texto devuelve `client_request_conflict`, en lugar de la regla de Rails que generaba uno nuevo ([agent-run.md §3](../architecture/agent-run.md#3-contrato-de-send_instruction-e-idempotencia-a2)). Si el agente ya tiene una ejecución activa en la sala, la instrucción se rechaza con `agent_busy` y no se guarda nada.
 - **Mensajes de error:** la UI los resuelve por `error_kind` (con el nombre del proveedor); uno desconocido muestra el genérico. Nunca se muestra el texto del proveedor ni claves.
 - **Reintentos:** 3 intentos con espera creciente; el cliente HTTP usa `max_retries = 0` y solo el motor reintenta.
-- **Errores transitorios:** `rate_limited`, `timeout`, `provider_unavailable`. **Permanentes:** `provider_not_configured`, `model_unavailable`, `provider_auth_failed`, `provider_billing`, `provider_rejected`, `content_filtered`, `output_truncated`, `invalid_response`, `context_too_large` (propuesto), además de `cancelled` y `expired`. Un `connection_refused` contra `localhost` es `provider_unavailable` y la UI muestra «Ollama no está en ejecución».
+- **Errores transitorios:** `rate_limited`, `timeout`, `provider_unavailable`. **Permanentes:** `provider_not_configured`, `model_unavailable`, `provider_auth_failed`, `provider_billing`, `provider_rejected`, `content_filtered`, `output_truncated`, `invalid_response`, `context_too_large`, además de `cancelled` y `expired`. Un `connection_refused` contra `localhost` es `provider_unavailable` y la UI muestra «Ollama no está en ejecución».
 - **Límites diarios (opcionales):** 50 ejecuciones y 500 000 tokens en 24 horas, desactivados para los proveedores locales. Protección inicial, no presupuesto estricto. Fuera del primer corte de `AgentRun`: necesitan la tabla `settings` (propuesta A10 en [agent-run.md](../architecture/agent-run.md)).
-- **Registro:** por ejecución se guardan proveedor, modelo solicitado y reportado, tokens de entrada, salida y caché, `finish_reason` normalizado (`stop`, `length`, `content_filter`, `other`) e id de solicitud del proveedor.
-- **Eliminar un agente** con mensajes o ejecuciones no está permitido. **Eliminar una sala** elimina sus ejecuciones y mensajes y cancela las ejecuciones en curso.
+- **Registro:** por ejecución se guardan proveedor, modelo, intentos, tokens de entrada y salida (si el proveedor los informa) y fechas de creación, inicio y fin. El modelo reportado, los tokens de caché, `finish_reason` y el id de solicitud del proveedor no se guardan porque nada los usa todavía.
+- **Eliminar un agente** con mensajes o ejecuciones no está permitido (`agent_has_activity`). **Eliminar una sala** elimina sus ejecuciones y mensajes y cancela las ejecuciones en curso.
 - **Longitud de la respuesta (decisión aprobada D10):** el límite de 4000 caracteres es solo para los mensajes del usuario. La respuesta del agente no tiene límite de caracteres; la acotan los tokens de salida del modelo y los límites de contexto. Nunca se trunca en silencio: si el proveedor corta la respuesta (`finish_reason` de longitud) la ejecución falla con `output_truncated` y no se crea mensaje; si la filtra, con `content_filtered`. El esquema de `messages` no cambia.
 
 ## Implicaciones de las reuniones conversacionales
@@ -107,7 +107,8 @@ Planificado (Fases 4–5); se documenta con [feature-template.md](feature-templa
 - Un razonamiento que agota `max_output_tokens` falla como `output_truncated`.
 - Las respuestas se muestran como texto plano, sin markdown.
 - Una ejecución fallida no se puede reintentar: hay que enviar la instrucción de nuevo.
-- Los parámetros exactos de cada proveedor (nombre del parámetro de tokens de salida, uso en streaming de Groq, Ollama y LM Studio) se fijan con pruebas `wiremock` y se confirman con las pruebas reales opcionales y claves válidas.
+- Los parámetros de cada proveedor están fijados con pruebas `wiremock`. Con proveedor real solo se ha verificado Ollama (incluido el uso de tokens en streaming). Anthropic, OpenAI, Groq y LM Studio esperan sus pruebas reales opcionales (`#[ignore]`, con la clave en una variable de entorno): en particular, la autenticación `Bearer` y la versión `2026-10-21` de Anthropic, si Groq acepta `stream_options` y la forma del fragmento de uso de LM Studio.
+- La comprobación «sin conexión a internet» con solo un proveedor local no se ha hecho todavía con la red desactivada (la app no llama a la nube con agentes locales).
 
 **Prioridad:** Must Have
 **Métrica de éxito:** porcentaje de salas con al menos una ejecución `succeeded`, tasa de ejecuciones `failed` por `error_kind` y proveedor, tokens por ejecución y proveedor.

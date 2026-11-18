@@ -4,7 +4,7 @@
 
 ## Estado actual
 
-Fase 0 completada (2026-11-17): scaffold Tauri 2 (React + TypeScript + Vite), spikes de keychain, de `git worktree` + PTY con salida en vivo y de streaming SSE (Chat Completions), validados en los tres SO desde CI y con pruebas reales contra Ollama y DeepSeek. Fase 1 completada (2026-11-17): SQLite con `profile` y `workspaces`, primer arranque (idioma y workspace), shell (riel + topbar), cambio y creación de workspace, tokens Grafito e i18n `es`/`en`. Fase 2 completada (2026-11-18): equipos, agentes personalizados, catálogo de plantillas y contratación con asistente; ya se pueden editar (incluido el equipo) y eliminar agentes con confirmación y arrastrar los nodos del organigrama con posiciones persistidas; ya se detectan los modelos locales (Ollama y LM Studio). Fase 3 en curso (2026-11-18): salas, participantes y chat persistente construidos; ejecución de agentes, adaptadores y claves siguen sin construir. Ver [../architecture/overview.md](../architecture/overview.md).
+Fase 0 completada (2026-11-17): scaffold Tauri 2 (React + TypeScript + Vite), spikes de keychain, de `git worktree` + PTY con salida en vivo y de streaming SSE (Chat Completions), validados en los tres SO desde CI y con pruebas reales contra Ollama y DeepSeek. Fase 1 completada (2026-11-17): SQLite con `profile` y `workspaces`, primer arranque (idioma y workspace), shell (riel + topbar), cambio y creación de workspace, tokens Grafito e i18n `es`/`en`. Fase 2 completada (2026-11-18): equipos, agentes personalizados, catálogo de plantillas y contratación con asistente; ya se pueden editar (incluido el equipo) y eliminar agentes con confirmación y arrastrar los nodos del organigrama con posiciones persistidas; ya se detectan los modelos locales (Ollama y LM Studio). Fase 3 en curso (2026-11-18): salas, participantes y chat persistente construidos; `AgentRun` construido (motor con estados persistidos, streaming, reintentos, cancelación y expiración al arrancar; adaptadores de los cinco proveedores probados con `wiremock`; «Pedir a» en la sala) y probado con un modelo real de Ollama; la pantalla «Claves de IA» sigue sin construir. Ver [../architecture/overview.md](../architecture/overview.md).
 
 ## Fase 0 — Spike de validación (1 semana)
 
@@ -40,8 +40,9 @@ Fase 0 completada (2026-11-17): scaffold Tauri 2 (React + TypeScript + Vite), sp
 ## Fase 3 — Salas y ejecución con streaming (3 semanas)
 
 - ✅ Salas, participantes y chat persistente ([rooms.md](rooms.md)).
-- Adaptadores para los cinco proveedores del catálogo real: `anthropic`, `openai`, `groq`, `ollama` y `lmstudio` (decisión aprobada D9).
-- `AgentRun` con estados, reintentos, idempotencia, expiración al arrancar y cancelación, con los ajustes que necesitan las reuniones: prompt construido en `claim` y tokens con secuencia. Propuesta técnica pendiente de aprobación: [agent-run.md](../architecture/agent-run.md).
+- ✅ Adaptadores para los cinco proveedores del catálogo real: `anthropic`, `openai`, `groq`, `ollama` y `lmstudio` (decisión aprobada D9). Verificados con `wiremock`; con proveedor real, solo Ollama hasta ahora.
+- ✅ `AgentRun` con estados, reintentos, idempotencia, expiración al arrancar y cancelación, con los ajustes que necesitan las reuniones: prompt construido en `claim` y tokens con secuencia ([agent-run.md](../architecture/agent-run.md), aprobado y construido).
+- Cambio explícito de proveedor y modelo de un agente (D18), entrega pequeña e independiente del motor.
 - Claves de IA en keychain con verificación previa (pantalla «Claves de IA», entrega separada de `AgentRun`).
 
 **Resultado esperado:** todos los criterios de [agent-execution.md](agent-execution.md), más streaming y cancelación; funciona sin conexión con un proveedor local en ejecución.

@@ -1,6 +1,6 @@
 # Arquitectura
 
-> **Estado:** Fases 0–2 completadas; Fase 3 con salas y mensajes construidos (sin ejecución de agentes). Hoy existe el scaffold Tauri 2 (React 19 + TypeScript + Vite + Tailwind v4), SQLite con `profile`, `workspaces`, `teams`, `agents`, `canvas_positions`, `rooms`, `room_agents` y `messages`, el primer arranque, el shell y el cambio de workspace, equipos, agentes y organigrama, salas con participantes y mensajes del usuario, el módulo `keychain` con los comandos `save_secret`, `secret_last_four` y `delete_secret`, y los spikes `run_in_worktree` (git worktree + PTY con salida en vivo) y `stream_completion` (streaming SSE desde un proveedor compatible con Chat Completions, como Ollama). La organización de carpetas está en [project-structure.md](project-structure.md). El resto de este documento describe la arquitectura **objetivo**; cada sección marca lo que ya existe.
+> **Estado:** Fases 0–2 completadas; Fase 3 con salas, mensajes y ejecución de agentes (`AgentRun`) construidos. Hoy existe el scaffold Tauri 2 (React 19 + TypeScript + Vite + Tailwind v4), SQLite con `profile`, `workspaces`, `teams`, `agents`, `canvas_positions`, `rooms`, `room_agents` y `messages`, el primer arranque, el shell y el cambio de workspace, equipos, agentes y organigrama, salas con participantes y mensajes, `agent_runs` y el motor de ejecución con adaptadores para Anthropic, OpenAI y Chat Completions (Groq, Ollama, LM Studio), el módulo `keychain` con los comandos `save_secret`, `secret_last_four` y `delete_secret`, y el spike `run_in_worktree` (git worktree + PTY con salida en vivo). La organización de carpetas está en [project-structure.md](project-structure.md). El resto de este documento describe la arquitectura **objetivo**; cada sección marca lo que ya existe.
 >
 > Este producto reemplaza al SaaS Rails (repositorio `meelting`), congelado como referencia de diseño: modelo de dominio, estados, errores, textos, plantillas y specs como casos de prueba.
 
@@ -51,7 +51,7 @@
 | Ventana | `tauri-plugin-window-state`: recuerda tamaño, posición y estado maximizado entre arranques; sin permisos para la UI | ✅ |
 | Secretos | crate `keyring` 3 (Keychain, Credential Manager, Secret Service) | ✅ spike |
 | Datos | SQLite con `sqlx`, modo WAL, migraciones `sqlx migrate` | ✅ `profile`, `workspaces`, `teams`, `agents`, `canvas_positions`, `rooms`, `room_agents` y `messages`; el resto de tablas con su fase |
-| HTTP/streaming | `reqwest` + SSE (`eventsource-stream`) | ✅ spike (Chat Completions); adaptadores por proveedor pendientes |
+| HTTP/streaming | `reqwest` + SSE (`eventsource-stream`) | ✅ adaptadores de los tres protocolos |
 | Terminal | `portable-pty` (ConPTY en Windows) | ✅ spike |
 | Git | CLI `git` por `tokio::process` | ✅ spike |
 | Docker | CLI `docker` por `tokio::process` (o `bollard`); opcional | pendiente |
@@ -67,8 +67,8 @@
 - **Catálogos**: colecciones de solo lectura embebidas en la app (`agent_templates/*.yml`, `llm.yml`), leídas con `serde_yaml`. Un catálogo nunca orquesta: la acción que lo usa es un servicio.
 - **Integración con el SO** (`system/`): procesos hijo (`git`), PTY y keychain; sin reglas de negocio.
 - **Dominio puro** (modelos, `BuildPrompt`, normalización de proveedores, path jail) separado del código de integración con el SO, para poder testearlo sin I/O.
-- **Eventos** (`emit`) del núcleo a la UI: `message:created` (✅, tras confirmar la transacción), y previstos `agent_run:token`, `agent_run:status`, `tool_call:output`. Los eventos propuestos para las reuniones y la voz (plan, disponibilidad, captura, transcripción, reproducción) están en [conversation-engine.md §11](conversation-engine.md#11-contratos-ipc-propuestos-nombres-no-definitivos).
-- **Ejecución de agentes** (propuesta pendiente de aprobación): [agent-run.md](agent-run.md).
+- **Eventos** (`emit`) del núcleo a la UI: `message:created`, `agent_run:status` (✅, ambos tras confirmar la transacción) y `agent_run:token` (✅, agrupado cada ≤ 50 ms, con `attempt` y `seq`); previsto `tool_call:output`. Los eventos propuestos para las reuniones y la voz (plan, disponibilidad, captura, transcripción, reproducción) están en [conversation-engine.md §11](conversation-engine.md#11-contratos-ipc-propuestos-nombres-no-definitivos).
+- **Ejecución de agentes** (✅ construida según el diseño aprobado): [agent-run.md](agent-run.md).
 - **Reuniones conversacionales y voz** (propuesta): [conversation-engine.md](conversation-engine.md) y [voice-engine.md](voice-engine.md). La captura y la reproducción de audio irían en el núcleo; `AgentRun` permanece independiente del audio.
 
 El webview **no recibe acceso directo a `fs` ni `shell`**: las capabilities de Tauri se declaran mínimas, solo los comandos propios.
@@ -125,7 +125,7 @@ Reglas generales:
 | `rooms` | `id`, `workspace_id`, `name` (1–80), `created_at`, `updated_at` | Única `(id, workspace_id)`. `updated_at` es la última actividad: igual a `created_at` al crear y se actualiza con cada mensaje en la misma transacción. Índice `(workspace_id, updated_at DESC, id DESC)` para el listado |
 | `room_agents` | `room_id`, `agent_id`, `workspace_id`, `created_at` | PK `(room_id, agent_id)`, sin `id` ni `updated_at`. FK compuestas `(room_id, workspace_id) → rooms` y `(agent_id, workspace_id) → agents`, ambas `ON DELETE CASCADE`; la segunda usa el índice único `agents (id, workspace_id)` |
 | `messages` | `id`, `room_id`, `agent_id` (NULL = usuario), `body`, `created_at` | Inmutables, sin `updated_at`. `body` no vacío; máximo 4000 caracteres solo si es del usuario (`agent_id IS NULL`). `room_id → rooms` `ON DELETE CASCADE`; `(room_id, agent_id) → room_agents` `ON DELETE NO ACTION`: un agente solo escribe en salas donde participa, y un agente con mensajes no se puede eliminar ni quitar de la sala. Al eliminar la sala, la comprobación al final de la sentencia permite borrar participaciones y mensajes juntos |
-| `agent_runs` | Propuesta final pendiente de aprobación en [agent-run.md §2](agent-run.md#2-modelo-de-datos-migración-create_agent_runs): `id`, `room_id`, `agent_id`, `request_message_id`, `response_message_id`, `client_request_id`, `status`, `error_kind`, `attempts`, `provider`, `model`, `input_tokens`, `output_tokens`, `created_at`, `started_at`, `finished_at` | Únicas: `(room_id, client_request_id)`, `request_message_id`, `response_message_id` y una ejecución activa por `(room_id, agent_id)` (índice parcial). FK compuestas hacia `messages` para que solicitud y respuesta sean de la misma sala y la respuesta del mismo agente; requieren dos índices únicos nuevos en `messages` (propuestos). No porta de Rails `user_id`, `updated_at`, `finish_reason`, `response_model`, `cached_input_tokens` ni `provider_request_id` |
+| `agent_runs` | ✅ Migraciones aprobadas y aplicadas ([agent-run.md §2](agent-run.md#2-esquema-sql-final)): `id`, `room_id`, `agent_id`, `request_message_id`, `response_message_id`, `client_request_id`, `status`, `error_kind`, `attempts`, `provider`, `model`, `input_tokens`, `output_tokens`, `created_at`, `started_at`, `finished_at` | Únicas: `(room_id, client_request_id)`, `request_message_id`, `response_message_id` y una ejecución activa por `(room_id, agent_id)` (índice parcial). FK compuestas hacia `messages` para que solicitud y respuesta sean de la misma sala y la respuesta del mismo agente; requieren dos índices únicos en `messages` (✅). No porta de Rails `user_id`, `updated_at`, `finish_reason`, `response_model`, `cached_input_tokens` ni `provider_request_id` |
 | `llm_providers_configured` | `provider`, `base_url`, `updated_at` | Planificada para la pantalla «Claves de IA»; `AgentRun` no la necesita (consulta el keychain al ejecutar) |
 | `tasks` | `id`, `workspace_id`, `room_id`, `agent_id`, `title`, `repo_path`, `base_branch`, `branch`, `worktree_path`, `status`, `created_at`, `updated_at`, `finished_at` | Fase 4. `status`: `preparing`, `ready`, `running`, `waiting_approval`, `done`, `failed`, `discarded` |
 | `tool_calls` | `id`, `agent_run_id`, `task_id`, `tool`, `arguments` (JSON), `status`, `output`, `exit_code`, `created_at`, `finished_at` | Fase 5 |
@@ -136,25 +136,25 @@ Reglas generales:
 
 ## 6. Motor de agentes y proveedores
 
-Proveedores de la Fase 3 (decisión aprobada D9): los cinco del catálogo real `src-tauri/src/catalogs/llm.yml`, con tres protocolos. Diseño propuesto, pendiente de aprobación, en [agent-run.md](agent-run.md): selección del adaptador con un `match` sobre el protocolo declarado en el catálogo, sin trait mientras haya tres casos.
+Proveedores de la Fase 3 (decisión aprobada D9): los cinco del catálogo real `src-tauri/src/catalogs/llm.yml`, con tres protocolos. Diseño aprobado y construido ([agent-run.md](agent-run.md)): el adaptador se elige con un `match` sobre el protocolo declarado en el catálogo, sin trait mientras haya tres casos.
 
 | Protocolo | Proveedores | Notas |
 |---|---|---|
 | Messages API, SSE | `anthropic` | `system`, `messages`, `max_tokens`; texto = bloques `text` |
 | Responses API, SSE | `openai` | `instructions` + `input`; `store: false`; los tokens de razonamiento cuentan en `max_output_tokens` |
-| Chat Completions, SSE | `groq` (nube, con clave), `ollama` y `lmstudio` (local, sin clave; modelos con `GET /v1/models`) | Instrucciones como `system`; timeout más largo en local. Evoluciona el spike `stream_completion` |
+| Chat Completions, SSE | `groq` (nube, con clave), `ollama` y `lmstudio` (local, sin clave; modelos con `GET /v1/models`) | Instrucciones como `system`; timeout más largo en local; parámetro de tokens de salida según el catálogo. Sustituye al spike `stream_completion` |
 
 Reglas:
 - La clave solo se lee del keychain en el núcleo; **nunca llega a la UI, a logs ni a eventos**. No se registran prompts ni razonamiento.
 - Un run **nunca cambia de proveedor ni de modelo** si falla.
 - `max_retries = 0` en el cliente HTTP; solo el motor reintenta.
-- Los errores no incluyen texto del proveedor: solo `provider`, `status` y `request_id`.
-- Una respuesta que no es JSON o SSE válido es `EmptyResponse`.
+- Los errores no incluyen texto del proveedor: se reducen a un `error_kind` por estado HTTP y código.
+- Una respuesta que no es JSON o SSE válido es `invalid_response`.
 - Modelos y proveedores viven **solo** en `llm.yml`; el código no nombra ningún modelo.
 
-**Errores (`LlmError`):** transitorios `rate_limited`, `timeout`, `provider_unavailable`; permanentes `provider_not_configured`, `model_unavailable`, `provider_auth_failed`, `provider_billing`, `provider_rejected`, `content_filtered`, `output_truncated`, `invalid_response`. HTTP: 401/403 → auth, 402 → billing, 408 → timeout, 429 → rate limit (respetando `retry-after`), 5xx → unavailable, resto → rejected.
+**Errores (`error_kind`):** transitorios `rate_limited`, `timeout`, `provider_unavailable`; permanentes `provider_not_configured`, `model_unavailable`, `provider_auth_failed`, `provider_billing`, `provider_rejected`, `content_filtered`, `output_truncated`, `invalid_response`, `context_too_large`, además de `cancelled` y `expired`. HTTP: 401/403 → auth, 402 → billing, 404 → modelo no disponible, 408 → timeout, 429 → rate limit (respetando `retry-after`; `insufficient_quota` → billing), 5xx y 529 → unavailable, resto → rejected.
 
-**Máquina de estados de `AgentRun`:** `queued → running → succeeded | failed`. Transiciones solo por funciones del repositorio, atómicas: `claim`, `requeue` (suma `attempts`), `succeed`, `fail_with(kind)`, `expire`. Hasta 3 intentos con espera creciente. Idempotencia por `(room_id, client_request_id)` único e índice parcial. Al iniciar la app, toda ejecución `queued` o `running` pasa a `failed` con `error_kind = expired` (propuesta en [agent-run.md](agent-run.md)). La cancelación usa `CancellationToken` y termina en `failed` con `error_kind = cancelled`. El texto parcial se acumula en memoria; solo se persiste el mensaje final.
+**Máquina de estados de `AgentRun`:** `queued → running → succeeded | failed`. Transiciones solo por funciones del repositorio, atómicas y con guarda de estado: `claim` (suma `attempts`), `requeue`, `succeed`, `fail`, `cancel`, `expire_active`. Hasta 3 intentos con espera de 2 y 8 s. Idempotencia por `(room_id, client_request_id)` único e índice parcial. Al iniciar la app, toda ejecución `queued` o `running` pasa a `failed` con `error_kind = expired` (✅). La cancelación usa `CancellationToken` y termina en `failed` con `error_kind = cancelled`. El texto parcial se acumula en memoria; solo se persiste el mensaje final.
 
 **Contexto del prompt (`BuildPrompt`):** instrucciones del agente, nombre de la sala (no hay columna de objetivo, D11) y mensajes de la sala anteriores a la instrucción, hasta un tope interno de caracteres y 100 mensajes, congelados al empezar la ejecución; los de otros se envían con su nombre. **Longitud de la respuesta** (D10): sin límite de caracteres; la acotan los tokens de salida del catálogo y una respuesta cortada falla como `output_truncated` sin crear mensaje.
 

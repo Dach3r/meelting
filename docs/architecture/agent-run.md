@@ -610,3 +610,18 @@ Estados:
 | Un reintento que espera plaza y agota su duración máxima | Documentado; el usuario ve `timeout` | Prueba del planificador |
 | Cierre entre la respuesta del proveedor y el commit | Limitación documentada | — |
 | Evolución a R2 (varias ejecuciones por intervención) | Propuesta propia de índices, contrato y autorización (§2.3) | Decisiones de R2 |
+
+## 18. Implementación (2026-11-18)
+
+Construido según este documento en tres entregas: esquema e integridad, motor de ejecución con adaptadores e interfaz. Decisiones de implementación que el diseño no fijaba:
+
+- **Duración máxima durante la espera de plaza de un reintento:** si vence mientras la ejecución está `queued` esperando plaza, pasa directamente a `failed` / `timeout`. Por eso la guarda de `fail` admite `queued` y `running`; `succeeded` y `failed` siguen siendo finales.
+- **Respuesta vacía:** si el proveedor termina bien pero el texto queda vacío, la ejecución falla con `invalid_response` (la tabla `messages` no admite cuerpos en blanco). El texto se guarda sin los espacios iniciales y finales; nunca se recorta su contenido.
+- **Corte del stream:** un stream que se cierra sin su evento final es `provider_unavailable` (transitorio). Un `[DONE]` de Chat Completions sin `finish_reason = stop` es `invalid_response`.
+- **Keychain:** un error al leerlo se trata como `provider_not_configured`.
+- **Fallo interno de la base dentro de la tarea** (no debería ocurrir): la tarea se detiene sin inventar un `error_kind`; la ejecución queda activa hasta que el usuario la cancela o hasta el siguiente arranque, que la expira.
+- **Errores en el cuerpo y en el stream** se clasifican por `code` o `type` (p. ej. `overloaded_error`, `rate_limit_exceeded`, `insufficient_quota`); un código desconocido es `provider_rejected`.
+- **Interfaz:** la invocación de `send_instruction` tiene un tope de 15 s en la UI y hasta 3 intentos automáticos con el mismo `client_request_id` ante fallos de transporte; los errores de negocio no se reintentan. El orden de los eventos de estado usa la posición lógica de §5.
+- **Límites:** `Limits::default()` contiene los valores de §9.4; el motor la recibe al crearse y las pruebas usan otros valores. No hay preferencias persistentes ni pantalla.
+
+**Pruebas:** 45 casos de una fila del esquema más pruebas de unicidad, borrados, guarda, plan de consulta y migración sobre datos; repositorio; `send_instruction` (incluidas 12 repeticiones simultáneas con una sola llamada al proveedor); motor (orden de llegada con reintentos al final, plaza liberada en el backoff, cancelación en cola, en backoff, durante el stream y en carrera con el éxito, duración máxima, L1, `context_too_large`, modelo retirado, clave del keychain, eventos solo después del commit); adaptadores con `wiremock`; frontend con Vitest. Prueba real: un agente con Ollama (`qwen2.5:0.5b`) respondió en streaming dos veces en la misma sala, con uso de tokens informado.
