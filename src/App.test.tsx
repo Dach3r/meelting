@@ -312,6 +312,24 @@ describe("workspace shell", () => {
     expect(card).toHaveAttribute("aria-pressed", "false");
   });
 
+  it("shows the selected agent in a drawer and closes it", async () => {
+    invokeMock.mockImplementation(async (command) =>
+      command === "list_teams"
+        ? [{ id: "t1", name: "General", agents: [{ id: "a1", team_id: "t1", name: "Ada", role: "Backend dev" }] }]
+        : session({ locale: "en" }),
+    );
+    const user = userEvent.setup();
+    render(<App />);
+
+    expect(screen.queryByRole("complementary", { name: "Ada" })).toBeNull();
+    await user.click(await screen.findByRole("button", { name: "Ada" }));
+    const drawer = screen.getByRole("complementary", { name: "Ada" });
+    expect(within(drawer).getByText("General")).toBeInTheDocument();
+    expect(within(drawer).getAllByText("Backend dev").length).toBeGreaterThan(0);
+    await user.click(within(drawer).getByRole("button", { name: "Close" }));
+    expect(screen.queryByRole("complementary", { name: "Ada" })).toBeNull();
+  });
+
   it("offers no zoom while there are no teams", async () => {
     mockCore(session({ locale: "en" }));
     render(<App />);
