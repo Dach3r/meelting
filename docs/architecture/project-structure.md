@@ -127,7 +127,7 @@ src/
 ├── test/setup.ts          Configuración de Vitest (jest-dom)
 └── components/            Atomic design (overview.md §8)
     ├── atoms/             Avatar, Button, CardSelect, Field, Icons, Logo
-    ├── molecules/         AgentTemplateDetail, Alert, IslandMenu, LocaleSwitcher, Modal, NavItem, OrgAgentCard, OrgCard, OrgDrawer, OrgNode, SegmentedControl, SettingsRow, SwitchingOverlay, TeamForm, ThemeSwitcher, WorkspaceSwitcher, ZoomControls
+    ├── molecules/         AgentTemplateDetail, Alert, IslandMenu, LocaleSwitcher, Modal, NavItem, OrgAgentCard, OrgCard, OrgDrawer, OrgNode, SegmentedControl, SettingsRow, SwitchingOverlay, TeamForm, TeamPicker, ThemeSwitcher, WorkspaceSwitcher, ZoomControls
     ├── organisms/         AgentCatalogPage, AgentEditForm, AgentForm, NewWorkspacePage, OrgChart, Rail, SettingsPage, TeamsPage, Topbar
     └── templates/         Workspace (riel + topbar + contenido)
 ```

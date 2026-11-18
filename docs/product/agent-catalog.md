@@ -17,7 +17,7 @@
 - Tabla `agents` perteneciente a un workspace, con copia de los valores de la plantilla.
 - Secciones separadas: **Catálogo de agentes** y **Equipos**.
 - Contratar desde el catálogo, crear agentes personalizados sin plantilla, ver, editar y eliminar.
-- Equipos como pantalla de inicio, con organigrama arrastrable: equipos que agrupan agentes bajo "Tú" (todo agente pertenece a un equipo), arrastrar libremente equipos y agentes (los agentes siguen a su equipo); el equipo de un agente se cambia al editarlo (al cambiar de equipo se descarta su posición guardada y reaparece en la disposición automática del equipo nuevo; guardar sin cambiar de equipo la conserva).
+- Equipos como pantalla de inicio, con organigrama arrastrable: equipos que agrupan agentes bajo "Tú" (todo agente pertenece a un equipo), arrastrar libremente equipos y agentes (los agentes siguen a su equipo); el equipo de un agente se cambia al editarlo, en una tabla de equipos ordenada por nombre con búsqueda, agentes por equipo y el equipo actual marcado (al cambiar de equipo se descarta su posición guardada y reaparece en la disposición automática del equipo nuevo; guardar sin cambiar de equipo la conserva).
 - Selector de proveedor y modelo por agente, incluido el proveedor `local`.
 
 **Excluye**

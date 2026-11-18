@@ -8,6 +8,7 @@ import { Field } from "../atoms/Field";
 import { roleGroupIcons } from "../atoms/roleGroupIcons";
 import { SelectField } from "../atoms/SelectField";
 import { Alert } from "../molecules/Alert";
+import { TeamPicker } from "../molecules/TeamPicker";
 
 type Props = {
   agent: AgentDetail;
@@ -109,16 +110,7 @@ export function AgentEditForm({ agent, teams, busy, errorMessage, onSubmit, onCl
             </>
           )}
           {current.key === "team" && (
-            <SelectField
-              label={t("teams.agent.team")}
-              hideLabel
-              grow
-              searchPlaceholder={t("teams.agent.teamSearch")}
-              emptyMessage={t("teams.agent.teamEmpty")}
-              value={teams.find((team) => team.id === draft.team_id)?.name ?? ""}
-              groups={[{ id: "teams", options: teams.map((team) => team.name) }]}
-              onChange={(name) => set("team_id")(teams.find((team) => team.name === name)?.id ?? draft.team_id)}
-            />
+            <TeamPicker teams={teams} currentId={saved.team_id} value={draft.team_id} onChange={set("team_id")} />
           )}
           {current.key === "behavior" && (
             <>

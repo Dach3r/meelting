@@ -734,7 +734,7 @@ describe("workspace shell", () => {
       await user.clear(screen.getByLabelText("Name"));
       await user.type(screen.getByLabelText("Name"), "Bea");
       await user.click(screen.getByRole("tab", { name: "Team" }));
-      await user.click(screen.getByRole("option", { name: "Design" }));
+      await user.click(screen.getByRole("option", { name: /Design/ }));
       await user.click(screen.getByRole("button", { name: "Save changes" }));
 
       expect(invokeMock).toHaveBeenCalledWith("update_agent", {
@@ -751,6 +751,41 @@ describe("workspace shell", () => {
       expect(screen.getByRole("dialog", { name: "Edit agent \u00b7 Ana" })).toBeInTheDocument();
       await user.click(screen.getByRole("tab", { name: "Instructions" }));
       expect(screen.getByLabelText("Instructions")).toHaveValue("Be careful");
+    });
+
+    it("shows the current team and each team with its agent count", async () => {
+      mockEditing();
+      const user = userEvent.setup();
+      render(<App />);
+
+      const dialog = await openEditor(user);
+      await user.click(within(dialog).getByRole("tab", { name: "Team" }));
+
+      expect(within(dialog).getByText("Now")).toBeInTheDocument();
+      const general = within(dialog).getByRole("option", { name: /General/ });
+      expect(general).toHaveAttribute("aria-selected", "true");
+      expect(general).toHaveTextContent("Current");
+      expect(general).toHaveTextContent("1");
+      expect(within(dialog).getByRole("option", { name: /Design/ })).toHaveAttribute("aria-selected", "false");
+      expect(within(dialog).getByText("2 teams")).toBeInTheDocument();
+    });
+
+    it("filters the teams by name and picks one with the keyboard", async () => {
+      mockEditing();
+      const user = userEvent.setup();
+      render(<App />);
+
+      const dialog = await openEditor(user);
+      await user.click(within(dialog).getByRole("tab", { name: "Team" }));
+      await user.type(within(dialog).getByRole("combobox", { name: "Search team" }), "des");
+
+      expect(within(dialog).getAllByRole("option")).toHaveLength(1);
+      expect(within(dialog).getByText("1 / 2 teams")).toBeInTheDocument();
+      await user.keyboard("{Enter}");
+      expect(within(dialog).getByRole("option", { name: /Design/ })).toHaveAttribute("aria-selected", "true");
+      await user.clear(within(dialog).getByRole("combobox", { name: "Search team" }));
+      await user.type(within(dialog).getByRole("combobox", { name: "Search team" }), "zzz");
+      expect(within(dialog).getByText("No team matches")).toBeInTheDocument();
     });
 
     it("keeps the editor open and shows the error when saving fails", async () => {
