@@ -123,6 +123,7 @@ export function TeamsPage({
           onNewTeam={openTeamForm}
           onNewAgent={onHireAgent}
           onEditAgent={editAgent}
+          onLoadAgent={onLoadAgent}
           onDeleteAgent={askToDelete}
           onMoveNode={onMoveNode}
         />

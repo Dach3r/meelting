@@ -58,6 +58,7 @@
         "business": "Business"
       },
       "model": "Model",
+      "provider": "Provider",
       "location": "Where it runs",
       "locations": {
         "cloud": "In the cloud",

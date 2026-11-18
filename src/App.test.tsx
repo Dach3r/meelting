@@ -704,6 +704,19 @@ describe("workspace shell", () => {
       });
     }
 
+    it("shows the model and description of the selected agent in its drawer", async () => {
+      mockEditing();
+      const user = userEvent.setup();
+      render(<App />);
+
+      await user.click(await screen.findByRole("button", { name: "Ana" }));
+      const drawer = screen.getByRole("complementary", { name: "Ana" });
+
+      expect(await within(drawer).findByText("gpt-5")).toBeInTheDocument();
+      expect(within(drawer).getByText("OpenAI")).toBeInTheDocument();
+      expect(within(drawer).getByText("Writes code")).toBeInTheDocument();
+    });
+
     async function openEditor(user: ReturnType<typeof userEvent.setup>) {
       await user.click(await screen.findByRole("button", { name: "Ana" }));
       await user.click(screen.getByRole("button", { name: "Edit agent" }));
@@ -715,10 +728,10 @@ describe("workspace shell", () => {
       const user = userEvent.setup();
       render(<App />);
 
-      await openEditor(user);
+      const dialog = await openEditor(user);
       expect(invokeMock).toHaveBeenCalledWith("get_agent", { agentId: "a1" });
       expect(screen.getByLabelText("Name")).toHaveValue("Ana");
-      expect(screen.queryByText("Model")).not.toBeInTheDocument();
+      expect(within(dialog).queryByText("Model")).not.toBeInTheDocument();
       await user.clear(screen.getByLabelText("Name"));
       await user.type(screen.getByLabelText("Name"), "Bea");
       await user.selectOptions(screen.getByLabelText("Team"), "t2");

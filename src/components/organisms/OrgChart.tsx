@@ -1,7 +1,8 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
-import type { Team } from "../../hooks/useTeams";
-import { Briefcase, Pencil, Trash2, UserPlus, Users } from "lucide-react";
+import { useLlmProviders } from "../../hooks/useLlmProviders";
+import type { AgentDetail, Team } from "../../hooks/useTeams";
+import { Briefcase, Cloud, Cpu, HardDrive, Pencil, Trash2, UserPlus, Users } from "lucide-react";
 import { Avatar } from "../atoms/Avatar";
 import { Button } from "../atoms/Button";
 import { OrgDrawer } from "../molecules/OrgDrawer";
@@ -51,11 +52,14 @@ type Props = {
   onNewAgent: (teamId: string) => void;
   onEditAgent: (agentId: string) => void;
   onDeleteAgent: (agentId: string) => void;
+  onLoadAgent: (agentId: string) => Promise<AgentDetail | null>;
   onMoveNode: (nodeId: string, x: number, y: number) => void;
 };
 
-export function OrgChart({ teams, zoom, onNewTeam, onNewAgent, onEditAgent, onDeleteAgent, onMoveNode }: Props) {
+export function OrgChart({ teams, zoom, onNewTeam, onNewAgent, onEditAgent, onDeleteAgent, onLoadAgent, onMoveNode }: Props) {
   const { t } = useI18n();
+  const providers = useLlmProviders();
+  const [detail, setDetail] = useState<AgentDetail | null>(null);
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [paths, setPaths] = useState<string[]>([]);
@@ -73,6 +77,19 @@ export function OrgChart({ teams, zoom, onNewTeam, onNewAgent, onEditAgent, onDe
 
   const drawerTeam = teams.find((team) => team.id === selectedId || team.agents.some((agent) => agent.id === selectedId));
   const drawerAgent = drawerTeam?.agents.find((agent) => agent.id === selectedId);
+  const drawerAgentId = drawerAgent?.id;
+  const shownDetail = detail?.id === drawerAgentId ? detail : null;
+
+  useEffect(() => {
+    if (!drawerAgentId) return;
+    let current = true;
+    onLoadAgent(drawerAgentId).then((loaded) => {
+      if (current) setDetail(loaded);
+    });
+    return () => {
+      current = false;
+    };
+  }, [drawerAgentId, drawerTeam?.agents]);
   const drawerOpen = Boolean(drawerTeam);
 
   const edges: Edge[] = [];
@@ -200,6 +217,16 @@ export function OrgChart({ teams, zoom, onNewTeam, onNewAgent, onEditAgent, onDe
           rows={[
             { Icon: Users, label: t("teams.agent.team"), value: drawerTeam.name },
             { Icon: Briefcase, label: t("teams.agent.role"), value: drawerAgent.role },
+            ...(shownDetail
+              ? [
+                  {
+                    Icon: providers.find((provider) => provider.key === shownDetail.provider)?.location === "local" ? HardDrive : Cloud,
+                    label: t("teams.agent.provider"),
+                    value: providers.find((provider) => provider.key === shownDetail.provider)?.name ?? shownDetail.provider,
+                  },
+                  { Icon: Cpu, label: t("teams.agent.model"), value: shownDetail.model },
+                ]
+              : []),
           ]}
           actions={
             <>
@@ -214,7 +241,14 @@ export function OrgChart({ teams, zoom, onNewTeam, onNewAgent, onEditAgent, onDe
             </>
           }
           onClose={() => setSelectedId(null)}
-        />
+        >
+          {shownDetail?.description && (
+            <div className="grid gap-1 rounded-2xl bg-raised p-3">
+              <p className="text-xs font-medium text-muted">{t("teams.agent.description")}</p>
+              <p className="max-h-32 overflow-y-auto text-sm text-ink">{shownDetail.description}</p>
+            </div>
+          )}
+        </OrgDrawer>
       )}
       {drawerTeam && !drawerAgent && (
         <OrgDrawer
