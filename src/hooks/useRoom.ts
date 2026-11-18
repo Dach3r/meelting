@@ -18,9 +18,9 @@ const recentMessages = 100;
 const interventionTimeoutMs = 15000;
 const interventionTries = 3;
 
-type RoomDetail = { room: Room; messages: Message[]; runs: AgentRun[]; partials: RunSnapshot[] };
+type RoomDetail = { room: Room; messages: Message[]; runs: AgentRun[]; partials: RunSnapshot[]; proposed_agent_id: string | null };
 
-export type Selection = { kind: "auto" } | { kind: "nobody" } | { kind: "agent" | "confirmed"; agent_id: string };
+export type Selection = { kind: "auto"; agent_id: string | null } | { kind: "nobody" } | { kind: "agent" | "confirmed"; agent_id: string };
 
 export type Draft = { body: string; selection: Selection; mentionIds: string[] };
 
@@ -32,10 +32,18 @@ type InterventionSent =
   | { outcome: "sent"; message: Message; run: AgentRun | null; partial: RunSnapshot | null }
   | ({ outcome: "choose" } & Choice);
 
-type Update = (state: { messages: Message[]; runs: RunState }) => { messages: Message[]; runs: RunState };
+type RoomState = { messages: Message[]; runs: RunState; proposal: string | null };
+
+type Update = (state: RoomState) => RoomState;
 
 function withMessage(messages: Message[], message: Message) {
   return messages.some((known) => known.id === message.id) ? messages : [...messages, message].slice(-recentMessages);
+}
+
+function withStatus(state: RoomState, run: AgentRun): RoomState {
+  const runs = applyStatus(state.runs, run);
+  const replied = run.status === "succeeded" && runs !== state.runs;
+  return { ...state, runs, proposal: replied ? run.agent_id : state.proposal };
 }
 
 function invokeWithTimeout<T>(command: string, args: Record<string, unknown>) {
@@ -56,7 +64,7 @@ function invokeWithTimeout<T>(command: string, args: Record<string, unknown>) {
 
 export function useRoom(roomId: string) {
   const [room, setRoom] = useState<Room | null>(null);
-  const [state, setState] = useState<{ messages: Message[]; runs: RunState }>({ messages: [], runs: emptyRunState });
+  const [state, setState] = useState<RoomState>({ messages: [], runs: emptyRunState, proposal: null });
   const [errorKey, setErrorKey] = useState<string | null>(null);
   const [sendErrorKey, setSendErrorKey] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
@@ -71,7 +79,7 @@ export function useRoom(roomId: string) {
       else waiting.push(change);
     };
     setRoom(null);
-    setState({ messages: [], runs: emptyRunState });
+    setState({ messages: [], runs: emptyRunState, proposal: null });
     const subscriptions = Promise.all([
       listen<Message>("message:created", (event) => {
         const message = event.payload;
@@ -79,7 +87,7 @@ export function useRoom(roomId: string) {
       }),
       listen<AgentRun>("agent_run:status", (event) => {
         const run = event.payload;
-        if (run.room_id === roomId) receive((s) => ({ ...s, runs: applyStatus(s.runs, run) }));
+        if (run.room_id === roomId) receive((s) => withStatus(s, run));
       }),
       listen<TokenChunk>("agent_run:token", (event) => {
         const chunk = event.payload;
@@ -96,6 +104,7 @@ export function useRoom(roomId: string) {
           waiting.splice(0).reduce((s, change) => change(s), {
             messages: detail.messages,
             runs: loadRunState(detail.runs, detail.partials),
+            proposal: detail.proposed_agent_id,
           }),
         );
       })
@@ -128,7 +137,7 @@ export function useRoom(roomId: string) {
             const messages = withMessage(s.messages, sent.message);
             if (!sent.run) return { ...s, messages };
             const runs = applyStatus(s.runs, sent.run);
-            return { messages, runs: sent.partial ? applySnapshot(runs, sent.partial) : runs };
+            return { ...s, messages, runs: sent.partial ? applySnapshot(runs, sent.partial) : runs };
           });
           return "sent";
         } catch (error) {
@@ -154,7 +163,8 @@ export function useRoom(roomId: string) {
     }
   }
 
-  const detail = room ? { room, messages: state.messages, runs: state.runs } : null;
+  const proposal = room?.agents.some((agent) => agent.id === state.proposal) ? state.proposal : null;
+  const detail = room ? { room, messages: state.messages, runs: state.runs, proposal } : null;
 
   return { detail, errorKey, sendErrorKey, sending, sendIntervention, cancelRun };
 }

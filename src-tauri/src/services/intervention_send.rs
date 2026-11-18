@@ -109,7 +109,7 @@ async fn store(
             .ok_or(SessionError::ClientRequestConflict)?;
         let other_agent = match intervention.selection {
             Selection::Agent(id) | Selection::Confirmed(id) => *id != existing.agent_id,
-            Selection::Auto | Selection::Nobody => false,
+            Selection::Auto(_) | Selection::Nobody => false,
         };
         if other_agent || request.body != body {
             return Err(SessionError::ClientRequestConflict);
@@ -132,7 +132,7 @@ async fn store(
     {
         Resolution::Nobody => return Ok(Stored::Nobody),
         Resolution::Choose { reason, candidates } => return Ok(Stored::Choose(reason, candidates)),
-        Resolution::Agent { agent_id } => agent_id,
+        Resolution::Agent { agent_id } | Resolution::Proposed { agent_id } => agent_id,
     };
     if agent_runs::has_active(&mut *transaction, room_id, &agent_id).await? {
         return Err(SessionError::AgentBusy);
@@ -502,7 +502,7 @@ mod tests {
         let h = harness(&server.uri(), fast_limits(), &two_agents()).await;
 
         let run = run_of(
-            intervene(&h, Selection::Auto, "@Agent1 how?", &[])
+            intervene(&h, Selection::Auto(None), "@Agent1 how?", &[])
                 .await
                 .unwrap(),
         )
@@ -518,7 +518,7 @@ mod tests {
         let h = harness(&server.uri(), fast_limits(), &two_agents()).await;
 
         let run = run_of(
-            intervene(&h, Selection::Auto, "agent0, how?", &[])
+            intervene(&h, Selection::Auto(None), "agent0, how?", &[])
                 .await
                 .unwrap(),
         )
@@ -533,10 +533,10 @@ mod tests {
         let server = local_server(0).await;
         let h = harness(&server.uri(), fast_limits(), &two_agents()).await;
 
-        let unknown = intervene(&h, Selection::Auto, "@Marta are you there?", &[])
+        let unknown = intervene(&h, Selection::Auto(None), "@Marta are you there?", &[])
             .await
             .unwrap();
-        let plain = intervene(&h, Selection::Auto, "Just a note", &[])
+        let plain = intervene(&h, Selection::Auto(None), "Just a note", &[])
             .await
             .unwrap();
 
@@ -576,7 +576,7 @@ mod tests {
         let both = vec![h.agents[0].clone(), h.agents[1].clone()];
 
         assert_eq!(
-            intervene(&h, Selection::Auto, "@QA Engineer thoughts?", &[])
+            intervene(&h, Selection::Auto(None), "@QA Engineer thoughts?", &[])
                 .await
                 .unwrap(),
             InterventionSent::Choose {
@@ -585,7 +585,7 @@ mod tests {
             }
         );
         assert_eq!(
-            intervene(&h, Selection::Auto, "@Agent0 and @Agent1", &[])
+            intervene(&h, Selection::Auto(None), "@Agent0 and @Agent1", &[])
                 .await
                 .unwrap(),
             InterventionSent::Choose {
@@ -620,7 +620,7 @@ mod tests {
         let chosen = run_of(
             intervene(
                 &h,
-                Selection::Auto,
+                Selection::Auto(None),
                 "@QA Engineer thoughts?",
                 &[h.agents[1].clone()],
             )
@@ -662,9 +662,14 @@ mod tests {
 
         assert_eq!(
             run_of(
-                intervene(&h, Selection::Auto, "@Agent1 hi", &[h.agents[1].clone()])
-                    .await
-                    .unwrap()
+                intervene(
+                    &h,
+                    Selection::Auto(None),
+                    "@Agent1 hi",
+                    &[h.agents[1].clone()]
+                )
+                .await
+                .unwrap()
             ),
             None
         );
@@ -680,7 +685,7 @@ mod tests {
             .await
             .unwrap();
         assert!(matches!(
-            intervene(&h, Selection::Auto, "@Agent0 hi", &[]).await,
+            intervene(&h, Selection::Auto(None), "@Agent0 hi", &[]).await,
             Err(SessionError::RoomNotFound)
         ));
         assert_eq!(h.count("SELECT COUNT(*) FROM agent_runs").await, 0);
@@ -695,21 +700,21 @@ mod tests {
             .await;
         let h = harness(&server.uri(), fast_limits(), &two_agents()).await;
         let first = run_of(
-            intervene(&h, Selection::Auto, "@Agent0 one", &[])
+            intervene(&h, Selection::Auto(None), "@Agent0 one", &[])
                 .await
                 .unwrap(),
         )
         .unwrap();
 
         assert!(matches!(
-            intervene(&h, Selection::Auto, "Agent0, two", &[]).await,
+            intervene(&h, Selection::Auto(None), "Agent0, two", &[]).await,
             Err(SessionError::AgentBusy)
         ));
-        let note = intervene(&h, Selection::Auto, "A note meanwhile", &[])
+        let note = intervene(&h, Selection::Auto(None), "A note meanwhile", &[])
             .await
             .unwrap();
         let second = run_of(
-            intervene(&h, Selection::Auto, "@Agent1 three", &[])
+            intervene(&h, Selection::Auto(None), "@Agent1 three", &[])
                 .await
                 .unwrap(),
         )
@@ -732,7 +737,7 @@ mod tests {
         let h = harness(&server.uri(), fast_limits(), &two_agents()).await;
 
         let run = run_of(
-            intervene(&h, Selection::Auto, "@Agent0 ask around", &[])
+            intervene(&h, Selection::Auto(None), "@Agent0 ask around", &[])
                 .await
                 .unwrap(),
         )
@@ -757,7 +762,7 @@ mod tests {
                 Intervention {
                     room_id: &h.room_id,
                     body: "@Agent1 how?",
-                    selection: &Selection::Auto,
+                    selection: &Selection::Auto(None),
                     mention_ids: &[],
                     client_request_id: ID,
                 },
@@ -770,5 +775,224 @@ mod tests {
 
         assert_eq!(again.id, first.id);
         assert_eq!(h.count("SELECT COUNT(*) FROM agent_runs").await, 1);
+    }
+
+    async fn proposal(h: &crate::services::agent_run_engine::testing::Harness) -> Option<String> {
+        crate::services::room_get::run(&h.engine.pool, &h.engine.registry, &h.room_id)
+            .await
+            .unwrap()
+            .proposed_agent_id
+    }
+
+    #[tokio::test]
+    async fn a_follow_up_without_a_mention_goes_to_the_proposed_agent_with_the_history() {
+        let server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .respond_with(chat(&["Use OAuth with PKCE."]))
+            .expect(2)
+            .mount(&server)
+            .await;
+        let h = harness(&server.uri(), fast_limits(), &two_agents()).await;
+        assert_eq!(proposal(&h).await, None);
+        let first = run_of(
+            intervene(
+                &h,
+                Selection::Auto(None),
+                "@Agent1 how would you do OAuth?",
+                &[],
+            )
+            .await
+            .unwrap(),
+        )
+        .unwrap();
+        h.finished(&first.id).await;
+        let proposed = proposal(&h).await;
+        assert_eq!(proposed.as_deref(), Some(h.agents[1].as_str()));
+
+        let follow_up = run_of(
+            intervene(&h, Selection::Auto(proposed), "Why PKCE?", &[])
+                .await
+                .unwrap(),
+        )
+        .unwrap();
+        h.finished(&follow_up.id).await;
+
+        assert_eq!(follow_up.agent_id, h.agents[1]);
+        let requests = server.received_requests().await.unwrap();
+        let last = String::from_utf8_lossy(&requests[1].body).to_string();
+        assert!(last.contains("how would you do OAuth?"));
+        assert!(last.contains("Use OAuth with PKCE."));
+        assert!(last.contains("Why PKCE?"));
+    }
+
+    #[tokio::test]
+    async fn an_explicit_change_of_recipient_keeps_the_context_and_moves_the_proposal() {
+        let server = local_server(2).await;
+        let h = harness(&server.uri(), fast_limits(), &two_agents()).await;
+        let first = run_of(
+            intervene(&h, Selection::Auto(None), "@Agent0 start", &[])
+                .await
+                .unwrap(),
+        )
+        .unwrap();
+        h.finished(&first.id).await;
+
+        let switched = run_of(
+            intervene(
+                &h,
+                Selection::Auto(Some(h.agents[0].clone())),
+                "@Agent1 your view?",
+                &[],
+            )
+            .await
+            .unwrap(),
+        )
+        .unwrap();
+        h.finished(&switched.id).await;
+
+        assert_eq!(switched.agent_id, h.agents[1]);
+        assert_eq!(proposal(&h).await.as_deref(), Some(h.agents[1].as_str()));
+        let requests = server.received_requests().await.unwrap();
+        assert!(String::from_utf8_lossy(&requests[1].body).contains("start"));
+    }
+
+    #[tokio::test]
+    async fn failed_or_cancelled_replies_do_not_change_the_proposal() {
+        let server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(wiremock::matchers::body_string_contains("You are Agent0"))
+            .respond_with(chat(&["ok"]))
+            .mount(&server)
+            .await;
+        Mock::given(method("POST"))
+            .and(wiremock::matchers::body_string_contains("fail now"))
+            .respond_with(wiremock::ResponseTemplate::new(401))
+            .mount(&server)
+            .await;
+        Mock::given(method("POST"))
+            .and(wiremock::matchers::body_string_contains("take your time"))
+            .respond_with(chat(&["late"]).set_delay(std::time::Duration::from_millis(500)))
+            .mount(&server)
+            .await;
+        let h = harness(&server.uri(), fast_limits(), &two_agents()).await;
+        let first = run_of(
+            intervene(&h, Selection::Auto(None), "@Agent0 hi", &[])
+                .await
+                .unwrap(),
+        )
+        .unwrap();
+        h.finished(&first.id).await;
+
+        let failed = run_of(
+            intervene(&h, Selection::Auto(None), "@Agent1 fail now", &[])
+                .await
+                .unwrap(),
+        )
+        .unwrap();
+        assert_eq!(h.finished(&failed.id).await.status, RunStatus::Failed);
+        let slow = run_of(
+            intervene(&h, Selection::Auto(None), "@Agent1 take your time", &[])
+                .await
+                .unwrap(),
+        )
+        .unwrap();
+        crate::services::agent_run_cancel::run(&h.engine, &slow.id)
+            .await
+            .unwrap();
+        assert_eq!(
+            h.finished(&slow.id).await.error_kind,
+            Some(ErrorKind::Cancelled)
+        );
+
+        assert_eq!(proposal(&h).await.as_deref(), Some(h.agents[0].as_str()));
+    }
+
+    #[tokio::test]
+    async fn with_parallel_replies_the_last_one_saved_is_proposed() {
+        let server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(wiremock::matchers::body_string_contains("You are Agent0"))
+            .respond_with(chat(&["slow"]).set_delay(std::time::Duration::from_millis(300)))
+            .mount(&server)
+            .await;
+        Mock::given(method("POST"))
+            .and(wiremock::matchers::body_string_contains("You are Agent1"))
+            .respond_with(chat(&["fast"]))
+            .mount(&server)
+            .await;
+        let mut limits = fast_limits();
+        limits.local.concurrency = 2;
+        let h = harness(&server.uri(), limits, &two_agents()).await;
+
+        let slow = run_of(
+            intervene(&h, Selection::Auto(None), "@Agent0 think", &[])
+                .await
+                .unwrap(),
+        )
+        .unwrap();
+        let fast = run_of(
+            intervene(&h, Selection::Auto(None), "@Agent1 quick", &[])
+                .await
+                .unwrap(),
+        )
+        .unwrap();
+        let fast_done = h.finished(&fast.id).await;
+        assert_eq!(proposal(&h).await.as_deref(), Some(h.agents[1].as_str()));
+        let slow_done = h.finished(&slow.id).await;
+
+        assert!(fast_done.finished_at <= slow_done.finished_at);
+        assert_eq!(proposal(&h).await.as_deref(), Some(h.agents[0].as_str()));
+    }
+
+    #[tokio::test]
+    async fn the_proposal_belongs_to_its_room_and_is_lost_on_restart() {
+        let server = local_server(1).await;
+        let h = harness(&server.uri(), fast_limits(), &two_agents()).await;
+        let other = crate::services::room_create::run(&h.engine.pool, "Other", h.agents.clone())
+            .await
+            .unwrap();
+        let first = run_of(
+            intervene(&h, Selection::Auto(None), "@Agent0 hi", &[])
+                .await
+                .unwrap(),
+        )
+        .unwrap();
+        h.finished(&first.id).await;
+
+        let other_detail =
+            crate::services::room_get::run(&h.engine.pool, &h.engine.registry, &other.id)
+                .await
+                .unwrap();
+        assert_eq!(other_detail.proposed_agent_id, None);
+        let restarted = crate::services::agent_run_engine::Engine::new(
+            h.engine.pool.clone(),
+            h.engine.providers.clone(),
+            fast_limits(),
+            std::sync::Arc::new(|_| {}),
+        );
+        let after_restart =
+            crate::services::room_get::run(&restarted.pool, &restarted.registry, &h.room_id)
+                .await
+                .unwrap();
+        assert_eq!(after_restart.proposed_agent_id, None);
+        workspace_create::run(&h.engine.pool, "Globex")
+            .await
+            .unwrap();
+        assert!(matches!(
+            crate::services::room_get::run(&h.engine.pool, &h.engine.registry, &h.room_id).await,
+            Err(SessionError::RoomNotFound)
+        ));
+    }
+
+    #[tokio::test]
+    async fn a_proposal_that_no_longer_takes_part_is_rejected() {
+        let server = local_server(0).await;
+        let h = harness(&server.uri(), fast_limits(), &two_agents()).await;
+
+        assert!(matches!(
+            intervene(&h, Selection::Auto(Some("gone".into())), "Why?", &[]).await,
+            Err(SessionError::AgentNotFound)
+        ));
+        assert_eq!(h.count("SELECT COUNT(*) FROM messages").await, 0);
     }
 }

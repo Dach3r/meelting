@@ -15,6 +15,7 @@ type Props = {
   room: Room;
   messages: Message[];
   runs: RunState;
+  proposedAgentId: string | null;
   providers: LlmProvider[];
   sending: boolean;
   errorMessage: string | null;
@@ -22,7 +23,7 @@ type Props = {
   onCancel: (runId: string) => void;
 };
 
-export function RoomChat({ room, messages, runs, providers, sending, errorMessage, onSend, onCancel }: Props) {
+export function RoomChat({ room, messages, runs, proposedAgentId, providers, sending, errorMessage, onSend, onCancel }: Props) {
   const { t, locale } = useI18n();
   const end = useRef<HTMLLIElement>(null);
   const allRuns = Object.values(runs.runs);
@@ -79,7 +80,7 @@ export function RoomChat({ room, messages, runs, providers, sending, errorMessag
         </ol>
       )}
       {errorMessage && <Alert message={errorMessage} />}
-      <MessageComposer roomId={room.id} agents={room.agents} busyAgentIds={busyAgentIds} sending={sending} onSend={onSend} />
+      <MessageComposer roomId={room.id} agents={room.agents} proposedAgentId={proposedAgentId} busyAgentIds={busyAgentIds} sending={sending} onSend={onSend} />
     </section>
   );
 }

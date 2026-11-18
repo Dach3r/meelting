@@ -20,6 +20,7 @@ pub struct TooLong;
 #[derive(Default)]
 pub struct Registry {
     entries: Mutex<HashMap<String, Entry>>,
+    last_responders: Mutex<HashMap<String, String>>,
 }
 
 impl Registry {
@@ -27,6 +28,21 @@ impl Registry {
         self.entries
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner())
+    }
+
+    pub fn responded(&self, room_id: &str, agent_id: &str) {
+        self.last_responders
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .insert(room_id.to_string(), agent_id.to_string());
+    }
+
+    pub fn last_responder(&self, room_id: &str) -> Option<String> {
+        self.last_responders
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .get(room_id)
+            .cloned()
     }
 
     pub fn insert(&self, run_id: &str, room_id: &str) -> CancellationToken {

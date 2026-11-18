@@ -2,7 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useState } from "react";
 import type { Choice, Selection } from "./useRoom";
 
-export type Resolution = { kind: "nobody" } | { kind: "agent"; agent_id: string } | ({ kind: "choose" } & Choice);
+export type Resolution = { kind: "nobody" } | { kind: "agent" | "proposed"; agent_id: string } | ({ kind: "choose" } & Choice);
 
 const previewDelayMs = 150;
 

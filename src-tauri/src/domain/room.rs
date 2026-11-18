@@ -41,6 +41,7 @@ pub struct RoomDetail {
     pub messages: Vec<Message>,
     pub runs: Vec<AgentRun>,
     pub partials: Vec<Partial>,
+    pub proposed_agent_id: Option<String>,
 }
 
 pub fn normalize_body(raw: &str) -> Option<String> {

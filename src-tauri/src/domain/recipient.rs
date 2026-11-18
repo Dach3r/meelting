@@ -8,7 +8,7 @@ const VOCATIVE_MAX_WORDS: usize = 4;
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 #[serde(tag = "kind", content = "agent_id", rename_all = "snake_case")]
 pub enum Selection {
-    Auto,
+    Auto(Option<String>),
     Nobody,
     Agent(String),
     Confirmed(String),
@@ -27,6 +27,9 @@ pub enum ChoiceReason {
 pub enum Resolution {
     Nobody,
     Agent {
+        agent_id: String,
+    },
+    Proposed {
         agent_id: String,
     },
     Choose {
@@ -65,11 +68,17 @@ pub fn resolve(
             })
         }
         Selection::Confirmed(_) | Selection::Agent(_) => Err(NotParticipant),
-        Selection::Auto => {
+        Selection::Auto(proposed) => {
             let references = references(body, mention_ids, participants);
             let candidates = ordered(distinct(&references), participants);
             Ok(match candidates.as_slice() {
-                [] => Resolution::Nobody,
+                [] => match proposed {
+                    Some(id) if participates(id) => Resolution::Proposed {
+                        agent_id: id.clone(),
+                    },
+                    Some(_) => return Err(NotParticipant),
+                    None => Resolution::Nobody,
+                },
                 [only] if references.iter().all(|found| found.len() == 1) => Resolution::Agent {
                     agent_id: only.clone(),
                 },
@@ -217,7 +226,7 @@ mod tests {
     }
 
     fn auto(body: &str) -> Resolution {
-        resolve(&Selection::Auto, body, &[], &room()).unwrap()
+        resolve(&Selection::Auto(None), body, &[], &room()).unwrap()
     }
 
     fn agent(id: &str) -> Resolution {
@@ -241,11 +250,11 @@ mod tests {
         assert_eq!(auto("@qa engineer"), agent("qa"));
         let accented = vec![participant("jo", "José", "Tech Lead")];
         assert_eq!(
-            resolve(&Selection::Auto, "@jose revisa esto", &[], &accented),
+            resolve(&Selection::Auto(None), "@jose revisa esto", &[], &accented),
             Ok(agent("jo"))
         );
         assert_eq!(
-            resolve(&Selection::Auto, "@JOSÉ", &[], &accented),
+            resolve(&Selection::Auto(None), "@JOSÉ", &[], &accented),
             Ok(agent("jo"))
         );
     }
@@ -265,15 +274,20 @@ mod tests {
             participant("b2", "Backend", "Software Developer"),
         ];
         assert_eq!(
-            resolve(&Selection::Auto, "@Backend hi", &[], &twins),
+            resolve(&Selection::Auto(None), "@Backend hi", &[], &twins),
             Ok(choose(ChoiceReason::Ambiguous, &["b1", "b2"]))
         );
         assert_eq!(
-            resolve(&Selection::Auto, "@Backend hi", &["b2".into()], &twins),
+            resolve(
+                &Selection::Auto(None),
+                "@Backend hi",
+                &["b2".into()],
+                &twins
+            ),
             Ok(agent("b2"))
         );
         assert_eq!(
-            resolve(&Selection::Auto, "@Backend Developer hi", &[], &twins),
+            resolve(&Selection::Auto(None), "@Backend Developer hi", &[], &twins),
             Ok(agent("b1"))
         );
     }
@@ -281,7 +295,12 @@ mod tests {
     #[test]
     fn selected_ids_outside_the_room_never_resolve() {
         assert_eq!(
-            resolve(&Selection::Auto, "@Marta hi", &["outsider".into()], &room()),
+            resolve(
+                &Selection::Auto(None),
+                "@Marta hi",
+                &["outsider".into()],
+                &room()
+            ),
             Ok(Resolution::Nobody)
         );
         assert_eq!(
@@ -315,8 +334,41 @@ mod tests {
             participant("b", "Bea", "Backend Engineer"),
         ];
         assert_eq!(
-            resolve(&Selection::Auto, "Backend, hi", &[], &devs),
+            resolve(&Selection::Auto(None), "Backend, hi", &[], &devs),
             Ok(choose(ChoiceReason::Ambiguous, &["a", "b"]))
+        );
+    }
+
+    #[test]
+    fn the_proposal_applies_only_when_the_message_names_nobody() {
+        let following = Selection::Auto(Some("be".into()));
+        let proposed = Resolution::Proposed {
+            agent_id: "be".into(),
+        };
+        assert_eq!(resolve(&following, "Why PKCE?", &[], &room()), Ok(proposed));
+        assert_eq!(
+            resolve(&following, "@Quique why?", &[], &room()),
+            Ok(agent("qa"))
+        );
+        assert_eq!(
+            resolve(&following, "Paula, why?", &[], &room()),
+            Ok(agent("po"))
+        );
+        assert_eq!(
+            resolve(&following, "@Backend Developer and @Paula", &[], &room()),
+            Ok(choose(ChoiceReason::Several, &["be", "po"]))
+        );
+        assert_eq!(
+            resolve(&Selection::Nobody, "Why PKCE?", &[], &room()),
+            Ok(Resolution::Nobody)
+        );
+    }
+
+    #[test]
+    fn a_proposal_outside_the_room_is_rejected() {
+        assert_eq!(
+            resolve(&Selection::Auto(Some("gone".into())), "Why?", &[], &room()),
+            Err(NotParticipant)
         );
     }
 
@@ -389,7 +441,14 @@ mod tests {
     #[test]
     fn the_selection_is_read_from_the_ui_payload() {
         let parse = |json: &str| serde_json::from_str::<Selection>(json).unwrap();
-        assert_eq!(parse(r#"{"kind":"auto"}"#), Selection::Auto);
+        assert_eq!(
+            parse(r#"{"kind":"auto","agent_id":null}"#),
+            Selection::Auto(None)
+        );
+        assert_eq!(
+            parse(r#"{"kind":"auto","agent_id":"be"}"#),
+            Selection::Auto(Some("be".into()))
+        );
         assert_eq!(parse(r#"{"kind":"nobody"}"#), Selection::Nobody);
         assert_eq!(
             parse(r#"{"kind":"agent","agent_id":"be"}"#),

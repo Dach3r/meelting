@@ -52,13 +52,13 @@ src-tauri/src/
 │   ├── rooms_list.rs      ✅ salas del workspace actual por actividad reciente, con sus agentes y los últimos 3 mensajes de la primera
 │   ├── recipient_resolve.rs ✅ resolve_recipient: vista previa del destinatario con las mismas reglas que send_intervention, sin guardar nada
 │   ├── room_create.rs     ✅ valida el nombre, deduplica los agentes y crea la sala con sus participantes en una transacción
-│   ├── room_get.rs        ✅ sala del workspace actual con sus agentes, sus últimos 100 mensajes, sus ejecuciones y las instantáneas del buffer (tomadas antes de leer la base)
+│   ├── room_get.rs        ✅ sala del workspace actual con sus agentes, sus últimos 100 mensajes, sus ejecuciones, las instantáneas del buffer (tomadas antes de leer la base) y el destinatario propuesto si sigue participando
 │   ├── room_delete.rs     ✅ elimina una sala (participaciones, mensajes y ejecuciones en cascada), cancela sus ejecuciones activas y devuelve la lista actualizada
 │   ├── message_send.rs    ✅ guarda un mensaje del usuario sin ejecución y actualiza la actividad de la sala en una transacción (lo usa intervention_send)
 │   ├── intervention_send.rs ✅ send_intervention: valida, deduplica por client_request_id, resuelve el destinatario con domain/recipient dentro de la transacción y guarda el mensaje del usuario (con la ejecución queued si hay agente) o devuelve los candidatos para elegir sin guardar nada
 │   ├── agent_run_engine.rs ✅ motor de ejecución: pool, registro, catálogo, límites, semáforos local (1) y nube (4) y emisor de eventos; lanza cada ejecución como tarea tokio
 │   ├── agent_run_execute.rs ✅ tarea de una ejecución: espera de plaza, claim, contexto congelado, llamada al adaptador, tokens agrupados cada 50 ms, reintentos con plaza liberada, duración máxima, éxito atómico y fallos
-│   ├── agent_run_registry.rs ✅ registro en memoria de ejecuciones aceptadas: texto del intento acotado por L1, secuencia, prompt congelado y token de cancelación
+│   ├── agent_run_registry.rs ✅ registro en memoria de ejecuciones aceptadas (texto del intento acotado por L1, secuencia, prompt congelado y token de cancelación) y último agente que respondió en cada sala (D19)
 │   ├── agent_run_cancel.rs ✅ cancelación idempotente filtrada por workspace
 │   ├── agent_runs_expire.rs ✅ expira las ejecuciones queued y running al arrancar
 │   ├── canvas_positions_save.rs ✅ guarda las posiciones del organigrama de equipos y agentes del workspace actual

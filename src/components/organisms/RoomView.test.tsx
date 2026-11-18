@@ -68,7 +68,7 @@ function token(seq: number, text: string, attempt = 1, roomId = "r1") {
   emit("agent_run:token", { run_id: "run1", room_id: roomId, attempt, seq, text });
 }
 
-type Detail = { room: Room; messages: Message[]; runs: AgentRun[]; partials: RunSnapshot[] };
+type Detail = { room: Room; messages: Message[]; runs: AgentRun[]; partials: RunSnapshot[]; proposed_agent_id: string | null };
 
 function core(handlers: Record<string, (args: Record<string, unknown>) => unknown>) {
   invokeMock.mockImplementation(async (command, args) => {
@@ -80,7 +80,7 @@ function core(handlers: Record<string, (args: Record<string, unknown>) => unknow
 }
 
 function detail(overrides: Partial<Detail> = {}): Detail {
-  return { room, messages: [], runs: [], partials: [], ...overrides };
+  return { room, messages: [], runs: [], partials: [], proposed_agent_id: null, ...overrides };
 }
 
 async function renderRoom() {
@@ -146,7 +146,7 @@ describe("asking an agent", () => {
 
     const calls = invokeMock.mock.calls.filter(([command]) => command === "send_intervention").map(([, args]) => args);
     expect(calls).toEqual([
-      expect.objectContaining({ body: "Hello", selection: { kind: "auto" }, mentionIds: [] }),
+      expect.objectContaining({ body: "Hello", selection: { kind: "auto", agent_id: null }, mentionIds: [] }),
       expect.objectContaining({ body: "@Ana just a note", selection: { kind: "nobody" } }),
     ]);
   });
@@ -270,10 +270,10 @@ describe("mentioning an agent", () => {
     expect(await screen.findByText("Bob will reply.")).toBeInTheDocument();
     await user.keyboard("{Enter}");
 
-    expect(invokeMock).toHaveBeenCalledWith("resolve_recipient", { roomId: "r1", body: "@Bob how?", selection: { kind: "auto" }, mentionIds: ["a2"] });
+    expect(invokeMock).toHaveBeenCalledWith("resolve_recipient", { roomId: "r1", body: "@Bob how?", selection: { kind: "auto", agent_id: null }, mentionIds: ["a2"] });
     expect(invokeMock).toHaveBeenCalledWith(
       "send_intervention",
-      expect.objectContaining({ body: "@Bob how?", selection: { kind: "auto" }, mentionIds: ["a2"] }),
+      expect.objectContaining({ body: "@Bob how?", selection: { kind: "auto", agent_id: null }, mentionIds: ["a2"] }),
     );
   });
 
@@ -330,6 +330,62 @@ describe("mentioning an agent", () => {
 
     expect(await screen.findByText("Ana is still working on a request.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Send" })).toBeDisabled();
+  });
+});
+
+describe("following the conversation", () => {
+  it("proposes the agent that replied last and sends the follow-up to it", async () => {
+    core({
+      get_room: () => detail({ proposed_agent_id: "a2" }),
+      resolve_recipient: ({ selection }) => ({ kind: "proposed", agent_id: (selection as { agent_id: string }).agent_id }),
+      send_intervention: () => sent(message("m1", "Why PKCE?"), run("queued", 0, { agent_id: "a2" })),
+    });
+    const user = userEvent.setup();
+    await renderRoom();
+
+    expect(screen.getByText("Replying to Bob")).toBeInTheDocument();
+    expect(screen.getByText("suggested")).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Ask" })).toHaveDisplayValue("From the message");
+    await user.type(screen.getByLabelText("Message"), "Why PKCE?{Enter}");
+
+    expect(invokeMock).toHaveBeenCalledWith("send_intervention", expect.objectContaining({ body: "Why PKCE?", selection: { kind: "auto", agent_id: "a2" } }));
+  });
+
+  it("moves the proposal only when an agent's reply is saved", async () => {
+    core({ get_room: () => detail({ messages: [message("m1", "Hi")], runs: [run("running", 1)], proposed_agent_id: "a2" }) });
+    await renderRoom();
+
+    emit("agent_run:status", run("failed", 1, { error_kind: "timeout" }));
+    expect(screen.getByText("Replying to Bob")).toBeInTheDocument();
+    emit("agent_run:status", run("succeeded", 1, { id: "run2", response_message_id: "m2" }));
+
+    expect(screen.getByText("Replying to Ana")).toBeInTheDocument();
+  });
+
+  it("lets you dismiss the proposal for one message or choose someone explicitly", async () => {
+    core({
+      get_room: () => detail({ proposed_agent_id: "a2" }),
+      resolve_recipient: () => ({ kind: "nobody" }),
+      send_intervention: () => sent(message("m1", "Note"), null),
+    });
+    const user = userEvent.setup();
+    await renderRoom();
+
+    await user.click(screen.getByRole("button", { name: "Don't send this message to Bob" }));
+    expect(screen.queryByText("Replying to Bob")).not.toBeInTheDocument();
+    await user.type(screen.getByLabelText("Message"), "Note{Enter}");
+    expect(invokeMock).toHaveBeenLastCalledWith("send_intervention", expect.objectContaining({ selection: { kind: "auto", agent_id: null } }));
+    expect(screen.getByText("Replying to Bob")).toBeInTheDocument();
+
+    await user.selectOptions(screen.getByRole("combobox", { name: "Ask" }), "Ana · QA Engineer");
+    expect(screen.queryByText("Replying to Bob")).not.toBeInTheDocument();
+  });
+
+  it("never proposes an agent that is not in the room", async () => {
+    core({ get_room: () => detail({ proposed_agent_id: "gone" }) });
+    await renderRoom();
+
+    expect(screen.queryByText(/Replying to/)).not.toBeInTheDocument();
   });
 });
 

@@ -1,4 +1,4 @@
-import { SendHorizontal } from "lucide-react";
+import { SendHorizontal, X } from "lucide-react";
 import { useId, useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
 import { translateWith } from "../../i18n/translate";
@@ -15,17 +15,19 @@ const bodyMaxChars = 4000;
 type Props = {
   roomId: string;
   agents: Participant[];
+  proposedAgentId: string | null;
   busyAgentIds: string[];
   sending: boolean;
   onSend: (draft: Draft) => Promise<SendResult>;
 };
 
-function selectionOf(value: string): Selection {
-  if (value === "auto" || value === "nobody") return { kind: value };
+function selectionOf(value: string, proposal: string | null): Selection {
+  if (value === "auto") return { kind: "auto", agent_id: proposal };
+  if (value === "nobody") return { kind: "nobody" };
   return { kind: "agent", agent_id: value };
 }
 
-export function MessageComposer({ roomId, agents, busyAgentIds, sending, onSend }: Props) {
+export function MessageComposer({ roomId, agents, proposedAgentId, busyAgentIds, sending, onSend }: Props) {
   const { t, locale } = useI18n();
   const limitId = useId();
   const statusId = useId();
@@ -39,8 +41,11 @@ export function MessageComposer({ roomId, agents, busyAgentIds, sending, onSend 
   const [highlighted, setHighlighted] = useState(0);
   const [dismissedAt, setDismissedAt] = useState<number | null>(null);
   const [pending, setPending] = useState<{ draft: Draft; choice: Choice } | null>(null);
+  const [dismissed, setDismissed] = useState<string | null>(null);
 
-  const selection = useMemo(() => selectionOf(recipient), [recipient]);
+  const proposal = proposedAgentId !== dismissed ? proposedAgentId : null;
+  const proposedAgent = recipient === "auto" ? agents.find((agent) => agent.id === proposal) : undefined;
+  const selection = useMemo(() => selectionOf(recipient, proposal), [recipient, proposal]);
   const mentionIdsKey = keptMentionIds(body, chosen).join(",");
   const mentionIds = useMemo(() => (mentionIdsKey ? mentionIdsKey.split(",") : []), [mentionIdsKey]);
   const preview = useRecipientPreview(roomId, body, selection, mentionIds);
@@ -52,7 +57,9 @@ export function MessageComposer({ roomId, agents, busyAgentIds, sending, onSend 
 
   const length = Array.from(body.trim()).length;
   const tooLong = length > bodyMaxChars;
-  const targetId = selection.kind === "agent" ? selection.agent_id : preview?.kind === "agent" ? preview.agent_id : null;
+  const following = proposedAgent !== undefined && (!preview || preview.kind === "proposed");
+  const targetId =
+    selection.kind === "agent" ? selection.agent_id : preview && preview.kind !== "nobody" && preview.kind !== "choose" ? preview.agent_id : following ? proposal : null;
   const target = agents.find((agent) => agent.id === targetId);
   const busy = target !== undefined && busyAgentIds.includes(target.id);
   const disabled = length === 0 || tooLong || sending || busy;
@@ -61,7 +68,7 @@ export function MessageComposer({ roomId, agents, busyAgentIds, sending, onSend 
     if (busy && target) return translateWith(locale, "agentRun.busy", { agent: target.name });
     if (!preview || selection.kind === "nobody") return null;
     if (preview.kind === "choose") return t(`agentRun.preview.${preview.reason}`);
-    if (selection.kind === "agent") return null;
+    if (selection.kind === "agent" || preview.kind === "proposed") return null;
     if (preview.kind === "agent" && target) return translateWith(locale, "agentRun.preview.agent", { agent: target.name });
     return t("agentRun.preview.nobody");
   }
@@ -87,6 +94,7 @@ export function MessageComposer({ roomId, agents, busyAgentIds, sending, onSend 
     if (result === "sent") {
       edit("", 0);
       setChosen([]);
+      setDismissed(null);
       return;
     }
     setPending({ draft, choice: result });
@@ -175,6 +183,22 @@ export function MessageComposer({ roomId, agents, busyAgentIds, sending, onSend 
             </Button>
           </div>
         </div>
+      )}
+      {following && (
+        <p className="flex items-center gap-2 text-sm text-muted">
+          <span>
+            {translateWith(locale, "agentRun.proposal", { agent: proposedAgent.name })}{" "}
+            <span className="rounded-full border border-line px-2 py-0.5 text-xs">{t("agentRun.proposed")}</span>
+          </span>
+          <button
+            type="button"
+            aria-label={translateWith(locale, "agentRun.dismissProposal", { agent: proposedAgent.name })}
+            onClick={() => setDismissed(proposedAgentId)}
+            className="grid size-6 cursor-pointer place-items-center rounded-full hover:bg-ink/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+          >
+            <X aria-hidden className="size-3.5" />
+          </button>
+        </p>
       )}
       <div className="relative flex items-end gap-2">
         {open && <MentionSuggestions id={listId} label={t("agentRun.mentions")} agents={suggestions} active={active} onPick={pick} />}

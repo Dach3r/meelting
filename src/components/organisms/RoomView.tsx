@@ -48,7 +48,7 @@ export function RoomView({ roomId, busy, deleteErrorMessage, onBack, onDelete, o
   }
 
   if (!detail) return null;
-  const { room, messages, runs } = detail;
+  const { room, messages, runs, proposal } = detail;
   const thinking = new Set(Object.values(runs.runs).filter(isActive).map((run) => run.agent_id));
 
   return (
@@ -90,6 +90,7 @@ export function RoomView({ roomId, busy, deleteErrorMessage, onBack, onDelete, o
           room={room}
           messages={messages}
           runs={runs}
+          proposedAgentId={proposal}
           providers={providers}
           sending={sending}
           errorMessage={sendErrorKey ? translateError(locale, sendErrorKey) : null}

@@ -34,7 +34,7 @@ function plain(sent: Message) {
 }
 
 function automatic(body: string) {
-  return { roomId: "r1", body, selection: { kind: "auto" }, mentionIds: [], clientRequestId: expect.any(String) };
+  return { roomId: "r1", body, selection: { kind: "auto", agent_id: null }, mentionIds: [], clientRequestId: expect.any(String) };
 }
 
 const handlers = new Map<string, EventCallback<unknown>>();
@@ -224,7 +224,7 @@ describe("inside a room", () => {
     const sent = message("m100", "Newest");
     const scrollIntoView = vi.spyOn(Element.prototype, "scrollIntoView");
     const user = await openDaily({
-      get_room: () => ({ room: daily, messages: [message("m0", "Hello team"), ...history.slice(1)], runs: [], partials: [] }),
+      get_room: () => ({ room: daily, messages: [message("m0", "Hello team"), ...history.slice(1)], runs: [], partials: [], proposed_agent_id: null }),
       send_intervention: () => plain(sent),
     });
     scrollIntoView.mockClear();

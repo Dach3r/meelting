@@ -297,6 +297,7 @@ async fn complete(engine: &Engine, run: &AgentRun, usage: Usage) {
     match commit_success(engine, run, body, usage).await {
         Ok(Some((message, done))) => {
             engine.registry.remove(&run.id);
+            engine.registry.responded(&run.room_id, &run.agent_id);
             engine.emit(RunEvent::MessageCreated(message));
             engine.emit(RunEvent::Status(done));
         }

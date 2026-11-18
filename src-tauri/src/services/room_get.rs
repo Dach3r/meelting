@@ -21,11 +21,15 @@ pub async fn run(
     let runs = agent_runs::for_room(&mut *transaction, room_id, RECENT_MESSAGES).await?;
     transaction.commit().await?;
     let room = with_agents(vec![row], participants).remove(0);
+    let proposed_agent_id = registry
+        .last_responder(room_id)
+        .filter(|agent_id| room.agents.iter().any(|agent| agent.id == *agent_id));
     Ok(RoomDetail {
         room,
         messages,
         runs,
         partials,
+        proposed_agent_id,
     })
 }
 

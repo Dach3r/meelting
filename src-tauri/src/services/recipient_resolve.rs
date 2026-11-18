@@ -82,7 +82,7 @@ mod tests {
             let pool = pool.clone();
             let room_id = room_id.clone();
             async move {
-                run(&pool, &room_id, body, &Selection::Auto, &[])
+                run(&pool, &room_id, body, &Selection::Auto(None), &[])
                     .await
                     .unwrap()
             }
@@ -115,7 +115,7 @@ mod tests {
         let (other_room, outsiders) = room_with(&pool, &["Olga"]).await;
 
         assert!(matches!(
-            run(&pool, &room_id, "@Bruno", &Selection::Auto, &[]).await,
+            run(&pool, &room_id, "@Bruno", &Selection::Auto(None), &[]).await,
             Err(SessionError::RoomNotFound)
         ));
         assert!(matches!(
@@ -134,7 +134,7 @@ mod tests {
                 &pool,
                 &other_room,
                 "@Bruno",
-                &Selection::Auto,
+                &Selection::Auto(None),
                 &[ids[0].clone()]
             )
             .await
@@ -142,7 +142,7 @@ mod tests {
             Resolution::Nobody
         );
         assert_eq!(
-            run(&pool, &other_room, "@olga", &Selection::Auto, &[])
+            run(&pool, &other_room, "@olga", &Selection::Auto(None), &[])
                 .await
                 .unwrap(),
             Resolution::Agent {

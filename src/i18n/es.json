@@ -237,6 +237,9 @@
     "askLabel": "Pedir a",
     "nobody": "Nadie, solo un mensaje",
     "auto": "Según el mensaje",
+    "proposal": "Respondiendo a {agent}",
+    "proposed": "propuesto",
+    "dismissProposal": "No dirigir este mensaje a {agent}",
     "busy": "{agent} todavía está trabajando en una solicitud.",
     "mentions": "Agentes de la sala",
     "preview": {

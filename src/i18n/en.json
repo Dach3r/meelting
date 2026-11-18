@@ -237,6 +237,9 @@
     "askLabel": "Ask",
     "nobody": "No one, just a message",
     "auto": "From the message",
+    "proposal": "Replying to {agent}",
+    "proposed": "suggested",
+    "dismissProposal": "Don't send this message to {agent}",
     "busy": "{agent} is still working on a request.",
     "mentions": "Agents in the room",
     "preview": {
