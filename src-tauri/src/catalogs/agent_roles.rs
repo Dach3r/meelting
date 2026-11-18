@@ -30,7 +30,7 @@ mod tests {
     fn loads_the_roles_without_duplicates() {
         let roles: Vec<String> = groups().into_iter().flat_map(|group| group.roles).collect();
 
-        assert_eq!(roles.len(), 14);
+        assert_eq!(roles.len(), 25);
         assert_eq!(roles.iter().collect::<HashSet<_>>().len(), roles.len());
         assert!(roles.iter().all(|role| {
             role == role.trim() && (1..=TEXT_MAX_CHARS).contains(&role.chars().count())
@@ -41,7 +41,7 @@ mod tests {
     fn groups_have_unique_keys_and_at_least_one_role() {
         let groups = groups();
 
-        assert_eq!(groups.len(), 4);
+        assert_eq!(groups.len(), 5);
         assert_eq!(
             groups
                 .iter()

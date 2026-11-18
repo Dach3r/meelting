@@ -7,7 +7,11 @@
 - group: engineering
   roles:
     - Software Developer
+    - Frontend Developer
+    - Backend Developer
+    - Mobile Developer
     - Tech Lead
+    - Code Reviewer
     - QA Engineer
     - DevOps Engineer
     - Security Engineer
@@ -20,3 +24,12 @@
     - UX/UI Designer
     - Technical Writer
     - Support Engineer
+- group: business
+  roles:
+    - Marketing Specialist
+    - SEO Specialist
+    - Sales Representative
+    - Customer Success Manager
+    - Legal Advisor
+    - Financial Analyst
+    - HR Specialist

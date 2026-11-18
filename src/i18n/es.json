@@ -54,7 +54,8 @@
         "product": "Producto",
         "engineering": "Ingeniería",
         "data": "Datos",
-        "design_support": "Diseño y soporte"
+        "design_support": "Diseño y soporte",
+        "business": "Negocio"
       },
       "provider": "Proveedor",
       "model": "Modelo",
@@ -78,6 +79,10 @@
       "team": "Equipo:",
       "back": "Volver a equipos",
       "custom": "Crear agente personalizado",
+      "search": "Buscar plantilla",
+      "all": "Todas",
+      "empty": "Ninguna plantilla coincide",
+      "categories": "Categorías",
       "details": "Ver detalles",
       "hire": "Contratar"
     },

@@ -1,4 +1,4 @@
-import { ChartColumn, Code, Package, PenLine, type LucideIcon } from "lucide-react";
+import { Briefcase, ChartColumn, Code, Package, PenLine, Search, type LucideIcon } from "lucide-react";
 import { useState } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
 import { useAgentRoles } from "../../hooks/useAgentRoles";
@@ -10,6 +10,7 @@ import { Button } from "../atoms/Button";
 import { Alert } from "../molecules/Alert";
 import { AgentTemplateDetail } from "../molecules/AgentTemplateDetail";
 import { Modal } from "../molecules/Modal";
+import { SegmentedControl } from "../molecules/SegmentedControl";
 import { AgentForm } from "./AgentForm";
 import { HireWizard } from "./HireWizard";
 
@@ -27,6 +28,7 @@ const roleGroupIcons: Record<string, LucideIcon> = {
   engineering: Code,
   data: ChartColumn,
   design_support: PenLine,
+  business: Briefcase,
 };
 
 type Dialog = { kind: "detail" | "hire"; template: AgentTemplate } | { kind: "custom" } | null;
@@ -34,12 +36,22 @@ type Dialog = { kind: "detail" | "hire"; template: AgentTemplate } | { kind: "cu
 export function AgentCatalogPage({ team, busy, actionErrorMessage, onCreateAgent, onClearActionError, onBack }: Props) {
   const { t, locale } = useI18n();
   const { templates, errorKey } = useAgentTemplates(locale);
-  const roleGroups = useAgentRoles().map(({ group, roles }) => ({
+  const rolesByGroup = useAgentRoles();
+  const roleGroups = rolesByGroup.map(({ group, roles }) => ({
     label: t(`teams.agent.roleGroups.${group}`),
     icon: roleGroupIcons[group],
     options: roles,
   }));
   const [dialog, setDialog] = useState<Dialog>(null);
+  const [query, setQuery] = useState("");
+  const [category, setCategory] = useState("all");
+  const groupOf = (template: AgentTemplate) => rolesByGroup.find(({ roles }) => roles.includes(template.role))?.group ?? "";
+  const needle = query.trim().toLowerCase();
+  const visibleTemplates = templates.filter(
+    (template) =>
+      (category === "all" || groupOf(template) === category) &&
+      [template.name, template.role, template.description].some((text) => text.toLowerCase().includes(needle)),
+  );
 
   function open(next: NonNullable<Dialog>) {
     onClearActionError();
@@ -74,12 +86,35 @@ export function AgentCatalogPage({ team, busy, actionErrorMessage, onCreateAgent
         </div>
       </div>
       {errorKey && <Alert message={translateError(locale, errorKey)} />}
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative min-w-60 flex-1">
+          <Search aria-hidden className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted" />
+          <input
+            type="search"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder={t("teams.catalog.search")}
+            aria-label={t("teams.catalog.search")}
+            className="w-full rounded-full border border-line bg-raised py-2.5 pr-4 pl-10 text-ink outline-none placeholder:text-muted focus:border-accent"
+          />
+        </div>
+        <SegmentedControl
+          label={t("teams.catalog.categories")}
+          value={category}
+          onChange={setCategory}
+          options={[
+            { value: "all", label: t("teams.catalog.all") },
+            ...rolesByGroup.map(({ group }) => ({ value: group, label: t(`teams.agent.roleGroups.${group}`) })),
+          ]}
+        />
+      </div>
+      {visibleTemplates.length === 0 && templates.length > 0 && <p className="py-6 text-center text-muted">{t("teams.catalog.empty")}</p>}
       <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {templates.map((template) => (
+        {visibleTemplates.map((template) => (
           <li key={template.key} className="grid content-between gap-4 rounded-2xl border border-line bg-raised p-5">
             <div className="grid gap-3">
               <div className="flex items-center gap-3">
-                <Avatar seed={template.key} label={template.name} className="size-12 rounded-xl text-xl" />
+                <Avatar seed={groupOf(template)} label={template.name} className="size-12 rounded-xl text-xl" />
                 <div className="min-w-0">
                   <h3 className="truncate font-bold text-ink">{template.name}</h3>
                   <p className="truncate text-sm text-muted">{template.role}</p>
@@ -109,7 +144,7 @@ export function AgentCatalogPage({ team, busy, actionErrorMessage, onCreateAgent
       </ul>
       {dialog?.kind === "detail" && (
         <Modal title={dialog.template.name} onClose={close}>
-          <AgentTemplateDetail template={dialog.template} />
+          <AgentTemplateDetail template={dialog.template} group={groupOf(dialog.template)} />
         </Modal>
       )}
       {dialog?.kind === "hire" && (

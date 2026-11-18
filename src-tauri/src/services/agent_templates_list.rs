@@ -29,7 +29,7 @@ mod tests {
         locale_change::run(&pool, Locale::Es).await.unwrap();
         let spanish = run(&pool).await.unwrap();
 
-        assert_eq!(english.len(), 5);
+        assert_eq!(english.len(), 25);
         assert_eq!(english[0].key, spanish[0].key);
         assert_ne!(english[0].description, spanish[0].description);
     }

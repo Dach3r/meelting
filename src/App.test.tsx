@@ -518,6 +518,28 @@ describe("agent catalog", () => {
     expect(screen.queryByRole("heading", { name: "Agent catalog" })).not.toBeInTheDocument();
   });
 
+  it("filters the templates by search text and by category", async () => {
+    mockCatalog();
+    const user = userEvent.setup();
+    render(<App />);
+    await openCatalog(user);
+    await screen.findByRole("heading", { name: "Product Owner" });
+
+    await user.type(screen.getByRole("searchbox", { name: "Search templates" }), "defects");
+    expect(screen.queryByRole("heading", { name: "Product Owner" })).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "QA Engineer" })).toBeInTheDocument();
+
+    await user.type(screen.getByRole("searchbox", { name: "Search templates" }), " nothing");
+    expect(screen.getByText("No template matches")).toBeInTheDocument();
+
+    await user.clear(screen.getByRole("searchbox", { name: "Search templates" }));
+    await user.click(screen.getByRole("button", { name: "Product" }));
+    expect(screen.getByRole("heading", { name: "Product Owner" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "QA Engineer" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "All" }));
+    expect(screen.getByRole("heading", { name: "QA Engineer" })).toBeInTheDocument();
+  });
+
   it("shows the template instructions by section", async () => {
     mockCatalog();
     const user = userEvent.setup();

@@ -54,7 +54,8 @@
         "product": "Product",
         "engineering": "Engineering",
         "data": "Data",
-        "design_support": "Design & support"
+        "design_support": "Design & support",
+        "business": "Business"
       },
       "provider": "Provider",
       "model": "Model",
@@ -78,6 +79,10 @@
       "team": "Team:",
       "back": "Back to teams",
       "custom": "Create custom agent",
+      "search": "Search templates",
+      "all": "All",
+      "empty": "No template matches",
+      "categories": "Categories",
       "details": "View details",
       "hire": "Hire"
     },

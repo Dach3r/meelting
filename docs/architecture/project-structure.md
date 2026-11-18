@@ -70,7 +70,7 @@ src-tauri/src/
     ├── agent_roles.rs     ✅ carga los roles predefinidos de agente (YAML) y valida que un rol exista
     ├── agent_roles.yml    ✅ roles agrupados por área
     ├── agent_templates.rs ✅ carga las plantillas de agente (YAML es/en) y valida claves
-    ├── agent_templates/   ✅ product_owner, software_developer, qa_engineer, devops_engineer, project_manager (.yml)
+    ├── agent_templates/   ✅ una plantilla por rol predefinido (25 .yml, p. ej. product_owner, qa_engineer, legal_advisor)
     └── llm.yml            pendiente
 ```
 
