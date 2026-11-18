@@ -23,6 +23,12 @@ pub enum SessionError {
     InvalidMessage,
     #[error("agent_has_activity")]
     AgentHasActivity,
+    #[error("invalid_client_request_id")]
+    InvalidClientRequestId,
+    #[error("agent_busy")]
+    AgentBusy,
+    #[error("client_request_conflict")]
+    ClientRequestConflict,
     #[error("not_set_up")]
     NotSetUp,
 }

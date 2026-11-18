@@ -12,7 +12,7 @@ async fn detect(providers: Vec<Provider>) -> Vec<LocalProviderModels> {
         providers
             .into_iter()
             .filter(|provider| provider.location == Location::Local)
-            .filter_map(|provider| provider.base_url.map(|url| (provider.key, url)))
+            .map(|provider| (provider.key, provider.base_url))
             .map(|(key, url)| async move {
                 let models = local_models::list(&url).await;
                 LocalProviderModels {
@@ -28,6 +28,7 @@ async fn detect(providers: Vec<Provider>) -> Vec<LocalProviderModels> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::catalogs::llm::{Model, OutputTokensParam, Protocol};
     use serde_json::json;
     use wiremock::matchers::{method, path};
     use wiremock::{Mock, MockServer, ResponseTemplate};
@@ -37,8 +38,10 @@ mod tests {
             key: key.into(),
             name: key.into(),
             location: Location::Local,
+            protocol: Protocol::ChatCompletions,
+            base_url,
+            output_tokens_param: Some(OutputTokensParam::MaxTokens),
             models: vec![],
-            base_url: Some(base_url),
         }
     }
 
@@ -56,8 +59,13 @@ mod tests {
             key: "openai".into(),
             name: "OpenAI".into(),
             location: Location::Cloud,
-            models: vec!["gpt-5".into()],
-            base_url: None,
+            protocol: Protocol::OpenaiResponses,
+            base_url: "https://api.openai.com/v1".into(),
+            output_tokens_param: None,
+            models: vec![Model {
+                key: "gpt-6.1-sol".into(),
+                max_output_tokens: 128000,
+            }],
         };
 
         let detected = detect(vec![

@@ -1,14 +1,20 @@
 use crate::domain::room::RoomList;
 use crate::repositories::rooms;
+use crate::services::agent_run_registry::Registry;
 use crate::services::rooms_list;
 use crate::services::session_load::{self, SessionError};
 use sqlx::SqlitePool;
 
-pub async fn run(pool: &SqlitePool, room_id: &str) -> Result<RoomList, SessionError> {
+pub async fn run(
+    pool: &SqlitePool,
+    registry: &Registry,
+    room_id: &str,
+) -> Result<RoomList, SessionError> {
     let workspace_id = session_load::require(pool).await?.current_workspace_id;
     if !rooms::delete(pool, &workspace_id, room_id).await? {
         return Err(SessionError::RoomNotFound);
     }
+    registry.cancel_room(room_id);
     rooms_list::run(pool).await
 }
 
@@ -58,7 +64,7 @@ mod tests {
             .await
             .unwrap();
 
-        let list = run(&pool, &room.id).await.unwrap();
+        let list = run(&pool, &Registry::default(), &room.id).await.unwrap();
 
         assert_eq!(list.rooms.len(), 1);
         assert_eq!(list.rooms[0].id, kept.id);
@@ -74,12 +80,12 @@ mod tests {
         let room = room_create::run(&pool, "Daily", vec![]).await.unwrap();
 
         assert!(matches!(
-            run(&pool, "missing").await,
+            run(&pool, &Registry::default(), "missing").await,
             Err(SessionError::RoomNotFound)
         ));
         workspace_create::run(&pool, "Globex").await.unwrap();
         assert!(matches!(
-            run(&pool, &room.id).await,
+            run(&pool, &Registry::default(), &room.id).await,
             Err(SessionError::RoomNotFound)
         ));
         assert_eq!(count(&pool, "SELECT COUNT(*) FROM rooms").await, 1);

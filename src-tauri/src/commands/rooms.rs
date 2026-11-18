@@ -1,7 +1,9 @@
 use crate::domain::room::{Message, Room, RoomDetail, RoomList};
+use crate::services::agent_run_engine::Engine;
 use crate::services::session_load::SessionError;
 use crate::services::{message_send, room_create, room_delete, room_get, rooms_list};
 use sqlx::SqlitePool;
+use std::sync::Arc;
 use tauri::{AppHandle, Emitter, State};
 
 #[tauri::command]
@@ -20,18 +22,18 @@ pub async fn create_room(
 
 #[tauri::command]
 pub async fn get_room(
-    pool: State<'_, SqlitePool>,
+    engine: State<'_, Arc<Engine>>,
     room_id: String,
 ) -> Result<RoomDetail, SessionError> {
-    room_get::run(&pool, &room_id).await
+    room_get::run(&engine.pool, &engine.registry, &room_id).await
 }
 
 #[tauri::command]
 pub async fn delete_room(
-    pool: State<'_, SqlitePool>,
+    engine: State<'_, Arc<Engine>>,
     room_id: String,
 ) -> Result<RoomList, SessionError> {
-    room_delete::run(&pool, &room_id).await
+    room_delete::run(&engine.pool, &engine.registry, &room_id).await
 }
 
 #[tauri::command]

@@ -24,6 +24,16 @@ pub async fn get<'e>(
         .await
 }
 
+pub async fn workspace_id<'e>(
+    executor: impl SqliteExecutor<'e>,
+    id: &str,
+) -> Result<Option<String>, sqlx::Error> {
+    sqlx::query_scalar("SELECT workspace_id FROM rooms WHERE id = ?")
+        .bind(id)
+        .fetch_optional(executor)
+        .await
+}
+
 pub async fn insert<'e>(
     executor: impl SqliteExecutor<'e>,
     id: &str,
@@ -131,5 +141,10 @@ mod tests {
         assert!(delete(&pool, "w1", "r1").await.unwrap());
         assert_eq!(get(&pool, "w1", "r1").await.unwrap(), None);
         assert!(get(&pool, "w2", "r4").await.unwrap().is_some());
+        assert_eq!(
+            workspace_id(&pool, "r4").await.unwrap().as_deref(),
+            Some("w2")
+        );
+        assert_eq!(workspace_id(&pool, "r1").await.unwrap(), None);
     }
 }

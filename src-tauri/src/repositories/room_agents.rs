@@ -19,6 +19,20 @@ pub async fn insert<'e>(
     Ok(())
 }
 
+pub async fn exists<'e>(
+    executor: impl SqliteExecutor<'e>,
+    room_id: &str,
+    agent_id: &str,
+) -> Result<bool, sqlx::Error> {
+    sqlx::query_scalar(
+        "SELECT EXISTS (SELECT 1 FROM room_agents WHERE room_id = ? AND agent_id = ?)",
+    )
+    .bind(room_id)
+    .bind(agent_id)
+    .fetch_one(executor)
+    .await
+}
+
 pub async fn list<'e>(
     executor: impl SqliteExecutor<'e>,
     workspace_id: &str,
@@ -72,6 +86,16 @@ mod tests {
             names,
             [("r1".into(), "Ana".into()), ("r1".into(), "Bea".into())]
         );
+    }
+
+    #[tokio::test]
+    async fn knows_whether_an_agent_takes_part_in_a_room() {
+        let (pool, _dir) = open_for_test().await;
+        seed(&pool).await;
+        insert(&pool, "r1", "a1", "w1").await.unwrap();
+
+        assert!(exists(&pool, "r1", "a1").await.unwrap());
+        assert!(!exists(&pool, "r1", "a2").await.unwrap());
     }
 
     #[tokio::test]

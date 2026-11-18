@@ -1,6 +1,9 @@
+pub mod agent_run;
 pub mod local_provider;
 pub mod locale;
 pub mod profile;
+pub mod prompt;
+pub mod provider_error;
 pub mod room;
 pub mod session;
 pub mod team;

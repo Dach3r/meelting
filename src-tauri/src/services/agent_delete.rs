@@ -25,6 +25,7 @@ mod tests {
     use crate::domain::locale::Locale;
     use crate::domain::team::AgentDraft;
     use crate::repositories::database::open_for_test;
+    use crate::services::agent_run_registry::Registry;
     use crate::services::{
         agent_create, first_launch, message_send, room_create, room_get, team_create,
         workspace_create,
@@ -104,7 +105,7 @@ mod tests {
         run(&pool, &agent_id).await.unwrap();
 
         assert!(
-            room_get::run(&pool, &room.id)
+            room_get::run(&pool, &Registry::default(), &room.id)
                 .await
                 .unwrap()
                 .room
@@ -131,7 +132,9 @@ mod tests {
             run(&pool, &agent_id).await,
             Err(SessionError::AgentHasActivity)
         ));
-        let detail = room_get::run(&pool, &room.id).await.unwrap();
+        let detail = room_get::run(&pool, &Registry::default(), &room.id)
+            .await
+            .unwrap();
         assert_eq!(detail.room.agents.len(), 1);
         assert_eq!(detail.messages.len(), 1);
     }
@@ -160,7 +163,9 @@ mod tests {
             run(&pool, &agent_id).await,
             Err(SessionError::AgentHasActivity)
         ));
-        let detail = room_get::run(&pool, &room.id).await.unwrap();
+        let detail = room_get::run(&pool, &Registry::default(), &room.id)
+            .await
+            .unwrap();
         assert_eq!(detail.room.agents.len(), 1);
     }
 }

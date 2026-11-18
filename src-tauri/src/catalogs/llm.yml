@@ -1,26 +1,43 @@
 - key: anthropic
   name: Anthropic
   location: cloud
+  protocol: anthropic_messages
+  base_url: https://api.anthropic.com/v1
   models:
-    - claude-sonnet-5-5
-    - claude-opus-5-5
-    - claude-haiku-5-5
+    - key: claude-sonnet-5-5
+      max_output_tokens: 128000
+    - key: claude-opus-5-5
+      max_output_tokens: 128000
+    - key: claude-haiku-5-5
+      max_output_tokens: 128000
 - key: openai
   name: OpenAI
   location: cloud
+  protocol: openai_responses
+  base_url: https://api.openai.com/v1
   models:
-    - gpt-6.1-sol
-    - gpt-6.1-terra
+    - key: gpt-6.1-sol
+      max_output_tokens: 128000
+    - key: gpt-6.1-terra
+      max_output_tokens: 128000
 - key: groq
   name: Groq
   location: cloud
+  protocol: chat_completions
+  base_url: https://api.groq.com/openai/v1
+  output_tokens_param: max_completion_tokens
   models:
-    - openai/gpt-oss-120b
+    - key: openai/gpt-oss-120b
+      max_output_tokens: 65536
 - key: ollama
   name: Ollama
   location: local
+  protocol: chat_completions
   base_url: http://localhost:11434/v1
+  output_tokens_param: max_tokens
 - key: lmstudio
   name: LM Studio
   location: local
+  protocol: chat_completions
   base_url: http://localhost:1234/v1
+  output_tokens_param: max_tokens

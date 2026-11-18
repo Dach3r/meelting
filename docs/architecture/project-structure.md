@@ -1,6 +1,6 @@
 # Estructura del proyecto
 
-> **Estado:** Fases 0–2 completadas; salas y mensajes de la Fase 3 construidos. Solo existen los módulos listados aquí como «✅». Lo marcado «pendiente» es la ubicación **prevista**; no se crea la carpeta hasta que haya código que la use (sin código muerto).
+> **Estado:** Fases 0–2 completadas; salas, mensajes y el núcleo de `AgentRun` (ejecución con streaming, reintentos y cancelación) de la Fase 3 construidos. Solo existen los módulos listados aquí como «✅». Lo marcado «pendiente» es la ubicación **prevista**; no se crea la carpeta hasta que haya código que la use (sin código muerto).
 
 Reglas de capas y convenciones: [overview.md](overview.md) §3 y §5.
 
@@ -28,16 +28,15 @@ La dependencia va siempre hacia abajo: `commands → services → system`. Ningu
 ```
 src-tauri/src/
 ├── main.rs                Arranque; solo llama a meelting_lib::run()
-├── lib.rs                 Builder de Tauri, plugin de estado de ventana y registro de comandos
+├── lib.rs                 Builder de Tauri, plugin de estado de ventana, expiración de ejecuciones al arrancar, motor de ejecución como estado y registro de comandos
 ├── commands/              Capa 1: comandos Tauri (delgados)
 │   ├── keychain.rs        ✅ save_secret, secret_last_four, delete_secret
 │   ├── worktree.rs        ✅ run_in_worktree
-│   ├── completion.rs      ✅ stream_completion
-│   ├── rooms.rs           ✅ list_rooms, create_room, get_room, delete_room, send_message (emite message:created)
+│   ├── agent_runs.rs      ✅ send_instruction, cancel_agent_run y el emisor de eventos del motor (agent_run:status, agent_run:token, message:created)
+│   ├── rooms.rs           ✅ list_rooms, create_room, get_room (con ejecuciones e instantáneas), delete_room, send_message (emite message:created)
 │   └── session.rs         ✅ load_session, complete_first_launch, create_workspace, switch_workspace, list_teams, create_team, create_agent, get_agent, update_agent, delete_agent, save_canvas_positions, reset_canvas_positions, list_agent_templates, list_agent_roles, list_llm_providers, detect_local_models, change_locale, change_theme
 ├── services/              Capa 2: acciones de negocio (verbos)
 │   ├── worktree_run.rs    ✅ crea un worktree y ejecuta un comando en él
-│   ├── completion_stream.rs ✅ lee la clave del keychain y hace streaming de una respuesta
 │   ├── session_load.rs    ✅ carga el perfil y los workspaces; define SessionError
 │   ├── first_launch.rs    ✅ crea el perfil y el primer workspace en una transacción
 │   ├── workspace_create.rs ✅ crea un workspace y lo deja como actual
@@ -52,9 +51,15 @@ src-tauri/src/
 │   ├── agent_delete.rs    ✅ elimina un agente del workspace actual y devuelve la lista actualizada; con mensajes o ejecuciones falla con agent_has_activity
 │   ├── rooms_list.rs      ✅ salas del workspace actual por actividad reciente, con sus agentes y los últimos 3 mensajes de la primera
 │   ├── room_create.rs     ✅ valida el nombre, deduplica los agentes y crea la sala con sus participantes en una transacción
-│   ├── room_get.rs        ✅ sala del workspace actual con sus agentes y sus últimos 100 mensajes
-│   ├── room_delete.rs     ✅ elimina una sala (participaciones y mensajes en cascada) y devuelve la lista actualizada
+│   ├── room_get.rs        ✅ sala del workspace actual con sus agentes, sus últimos 100 mensajes, sus ejecuciones y las instantáneas del buffer (tomadas antes de leer la base)
+│   ├── room_delete.rs     ✅ elimina una sala (participaciones, mensajes y ejecuciones en cascada), cancela sus ejecuciones activas y devuelve la lista actualizada
 │   ├── message_send.rs    ✅ guarda un mensaje del usuario y actualiza la actividad de la sala en una transacción
+│   ├── instruction_send.rs ✅ send_instruction: valida, deduplica por client_request_id, guarda el mensaje del usuario y la ejecución queued en una transacción y la entrega al motor
+│   ├── agent_run_engine.rs ✅ motor de ejecución: pool, registro, catálogo, límites, semáforos local (1) y nube (4) y emisor de eventos; lanza cada ejecución como tarea tokio
+│   ├── agent_run_execute.rs ✅ tarea de una ejecución: espera de plaza, claim, contexto congelado, llamada al adaptador, tokens agrupados cada 50 ms, reintentos con plaza liberada, duración máxima, éxito atómico y fallos
+│   ├── agent_run_registry.rs ✅ registro en memoria de ejecuciones aceptadas: texto del intento acotado por L1, secuencia, prompt congelado y token de cancelación
+│   ├── agent_run_cancel.rs ✅ cancelación idempotente filtrada por workspace
+│   ├── agent_runs_expire.rs ✅ expira las ejecuciones queued y running al arrancar
 │   ├── canvas_positions_save.rs ✅ guarda las posiciones del organigrama de equipos y agentes del workspace actual
 │   ├── canvas_positions_reset.rs ✅ borra las posiciones del organigrama del workspace actual y devuelve la lista actualizada
 │   ├── agent_roles_list.rs ✅ roles predefinidos del catálogo, agrupados por área
@@ -64,7 +69,10 @@ src-tauri/src/
 ├── system/                Capa 3: integración con el SO, sin reglas de negocio
 │   ├── git.rs             ✅ git por tokio::process (worktree add)
 │   ├── terminal.rs        ✅ PTY portable y lectura de salida
-│   ├── chat_completions.rs ✅ cliente HTTP con SSE (Chat Completions)
+│   ├── llm_stream.rs      ✅ HTTP + SSE común a los adaptadores: conexión, inactividad, errores HTTP por estado y código, retry-after
+│   ├── anthropic_messages.rs ✅ adaptador de la Messages API de Anthropic
+│   ├── openai_responses.rs ✅ adaptador de la Responses API de OpenAI
+│   ├── chat_completions.rs ✅ adaptador de Chat Completions (Groq, Ollama, LM Studio)
 │   ├── local_models.rs    ✅ lista los modelos de un proveedor local (GET /models)
 │   └── keychain.rs        ✅ keychain del SO (crate keyring)
 ├── repositories/          Acceso a SQLite (sqlx); las migraciones viven en src-tauri/migrations
@@ -77,8 +85,11 @@ src-tauri/src/
 │   ├── rooms.rs           ✅ consultas de la tabla rooms
 │   ├── room_agents.rs     ✅ consultas de la tabla room_agents
 │   ├── messages.rs        ✅ consultas de la tabla messages
-│   └── agent_runs.rs      ✅ pruebas de integridad del esquema de agent_runs (las consultas llegan con el motor de ejecución)
+│   └── agent_runs.rs      ✅ consultas y transiciones con guarda de agent_runs, y las pruebas de integridad del esquema
 ├── domain/                Modelos y lógica pura, sin I/O
+│   ├── agent_run.rs       ✅ estados, error_kind, ejecución, instantánea, límites internos inyectables y política de reintentos
+│   ├── prompt.rs          ✅ BuildPrompt: instrucciones, marco, historial etiquetado y presupuesto; context_too_large si el mínimo no cabe
+│   ├── provider_error.rs  ✅ normalización de errores del proveedor por estado HTTP y código
 │   ├── local_provider.rs  ✅ proveedor local detectado (clave, en ejecución, modelos)
 │   ├── locale.rs          ✅ idioma es/en
 │   ├── theme.rs           ✅ tema system/light/dark
@@ -92,7 +103,7 @@ src-tauri/src/
     ├── agent_roles.yml    ✅ roles agrupados por área
     ├── agent_templates.rs ✅ carga las plantillas de agente (YAML es/en) y valida claves
     ├── agent_templates/   ✅ una plantilla por rol predefinido (25 .yml, p. ej. product_owner, qa_engineer, legal_advisor)
-    ├── llm.rs             ✅ carga proveedores y modelos (YAML) y valida que un par proveedor/modelo exista
+    ├── llm.rs             ✅ carga proveedores (protocolo, base_url, parámetro de tokens de salida) y modelos con su máximo de salida, y valida que un par proveedor/modelo exista; la UI solo recibe los nombres
     └── llm.yml            ✅ proveedores en la nube y locales con sus modelos
 ```
 
@@ -110,12 +121,12 @@ src-tauri/src/
 
 - **Un error por módulo** con `thiserror`. Solo se implementa `Serialize` en el error que cruza hacia la UI (el del servicio o el de `keychain`), como cadena.
 - **Comandos de secretos sin servicio:** `commands/keychain.rs` llama a `system/keychain.rs` directamente porque aún no hay regla que orquestar. Cuando exista la verificación previa a guardar (Fase 3), pasa a un servicio.
-- **Errores hacia la UI como código:** `SessionError` se serializa como un código estable (`invalid_name`, `invalid_agent`, `invalid_message`, `workspace_not_found`, `team_not_found`, `agent_not_found`, `room_not_found`, `agent_has_activity`, `not_set_up`, `database`); la UI lo traduce. No viaja el detalle de la base de datos.
+- **Errores hacia la UI como código:** `SessionError` se serializa como un código estable (`invalid_name`, `invalid_agent`, `invalid_message`, `workspace_not_found`, `team_not_found`, `agent_not_found`, `room_not_found`, `agent_has_activity`, `invalid_client_request_id`, `agent_busy`, `client_request_conflict`, `not_set_up`, `database`); la UI lo traduce. Los fallos de una ejecución no son errores de comando: viajan como `error_kind` en la ejecución. No viaja el detalle de la base de datos.
 - **Base de datos:** el pool se abre en `setup` (`app_data_dir()/meelting.db`) y se registra como estado de Tauri; los comandos lo reciben con `State<SqlitePool>`. Los repositorios aceptan cualquier `SqliteExecutor` para poder usarse dentro de transacciones. Las escrituras que leen y luego escriben (crear sala, enviar mensaje) abren la transacción con `pool.begin_with("BEGIN IMMEDIATE")` sobre una conexión nueva del pool (nunca anidada): toman el bloqueo de escritura al empezar y esperan hasta el `busy_timeout` de sqlx (5 s); si se agota, el error llega como `database`. Las lecturas de varias tablas usan una transacción normal para leer una instantánea coherente.
 - **Servicios sin Tauri:** reciben `impl Fn` para salida y fin, de modo que se prueban sin ventana ni `AppHandle`.
-- **Eventos hacia la UI:** los emite el comando. Nombres actuales: `terminal-output` (texto), `terminal-exit` (código de salida), `llm-token` (fragmento de respuesta) y `message:created` (mensaje completo con su `room_id`, emitido después del commit; el comando también devuelve el mensaje). El fin del streaming es el retorno del comando.
-- **Claves:** solo el servicio las lee del keychain (`system::keychain::read`); nunca viajan a la UI. Los errores del proveedor no incluyen su texto, solo el estado HTTP.
-- **Proveedores sin nombres en el código:** el cliente recibe `base_url`, `model` y, opcional, el nombre del secreto. Los adaptadores por proveedor llegan en la Fase 3.
+- **Eventos hacia la UI:** los emite la capa de comandos. Nombres actuales: `terminal-output` (texto), `terminal-exit` (código de salida), `message:created` (mensaje completo con su `room_id`, después del commit), `agent_run:status` (la ejecución completa, después del commit de cada transición) y `agent_run:token` (`run_id`, `room_id`, `attempt`, `seq`, `text`). El motor de ejecución recibe un *callback* (`Emit`) que `commands/agent_runs.rs` traduce a eventos Tauri, así que los servicios siguen sin conocer Tauri.
+- **Claves:** solo la tarea de ejecución las lee del keychain (`<workspace_id>/<provider>`) justo antes de cada intento; nunca viajan a la UI, eventos ni errores. Los errores del proveedor se reducen a un `error_kind`; su texto nunca sale del adaptador.
+- **Proveedores sin nombres en el código:** el adaptador se elige con un `match` sobre el `protocol` del catálogo y recibe `base_url`, `model` y el tope de salida; ningún modelo se nombra en el código de producción.
 - **Pruebas junto al código** (`#[cfg(test)] mod tests`), con repositorios git temporales reales (`tempfile`) y sin APIs externas.
 - Nombres de archivo en `snake_case`; el servicio se nombra por la acción (`worktree_run`), no por el recurso.
 
@@ -151,7 +162,7 @@ src/
 | `hooks/` | Único lugar que llama a `invoke` o `listen`. Un hook por caso de uso, nombrado `use<Verbo><Objeto>` |
 | `App.tsx` | Compone organismos o templates; sin lógica |
 
-Los tests con Vitest viven junto al código (`App.test.tsx`, `translate.test.ts`, `RoomsPage.test.tsx`). Los spikes de Fase 0 que tenían interfaz (`run_in_worktree`, `stream_completion`) conservan su comando y servicio en el núcleo, pero ya no tienen pantalla; la interfaz definitiva llega con las fases 3 y 4.
+Los tests con Vitest viven junto al código (`App.test.tsx`, `translate.test.ts`, `RoomsPage.test.tsx`). El spike `run_in_worktree` conserva su comando y servicio en el núcleo sin pantalla; su interfaz llega con la Fase 4. El spike `stream_completion` se eliminó al llegar los adaptadores de `AgentRun`.
 
 ## Dónde poner lo nuevo
 

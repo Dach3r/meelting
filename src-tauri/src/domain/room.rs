@@ -1,3 +1,4 @@
+use crate::domain::agent_run::{AgentRun, Partial};
 use serde::Serialize;
 
 pub const BODY_MAX_CHARS: usize = 4000;
@@ -38,6 +39,8 @@ pub struct RoomList {
 pub struct RoomDetail {
     pub room: Room,
     pub messages: Vec<Message>,
+    pub runs: Vec<AgentRun>,
+    pub partials: Vec<Partial>,
 }
 
 pub fn normalize_body(raw: &str) -> Option<String> {

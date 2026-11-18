@@ -32,6 +32,64 @@ pub async fn insert_from_user<'e>(
     Ok(to_message(row))
 }
 
+pub async fn insert_from_agent<'e>(
+    executor: impl SqliteExecutor<'e>,
+    id: &str,
+    room_id: &str,
+    agent_id: &str,
+    body: &str,
+) -> Result<Message, sqlx::Error> {
+    let row: MessageRow = sqlx::query_as(
+        "INSERT INTO messages (id, room_id, agent_id, body, created_at) \
+         VALUES (?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) \
+         RETURNING id, room_id, agent_id, body, created_at",
+    )
+    .bind(id)
+    .bind(room_id)
+    .bind(agent_id)
+    .bind(body)
+    .fetch_one(executor)
+    .await?;
+    Ok(to_message(row))
+}
+
+pub async fn get<'e>(
+    executor: impl SqliteExecutor<'e>,
+    room_id: &str,
+    id: &str,
+) -> Result<Option<Message>, sqlx::Error> {
+    let row: Option<MessageRow> = sqlx::query_as(
+        "SELECT id, room_id, agent_id, body, created_at FROM messages WHERE id = ? AND room_id = ?",
+    )
+    .bind(id)
+    .bind(room_id)
+    .fetch_optional(executor)
+    .await?;
+    Ok(row.map(to_message))
+}
+
+pub async fn before<'e>(
+    executor: impl SqliteExecutor<'e>,
+    room_id: &str,
+    message: &Message,
+    limit: i64,
+) -> Result<Vec<Message>, sqlx::Error> {
+    let rows: Vec<MessageRow> = sqlx::query_as(
+        "SELECT id, room_id, agent_id, body, created_at FROM ( \
+             SELECT id, room_id, agent_id, body, created_at FROM messages \
+             WHERE room_id = ? AND (created_at, id) < (?, ?) \
+             ORDER BY created_at DESC, id DESC LIMIT ? \
+         ) ORDER BY created_at, id",
+    )
+    .bind(room_id)
+    .bind(&message.created_at)
+    .bind(&message.id)
+    .bind(limit)
+    .fetch_all(executor)
+    .await?;
+    Ok(rows.into_iter().map(to_message).collect())
+}
+
 pub async fn recent<'e>(
     executor: impl SqliteExecutor<'e>,
     room_id: &str,
@@ -99,6 +157,44 @@ mod tests {
         assert_eq!(message.agent_id, None);
         assert_eq!(message.body, "Hola");
         assert_eq!(recent(&pool, "r1", 100).await.unwrap(), [message]);
+    }
+
+    #[tokio::test]
+    async fn reads_the_messages_before_another_in_chronological_order() {
+        let (pool, _dir) = open_for_test().await;
+        seed(&pool).await;
+        sqlx::query("INSERT INTO messages VALUES ('m1', 'r1', NULL, 'one', '1'), ('m2', 'r1', 'a1', 'two', '2'), ('m4', 'r1', NULL, 'tie', '3'), ('m3', 'r1', NULL, 'request', '3'), ('m5', 'r1', NULL, 'later', '4'), ('m9', 'r2', NULL, 'other', '0')")
+            .execute(&pool)
+            .await
+            .unwrap();
+        let request = get(&pool, "r1", "m4").await.unwrap().unwrap();
+
+        let ids: Vec<String> = before(&pool, "r1", &request, 2)
+            .await
+            .unwrap()
+            .into_iter()
+            .map(|message| message.id)
+            .collect();
+
+        assert_eq!(ids, ["m2", "m3"]);
+        assert_eq!(get(&pool, "r2", "m4").await.unwrap(), None);
+    }
+
+    #[tokio::test]
+    async fn inserts_an_agent_message_of_any_length() {
+        let (pool, _dir) = open_for_test().await;
+        seed(&pool).await;
+
+        let message = insert_from_agent(&pool, "m1", "r1", "a1", &"a".repeat(5000))
+            .await
+            .unwrap();
+
+        assert_eq!(message.agent_id.as_deref(), Some("a1"));
+        assert!(
+            insert_from_agent(&pool, "m2", "r1", "a2", "hi")
+                .await
+                .is_err()
+        );
     }
 
     #[tokio::test]

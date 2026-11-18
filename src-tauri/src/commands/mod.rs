@@ -1,4 +1,4 @@
-pub mod completion;
+pub mod agent_runs;
 pub mod keychain;
 pub mod rooms;
 pub mod session;

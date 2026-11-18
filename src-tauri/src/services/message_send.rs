@@ -31,6 +31,7 @@ mod tests {
     use super::*;
     use crate::domain::locale::Locale;
     use crate::repositories::database::open_for_test;
+    use crate::services::agent_run_registry::Registry;
     use crate::services::{first_launch, room_create, room_delete, room_get, workspace_create};
     use futures_util::future::join_all;
 
@@ -49,7 +50,9 @@ mod tests {
         assert_eq!(message.room_id, room.id);
         assert_eq!(message.agent_id, None);
         assert_eq!(message.body, "Hola equipo");
-        let detail = room_get::run(&pool, &room.id).await.unwrap();
+        let detail = room_get::run(&pool, &Registry::default(), &room.id)
+            .await
+            .unwrap();
         assert_eq!(detail.messages, std::slice::from_ref(&message));
         assert_eq!(detail.room.updated_at, message.created_at);
     }
@@ -67,7 +70,9 @@ mod tests {
             ));
         }
         assert_eq!(count(&pool, "SELECT COUNT(*) FROM messages").await, 0);
-        let detail = room_get::run(&pool, &room.id).await.unwrap();
+        let detail = room_get::run(&pool, &Registry::default(), &room.id)
+            .await
+            .unwrap();
         assert_eq!(detail.room.updated_at, room.updated_at);
     }
 
@@ -119,7 +124,9 @@ mod tests {
         .await;
 
         assert!(sent.iter().all(Result::is_ok));
-        let detail = room_get::run(&pool, &room.id).await.unwrap();
+        let detail = room_get::run(&pool, &Registry::default(), &room.id)
+            .await
+            .unwrap();
         assert_eq!(detail.messages.len(), 20);
         let latest = detail
             .messages
@@ -138,9 +145,10 @@ mod tests {
 
         let bodies: Vec<String> = (0..10).map(|index| format!("m{index}")).collect();
 
+        let registry = Registry::default();
         let (sent, deleted) = tokio::join!(
             join_all(bodies.iter().map(|body| run(&pool, &room.id, body))),
-            room_delete::run(&pool, &room.id)
+            room_delete::run(&pool, &registry, &room.id)
         );
 
         assert!(deleted.is_ok());

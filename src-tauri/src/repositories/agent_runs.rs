@@ -1,3 +1,246 @@
+use crate::domain::agent_run::{AgentRun, ErrorKind, MAX_ATTEMPTS, RunStatus};
+use sqlx::SqliteExecutor;
+
+const COLUMNS: &str = "id, room_id, agent_id, request_message_id, response_message_id, status, error_kind, attempts, provider, model, input_tokens, output_tokens, created_at, started_at, finished_at";
+const NOW: &str = "strftime('%Y-%m-%dT%H:%M:%fZ', 'now')";
+
+#[derive(sqlx::FromRow)]
+struct Row {
+    id: String,
+    room_id: String,
+    agent_id: String,
+    request_message_id: String,
+    response_message_id: Option<String>,
+    status: String,
+    error_kind: Option<String>,
+    attempts: i64,
+    provider: String,
+    model: String,
+    input_tokens: Option<i64>,
+    output_tokens: Option<i64>,
+    created_at: String,
+    started_at: Option<String>,
+    finished_at: Option<String>,
+}
+
+impl TryFrom<Row> for AgentRun {
+    type Error = sqlx::Error;
+
+    fn try_from(row: Row) -> Result<Self, Self::Error> {
+        let invalid = |column: &str| sqlx::Error::ColumnDecode {
+            index: column.into(),
+            source: "unknown value".into(),
+        };
+        Ok(AgentRun {
+            status: RunStatus::parse(&row.status).ok_or_else(|| invalid("status"))?,
+            error_kind: match row.error_kind {
+                Some(kind) => Some(ErrorKind::parse(&kind).ok_or_else(|| invalid("error_kind"))?),
+                None => None,
+            },
+            id: row.id,
+            room_id: row.room_id,
+            agent_id: row.agent_id,
+            request_message_id: row.request_message_id,
+            response_message_id: row.response_message_id,
+            attempts: row.attempts,
+            provider: row.provider,
+            model: row.model,
+            input_tokens: row.input_tokens,
+            output_tokens: row.output_tokens,
+            created_at: row.created_at,
+            started_at: row.started_at,
+            finished_at: row.finished_at,
+        })
+    }
+}
+
+async fn one<'e>(
+    executor: impl SqliteExecutor<'e>,
+    query: sqlx::query::QueryAs<'_, sqlx::Sqlite, Row, sqlx::sqlite::SqliteArguments>,
+) -> Result<Option<AgentRun>, sqlx::Error> {
+    query
+        .fetch_optional(executor)
+        .await?
+        .map(AgentRun::try_from)
+        .transpose()
+}
+
+pub struct NewRun<'a> {
+    pub id: &'a str,
+    pub room_id: &'a str,
+    pub agent_id: &'a str,
+    pub request_message_id: &'a str,
+    pub client_request_id: &'a str,
+    pub provider: &'a str,
+    pub model: &'a str,
+    pub created_at: &'a str,
+}
+
+pub async fn insert_queued<'e>(
+    executor: impl SqliteExecutor<'e>,
+    run: &NewRun<'_>,
+) -> Result<AgentRun, sqlx::Error> {
+    let row: Row = sqlx::query_as(sqlx::AssertSqlSafe(format!(
+        "INSERT INTO agent_runs (id, room_id, agent_id, request_message_id, client_request_id, status, attempts, provider, model, created_at) \
+         VALUES (?, ?, ?, ?, ?, 'queued', 0, ?, ?, ?) RETURNING {COLUMNS}"
+    )))
+    .bind(run.id)
+    .bind(run.room_id)
+    .bind(run.agent_id)
+    .bind(run.request_message_id)
+    .bind(run.client_request_id)
+    .bind(run.provider)
+    .bind(run.model)
+    .bind(run.created_at)
+    .fetch_one(executor)
+    .await?;
+    row.try_into()
+}
+
+pub async fn find_by_client_request<'e>(
+    executor: impl SqliteExecutor<'e>,
+    room_id: &str,
+    client_request_id: &str,
+) -> Result<Option<AgentRun>, sqlx::Error> {
+    one(
+        executor,
+        sqlx::query_as(sqlx::AssertSqlSafe(format!(
+            "SELECT {COLUMNS} FROM agent_runs WHERE room_id = ? AND client_request_id = ?"
+        )))
+        .bind(room_id.to_string())
+        .bind(client_request_id.to_string()),
+    )
+    .await
+}
+
+pub async fn has_active<'e>(
+    executor: impl SqliteExecutor<'e>,
+    room_id: &str,
+    agent_id: &str,
+) -> Result<bool, sqlx::Error> {
+    sqlx::query_scalar(
+        "SELECT EXISTS (SELECT 1 FROM agent_runs WHERE room_id = ? AND agent_id = ? AND status IN ('queued', 'running'))",
+    )
+    .bind(room_id)
+    .bind(agent_id)
+    .fetch_one(executor)
+    .await
+}
+
+pub async fn claim<'e>(
+    executor: impl SqliteExecutor<'e>,
+    id: &str,
+) -> Result<Option<AgentRun>, sqlx::Error> {
+    one(
+        executor,
+        sqlx::query_as(sqlx::AssertSqlSafe(format!(
+            "UPDATE agent_runs SET status = 'running', attempts = attempts + 1, started_at = COALESCE(started_at, {NOW}) \
+             WHERE id = ? AND status = 'queued' AND attempts < {MAX_ATTEMPTS} RETURNING {COLUMNS}"
+        )))
+        .bind(id.to_string()),
+    )
+    .await
+}
+
+pub async fn requeue<'e>(
+    executor: impl SqliteExecutor<'e>,
+    id: &str,
+) -> Result<Option<AgentRun>, sqlx::Error> {
+    one(
+        executor,
+        sqlx::query_as(sqlx::AssertSqlSafe(format!(
+            "UPDATE agent_runs SET status = 'queued' \
+             WHERE id = ? AND status = 'running' AND attempts < {MAX_ATTEMPTS} RETURNING {COLUMNS}"
+        )))
+        .bind(id.to_string()),
+    )
+    .await
+}
+
+pub async fn succeed<'e>(
+    executor: impl SqliteExecutor<'e>,
+    id: &str,
+    response_message_id: &str,
+    input_tokens: Option<i64>,
+    output_tokens: Option<i64>,
+) -> Result<Option<AgentRun>, sqlx::Error> {
+    one(
+        executor,
+        sqlx::query_as(sqlx::AssertSqlSafe(format!(
+            "UPDATE agent_runs SET status = 'succeeded', response_message_id = ?, input_tokens = ?, output_tokens = ?, finished_at = {NOW} \
+             WHERE id = ? AND status = 'running' RETURNING {COLUMNS}"
+        )))
+        .bind(response_message_id.to_string())
+        .bind(input_tokens)
+        .bind(output_tokens)
+        .bind(id.to_string()),
+    )
+    .await
+}
+
+pub async fn fail<'e>(
+    executor: impl SqliteExecutor<'e>,
+    id: &str,
+    kind: ErrorKind,
+) -> Result<Option<AgentRun>, sqlx::Error> {
+    one(
+        executor,
+        sqlx::query_as(sqlx::AssertSqlSafe(format!(
+            "UPDATE agent_runs SET status = 'failed', error_kind = ?, finished_at = {NOW} \
+             WHERE id = ? AND status IN ('queued', 'running') RETURNING {COLUMNS}"
+        )))
+        .bind(kind.as_str())
+        .bind(id.to_string()),
+    )
+    .await
+}
+
+pub async fn cancel<'e>(
+    executor: impl SqliteExecutor<'e>,
+    workspace_id: &str,
+    id: &str,
+) -> Result<Option<AgentRun>, sqlx::Error> {
+    one(
+        executor,
+        sqlx::query_as(sqlx::AssertSqlSafe(format!(
+            "UPDATE agent_runs SET status = 'failed', error_kind = 'cancelled', finished_at = {NOW} \
+             WHERE id = ? AND status IN ('queued', 'running') \
+             AND room_id IN (SELECT id FROM rooms WHERE workspace_id = ?) RETURNING {COLUMNS}"
+        )))
+        .bind(id.to_string())
+        .bind(workspace_id.to_string()),
+    )
+    .await
+}
+
+pub async fn expire_active<'e>(executor: impl SqliteExecutor<'e>) -> Result<u64, sqlx::Error> {
+    let result = sqlx::query(sqlx::AssertSqlSafe(format!(
+        "UPDATE agent_runs SET status = 'failed', error_kind = 'expired', finished_at = {NOW} \
+         WHERE status IN ('queued', 'running')"
+    )))
+    .execute(executor)
+    .await?;
+    Ok(result.rows_affected())
+}
+
+pub async fn for_room<'e>(
+    executor: impl SqliteExecutor<'e>,
+    room_id: &str,
+    recent_messages: i64,
+) -> Result<Vec<AgentRun>, sqlx::Error> {
+    let rows: Vec<Row> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
+        "SELECT {COLUMNS} FROM agent_runs WHERE room_id = ? AND (status IN ('queued', 'running') OR request_message_id IN ( \
+             SELECT id FROM messages WHERE room_id = ? ORDER BY created_at DESC, id DESC LIMIT ? \
+         )) ORDER BY created_at, id"
+    )))
+    .bind(room_id)
+    .bind(room_id)
+    .bind(recent_messages)
+    .fetch_all(executor)
+    .await?;
+    rows.into_iter().map(AgentRun::try_from).collect()
+}
+
 #[cfg(test)]
 mod tests {
     use crate::repositories::database::open_for_test;
@@ -32,6 +275,8 @@ mod tests {
         "started_at",
         "finished_at",
     ];
+
+    type Case = (&'static str, Vec<(&'static str, &'static str)>, bool);
 
     const T0: &str = "'2026-11-19T10:00:00.000Z'";
     const T1: &str = "'2026-11-19T10:00:01.000Z'";
@@ -117,7 +362,7 @@ mod tests {
             ("finished_at", T2),
             ("response_message_id", "'g1'"),
         ];
-        let cases: Vec<(&str, Vec<(&str, &str)>, bool)> = vec![
+        let cases: Vec<Case> = vec![
             ("queued without attempts", vec![], true),
             ("running on its first attempt", running("1"), true),
             (
@@ -692,5 +937,190 @@ mod tests {
             .unwrap();
         assert_eq!(integrity, "ok");
         assert_eq!(count(&pool, "SELECT COUNT(*) FROM messages").await, 8);
+    }
+}
+
+#[cfg(test)]
+mod transition_tests {
+    use super::*;
+    use crate::repositories::database::open_for_test;
+    use sqlx::SqlitePool;
+
+    async fn seeded() -> (SqlitePool, tempfile::TempDir) {
+        let (pool, dir) = open_for_test().await;
+        for sql in [
+            "INSERT INTO workspaces VALUES ('w1', 'A', 'x', 'x'), ('w2', 'B', 'x', 'x')",
+            "INSERT INTO teams VALUES ('t1', 'w1', 'General', 'x', 'x')",
+            "INSERT INTO agents VALUES ('a1', 'w1', 't1', NULL, 'Ana', 'QA', '', '', 'ollama', 'qwen', 'x', 'x')",
+            "INSERT INTO rooms VALUES ('r1', 'w1', 'Sala', 'x', 'x')",
+            "INSERT INTO room_agents VALUES ('r1', 'a1', 'w1', 'x')",
+            "INSERT INTO messages VALUES ('u1', 'r1', NULL, 'hola', '2026-01-01T00:00:00.000Z'), ('u2', 'r1', NULL, 'otra', '2026-01-01T00:00:01.000Z'), ('g1', 'r1', 'a1', 'hi', '2026-01-01T00:00:02.000Z')",
+        ] {
+            sqlx::query(sql).execute(&pool).await.unwrap();
+        }
+        (pool, dir)
+    }
+
+    async fn queued(pool: &SqlitePool, id: &str, request: &str, client: &str) -> AgentRun {
+        insert_queued(
+            pool,
+            &NewRun {
+                id,
+                room_id: "r1",
+                agent_id: "a1",
+                request_message_id: request,
+                client_request_id: client,
+                provider: "ollama",
+                model: "qwen",
+                created_at: "2026-01-01T00:00:00.000Z",
+            },
+        )
+        .await
+        .unwrap()
+    }
+
+    const CLIENT: &str = "0196f3a0-0000-7000-8000-000000000001";
+
+    #[tokio::test]
+    async fn walks_a_run_through_retries_to_success() {
+        let (pool, _dir) = seeded().await;
+        let run = queued(&pool, "run1", "u1", CLIENT).await;
+        assert_eq!((run.status, run.attempts), (RunStatus::Queued, 0));
+        assert!(has_active(&pool, "r1", "a1").await.unwrap());
+
+        let first = claim(&pool, "run1").await.unwrap().unwrap();
+        let waiting = requeue(&pool, "run1").await.unwrap().unwrap();
+        let second = claim(&pool, "run1").await.unwrap().unwrap();
+        let done = succeed(&pool, "run1", "g1", Some(10), Some(2))
+            .await
+            .unwrap()
+            .unwrap();
+
+        assert_eq!((first.status, first.attempts), (RunStatus::Running, 1));
+        assert_eq!((waiting.status, waiting.attempts), (RunStatus::Queued, 1));
+        assert_eq!(second.attempts, 2);
+        assert_eq!(second.started_at, first.started_at);
+        assert_eq!(done.status, RunStatus::Succeeded);
+        assert_eq!(done.response_message_id.as_deref(), Some("g1"));
+        assert_eq!((done.input_tokens, done.output_tokens), (Some(10), Some(2)));
+        assert!(done.finished_at.is_some());
+        assert!(!has_active(&pool, "r1", "a1").await.unwrap());
+    }
+
+    #[tokio::test]
+    async fn transitions_only_apply_from_their_expected_state() {
+        let (pool, _dir) = seeded().await;
+        queued(&pool, "run1", "u1", CLIENT).await;
+
+        assert_eq!(requeue(&pool, "run1").await.unwrap(), None);
+        assert_eq!(
+            succeed(&pool, "run1", "g1", None, None).await.unwrap(),
+            None
+        );
+        claim(&pool, "run1").await.unwrap().unwrap();
+        assert_eq!(claim(&pool, "run1").await.unwrap(), None);
+        assert_eq!(claim(&pool, "missing").await.unwrap(), None);
+    }
+
+    #[tokio::test]
+    async fn the_third_attempt_cannot_be_requeued() {
+        let (pool, _dir) = seeded().await;
+        queued(&pool, "run1", "u1", CLIENT).await;
+        for _ in 0..2 {
+            claim(&pool, "run1").await.unwrap().unwrap();
+            requeue(&pool, "run1").await.unwrap().unwrap();
+        }
+        claim(&pool, "run1").await.unwrap().unwrap();
+
+        assert_eq!(requeue(&pool, "run1").await.unwrap(), None);
+        let failed = fail(&pool, "run1", ErrorKind::RateLimited)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(failed.attempts, 3);
+        assert_eq!(failed.error_kind, Some(ErrorKind::RateLimited));
+    }
+
+    #[tokio::test]
+    async fn a_final_state_never_returns_to_running() {
+        let (pool, _dir) = seeded().await;
+        queued(&pool, "run1", "u1", CLIENT).await;
+        cancel(&pool, "w1", "run1").await.unwrap().unwrap();
+
+        assert_eq!(claim(&pool, "run1").await.unwrap(), None);
+        assert_eq!(requeue(&pool, "run1").await.unwrap(), None);
+        assert_eq!(fail(&pool, "run1", ErrorKind::Timeout).await.unwrap(), None);
+        assert_eq!(
+            succeed(&pool, "run1", "g1", None, None).await.unwrap(),
+            None
+        );
+        assert_eq!(cancel(&pool, "w1", "run1").await.unwrap(), None);
+        let run = find_by_client_request(&pool, "r1", CLIENT)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(run.error_kind, Some(ErrorKind::Cancelled));
+    }
+
+    #[tokio::test]
+    async fn cancelling_from_another_workspace_changes_nothing() {
+        let (pool, _dir) = seeded().await;
+        queued(&pool, "run1", "u1", CLIENT).await;
+
+        assert_eq!(cancel(&pool, "w2", "run1").await.unwrap(), None);
+        assert!(has_active(&pool, "r1", "a1").await.unwrap());
+    }
+
+    #[tokio::test]
+    async fn expires_queued_and_running_runs_only() {
+        let (pool, _dir) = seeded().await;
+        sqlx::query("INSERT INTO teams VALUES ('t2', 'w1', 'Other', 'x', 'x')")
+            .execute(&pool)
+            .await
+            .unwrap();
+        queued(&pool, "run1", "u1", CLIENT).await;
+        claim(&pool, "run1").await.unwrap().unwrap();
+        sqlx::query("INSERT INTO agents VALUES ('a2', 'w1', 't2', NULL, 'Bob', 'QA', '', '', 'ollama', 'qwen', 'x', 'x')")
+            .execute(&pool)
+            .await
+            .unwrap();
+        sqlx::query("INSERT INTO room_agents VALUES ('r1', 'a2', 'w1', 'x')")
+            .execute(&pool)
+            .await
+            .unwrap();
+        insert_queued(
+            &pool,
+            &NewRun {
+                id: "run2",
+                room_id: "r1",
+                agent_id: "a2",
+                request_message_id: "u2",
+                client_request_id: "0196f3a0-0000-7000-8000-000000000002",
+                provider: "ollama",
+                model: "qwen",
+                created_at: "2026-01-01T00:00:00.000Z",
+            },
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(expire_active(&pool).await.unwrap(), 2);
+        assert_eq!(expire_active(&pool).await.unwrap(), 0);
+        let runs = for_room(&pool, "r1", 100).await.unwrap();
+        assert!(runs.iter().all(|run| run.status == RunStatus::Failed
+            && run.error_kind == Some(ErrorKind::Expired)
+            && run.finished_at.is_some()));
+    }
+
+    #[tokio::test]
+    async fn lists_runs_of_recent_messages_and_every_active_run() {
+        let (pool, _dir) = seeded().await;
+        queued(&pool, "run1", "u1", CLIENT).await;
+
+        assert_eq!(for_room(&pool, "r1", 100).await.unwrap().len(), 1);
+        assert_eq!(for_room(&pool, "r1", 1).await.unwrap().len(), 1);
+        cancel(&pool, "w1", "run1").await.unwrap();
+        assert!(for_room(&pool, "r1", 1).await.unwrap().is_empty());
+        assert!(for_room(&pool, "missing", 100).await.unwrap().is_empty());
     }
 }

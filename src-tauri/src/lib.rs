@@ -5,6 +5,10 @@ mod repositories;
 mod services;
 mod system;
 
+use crate::catalogs::llm;
+use crate::domain::agent_run::Limits;
+use crate::services::agent_run_engine::Engine;
+use crate::services::agent_runs_expire;
 use tauri::Manager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -17,6 +21,14 @@ pub fn run() {
             let pool = tauri::async_runtime::block_on(repositories::database::open(
                 &data_dir.join("meelting.db"),
             ))?;
+            tauri::async_runtime::block_on(agent_runs_expire::run(&pool))?;
+            let emit = commands::agent_runs::emitter(app.handle().clone());
+            app.manage(Engine::new(
+                pool.clone(),
+                llm::providers(),
+                Limits::default(),
+                emit,
+            ));
             app.manage(pool);
             Ok(())
         })
@@ -25,7 +37,6 @@ pub fn run() {
             commands::keychain::secret_last_four,
             commands::keychain::delete_secret,
             commands::worktree::run_in_worktree,
-            commands::completion::stream_completion,
             commands::session::load_session,
             commands::session::complete_first_launch,
             commands::session::create_workspace,
@@ -48,7 +59,9 @@ pub fn run() {
             commands::rooms::create_room,
             commands::rooms::get_room,
             commands::rooms::delete_room,
-            commands::rooms::send_message
+            commands::rooms::send_message,
+            commands::agent_runs::send_instruction,
+            commands::agent_runs::cancel_agent_run
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

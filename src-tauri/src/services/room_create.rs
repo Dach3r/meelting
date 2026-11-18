@@ -1,7 +1,7 @@
 use crate::domain::room::{Room, unique_ids};
 use crate::domain::workspace::normalize_name;
 use crate::repositories::{agents, room_agents, rooms};
-use crate::services::room_get;
+use crate::services::rooms_list::with_agents;
 use crate::services::session_load::{self, SessionError};
 use sqlx::SqlitePool;
 use uuid::Uuid;
@@ -26,7 +26,11 @@ pub async fn run(
         room_agents::insert(&mut *transaction, &id, agent_id, &workspace_id).await?;
     }
     transaction.commit().await?;
-    Ok(room_get::run(pool, &id).await?.room)
+    let row = rooms::get(pool, &workspace_id, &id)
+        .await?
+        .ok_or(SessionError::RoomNotFound)?;
+    let participants = room_agents::list(pool, &workspace_id).await?;
+    Ok(with_agents(vec![row], participants).remove(0))
 }
 
 #[cfg(test)]

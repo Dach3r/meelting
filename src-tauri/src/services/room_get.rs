@@ -1,20 +1,32 @@
 use crate::domain::room::{RECENT_MESSAGES, RoomDetail};
-use crate::repositories::{messages, room_agents, rooms};
+use crate::repositories::{agent_runs, messages, room_agents, rooms};
+use crate::services::agent_run_registry::Registry;
 use crate::services::rooms_list::with_agents;
 use crate::services::session_load::{self, SessionError};
 use sqlx::SqlitePool;
 
-pub async fn run(pool: &SqlitePool, room_id: &str) -> Result<RoomDetail, SessionError> {
+pub async fn run(
+    pool: &SqlitePool,
+    registry: &Registry,
+    room_id: &str,
+) -> Result<RoomDetail, SessionError> {
     let workspace_id = session_load::require(pool).await?.current_workspace_id;
+    let partials = registry.partials(room_id);
     let mut transaction = pool.begin().await?;
     let row = rooms::get(&mut *transaction, &workspace_id, room_id)
         .await?
         .ok_or(SessionError::RoomNotFound)?;
     let participants = room_agents::list(&mut *transaction, &workspace_id).await?;
     let messages = messages::recent(&mut *transaction, room_id, RECENT_MESSAGES).await?;
+    let runs = agent_runs::for_room(&mut *transaction, room_id, RECENT_MESSAGES).await?;
     transaction.commit().await?;
     let room = with_agents(vec![row], participants).remove(0);
-    Ok(RoomDetail { room, messages })
+    Ok(RoomDetail {
+        room,
+        messages,
+        runs,
+        partials,
+    })
 }
 
 #[cfg(test)]
@@ -35,7 +47,7 @@ mod tests {
                 .unwrap();
         }
 
-        let detail = run(&pool, &room.id).await.unwrap();
+        let detail = run(&pool, &Registry::default(), &room.id).await.unwrap();
 
         assert_eq!(detail.room.name, "Sala");
         assert_eq!(detail.messages.len(), 100);
@@ -50,12 +62,12 @@ mod tests {
         let room = room_create::run(&pool, "Sala", vec![]).await.unwrap();
 
         assert!(matches!(
-            run(&pool, "missing").await,
+            run(&pool, &Registry::default(), "missing").await,
             Err(SessionError::RoomNotFound)
         ));
         workspace_create::run(&pool, "Globex").await.unwrap();
         assert!(matches!(
-            run(&pool, &room.id).await,
+            run(&pool, &Registry::default(), &room.id).await,
             Err(SessionError::RoomNotFound)
         ));
     }
