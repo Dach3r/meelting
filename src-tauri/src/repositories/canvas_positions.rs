@@ -47,6 +47,17 @@ pub async fn delete<'e>(
     Ok(())
 }
 
+pub async fn clear<'e>(
+    executor: impl SqliteExecutor<'e>,
+    workspace_id: &str,
+) -> Result<(), sqlx::Error> {
+    sqlx::query("DELETE FROM canvas_positions WHERE workspace_id = ?")
+        .bind(workspace_id)
+        .execute(executor)
+        .await?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -79,6 +90,23 @@ mod tests {
             [position("n1", -5.5, 7.0)]
         );
         delete(&pool, "w1", "n1").await.unwrap();
+        assert!(list(&pool, "w1").await.unwrap().is_empty());
+        assert_eq!(list(&pool, "w2").await.unwrap().len(), 1);
+    }
+
+    #[tokio::test]
+    async fn clears_only_the_positions_of_the_workspace() {
+        let (pool, _dir) = open_for_test().await;
+        sqlx::query("INSERT INTO workspaces VALUES ('w1', 'A', 'x', 'x'), ('w2', 'B', 'x', 'x')")
+            .execute(&pool)
+            .await
+            .unwrap();
+        save(&pool, "w1", &position("n1", 1.0, 2.0)).await.unwrap();
+        save(&pool, "w1", &position("n2", 3.0, 4.0)).await.unwrap();
+        save(&pool, "w2", &position("n3", 5.0, 6.0)).await.unwrap();
+
+        clear(&pool, "w1").await.unwrap();
+
         assert!(list(&pool, "w1").await.unwrap().is_empty());
         assert_eq!(list(&pool, "w2").await.unwrap().len(), 1);
     }

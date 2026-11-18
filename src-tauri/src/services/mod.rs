@@ -4,6 +4,7 @@ pub mod agent_get;
 pub mod agent_roles_list;
 pub mod agent_templates_list;
 pub mod agent_update;
+pub mod canvas_positions_reset;
 pub mod canvas_positions_save;
 pub mod completion_stream;
 pub mod first_launch;

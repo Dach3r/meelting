@@ -37,6 +37,7 @@ pub fn run() {
             commands::session::update_agent,
             commands::session::delete_agent,
             commands::session::save_canvas_positions,
+            commands::session::reset_canvas_positions,
             commands::session::list_agent_roles,
             commands::session::list_llm_providers,
             commands::session::list_agent_templates,

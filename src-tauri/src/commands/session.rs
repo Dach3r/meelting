@@ -8,8 +8,8 @@ use crate::domain::theme::Theme;
 use crate::services::session_load::SessionError;
 use crate::services::{
     agent_create, agent_delete, agent_get, agent_roles_list, agent_templates_list, agent_update,
-    canvas_positions_save, first_launch, llm_providers_list, locale_change, session_load,
-    team_create, teams_list, theme_change, workspace_create, workspace_switch,
+    canvas_positions_reset, canvas_positions_save, first_launch, llm_providers_list, locale_change,
+    session_load, team_create, teams_list, theme_change, workspace_create, workspace_switch,
 };
 use sqlx::SqlitePool;
 use tauri::State;
@@ -96,6 +96,13 @@ pub async fn save_canvas_positions(
     positions: Vec<Position>,
 ) -> Result<(), SessionError> {
     canvas_positions_save::run(&pool, positions).await
+}
+
+#[tauri::command]
+pub async fn reset_canvas_positions(
+    pool: State<'_, SqlitePool>,
+) -> Result<Vec<Team>, SessionError> {
+    canvas_positions_reset::run(&pool).await
 }
 
 #[tauri::command]
