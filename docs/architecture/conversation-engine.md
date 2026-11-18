@@ -23,6 +23,7 @@ Conversación dirigida por texto (decisiones D19–D23 en [decisions.md](../prod
   - **Cuándo se recalcula:** al abrir la sala, cuando termina una ejecución y con «Comprobar disponibilidad». Nunca mientras se escribe.
   - **Sin bloqueos:** la disponibilidad no impide enviar; si el agente no puede responder, la ejecución falla con su `error_kind` como antes, sin cambiar de proveedor ni de modelo.
 - **Contexto con destinatarios (D22):** al congelar el contexto, cada pregunta anterior del usuario que originó una ejecución lleva la etiqueta `[Usuario → Nombre · Rol]` (`[User → …]` en inglés). El destinatario sale de `agent_runs.request_message_id` dentro de la misma sala, y el nombre y el rol, de los participantes validados por el núcleo. El texto escrito por el usuario nunca se interpreta como etiqueta. El marco del sistema explica la etiqueta. Mismo presupuesto, mismo recorte y mismo contexto congelado en los reintentos.
+- **Presentación:** el estado temporal de una ejecución se integra en el bloque de su respuesta en curso (agente, «En cola…», «Pensando…», «Escribiendo…» o «Reintentando», texto en vivo y «Cancelar»). Al guardarse la respuesta desaparece, y el proveedor y el modelo solo figuran en el pie de la respuesta. Los mensajes muestran la hora (la fecha completa al pasar el cursor) y el rol no se repite cuando coincide con el nombre.
 - **Agentes como autores:** la resolución solo se aplica a la intervención del usuario. Las menciones escritas por un agente nunca crean ejecuciones.
 
 ## 1. Principio de diseño

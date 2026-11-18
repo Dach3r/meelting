@@ -28,11 +28,11 @@
 - `push`, `merge` o modificación de la rama base.
 
 ## Flujo funcional
-1. El usuario abre una sala con agentes y elige uno en «Pedir a».
-2. Escribe la instrucción y la envía. Aparece en la conversación con la línea de estado «Esperando a <agente>…» y el proveedor y modelo del agente.
-3. El motor toma la ejecución: «<agente> está trabajando…». Los tokens aparecen en vivo. Si el proveedor falla de forma temporal, se reintenta hasta 3 veces con el mismo proveedor y modelo.
+1. El usuario abre una sala con agentes y se dirige a uno: lo menciona con `@`, lo nombra al inicio («Backend, …»), lo elige en «Pedir a» o sigue con el agente propuesto ([conversation-engine.md](../architecture/conversation-engine.md#r1-implementado)).
+2. Envía la instrucción. Debajo aparece el agente con «En cola…».
+3. El motor toma la ejecución: «Pensando…» y, cuando llegan tokens, «Escribiendo…» con el texto en vivo en el mismo bloque. Si el proveedor falla de forma temporal, se reintenta hasta 3 veces con el mismo proveedor y modelo.
 4. El usuario puede **cancelar** la ejecución en curso (`failed` con `error_kind = cancelled`).
-5. Al terminar con éxito, la respuesta se persiste como mensaje del agente con su proveedor y modelo, y la línea de estado pasa a «<agente> respondió».
+5. Al terminar con éxito, la respuesta se persiste como mensaje del agente y el bloque provisional desaparece. El proveedor, el modelo y los tokens solo se muestran en el pie de la respuesta.
 6. Si falla, la línea de estado explica la razón en el idioma del usuario, resuelta en la UI a partir de `error_kind`. El usuario puede volver a pedirlo.
 7. Si el usuario sale de la sala, la ejecución continúa; la respuesta queda en la conversación cuando vuelva.
 

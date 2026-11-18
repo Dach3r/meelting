@@ -36,10 +36,8 @@ describe("translate", () => {
   });
 
   it("fills in named values", () => {
-    expect(translateWith("en", "agentRun.running", { agent: "Ana" })).toBe("Ana is working…");
-    expect(translateWith("es", "agentRun.retrying", { agent: "Ana", attempt: 2 })).toBe(
-      "Ana tuvo un problema temporal. Reintentando (intento 2 de 3)…",
-    );
+    expect(translateWith("en", "agentRun.busy", { agent: "Ana" })).toBe("Ana is still working on a request.");
+    expect(translateWith("es", "agentRun.retrying", { attempt: 2 })).toBe("Problema temporal. Reintentando (intento 2 de 3)…");
   });
 
   it("explains every run error with the provider name and says when a local provider is not running", () => {

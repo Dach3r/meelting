@@ -259,12 +259,11 @@
       "several": "You mentioned several agents: you'll pick one when sending.",
       "conflict": "The mention doesn't match the chosen agent: you can settle it when sending."
     },
-    "queued": "Waiting for {agent}…",
-    "retrying": "{agent} hit a temporary problem. Retrying (attempt {attempt} of 3)…",
-    "running": "{agent} is working…",
-    "succeeded": "{agent} replied",
+    "queued": "Queued…",
+    "retrying": "Temporary problem. Retrying (attempt {attempt} of 3)…",
     "cancel": "Cancel",
     "thinking": "Thinking…",
+    "writing": "Writing…",
     "tokens": "{input} in · {output} out tokens",
     "errors": {
       "rate_limited": "{provider} is receiving too many requests. Try again in a moment.",

@@ -1,5 +1,6 @@
 import type { Participant } from "../../hooks/useRooms";
 import { Avatar } from "../atoms/Avatar";
+import { roleRepeatsName } from "./agentLabel";
 
 type Props = {
   id: string;
@@ -35,7 +36,7 @@ export function MentionSuggestions({ id, label, agents, active, onPick }: Props)
         >
           <Avatar seed={agent.name} label={agent.name} className="size-6 shrink-0 rounded-full text-xs" />
           <span className="truncate font-medium text-ink">{agent.name}</span>
-          <span className="truncate text-xs text-muted">{agent.role}</span>
+          {!roleRepeatsName(agent.name, agent.role) && <span className="truncate text-xs text-muted">{agent.role}</span>}
         </li>
       ))}
     </ul>

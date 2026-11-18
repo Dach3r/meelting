@@ -25,6 +25,10 @@ export function formatDateTime(locale: Locale, iso: string): string {
   return new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(new Date(iso));
 }
 
+export function formatTime(locale: Locale, iso: string): string {
+  return new Intl.DateTimeFormat(locale, { timeStyle: "short" }).format(new Date(iso));
+}
+
 export function formatAgentCount(locale: Locale, count: number): string {
   if (count === 0) return translate(locale, "rooms.agentsNone");
   if (count === 1) return translate(locale, "rooms.agentsOne");

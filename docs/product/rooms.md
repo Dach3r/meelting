@@ -16,7 +16,8 @@
 - Mensajes (`messages`) del usuario y de agentes, con historial persistente por sala. La entrega en vivo usa **eventos Tauri** emitidos por el núcleo. Los mensajes son inmutables: sin edición ni eliminación individual.
 - Pantalla de la sala como reunión: una tarjeta por participante (el usuario y cada agente con su rol), la conversación como transcripción en un panel lateral con el compositor (Intro envía, Mayús+Intro salta de línea), y una barra inferior con el número de agentes y la acción de eliminar. Mientras un agente tiene una ejecución activa en la sala, su tarjeta muestra «Pensando…».
 - Listado de salas con tarjetas del tema oscuro Grafito.
-- Selector «Pedir a» en el compositor: vacío envía un mensaje; con un agente envía una instrucción dirigida. Bajo la instrucción se ven su estado (en cola, trabajando, reintentando, respondió o el error traducido), el proveedor y el modelo, el texto en vivo y el botón «Cancelar»; la respuesta guardada muestra proveedor, modelo y tokens.
+- Compositor con menciones `@`, selector «Pedir a» («Según el mensaje», «Nadie» o un agente) y destinatario propuesto ([conversation-engine.md](../architecture/conversation-engine.md#r1-implementado)). Bajo la instrucción aparece el agente con su estado (en cola, pensando, escribiendo o reintentando), el texto en vivo y «Cancelar», o el error traducido. La respuesta guardada muestra proveedor, modelo y tokens solo en su pie.
+- Cada mensaje muestra la hora, y al pasar el cursor, la fecha completa. Si el rol de un agente coincide con su nombre, no se repite.
 
 **Excluye**
 - Archivado y edición de salas, edición o borrado de mensajes, paginación del historial (se cargan los últimos 100).

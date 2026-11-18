@@ -130,8 +130,8 @@ describe("asking an agent", () => {
       clientRequestId: expect.stringMatching(uuid),
     });
     expect(screen.getByText("Review it")).toBeInTheDocument();
-    expect(screen.getByRole("status")).toHaveTextContent("Waiting for Ana…");
-    expect(screen.getByText("Ollama · qwen2.5:0.5b")).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("Queued…");
+    expect(screen.queryByText(/qwen2.5:0.5b/)).not.toBeInTheDocument();
     expect(within(screen.getByRole("region", { name: "Participants" })).getByText("Queued")).toBeInTheDocument();
   });
 
@@ -450,15 +450,41 @@ describe("agent availability", () => {
   });
 });
 
+describe("reading the conversation", () => {
+  it("shows the time of each message with the full date on hover", async () => {
+    core({ get_room: () => detail({ messages: [message("m1", "Hello")] }) });
+    await renderRoom();
+
+    const time = screen.getByText(new Intl.DateTimeFormat("en", { timeStyle: "short" }).format(new Date("2026-11-18T10:00:00.000Z")));
+    expect(time).toHaveAttribute("title", new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short" }).format(new Date("2026-11-18T10:00:00.000Z")));
+  });
+
+  it("does not repeat a role that matches the agent's name", async () => {
+    core({
+      get_room: () => detail({ room: { ...room, agents: [{ id: "a1", name: "Tech Lead", role: "tech lead" }, ...room.agents.slice(1)] } }),
+    });
+    const user = userEvent.setup();
+    await renderRoom();
+
+    const tile = within(within(screen.getByRole("region", { name: "Participants" })).getByText("Tech Lead").closest("li") as HTMLElement);
+    expect(tile.queryByText("tech lead")).not.toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Tech Lead" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Bob · Developer" })).toBeInTheDocument();
+    await user.type(screen.getByRole("combobox", { name: "Message" }), "@t");
+    expect(within(screen.getByRole("listbox")).getByRole("option").textContent).toBe("TTech Lead");
+  });
+});
+
 describe("following a run", () => {
   it("shows the text live and replaces it with the saved reply and its usage", async () => {
     core({ get_room: () => detail({ messages: [message("m1", "Say hello")], runs: [run("queued", 0)] }) });
     await renderRoom();
 
     emit("agent_run:status", run("running", 1));
+    expect(screen.getByRole("status")).toHaveTextContent("Thinking…");
     token(1, "Hel");
     token(2, "lo");
-    expect(screen.getByRole("status")).toHaveTextContent("Ana is working…");
+    expect(screen.getByRole("status")).toHaveTextContent("Writing…");
     expect(screen.getByText("Hello")).toBeInTheDocument();
 
     emit("message:created", message("m2", "Hello!", { agent_id: "a1" }));
@@ -466,7 +492,8 @@ describe("following a run", () => {
 
     expect(screen.queryByText("Hello")).not.toBeInTheDocument();
     expect(screen.getByText("Hello!")).toBeInTheDocument();
-    expect(screen.getByRole("status")).toHaveTextContent("Ana replied");
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(screen.getAllByText(/qwen2.5:0.5b/)).toHaveLength(1);
     expect(screen.getByText("Ollama · qwen2.5:0.5b · 103 in · 9 out tokens")).toBeInTheDocument();
     expect(screen.queryByText("Thinking…")).not.toBeInTheDocument();
   });
@@ -480,7 +507,7 @@ describe("following a run", () => {
     emit("agent_run:status", run("running", 1));
 
     expect(screen.queryByText("First try")).not.toBeInTheDocument();
-    expect(screen.getByRole("status")).toHaveTextContent("Ana hit a temporary problem. Retrying (attempt 2 of 3)…");
+    expect(screen.getByRole("status")).toHaveTextContent("Temporary problem. Retrying (attempt 2 of 3)…");
 
     emit("agent_run:status", run("running", 2));
     token(1, "Second", 2);
@@ -514,7 +541,7 @@ describe("following a run", () => {
 
     expect(screen.queryByText("Elsewhere")).not.toBeInTheDocument();
     expect(screen.queryByText("Other room")).not.toBeInTheDocument();
-    expect(screen.getByRole("status")).toHaveTextContent("Ana is working…");
+    expect(screen.getByRole("status")).toHaveTextContent("Thinking…");
   });
 
   it("cancels the run", async () => {

@@ -8,6 +8,7 @@ import type { Participant } from "../../hooks/useRooms";
 import { Button } from "../atoms/Button";
 import { fieldClasses } from "../atoms/Field";
 import { MentionSuggestions, mentionOptionId } from "./MentionSuggestions";
+import { agentLabel } from "./agentLabel";
 import { type ChosenMention, activeMention, insertMention, keptMentionIds, matchingAgents } from "./mentionDraft";
 
 const bodyMaxChars = 4000;
@@ -156,7 +157,7 @@ export function MessageComposer({ roomId, agents, proposedAgentId, busyAgentIds,
             <option value="nobody">{t("agentRun.nobody")}</option>
             {agents.map((agent) => (
               <option key={agent.id} value={agent.id}>
-                {agent.name} · {agent.role}
+                {agentLabel(agent)}
               </option>
             ))}
           </select>
@@ -173,7 +174,7 @@ export function MessageComposer({ roomId, agents, proposedAgentId, busyAgentIds,
               return (
                 agent && (
                   <Button key={agent.id} type="button" variant="ghost" size="compact" disabled={sending} onClick={() => confirm(agent.id)}>
-                    {agent.name} · {agent.role}
+                    {agentLabel(agent)}
                   </Button>
                 )
               );
