@@ -4,6 +4,7 @@ import { useI18n } from "../../i18n/I18nProvider";
 import { useAgentRoles } from "../../hooks/useAgentRoles";
 import type { AgentTemplate } from "../../hooks/useAgentTemplates";
 import { useLlmProviders, type LlmProvider } from "../../hooks/useLlmProviders";
+import { useLocalModels } from "../../hooks/useLocalModels";
 import type { AgentDetail, AgentDraft, Team } from "../../hooks/useTeams";
 import { Button } from "../atoms/Button";
 import { Field, fieldClasses } from "../atoms/Field";
@@ -42,6 +43,7 @@ export function AgentForm({ team, template, edit, busy, errorMessage, onSubmit, 
   const steps = edit ? editSteps : createSteps;
   const [step, setStep] = useState(0);
   const [location, setLocation] = useState<LlmProvider["location"]>("cloud");
+  const [localKey, setLocalKey] = useState("");
   const [draft, setDraft] = useState<AgentDraft>(
     edit?.agent ?? {
       team_id: team.id,
@@ -61,14 +63,14 @@ export function AgentForm({ team, template, edit, busy, errorMessage, onSubmit, 
     engine: filled(draft.provider, draft.model),
     behavior: true,
   };
+  const localProviders = providers.filter((provider) => provider.location === "local");
+  const localProvider = localProviders.find((provider) => provider.key === localKey) ?? localProviders[0];
+  const detected = useLocalModels(!edit && location === "local");
+  const localState = detected?.find((entry) => entry.key === localProvider?.key);
+  const localModels = localState?.models ?? [];
   const modelGroups = providers
-    .filter((provider) => provider.location === location)
-    .map((provider) => ({
-      id: provider.key,
-      label: provider.name,
-      icon: location === "cloud" ? Cloud : HardDrive,
-      options: provider.models,
-    }));
+    .filter((provider) => provider.location === "cloud")
+    .map((provider) => ({ id: provider.key, label: provider.name, icon: Cloud, options: provider.models }));
   const current = steps[step];
   const last = step === steps.length - 1;
 
@@ -159,16 +161,55 @@ export function AgentForm({ team, template, edit, busy, errorMessage, onSubmit, 
                   setDraft({ ...draft, provider: "", model: "" });
                 }}
               />
-              <SelectField
-                key={location}
-                label={t("teams.agent.model")}
-                searchPlaceholder={t("teams.agent.modelSearch")}
-                emptyMessage={t("teams.agent.modelEmpty")}
-                value={draft.model}
-                groups={modelGroups}
-                onChange={(model, provider) => setDraft({ ...draft, provider, model })}
-                autoFocus
-              />
+              {location === "cloud" && (
+                <SelectField
+                  label={t("teams.agent.model")}
+                  searchPlaceholder={t("teams.agent.modelSearch")}
+                  emptyMessage={t("teams.agent.modelEmpty")}
+                  value={draft.model}
+                  groups={modelGroups}
+                  onChange={(model, provider) => setDraft({ ...draft, provider, model })}
+                  autoFocus
+                />
+              )}
+              {location === "local" && localProvider && (
+                <>
+                  <SegmentedControl
+                    label={t("teams.agent.runtime")}
+                    options={localProviders.map((provider) => ({ value: provider.key, label: provider.name }))}
+                    value={localProvider.key}
+                    onChange={(value) => {
+                      setLocalKey(value);
+                      setDraft({ ...draft, provider: "", model: "" });
+                    }}
+                  />
+                  {detected === null && <p className="text-sm text-muted">{t("teams.agent.localDetecting")}</p>}
+                  {localModels.length > 0 && (
+                    <SelectField
+                      key={localProvider.key}
+                      label={t("teams.agent.model")}
+                      searchPlaceholder={t("teams.agent.modelSearch")}
+                      emptyMessage={t("teams.agent.modelEmpty")}
+                      value={draft.model}
+                      groups={[{ id: localProvider.key, label: localProvider.name, icon: HardDrive, options: localModels }]}
+                      onChange={(model) => setDraft({ ...draft, provider: localProvider.key, model })}
+                      autoFocus
+                    />
+                  )}
+                  {detected !== null && localModels.length === 0 && (
+                    <>
+                      <Alert message={t(localState?.running ? "teams.agent.localNoModels" : "teams.agent.localStopped")} />
+                      <Field
+                        label={t("teams.agent.modelName")}
+                        value={draft.model}
+                        onChange={(model) => setDraft({ ...draft, provider: localProvider.key, model })}
+                        maxLength={200}
+                        icon={HardDrive}
+                      />
+                    </>
+                  )}
+                </>
+              )}
             </>
           )}
           {current === "behavior" && (
