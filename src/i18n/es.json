@@ -57,7 +57,6 @@
         "design_support": "Diseño y soporte",
         "business": "Negocio"
       },
-      "roleGreeting": "Hola, soy",
       "roleProfiles": {
         "product_owner": {
           "bio": "Decido qué entra al backlog y qué no, siempre con el usuario en mente.",

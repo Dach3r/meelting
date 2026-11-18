@@ -446,11 +446,11 @@ describe("workspace shell", () => {
     await user.clear(screen.getByLabelText("Search role"));
     await user.click(screen.getByRole("option", { name: "Software Developer" }));
     expect(screen.getByRole("option", { name: "Software Developer" })).toHaveAttribute("aria-selected", "true");
-    expect(screen.getByText(/Hi, I'm Software Developer\. I handle code tasks/)).toBeInTheDocument();
+    expect(screen.getByText(/I handle code tasks/)).toBeInTheDocument();
     expect(screen.getByText("Full-stack")).toBeInTheDocument();
     await user.click(screen.getByRole("option", { name: "QA Engineer" }));
-    expect(screen.queryByText(/Hi, I'm Software Developer/)).not.toBeInTheDocument();
-    expect(screen.getByText(/Hi, I'm QA Engineer/)).toBeInTheDocument();
+    expect(screen.queryByText(/I handle code tasks/)).not.toBeInTheDocument();
+    expect(screen.getByText(/I try to break what they build/)).toBeInTheDocument();
     await user.click(screen.getByRole("option", { name: "Software Developer" }));
     await user.click(next);
     expect(screen.getByRole("button", { name: "Continue" })).toBeDisabled();

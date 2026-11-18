@@ -69,7 +69,7 @@ export function SelectField({ label, searchPlaceholder, emptyMessage, value, gro
             className="w-full bg-transparent py-3.5 pr-4 pl-10 text-base text-ink outline-none placeholder:text-muted"
           />
         </div>
-        <div id={`${id}-list`} role="listbox" aria-labelledby={`${id}-label`} className="max-h-96 overflow-y-auto overscroll-contain p-1.5">
+        <div id={`${id}-list`} role="listbox" aria-labelledby={`${id}-label`} className="max-h-[26rem] overflow-y-auto overscroll-contain p-1.5">
           {flat.length === 0 && <p className="px-3 py-4 text-center text-sm text-muted">{emptyMessage}</p>}
           {visible.map(({ label: groupLabel, icon: GroupIcon, options }) => (
             <div key={groupLabel} role="group" aria-label={groupLabel}>
@@ -80,7 +80,7 @@ export function SelectField({ label, searchPlaceholder, emptyMessage, value, gro
               {options.map((option) => {
                 const position = ++index;
                 return (
-                  <div key={option} className={`rounded-xl ${option === value ? "bg-surface ring-1 ring-line" : ""}`}>
+                  <div key={option} className={`rounded-xl ${option === value ? "bg-hi/40 ring-1 ring-line" : ""}`}>
                     <div
                       id={`${id}-${position}`}
                       role="option"
@@ -90,7 +90,7 @@ export function SelectField({ label, searchPlaceholder, emptyMessage, value, gro
                       onClick={() => onChange(option)}
                       className={`flex cursor-pointer items-center gap-3 rounded-xl p-2.5 text-base text-ink ${option === value ? "font-bold" : position === active ? "bg-hi/50" : ""}`}
                     >
-                      <Avatar seed={option} label={option} className="size-9 rounded-full text-sm" />
+                      <Avatar seed={groupLabel} label={option} className="size-10 rounded-full text-base" />
                       <span className="flex-1">{option}</span>
                       {option === value && <Check aria-hidden className="size-4 text-accent" />}
                     </div>
