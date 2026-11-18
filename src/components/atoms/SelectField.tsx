@@ -1,5 +1,6 @@
 import { Check, Search, type LucideIcon } from "lucide-react";
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useState, type ReactNode } from "react";
+import { Avatar } from "./Avatar";
 
 export type SelectGroup = {
   label: string;
@@ -14,10 +15,11 @@ type Props = {
   value: string;
   groups: SelectGroup[];
   onChange: (value: string) => void;
+  renderDetail: (value: string) => ReactNode;
   autoFocus?: boolean;
 };
 
-export function SelectField({ label, searchPlaceholder, emptyMessage, value, groups, onChange, autoFocus }: Props) {
+export function SelectField({ label, searchPlaceholder, emptyMessage, value, groups, onChange, renderDetail, autoFocus }: Props) {
   const id = useId();
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(() => Math.max(groups.flatMap((group) => group.options).indexOf(value), 0));
@@ -67,7 +69,7 @@ export function SelectField({ label, searchPlaceholder, emptyMessage, value, gro
             className="w-full bg-transparent py-3.5 pr-4 pl-10 text-base text-ink outline-none placeholder:text-muted"
           />
         </div>
-        <div id={`${id}-list`} role="listbox" aria-labelledby={`${id}-label`} className="max-h-64 overflow-y-auto overscroll-contain p-1.5">
+        <div id={`${id}-list`} role="listbox" aria-labelledby={`${id}-label`} className="max-h-96 overflow-y-auto overscroll-contain p-1.5">
           {flat.length === 0 && <p className="px-3 py-4 text-center text-sm text-muted">{emptyMessage}</p>}
           {visible.map(({ label: groupLabel, icon: GroupIcon, options }) => (
             <div key={groupLabel} role="group" aria-label={groupLabel}>
@@ -78,18 +80,21 @@ export function SelectField({ label, searchPlaceholder, emptyMessage, value, gro
               {options.map((option) => {
                 const position = ++index;
                 return (
-                  <div
-                    key={option}
-                    id={`${id}-${position}`}
-                    role="option"
-                    aria-selected={option === value}
-                    onMouseEnter={() => setActive(position)}
-                    onMouseDown={(event) => event.preventDefault()}
-                    onClick={() => onChange(option)}
-                    className={`flex cursor-pointer items-center justify-between rounded-lg px-3 py-2.5 text-base text-ink ${option === value ? "bg-hi font-semibold" : position === active ? "bg-hi/50" : ""}`}
-                  >
-                    {option}
-                    {option === value && <Check aria-hidden className="size-4 text-accent" />}
+                  <div key={option} className={`rounded-xl ${option === value ? "bg-surface ring-1 ring-line" : ""}`}>
+                    <div
+                      id={`${id}-${position}`}
+                      role="option"
+                      aria-selected={option === value}
+                      onMouseEnter={() => setActive(position)}
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => onChange(option)}
+                      className={`flex cursor-pointer items-center gap-3 rounded-xl p-2.5 text-base text-ink ${option === value ? "font-bold" : position === active ? "bg-hi/50" : ""}`}
+                    >
+                      <Avatar seed={option} label={option} className="size-9 rounded-full text-sm" />
+                      <span className="flex-1">{option}</span>
+                      {option === value && <Check aria-hidden className="size-4 text-accent" />}
+                    </div>
+                    {option === value && renderDetail(option)}
                   </div>
                 );
               })}

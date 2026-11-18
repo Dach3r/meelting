@@ -446,6 +446,12 @@ describe("workspace shell", () => {
     await user.clear(screen.getByLabelText("Search role"));
     await user.click(screen.getByRole("option", { name: "Software Developer" }));
     expect(screen.getByRole("option", { name: "Software Developer" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByText(/Hi, I'm Software Developer\. I handle code tasks/)).toBeInTheDocument();
+    expect(screen.getByText("Full-stack")).toBeInTheDocument();
+    await user.click(screen.getByRole("option", { name: "QA Engineer" }));
+    expect(screen.queryByText(/Hi, I'm Software Developer/)).not.toBeInTheDocument();
+    expect(screen.getByText(/Hi, I'm QA Engineer/)).toBeInTheDocument();
+    await user.click(screen.getByRole("option", { name: "Software Developer" }));
     await user.click(next);
     expect(screen.getByRole("button", { name: "Continue" })).toBeDisabled();
     await user.type(screen.getByLabelText("Provider"), "openai");
@@ -592,18 +598,18 @@ describe("agent catalog", () => {
     expect(screen.getByLabelText("Name")).toHaveValue("Product Owner");
     await user.clear(screen.getByLabelText("Name"));
     await user.type(screen.getByLabelText("Name"), "Ana");
-    await user.click(screen.getByRole("button", { name: "Continue" }));
     expect(screen.getByRole("option", { name: "Product Owner" })).toHaveAttribute("aria-selected", "true");
+    await user.click(screen.getByLabelText("Search role"));
     await user.keyboard("{ArrowDown}{Enter}");
     expect(screen.getByRole("option", { name: "Software Developer" })).toHaveAttribute("aria-selected", "true");
+    await user.click(screen.getByRole("option", { name: "Product Owner" }));
     await user.click(screen.getByRole("button", { name: "Continue" }));
-    expect(screen.getByLabelText("Description")).toHaveValue("Orders priorities.");
-    await user.click(screen.getByRole("button", { name: "Continue" }));
-    expect(screen.getByLabelText("Instructions")).toHaveValue(templates[0].instructions);
-    await user.click(screen.getByRole("button", { name: "Continue" }));
-    expect(screen.getByRole("button", { name: "Hire" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Continue" })).toBeDisabled();
     await user.type(screen.getByLabelText("Provider"), "openai");
     await user.type(screen.getByLabelText("Model"), "gpt-4o");
+    await user.click(screen.getByRole("button", { name: "Continue" }));
+    expect(screen.getByLabelText("Description")).toHaveValue("Orders priorities.");
+    expect(screen.getByLabelText("Instructions")).toHaveValue(templates[0].instructions);
     await user.click(screen.getByRole("button", { name: "Hire" }));
 
     expect(invokeMock).toHaveBeenCalledWith("create_agent", {
@@ -622,7 +628,7 @@ describe("agent catalog", () => {
     expect(screen.queryByRole("heading", { name: "Agent catalog" })).not.toBeInTheDocument();
   });
 
-  it("reopens the wizard at the first step with the error when the core rejects", async () => {
+  it("keeps the wizard open with the error when the core rejects", async () => {
     mockCatalog(() => {
       throw "invalid_agent";
     });
@@ -631,13 +637,14 @@ describe("agent catalog", () => {
     await openCatalog(user);
 
     await user.click(await screen.findByRole("button", { name: "Hire QA Engineer" }));
-    for (let step = 0; step < 4; step++) await user.click(screen.getByRole("button", { name: "Continue" }));
+    await user.click(screen.getByRole("button", { name: "Continue" }));
     await user.type(screen.getByLabelText("Provider"), "openai");
     await user.type(screen.getByLabelText("Model"), "gpt-4o");
+    await user.click(screen.getByRole("button", { name: "Continue" }));
     await user.click(screen.getByRole("button", { name: "Hire" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Check the fields");
-    expect(screen.getByLabelText("Name")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Hire" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Agent catalog" })).toBeInTheDocument();
   });
 });

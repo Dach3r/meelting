@@ -7,6 +7,7 @@ import { Button } from "../atoms/Button";
 import { Field } from "../atoms/Field";
 import { SelectField, type SelectGroup } from "../atoms/SelectField";
 import { Alert } from "../molecules/Alert";
+import { RoleIntro } from "../molecules/RoleIntro";
 
 type Props = {
   team: Team;
@@ -104,6 +105,7 @@ export function AgentForm({ team, template, roleGroups, busy, errorMessage, onSu
                 value={draft.role}
                 groups={roleGroups}
                 onChange={set("role")}
+                renderDetail={(role) => <RoleIntro role={role} />}
               />
             </>
           )}
