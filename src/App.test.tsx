@@ -750,7 +750,7 @@ describe("workspace shell", () => {
       expect(await screen.findByRole("button", { name: "Bea" })).toBeInTheDocument();
       expect(screen.getByRole("dialog", { name: "Edit agent \u00b7 Ana" })).toBeInTheDocument();
       await user.click(screen.getByRole("tab", { name: "Instructions" }));
-      expect(screen.getByLabelText("Instructions")).toHaveValue("Be careful");
+      expect(screen.getByRole("textbox", { name: "Instructions" })).toHaveValue("Be careful");
     });
 
     it("shows the current team and each team with its agent count", async () => {
@@ -794,7 +794,7 @@ describe("workspace shell", () => {
 
       await openEditor(user);
       await user.click(screen.getByRole("tab", { name: "Instructions" }));
-      await user.type(screen.getByLabelText("Instructions"), "!");
+      await user.type(screen.getByRole("textbox", { name: "Instructions" }), "!");
       await user.click(screen.getByRole("button", { name: "Save changes" }));
 
       expect(await screen.findByRole("alert")).toHaveTextContent("That agent no longer exists.");
