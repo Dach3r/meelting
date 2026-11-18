@@ -49,7 +49,7 @@ src-tauri/src/
 │   ├── agent_create.rs    ✅ valida y crea un agente (personalizado o desde plantilla) y devuelve la lista actualizada
 │   ├── agent_get.rs       ✅ detalle completo de un agente del workspace actual
 │   ├── agent_update.rs    ✅ valida y edita nombre, rol, descripción, instrucciones y equipo de un agente
-│   ├── agent_delete.rs    ✅ elimina un agente del workspace actual y devuelve la lista actualizada
+│   ├── agent_delete.rs    ✅ elimina un agente del workspace actual y devuelve la lista actualizada; con mensajes o ejecuciones falla con agent_has_activity
 │   ├── rooms_list.rs      ✅ salas del workspace actual por actividad reciente, con sus agentes y los últimos 3 mensajes de la primera
 │   ├── room_create.rs     ✅ valida el nombre, deduplica los agentes y crea la sala con sus participantes en una transacción
 │   ├── room_get.rs        ✅ sala del workspace actual con sus agentes y sus últimos 100 mensajes
@@ -76,7 +76,8 @@ src-tauri/src/
 │   ├── agents.rs          ✅ consultas de la tabla agents
 │   ├── rooms.rs           ✅ consultas de la tabla rooms
 │   ├── room_agents.rs     ✅ consultas de la tabla room_agents
-│   └── messages.rs        ✅ consultas de la tabla messages
+│   ├── messages.rs        ✅ consultas de la tabla messages
+│   └── agent_runs.rs      ✅ pruebas de integridad del esquema de agent_runs (las consultas llegan con el motor de ejecución)
 ├── domain/                Modelos y lógica pura, sin I/O
 │   ├── local_provider.rs  ✅ proveedor local detectado (clave, en ejecución, modelos)
 │   ├── locale.rs          ✅ idioma es/en
@@ -109,7 +110,7 @@ src-tauri/src/
 
 - **Un error por módulo** con `thiserror`. Solo se implementa `Serialize` en el error que cruza hacia la UI (el del servicio o el de `keychain`), como cadena.
 - **Comandos de secretos sin servicio:** `commands/keychain.rs` llama a `system/keychain.rs` directamente porque aún no hay regla que orquestar. Cuando exista la verificación previa a guardar (Fase 3), pasa a un servicio.
-- **Errores hacia la UI como código:** `SessionError` se serializa como un código estable (`invalid_name`, `invalid_agent`, `invalid_message`, `workspace_not_found`, `team_not_found`, `agent_not_found`, `room_not_found`, `not_set_up`, `database`); la UI lo traduce. No viaja el detalle de la base de datos.
+- **Errores hacia la UI como código:** `SessionError` se serializa como un código estable (`invalid_name`, `invalid_agent`, `invalid_message`, `workspace_not_found`, `team_not_found`, `agent_not_found`, `room_not_found`, `agent_has_activity`, `not_set_up`, `database`); la UI lo traduce. No viaja el detalle de la base de datos.
 - **Base de datos:** el pool se abre en `setup` (`app_data_dir()/meelting.db`) y se registra como estado de Tauri; los comandos lo reciben con `State<SqlitePool>`. Los repositorios aceptan cualquier `SqliteExecutor` para poder usarse dentro de transacciones. Las escrituras que leen y luego escriben (crear sala, enviar mensaje) abren la transacción con `pool.begin_with("BEGIN IMMEDIATE")` sobre una conexión nueva del pool (nunca anidada): toman el bloqueo de escritura al empezar y esperan hasta el `busy_timeout` de sqlx (5 s); si se agota, el error llega como `database`. Las lecturas de varias tablas usan una transacción normal para leer una instantánea coherente.
 - **Servicios sin Tauri:** reciben `impl Fn` para salida y fin, de modo que se prueban sin ventana ni `AppHandle`.
 - **Eventos hacia la UI:** los emite el comando. Nombres actuales: `terminal-output` (texto), `terminal-exit` (código de salida), `llm-token` (fragmento de respuesta) y `message:created` (mensaje completo con su `room_id`, emitido después del commit; el comando también devuelve el mensaje). El fin del streaming es el retorno del comando.

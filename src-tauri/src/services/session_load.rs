@@ -21,6 +21,8 @@ pub enum SessionError {
     RoomNotFound,
     #[error("invalid_message")]
     InvalidMessage,
+    #[error("agent_has_activity")]
+    AgentHasActivity,
     #[error("not_set_up")]
     NotSetUp,
 }

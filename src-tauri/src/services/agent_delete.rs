@@ -6,7 +6,13 @@ use sqlx::SqlitePool;
 
 pub async fn run(pool: &SqlitePool, agent_id: &str) -> Result<Vec<Team>, SessionError> {
     let workspace_id = session_load::require(pool).await?.current_workspace_id;
-    if !agents::delete(pool, &workspace_id, agent_id).await? {
+    let deleted = agents::delete(pool, &workspace_id, agent_id)
+        .await
+        .map_err(|error| match error.as_database_error() {
+            Some(database) if database.is_foreign_key_violation() => SessionError::AgentHasActivity,
+            _ => SessionError::Database(error),
+        })?;
+    if !deleted {
         return Err(SessionError::AgentNotFound);
     }
     canvas_positions::delete(pool, &workspace_id, agent_id).await?;
@@ -20,7 +26,8 @@ mod tests {
     use crate::domain::team::AgentDraft;
     use crate::repositories::database::open_for_test;
     use crate::services::{
-        agent_create, first_launch, room_create, room_get, team_create, workspace_create,
+        agent_create, first_launch, message_send, room_create, room_get, team_create,
+        workspace_create,
     };
 
     async fn setup(pool: &SqlitePool) -> String {
@@ -122,10 +129,38 @@ mod tests {
 
         assert!(matches!(
             run(&pool, &agent_id).await,
-            Err(SessionError::Database(_))
+            Err(SessionError::AgentHasActivity)
         ));
         let detail = room_get::run(&pool, &room.id).await.unwrap();
         assert_eq!(detail.room.agents.len(), 1);
         assert_eq!(detail.messages.len(), 1);
+    }
+
+    #[tokio::test]
+    async fn cannot_delete_an_agent_that_has_runs_but_no_messages() {
+        let (pool, _dir) = open_for_test().await;
+        let agent_id = setup(&pool).await;
+        let room = room_create::run(&pool, "Daily", vec![agent_id.clone()])
+            .await
+            .unwrap();
+        let request = message_send::run(&pool, &room.id, "hola").await.unwrap();
+        sqlx::query(
+            "INSERT INTO agent_runs (id, room_id, agent_id, request_message_id, client_request_id, status, attempts, provider, model, created_at) \
+             VALUES ('run1', ?, ?, ?, '0196f3a0-0000-7000-8000-000000000001', 'queued', 0, 'anthropic', 'claude-sonnet-5-5', ?)",
+        )
+        .bind(&room.id)
+        .bind(&agent_id)
+        .bind(&request.id)
+        .bind(&request.created_at)
+        .execute(&pool)
+        .await
+        .unwrap();
+
+        assert!(matches!(
+            run(&pool, &agent_id).await,
+            Err(SessionError::AgentHasActivity)
+        ));
+        let detail = room_get::run(&pool, &room.id).await.unwrap();
+        assert_eq!(detail.room.agents.len(), 1);
     }
 }
