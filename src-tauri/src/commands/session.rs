@@ -5,8 +5,8 @@ use crate::domain::team::{AgentDraft, Team};
 use crate::domain::theme::Theme;
 use crate::services::session_load::SessionError;
 use crate::services::{
-    agent_create, agent_templates_list, first_launch, locale_change, session_load, team_create,
-    teams_list, theme_change, workspace_create, workspace_switch,
+    agent_create, agent_roles_list, agent_templates_list, first_launch, locale_change,
+    session_load, team_create, teams_list, theme_change, workspace_create, workspace_switch,
 };
 use sqlx::SqlitePool;
 use tauri::State;
@@ -60,6 +60,11 @@ pub async fn create_agent(
     draft: AgentDraft,
 ) -> Result<Vec<Team>, SessionError> {
     agent_create::run(&pool, draft).await
+}
+
+#[tauri::command]
+pub fn list_agent_roles() -> Vec<String> {
+    agent_roles_list::run()
 }
 
 #[tauri::command]

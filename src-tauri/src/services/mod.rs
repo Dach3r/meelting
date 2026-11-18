@@ -1,4 +1,5 @@
 pub mod agent_create;
+pub mod agent_roles_list;
 pub mod agent_templates_list;
 pub mod completion_stream;
 pub mod first_launch;

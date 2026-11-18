@@ -1,4 +1,4 @@
-use crate::catalogs::agent_templates;
+use crate::catalogs::{agent_roles, agent_templates};
 use crate::domain::team::{AgentDraft, Team};
 use crate::repositories::{agents, teams};
 use crate::services::session_load::{self, SessionError};
@@ -8,6 +8,9 @@ use uuid::Uuid;
 
 pub async fn run(pool: &SqlitePool, draft: AgentDraft) -> Result<Vec<Team>, SessionError> {
     let draft = draft.normalize().ok_or(SessionError::InvalidAgent)?;
+    if !agent_roles::exists(&draft.role) {
+        return Err(SessionError::InvalidAgent);
+    }
     if let Some(key) = &draft.template_key
         && !agent_templates::exists(key)
     {
@@ -33,7 +36,7 @@ mod tests {
             team_id: team_id.into(),
             template_key: None,
             name: "Ana".into(),
-            role: "Developer".into(),
+            role: "Software Developer".into(),
             description: "Writes code".into(),
             instructions: "Be careful".into(),
             provider: "openai".into(),
@@ -53,7 +56,7 @@ mod tests {
 
         assert_eq!(created[0].agents.len(), 1);
         assert_eq!(created[0].agents[0].name, "Ana");
-        assert_eq!(created[0].agents[0].role, "Developer");
+        assert_eq!(created[0].agents[0].role, "Software Developer");
     }
 
     #[tokio::test]
@@ -65,6 +68,22 @@ mod tests {
             .clone();
         let mut invalid = draft(&team_id);
         invalid.model = " ".into();
+
+        assert!(matches!(
+            run(&pool, invalid).await,
+            Err(SessionError::InvalidAgent)
+        ));
+    }
+
+    #[tokio::test]
+    async fn rejects_a_role_outside_the_catalog() {
+        let (pool, _dir) = open_for_test().await;
+        first_launch::run(&pool, Locale::En, "First").await.unwrap();
+        let team_id = team_create::run(&pool, "General").await.unwrap()[0]
+            .id
+            .clone();
+        let mut invalid = draft(&team_id);
+        invalid.role = "Wizard".into();
 
         assert!(matches!(
             run(&pool, invalid).await,

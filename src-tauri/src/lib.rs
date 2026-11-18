@@ -33,6 +33,7 @@ pub fn run() {
             commands::session::list_teams,
             commands::session::create_team,
             commands::session::create_agent,
+            commands::session::list_agent_roles,
             commands::session::list_agent_templates,
             commands::session::change_locale,
             commands::session::change_theme
