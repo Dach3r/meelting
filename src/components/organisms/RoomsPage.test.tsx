@@ -76,14 +76,14 @@ describe("rooms list", () => {
     expect(await screen.findByText("No rooms yet")).toBeInTheDocument();
   });
 
-  it("lays out every room as a card with its agents and an empty seat for each free slot", async () => {
+  it("lays out every room as a card with its agents and its latest activity", async () => {
     core({ list_rooms: () => ({ rooms: [daily, retro], featured_messages: [] }) });
     renderPage();
 
     const rooms = within(await screen.findByRole("list", { name: "Rooms" }));
     const dailyCard = within(rooms.getByRole("heading", { name: "Daily" }).closest("li")!);
-    expect(dailyCard.getByText("Ana")).toBeInTheDocument();
-    expect(dailyCard.getByText("1 agent · Last activity", { exact: false })).toBeInTheDocument();
+    expect(dailyCard.getByText(/Ana/)).toBeInTheDocument();
+    expect(dailyCard.getByText(/1 agent/)).toBeInTheDocument();
     expect(dailyCard.getByRole("button", { name: "Enter room" })).toBeInTheDocument();
     const retroCard = within(rooms.getByRole("heading", { name: "Retro" }).closest("li")!);
     expect(retroCard.getByText("No agents", { exact: false })).toBeInTheDocument();
@@ -98,9 +98,9 @@ describe("rooms list", () => {
     renderPage();
 
     const card = within((await screen.findByRole("heading", { name: "Retro" })).closest("li")!);
-    expect(card.getByText("Cleo")).toBeInTheDocument();
-    expect(card.queryByText("Dan")).not.toBeInTheDocument();
-    expect(card.getByText("+2", { exact: false })).toBeInTheDocument();
+    expect(card.getByText(/Cleo/)).toBeInTheDocument();
+    expect(card.queryByText(/Dan/)).not.toBeInTheDocument();
+    expect(card.getByText("+2")).toBeInTheDocument();
   });
 
   it("shows the translated error when the rooms fail to load", async () => {

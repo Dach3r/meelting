@@ -13,35 +13,32 @@ export function RoomCard({ room, onOpen }: { room: Room; onOpen: () => void }) {
   const seated = room.agents.slice(0, SEATS);
   const extra = room.agents.length - seated.length;
   return (
-    <li className="flex flex-col gap-3 rounded-[20px] border border-line bg-shell p-3">
-      <ul aria-label={t("rooms.participants")} className="grid grid-cols-3 gap-1.5">
-        {seated.map((agent) => (
-          <li key={agent.id} className="relative grid h-26 place-items-center rounded-xl bg-surface">
-            <Avatar seed={agent.name} label={agent.name} className="size-11 rounded-full text-lg" />
-            <span className="absolute bottom-1.5 left-2 max-w-[90%] truncate text-[11px] text-muted">{agent.name}</span>
-          </li>
-        ))}
-        {Array.from({ length: SEATS - seated.length }, (_, i) => (
-          <li key={i} aria-hidden className="h-26 rounded-xl border border-dashed border-line" />
-        ))}
-      </ul>
-      <div className="flex items-end justify-between gap-2 px-1.5 pb-1">
-        <div className="grid min-w-0 gap-0.5">
-          <h3 id={nameId} className="truncate text-base font-semibold text-ink">
-            {room.name}
-          </h3>
-          <p className="text-xs text-muted">
-            {formatDateTime(locale, room.updated_at)}
-            {extra > 0 && ` · +${extra}`}
-          </p>
-          <p className="sr-only">
-            {formatAgentCount(locale, room.agents.length)} · {t("rooms.lastActivity")} {formatDateTime(locale, room.updated_at)}
-          </p>
-        </div>
-        <Button type="button" size="pill" aria-describedby={nameId} onClick={onOpen} className="shrink-0">
-          {t("rooms.enter")}
-        </Button>
+    <li className="flex flex-col gap-5 rounded-[20px] border border-line bg-shell p-5">
+      <div className="grid gap-0.5">
+        <h3 id={nameId} className="truncate text-lg font-semibold text-ink">
+          {room.name}
+        </h3>
+        <p className="text-xs text-muted">
+          {t("rooms.lastActivity")} {formatDateTime(locale, room.updated_at)}
+        </p>
       </div>
+      <div className="grid min-h-14 content-center gap-2">
+        {seated.length > 0 && (
+          <div className="flex items-center">
+            {seated.map((agent) => (
+              <Avatar key={agent.id} seed={agent.name} label={agent.name} className="-ml-2 size-11 rounded-full border-2 border-shell text-lg first:ml-0" />
+            ))}
+            {extra > 0 && <span className="ml-2 text-sm font-medium text-muted">+{extra}</span>}
+          </div>
+        )}
+        <p className="truncate text-xs text-muted">
+          {formatAgentCount(locale, room.agents.length)}
+          {seated.length > 0 && ` · ${seated.map((agent) => agent.name).join(", ")}`}
+        </p>
+      </div>
+      <Button type="button" size="pill" aria-describedby={nameId} onClick={onOpen} className="mt-auto w-full">
+        {t("rooms.enter")}
+      </Button>
     </li>
   );
 }
