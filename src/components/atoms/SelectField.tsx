@@ -17,9 +17,10 @@ type Props = {
   onChange: (value: string, groupId: string) => void;
   autoFocus?: boolean;
   hideLabel?: boolean;
+  grow?: boolean;
 };
 
-export function SelectField({ label, searchPlaceholder, emptyMessage, value, groups, onChange, autoFocus, hideLabel }: Props) {
+export function SelectField({ label, searchPlaceholder, emptyMessage, value, groups, onChange, autoFocus, hideLabel, grow }: Props) {
   const id = useId();
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(() => Math.max(groups.flatMap((group) => group.options).indexOf(value), 0));
@@ -45,11 +46,11 @@ export function SelectField({ label, searchPlaceholder, emptyMessage, value, gro
 
   let index = -1;
   return (
-    <div className="grid gap-2">
+    <div className={grow ? "flex flex-1 flex-col gap-2" : "grid gap-2"}>
       <span id={`${id}-label`} className={hideLabel ? "sr-only" : "text-sm font-medium text-muted"}>
         {label}
       </span>
-      <div className="overflow-hidden rounded-2xl border border-line bg-raised" onKeyDown={onKeyDown}>
+      <div className={`overflow-hidden rounded-2xl border border-line bg-raised ${grow ? "flex flex-1 flex-col" : ""}`} onKeyDown={onKeyDown}>
         <div className="relative border-b border-line">
           <Search aria-hidden className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted" />
           <input
@@ -69,7 +70,7 @@ export function SelectField({ label, searchPlaceholder, emptyMessage, value, gro
             className="w-full bg-transparent py-3.5 pr-4 pl-10 text-base text-ink outline-none placeholder:text-muted"
           />
         </div>
-        <div id={`${id}-list`} role="listbox" aria-labelledby={`${id}-label`} className="h-64 overflow-y-auto overscroll-contain p-1.5">
+        <div id={`${id}-list`} role="listbox" aria-labelledby={`${id}-label`} className={`overflow-y-auto overscroll-contain p-1.5 ${grow ? "min-h-64 flex-1" : "h-64"}`}>
           {flat.length === 0 && <p className="px-3 py-4 text-center text-sm text-muted">{emptyMessage}</p>}
           {visible.map(({ id: groupId, label: groupLabel, icon: GroupIcon, options }) => (
             <div key={groupId} role="group" aria-label={groupLabel}>
