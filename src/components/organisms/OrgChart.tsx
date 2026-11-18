@@ -241,14 +241,7 @@ export function OrgChart({ teams, zoom, onNewTeam, onNewAgent, onEditAgent, onDe
             </>
           }
           onClose={() => setSelectedId(null)}
-        >
-          {shownDetail?.description && (
-            <div className="grid gap-1 rounded-2xl bg-raised p-3">
-              <p className="text-xs font-medium text-muted">{t("teams.agent.description")}</p>
-              <p className="max-h-32 overflow-y-auto text-sm text-ink">{shownDetail.description}</p>
-            </div>
-          )}
-        </OrgDrawer>
+        />
       )}
       {drawerTeam && !drawerAgent && (
         <OrgDrawer

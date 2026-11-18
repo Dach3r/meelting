@@ -704,7 +704,7 @@ describe("workspace shell", () => {
       });
     }
 
-    it("shows the model and description of the selected agent in its drawer", async () => {
+    it("shows the provider and model of the selected agent in its drawer", async () => {
       mockEditing();
       const user = userEvent.setup();
       render(<App />);
@@ -714,7 +714,6 @@ describe("workspace shell", () => {
 
       expect(await within(drawer).findByText("gpt-5")).toBeInTheDocument();
       expect(within(drawer).getByText("OpenAI")).toBeInTheDocument();
-      expect(within(drawer).getByText("Writes code")).toBeInTheDocument();
     });
 
     async function openEditor(user: ReturnType<typeof userEvent.setup>) {
