@@ -84,14 +84,24 @@ export function RoomsPage({ agents }: { agents: Agent[] }) {
         </div>
       )}
       {list && featured && (
-        <FeaturedRoom room={featured} messages={list.featured_messages} onOpen={() => setOpenRoomId(featured.id)} />
-      )}
-      {others.length > 0 && (
-        <ul aria-label={t("rooms.others")} className="grid grid-cols-[repeat(auto-fill,minmax(16rem,1fr))] gap-4">
-          {others.map((room) => (
-            <RoomCard key={room.id} room={room} onOpen={() => setOpenRoomId(room.id)} />
-          ))}
-        </ul>
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
+          <FeaturedRoom room={featured} messages={list.featured_messages} onOpen={() => setOpenRoomId(featured.id)} />
+          <ul aria-label={t("rooms.others")} className="board-dots grid content-start gap-4 rounded-3xl border border-line bg-surface p-4 sm:grid-cols-2">
+            {others.map((room) => (
+              <RoomCard key={room.id} room={room} onOpen={() => setOpenRoomId(room.id)} />
+            ))}
+            <li>
+              <button
+                type="button"
+                onClick={openForm}
+                className="flex min-h-32 w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-line text-sm text-muted transition-colors hover:bg-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+              >
+                <Plus aria-hidden className="size-5" />
+                {t("rooms.new")}
+              </button>
+            </li>
+          </ul>
+        </div>
       )}
     </div>
   );

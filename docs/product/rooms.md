@@ -15,7 +15,7 @@
 - Se permite una sala sin agentes.
 - Mensajes (`messages`) del usuario y de agentes, con historial persistente por sala. La entrega en vivo usa **eventos Tauri** emitidos por el núcleo. Los mensajes son inmutables: sin edición ni eliminación individual.
 - Pantalla de la sala como reunión: una tarjeta por participante (el usuario y cada agente con su rol), la conversación como transcripción en un panel lateral con el compositor (Intro envía, Mayús+Intro salta de línea), y una barra inferior con el número de agentes y la acción de eliminar. Mientras un agente tiene una ejecución activa en la sala, su tarjeta muestra «Pensando…».
-- Listado de salas con tarjetas del tema oscuro Grafito.
+- Listado de salas como plano de oficina con la sala más reciente destacada, con tarjetas del tema Grafito.
 - Compositor con menciones `@`, selector «Pedir a» («Según el mensaje», «Nadie» o un agente) y destinatario propuesto ([conversation-engine.md](../architecture/conversation-engine.md#r1-implementado)). Bajo la instrucción aparece el agente con su estado (en cola, pensando, escribiendo o reintentando), el texto en vivo y «Cancelar», o el error traducido. La respuesta guardada muestra proveedor, modelo y tokens solo en su pie.
 - Cada mensaje muestra la hora, y al pasar el cursor, la fecha completa. Si el rol de un agente coincide con su nombre, no se repite.
 
@@ -24,7 +24,7 @@
 - Miembros humanos adicionales.
 
 ## Flujo funcional
-1. El usuario abre **Salas** y ve sus salas o un estado vacío. El listado va ordenado por actividad reciente (`rooms.updated_at`, que es la creación y se actualiza con cada mensaje; desempate por `id`): la primera se destaca con sus agentes y una vista previa de sus últimos 3 mensajes, y el resto aparece como tarjetas con su número de agentes y última actividad.
+1. El usuario abre **Salas** y ve sus salas o un estado vacío. El listado va ordenado por actividad reciente (`rooms.updated_at`, que es la creación y se actualiza con cada mensaje; desempate por `id`): la primera se destaca como una mesa de reunión (una tarjeta por participante, el usuario incluido, y la vista previa de sus últimos 3 mensajes) y el resto aparece sobre un plano punteado como salas con sus agentes sentados (hasta 3, con «+N» para el resto) y su última actividad, más un hueco discontinuo «Nueva sala».
 2. Crea una sala: nombre y, opcionalmente, agentes.
 3. Al crearla entra directamente; ve a los participantes como tarjetas y la conversación (últimos 100 mensajes) a un costado.
 4. Escribe un mensaje: el núcleo lo guarda y actualiza la actividad de la sala en una transacción, lo devuelve y, tras el commit, emite `message:created`. La UI lo añade desde el resultado o el evento sin duplicarlo (por `id`).
