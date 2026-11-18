@@ -408,7 +408,9 @@ describe("agent availability", () => {
   });
 
   it("explains a lost connection and lets you check again", async () => {
-    let answer = [{ agent_id: "a2", provider: "groq", availability: "needs_connection", reason: "provider_unavailable" }];
+    let answer: { agent_id: string; provider: string; availability: string; reason: string | null }[] = [
+      { agent_id: "a2", provider: "groq", availability: "needs_connection", reason: "provider_unavailable" },
+    ];
     core({ get_room: () => detail(), check_agent_availability: () => answer });
     const user = userEvent.setup();
     await renderRoom();
