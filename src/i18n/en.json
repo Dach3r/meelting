@@ -80,7 +80,6 @@
       "restoreTemplate": "Restore template",
       "identityTitle": "Who is this agent?",
       "engineTitle": "Which model does it use?",
-      "teamCurrent": "Now",
       "teamCurrentTag": "Current",
       "teamCountUnit": "teams",
       "teamAgentsNone": "You have no agents available",

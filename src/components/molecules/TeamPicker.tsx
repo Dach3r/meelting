@@ -43,18 +43,15 @@ export function TeamPicker({ teams, currentId, value, onChange }: Props) {
 
   return (
     <div className="flex flex-1 flex-col gap-3">
-      <div className="grid gap-3">
-        <p className={eyebrow}>{t("teams.agent.teamCurrent")}</p>
-        {current && (
-          <div className="flex items-center gap-4 rounded-2xl border border-line bg-shell p-4">
-            <Avatar seed={current.name} label={current.name} className="size-10 rounded-xl text-base" />
-            <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-ink">{current.name}</p>
-              <p className="text-xs text-muted">{agentsAvailable(current.agents.length)}</p>
-            </div>
+      {current && (
+        <div className="flex items-center gap-4 rounded-2xl border border-line bg-shell p-4">
+          <Avatar seed={current.name} label={current.name} className="size-10 rounded-xl text-base" />
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold text-ink">{current.name}</p>
+            <p className="text-xs text-muted">{agentsAvailable(current.agents.length)}</p>
           </div>
-        )}
-      </div>
+        </div>
+      )}
       <ArrowDown aria-hidden className="size-5 shrink-0 self-center text-muted" />
       <div className="flex min-h-56 min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-line">
         <div className={`flex items-center gap-3 border-b border-line bg-shell px-3.5 py-2 ${eyebrow}`}>

@@ -80,7 +80,6 @@
       "restoreTemplate": "Restaurar plantilla",
       "identityTitle": "¿Quién es este agente?",
       "engineTitle": "¿Con qué modelo trabaja?",
-      "teamCurrent": "Ahora",
       "teamCurrentTag": "Actual",
       "teamCountUnit": "equipos",
       "teamAgentsNone": "No tienes agentes disponibles",

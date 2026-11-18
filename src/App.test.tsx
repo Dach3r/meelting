@@ -761,7 +761,6 @@ describe("workspace shell", () => {
       const dialog = await openEditor(user);
       await user.click(within(dialog).getByRole("tab", { name: "Team" }));
 
-      expect(within(dialog).getByText("Now")).toBeInTheDocument();
       expect(within(dialog).getByText("You have one agent available")).toBeInTheDocument();
       expect(within(dialog).getByText("Ana")).toBeInTheDocument();
       expect(within(dialog).getByText("Software Developer")).toBeInTheDocument();
