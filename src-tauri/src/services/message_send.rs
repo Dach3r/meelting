@@ -72,6 +72,22 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn counts_each_emoji_as_one_character_up_to_the_maximum() {
+        let (pool, _dir) = open_for_test().await;
+        first_launch::run(&pool, Locale::En, "Acme").await.unwrap();
+        let room = room_create::run(&pool, "Daily", vec![]).await.unwrap();
+
+        let message = run(&pool, &room.id, &"😀".repeat(4000)).await.unwrap();
+
+        assert_eq!(message.body.chars().count(), 4000);
+        assert!(matches!(
+            run(&pool, &room.id, &"😀".repeat(4001)).await,
+            Err(SessionError::InvalidMessage)
+        ));
+        assert_eq!(count(&pool, "SELECT COUNT(*) FROM messages").await, 1);
+    }
+
+    #[tokio::test]
     async fn rejects_unknown_rooms_and_rooms_of_another_workspace() {
         let (pool, _dir) = open_for_test().await;
         first_launch::run(&pool, Locale::En, "Acme").await.unwrap();

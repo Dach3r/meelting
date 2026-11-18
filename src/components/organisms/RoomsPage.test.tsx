@@ -242,6 +242,23 @@ describe("inside a room", () => {
     expect(invokeMock).not.toHaveBeenCalledWith("send_message", expect.anything());
   });
 
+  it("counts emojis as one character like the core does", async () => {
+    const user = await openDaily({ send_message: ({ body }) => message("m2", String(body)) });
+    const send = screen.getByRole("button", { name: "Send" });
+
+    await user.click(screen.getByLabelText("Message"));
+    await user.paste("👩‍💻".repeat(1334));
+    expect(send).toBeDisabled();
+    expect(screen.getByText("Write a message of up to 4,000 characters.")).toBeInTheDocument();
+    await user.clear(screen.getByLabelText("Message"));
+    await user.paste(`  ${"😀".repeat(4000)}\n`);
+    expect(send).toBeEnabled();
+    expect(screen.getByLabelText("Message")).not.toHaveAttribute("aria-invalid", "true");
+    await user.click(send);
+
+    expect(invokeMock).toHaveBeenCalledWith("send_message", { roomId: "r1", body: `  ${"😀".repeat(4000)}\n` });
+  });
+
   it("deletes the room after confirming and goes back to the list", async () => {
     const user = await openDaily({ delete_room: () => ({ rooms: [], featured_messages: [] }) });
 

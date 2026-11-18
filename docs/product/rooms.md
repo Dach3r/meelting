@@ -40,7 +40,7 @@
 
 ## Reglas de negocio
 - `name` obligatorio, máximo 80 caracteres.
-- `body` del mensaje obligatorio (el núcleo recorta los espacios de los extremos). Máximo 4000 caracteres solo para los mensajes del usuario; las respuestas de agentes no se truncan (sus límites los fijará el motor de ejecución). La UI limita el compositor a 4000.
+- `body` del mensaje obligatorio (el núcleo recorta los espacios de los extremos). Máximo 4000 caracteres solo para los mensajes del usuario; las respuestas de agentes no se truncan (sus límites los fijará el motor de ejecución). La UI, el núcleo y SQLite cuentan igual: puntos de código Unicode (`Array.from` en la UI, `chars()` en Rust, `length()` en SQLite) sobre el texto recortado; un emoji simple cuenta 1 y uno compuesto con ZWJ cuenta cada punto de código. Si el mensaje pasa de 4000, el compositor desactiva el envío y muestra el aviso, sin cortar el texto.
 - Sala y agente de una participación deben pertenecer al mismo workspace; se valida en el servicio y lo refuerzan claves foráneas compuestas con `workspace_id`.
 - Un agente solo puede tener mensajes en salas donde participa (clave foránea `messages (room_id, agent_id) → room_agents`).
 - Eliminar una sala elimina sus mensajes y participaciones. Eliminar un agente elimina sus participaciones, salvo que tenga mensajes o ejecuciones: entonces no se puede eliminar. Hoy lo impide la base de datos (el núcleo devuelve `database`); el error propio `agent_has_messages` llega con `AgentRun`, cuando los agentes puedan escribir.
