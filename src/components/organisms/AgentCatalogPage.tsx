@@ -112,7 +112,7 @@ export function AgentCatalogPage({ team, busy, actionErrorMessage, onCreateAgent
         </Modal>
       )}
       {dialog?.kind === "custom" && (
-        <Modal title={`${t("teams.newAgent")} · ${team.name}`} onClose={close}>
+        <Modal title={`${t("teams.newAgent")} · ${team.name}`} onClose={close} bare>
           <AgentForm team={team} busy={busy} errorMessage={actionErrorMessage} onSubmit={create} onCancel={close} />
         </Modal>
       )}
