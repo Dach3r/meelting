@@ -1,12 +1,14 @@
-import { ArrowRight, Check, Cpu, FileText, Server, User, type LucideIcon } from "lucide-react";
+import { ArrowRight, Check, Cloud, Cpu, FileText, HardDrive, User, type LucideIcon } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
 import type { AgentTemplate } from "../../hooks/useAgentTemplates";
+import { useLlmProviders, type LlmProvider } from "../../hooks/useLlmProviders";
 import type { AgentDraft, Team } from "../../hooks/useTeams";
 import { Button } from "../atoms/Button";
 import { Field } from "../atoms/Field";
 import { SelectField, type SelectGroup } from "../atoms/SelectField";
 import { Alert } from "../molecules/Alert";
+import { SegmentedControl } from "../molecules/SegmentedControl";
 
 type Props = {
   team: Team;
@@ -20,11 +22,15 @@ type Props = {
 
 const steps = ["identity", "engine", "behavior"] as const;
 
+const locations: LlmProvider["location"][] = ["cloud", "local"];
+
 const stepIcons: Record<(typeof steps)[number], LucideIcon> = { identity: User, engine: Cpu, behavior: FileText };
 
 export function AgentForm({ team, template, roleGroups, busy, errorMessage, onSubmit, onCancel }: Props) {
   const { t } = useI18n();
+  const providers = useLlmProviders();
   const [step, setStep] = useState(0);
+  const [location, setLocation] = useState<LlmProvider["location"]>("cloud");
   const [draft, setDraft] = useState<AgentDraft>({
     team_id: team.id,
     template_key: template?.key ?? null,
@@ -42,6 +48,14 @@ export function AgentForm({ team, template, roleGroups, busy, errorMessage, onSu
     engine: filled(draft.provider, draft.model),
     behavior: true,
   };
+  const modelGroups = providers
+    .filter((provider) => provider.location === location)
+    .map((provider) => ({
+      id: provider.key,
+      label: provider.name,
+      icon: location === "cloud" ? Cloud : HardDrive,
+      options: provider.models,
+    }));
   const current = steps[step];
   const last = step === steps.length - 1;
 
@@ -109,8 +123,25 @@ export function AgentForm({ team, template, roleGroups, busy, errorMessage, onSu
           )}
           {current === "engine" && (
             <>
-              <Field label={t("teams.agent.provider")} value={draft.provider} onChange={set("provider")} icon={Server} autoFocus />
-              <Field label={t("teams.agent.model")} value={draft.model} onChange={set("model")} icon={Cpu} />
+              <SegmentedControl
+                label={t("teams.agent.location")}
+                options={locations.map((value) => ({ value, label: t(`teams.agent.locations.${value}`) }))}
+                value={location}
+                onChange={(value) => {
+                  setLocation(value);
+                  setDraft({ ...draft, provider: "", model: "" });
+                }}
+              />
+              <SelectField
+                key={location}
+                label={t("teams.agent.model")}
+                searchPlaceholder={t("teams.agent.modelSearch")}
+                emptyMessage={t("teams.agent.modelEmpty")}
+                value={draft.model}
+                groups={modelGroups}
+                onChange={(model, provider) => setDraft({ ...draft, provider, model })}
+                autoFocus
+              />
             </>
           )}
           {current === "behavior" && (

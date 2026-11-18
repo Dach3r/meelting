@@ -33,7 +33,7 @@ src-tauri/src/
 │   ├── keychain.rs        ✅ save_secret, secret_last_four, delete_secret
 │   ├── worktree.rs        ✅ run_in_worktree
 │   ├── completion.rs      ✅ stream_completion
-│   └── session.rs         ✅ load_session, complete_first_launch, create_workspace, switch_workspace, list_teams, create_team, create_agent, list_agent_templates, list_agent_roles, change_locale, change_theme
+│   └── session.rs         ✅ load_session, complete_first_launch, create_workspace, switch_workspace, list_teams, create_team, create_agent, list_agent_templates, list_agent_roles, list_llm_providers, change_locale, change_theme
 ├── services/              Capa 2: acciones de negocio (verbos)
 │   ├── worktree_run.rs    ✅ crea un worktree y ejecuta un comando en él
 │   ├── completion_stream.rs ✅ lee la clave del keychain y hace streaming de una respuesta
@@ -47,7 +47,8 @@ src-tauri/src/
 │   ├── team_create.rs     ✅ crea un equipo y devuelve la lista actualizada
 │   ├── agent_create.rs    ✅ valida y crea un agente (personalizado o desde plantilla) y devuelve la lista actualizada
 │   ├── agent_roles_list.rs ✅ roles predefinidos del catálogo, agrupados por área
-│   └── agent_templates_list.rs ✅ plantillas del catálogo en el idioma del perfil
+│   ├── agent_templates_list.rs ✅ plantillas del catálogo en el idioma del perfil
+│   └── llm_providers_list.rs ✅ proveedores y modelos del catálogo
 ├── system/                Capa 3: integración con el SO, sin reglas de negocio
 │   ├── git.rs             ✅ git por tokio::process (worktree add)
 │   ├── terminal.rs        ✅ PTY portable y lectura de salida
@@ -71,7 +72,8 @@ src-tauri/src/
     ├── agent_roles.yml    ✅ roles agrupados por área
     ├── agent_templates.rs ✅ carga las plantillas de agente (YAML es/en) y valida claves
     ├── agent_templates/   ✅ una plantilla por rol predefinido (25 .yml, p. ej. product_owner, qa_engineer, legal_advisor)
-    └── llm.yml            pendiente
+    ├── llm.rs             ✅ carga proveedores y modelos (YAML) y valida que un par proveedor/modelo exista
+    └── llm.yml            ✅ proveedores en la nube y locales con sus modelos
 ```
 
 ### Responsabilidad de cada capa

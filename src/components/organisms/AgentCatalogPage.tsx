@@ -36,6 +36,7 @@ export function AgentCatalogPage({ team, busy, actionErrorMessage, onCreateAgent
   const { templates, errorKey } = useAgentTemplates(locale);
   const rolesByGroup = useAgentRoles();
   const roleGroups = rolesByGroup.map(({ group, roles }) => ({
+    id: group,
     label: t(`teams.agent.roleGroups.${group}`),
     icon: roleGroupIcons[group],
     options: roles,

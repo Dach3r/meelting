@@ -1,0 +1,25 @@
+- key: anthropic
+  name: Anthropic
+  location: cloud
+  models:
+    - claude-sonnet-5-5
+    - claude-opus-5-5
+    - claude-haiku-5-5
+- key: openai
+  name: OpenAI
+  location: cloud
+  models:
+    - gpt-5
+    - gpt-5-mini
+- key: groq
+  name: Groq
+  location: cloud
+  models:
+    - llama-3.3-70b-versatile
+- key: ollama
+  name: Ollama
+  location: local
+  models:
+    - llama3.3:70b
+    - qwen2.5-coder:32b
+    - mistral-small:24b

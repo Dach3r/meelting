@@ -1,13 +1,15 @@
 use crate::catalogs::agent_roles::RoleGroup;
 use crate::catalogs::agent_templates::AgentTemplate;
+use crate::catalogs::llm::Provider;
 use crate::domain::locale::Locale;
 use crate::domain::session::Session;
 use crate::domain::team::{AgentDraft, Team};
 use crate::domain::theme::Theme;
 use crate::services::session_load::SessionError;
 use crate::services::{
-    agent_create, agent_roles_list, agent_templates_list, first_launch, locale_change,
-    session_load, team_create, teams_list, theme_change, workspace_create, workspace_switch,
+    agent_create, agent_roles_list, agent_templates_list, first_launch, llm_providers_list,
+    locale_change, session_load, team_create, teams_list, theme_change, workspace_create,
+    workspace_switch,
 };
 use sqlx::SqlitePool;
 use tauri::State;
@@ -66,6 +68,11 @@ pub async fn create_agent(
 #[tauri::command]
 pub fn list_agent_roles() -> Vec<RoleGroup> {
     agent_roles_list::run()
+}
+
+#[tauri::command]
+pub fn list_llm_providers() -> Vec<Provider> {
+    llm_providers_list::run()
 }
 
 #[tauri::command]

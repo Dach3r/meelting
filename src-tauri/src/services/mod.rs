@@ -3,6 +3,7 @@ pub mod agent_roles_list;
 pub mod agent_templates_list;
 pub mod completion_stream;
 pub mod first_launch;
+pub mod llm_providers_list;
 pub mod locale_change;
 pub mod session_load;
 pub mod team_create;

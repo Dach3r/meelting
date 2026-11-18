@@ -2,6 +2,7 @@ import { Check, Search, type LucideIcon } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 
 export type SelectGroup = {
+  id: string;
   label: string;
   icon: LucideIcon;
   options: string[];
@@ -13,7 +14,7 @@ type Props = {
   emptyMessage: string;
   value: string;
   groups: SelectGroup[];
-  onChange: (value: string) => void;
+  onChange: (value: string, groupId: string) => void;
   autoFocus?: boolean;
 };
 
@@ -24,7 +25,7 @@ export function SelectField({ label, searchPlaceholder, emptyMessage, value, gro
   const visible = groups
     .map((group) => ({ ...group, options: group.options.filter((option) => option.toLowerCase().includes(query.trim().toLowerCase())) }))
     .filter((group) => group.options.length > 0);
-  const flat = visible.flatMap((group) => group.options);
+  const flat = visible.flatMap((group) => group.options.map((option) => ({ option, groupId: group.id })));
 
   useEffect(() => {
     document.getElementById(`${id}-${active}`)?.scrollIntoView({ block: "nearest" });
@@ -37,7 +38,7 @@ export function SelectField({ label, searchPlaceholder, emptyMessage, value, gro
       if (flat.length > 0) setActive((current) => (current + step + flat.length) % flat.length);
     } else if (event.key === "Enter") {
       event.preventDefault();
-      if (flat[active]) onChange(flat[active]);
+      if (flat[active]) onChange(flat[active].option, flat[active].groupId);
     }
   }
 
@@ -69,8 +70,8 @@ export function SelectField({ label, searchPlaceholder, emptyMessage, value, gro
         </div>
         <div id={`${id}-list`} role="listbox" aria-labelledby={`${id}-label`} className="max-h-64 overflow-y-auto overscroll-contain p-1.5">
           {flat.length === 0 && <p className="px-3 py-4 text-center text-sm text-muted">{emptyMessage}</p>}
-          {visible.map(({ label: groupLabel, icon: GroupIcon, options }) => (
-            <div key={groupLabel} role="group" aria-label={groupLabel}>
+          {visible.map(({ id: groupId, label: groupLabel, icon: GroupIcon, options }) => (
+            <div key={groupId} role="group" aria-label={groupLabel}>
               <p aria-hidden className="flex items-center gap-2 px-3 pt-3 pb-1.5 text-xs font-semibold tracking-wider text-muted uppercase">
                 <GroupIcon className="size-3.5" />
                 {groupLabel}
@@ -85,7 +86,7 @@ export function SelectField({ label, searchPlaceholder, emptyMessage, value, gro
                     aria-selected={option === value}
                     onMouseEnter={() => setActive(position)}
                     onMouseDown={(event) => event.preventDefault()}
-                    onClick={() => onChange(option)}
+                    onClick={() => onChange(option, groupId)}
                     className={`flex cursor-pointer items-center justify-between rounded-lg px-3 py-2.5 text-base text-ink ${option === value ? "bg-hi font-semibold" : position === active ? "bg-hi/50" : ""}`}
                   >
                     {option}

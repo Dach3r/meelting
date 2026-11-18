@@ -1,4 +1,4 @@
-use crate::catalogs::{agent_roles, agent_templates};
+use crate::catalogs::{agent_roles, agent_templates, llm};
 use crate::domain::team::{AgentDraft, Team};
 use crate::repositories::{agents, teams};
 use crate::services::session_load::{self, SessionError};
@@ -9,6 +9,9 @@ use uuid::Uuid;
 pub async fn run(pool: &SqlitePool, draft: AgentDraft) -> Result<Vec<Team>, SessionError> {
     let draft = draft.normalize().ok_or(SessionError::InvalidAgent)?;
     if !agent_roles::exists(&draft.role) {
+        return Err(SessionError::InvalidAgent);
+    }
+    if !llm::exists(&draft.provider, &draft.model) {
         return Err(SessionError::InvalidAgent);
     }
     if let Some(key) = &draft.template_key
@@ -39,8 +42,8 @@ mod tests {
             role: "Software Developer".into(),
             description: "Writes code".into(),
             instructions: "Be careful".into(),
-            provider: "openai".into(),
-            model: "gpt".into(),
+            provider: "anthropic".into(),
+            model: "claude-sonnet-5-5".into(),
         }
     }
 
@@ -84,6 +87,22 @@ mod tests {
             .clone();
         let mut invalid = draft(&team_id);
         invalid.role = "Wizard".into();
+
+        assert!(matches!(
+            run(&pool, invalid).await,
+            Err(SessionError::InvalidAgent)
+        ));
+    }
+
+    #[tokio::test]
+    async fn rejects_a_model_outside_the_catalog() {
+        let (pool, _dir) = open_for_test().await;
+        first_launch::run(&pool, Locale::En, "First").await.unwrap();
+        let team_id = team_create::run(&pool, "General").await.unwrap()[0]
+            .id
+            .clone();
+        let mut invalid = draft(&team_id);
+        invalid.model = "gpt-5".into();
 
         assert!(matches!(
             run(&pool, invalid).await,

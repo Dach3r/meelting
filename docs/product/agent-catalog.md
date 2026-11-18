@@ -1,6 +1,6 @@
 # Catálogo de agentes IA
 
-> **Estado:** en curso (Fase 2). Ya existen: listar equipos y agentes, crear equipos (solo nombre), el catálogo de 25 plantillas (YAML es/en embebido) con buscador y filtro por categoría, el detalle de cada plantilla, contratar con un asistente por pasos, crear agentes personalizados con proveedor y modelo escritos a mano y un organigrama en forma de tablero ("Tú" → equipos → agentes sobre un lienzo de puntos, con tarjetas, contraer y mostrar equipos y agentes, selección de tarjetas con manijas, herramienta de mover el tablero y zoom flotante). Pendiente: «Contratar ahora con los datos de la plantilla» (requiere un proveedor y modelo por defecto de `llm.yml`), editar, eliminar, mover y arrastrar tarjetas, minimapa, fijados, estado de cada agente, `llm.yml` y el equipo «General» inicial. Comportamiento portado del producto Rails, donde ya estaba implementado.
+> **Estado:** en curso (Fase 2). Ya existen: listar equipos y agentes, crear equipos (solo nombre), el catálogo de 25 plantillas (YAML es/en embebido) con buscador y filtro por categoría, el detalle de cada plantilla, contratar con un asistente por pasos, crear agentes personalizados eligiendo el modelo de `llm.yml` (en la nube o en el equipo, con buscador) y un organigrama en forma de tablero ("Tú" → equipos → agentes sobre un lienzo de puntos, con tarjetas, contraer y mostrar equipos y agentes, selección de tarjetas con manijas, herramienta de mover el tablero y zoom flotante). Pendiente: «Contratar ahora con los datos de la plantilla» (requiere un proveedor y modelo por defecto de `llm.yml`), advertencia de proveedor sin clave, detección de modelos locales, editar, eliminar, mover y arrastrar tarjetas, minimapa, fijados, estado de cada agente y el equipo «General» inicial. Comportamiento portado del producto Rails, donde ya estaba implementado.
 
 **Problema:** el workspace nace vacío; el usuario no puede construir su equipo, que es la base de la oficina virtual.
 **Objetivo:** que el usuario contrate agentes desde un catálogo de plantillas, los personalice y los gestione como el equipo persistente de su workspace. Cada agente tiene su propio proveedor y modelo de IA y trabaja cuando el usuario le dirige una instrucción en una sala ([agent-execution.md](agent-execution.md)).
@@ -60,7 +60,7 @@ Detalle completo en [../architecture/overview.md](../architecture/overview.md#mo
 
 **`teams`:** `id`, `workspace_id`, `name` (1–80), timestamps.
 
-**Validaciones:** se reflejan en la base con `CHECK`; `provider` y `model` se validan contra `llm.yml` solo al crear o cuando cambian (un agente cuyo modelo salió del catálogo sigue siendo editable y avisa que debe elegir otro).
+**Validaciones:** se reflejan en la base con `CHECK`; `provider` y `model` se validan contra `llm.yml` al crear (hecho) o cuando cambian (un agente cuyo modelo salió del catálogo sigue siendo editable y avisa que debe elegir otro).
 
 **Avatar:** los agentes no tienen imagen elegible; `AgentAvatar` dibuja un círculo con las iniciales (máx. 2) de las dos primeras palabras del nombre.
 

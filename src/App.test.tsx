@@ -15,6 +15,12 @@ const roles = [
   { group: "engineering", roles: ["Software Developer", "QA Engineer"] },
 ];
 
+const providers = [
+  { key: "anthropic", name: "Anthropic", location: "cloud", models: ["claude-sonnet-5-5", "claude-opus-5-5"] },
+  { key: "openai", name: "OpenAI", location: "cloud", models: ["gpt-5"] },
+  { key: "ollama", name: "Ollama", location: "local", models: ["llama3.3:70b"] },
+];
+
 function session(overrides = {}) {
   return {
     locale: "es",
@@ -423,6 +429,7 @@ describe("workspace shell", () => {
       if (command === "list_teams") return teams;
       if (command === "list_agent_templates") return [];
       if (command === "list_agent_roles") return roles;
+      if (command === "list_llm_providers") return providers;
       if (command === "create_agent") return withAgent;
       return session({ locale: "en" });
     });
@@ -449,8 +456,7 @@ describe("workspace shell", () => {
     await user.click(screen.getByRole("option", { name: "Software Developer" }));
     await user.click(next);
     expect(screen.getByRole("button", { name: "Continue" })).toBeDisabled();
-    await user.type(screen.getByLabelText("Provider"), "openai");
-    await user.type(screen.getByLabelText("Model"), "gpt-4o");
+    await user.click(screen.getByRole("option", { name: "gpt-5" }));
     await user.click(screen.getByRole("button", { name: "Continue" }));
     await user.click(screen.getByRole("button", { name: "Create agent" }));
 
@@ -463,7 +469,7 @@ describe("workspace shell", () => {
         description: "",
         instructions: "",
         provider: "openai",
-        model: "gpt-4o",
+        model: "gpt-5",
       },
     });
     expect(await screen.findByText("Ana")).toBeInTheDocument();
@@ -496,6 +502,7 @@ describe("agent catalog", () => {
       if (command === "list_teams") return [team];
       if (command === "list_agent_templates") return templates;
       if (command === "list_agent_roles") return roles;
+      if (command === "list_llm_providers") return providers;
       if (command === "create_agent") return createAgent();
       return session({ locale: "en" });
     });
@@ -600,8 +607,7 @@ describe("agent catalog", () => {
     await user.click(screen.getByRole("option", { name: "Product Owner" }));
     await user.click(screen.getByRole("button", { name: "Continue" }));
     expect(screen.getByRole("button", { name: "Continue" })).toBeDisabled();
-    await user.type(screen.getByLabelText("Provider"), "openai");
-    await user.type(screen.getByLabelText("Model"), "gpt-4o");
+    await user.click(screen.getByRole("option", { name: "gpt-5" }));
     await user.click(screen.getByRole("button", { name: "Continue" }));
     expect(screen.getByLabelText("Description")).toHaveValue("Orders priorities.");
     expect(screen.getByLabelText("Instructions")).toHaveValue(templates[0].instructions);
@@ -616,11 +622,38 @@ describe("agent catalog", () => {
         description: "Orders priorities.",
         instructions: templates[0].instructions,
         provider: "openai",
-        model: "gpt-4o",
+        model: "gpt-5",
       },
     });
     expect(await screen.findByText("Ana")).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Agent catalog" })).not.toBeInTheDocument();
+  });
+
+  it("picks a model by where it runs and filters it with the search", async () => {
+    mockCatalog();
+    const user = userEvent.setup();
+    render(<App />);
+    await openCatalog(user);
+
+    await user.click(await screen.findByRole("button", { name: "Hire QA Engineer" }));
+    await user.click(screen.getByRole("button", { name: "Continue" }));
+    expect(screen.getAllByRole("option")).toHaveLength(3);
+    expect(screen.getByRole("group", { name: "Anthropic" })).toBeInTheDocument();
+    await user.type(screen.getByLabelText("Search model"), "opus");
+    expect(screen.getAllByRole("option")).toHaveLength(1);
+    await user.clear(screen.getByLabelText("Search model"));
+    await user.type(screen.getByLabelText("Search model"), "zzz");
+    expect(screen.getByText("No model matches")).toBeInTheDocument();
+    await user.clear(screen.getByLabelText("Search model"));
+    await user.click(screen.getByRole("option", { name: "claude-opus-5-5" }));
+    expect(screen.getByRole("button", { name: "Continue" })).toBeEnabled();
+
+    await user.click(screen.getByRole("button", { name: "On my computer" }));
+    expect(screen.getByRole("button", { name: "Continue" })).toBeDisabled();
+    expect(screen.getAllByRole("option")).toHaveLength(1);
+    expect(screen.getByRole("group", { name: "Ollama" })).toBeInTheDocument();
+    await user.click(screen.getByRole("option", { name: "llama3.3:70b" }));
+    expect(screen.getByRole("button", { name: "Continue" })).toBeEnabled();
   });
 
   it("keeps the wizard open with the error when the core rejects", async () => {
@@ -633,8 +666,7 @@ describe("agent catalog", () => {
 
     await user.click(await screen.findByRole("button", { name: "Hire QA Engineer" }));
     await user.click(screen.getByRole("button", { name: "Continue" }));
-    await user.type(screen.getByLabelText("Provider"), "openai");
-    await user.type(screen.getByLabelText("Model"), "gpt-4o");
+    await user.click(screen.getByRole("option", { name: "gpt-5" }));
     await user.click(screen.getByRole("button", { name: "Continue" }));
     await user.click(screen.getByRole("button", { name: "Hire" }));
 
