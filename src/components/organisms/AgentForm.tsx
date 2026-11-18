@@ -56,7 +56,7 @@ export function AgentForm({ team, busy, errorMessage, onSubmit, onCancel }: Prop
 
   return (
     <form onSubmit={submit} className="grid min-h-[34rem] sm:grid-cols-[15rem_1fr]">
-      <div className="grid content-start gap-7 bg-shell p-6 sm:p-8">
+      <div className="grid content-start gap-7 bg-raised/50 p-6 sm:p-8">
         <div className="grid gap-1">
           <h2 className="text-xl font-bold text-ink">{t("teams.newAgent")}</h2>
           <p className="text-sm text-muted">{`${t("teams.agent.team")} ${team.name}`}</p>
