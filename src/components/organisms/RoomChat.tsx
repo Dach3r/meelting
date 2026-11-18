@@ -4,7 +4,7 @@ import { translateWith } from "../../i18n/translate";
 import { type AgentRun, type RunState, isActive, liveText } from "../../hooks/agentRunState";
 import type { LlmProvider } from "../../hooks/useLlmProviders";
 import type { Draft, SendResult } from "../../hooks/useRoom";
-import type { Message, Room } from "../../hooks/useRooms";
+import type { Message, Participant, Room } from "../../hooks/useRooms";
 import { Alert } from "../molecules/Alert";
 import { AgentRunStatus } from "../molecules/AgentRunStatus";
 import { ChatMessage } from "../molecules/ChatMessage";
@@ -13,6 +13,7 @@ import { authorName } from "./authorName";
 
 type Props = {
   room: Room;
+  formerAgents: Participant[];
   messages: Message[];
   runs: RunState;
   proposedAgentId: string | null;
@@ -23,13 +24,14 @@ type Props = {
   onCancel: (runId: string) => void;
 };
 
-export function RoomChat({ room, messages, runs, proposedAgentId, providers, sending, errorMessage, onSend, onCancel }: Props) {
+export function RoomChat({ room, formerAgents, messages, runs, proposedAgentId, providers, sending, errorMessage, onSend, onCancel }: Props) {
   const { t, locale } = useI18n();
   const end = useRef<HTMLLIElement>(null);
   const allRuns = Object.values(runs.runs);
   const lastMessageId = messages[messages.length - 1]?.id;
   const lastLive = Object.values(runs.live).reduce((total, live) => total + live.text.length, 0);
   const busyAgentIds = allRuns.filter(isActive).map((run) => run.agent_id);
+  const knownAgents = [...room.agents, ...formerAgents];
 
   useEffect(() => {
     end.current?.scrollIntoView({ block: "end" });
@@ -62,11 +64,11 @@ export function RoomChat({ room, messages, runs, proposedAgentId, providers, sen
             const run = allRuns.find((candidate) => candidate.request_message_id === message.id);
             return (
               <Fragment key={message.id}>
-                <ChatMessage message={message} author={authorName(t, room, message)} footer={footer(message)} />
+                <ChatMessage message={message} author={authorName(t, knownAgents, message)} footer={footer(message)} />
                 {run && (
                   <AgentRunStatus
                     run={run}
-                    agentName={room.agents.find((agent) => agent.id === run.agent_id)?.name ?? ""}
+                    agentName={knownAgents.find((agent) => agent.id === run.agent_id)?.name ?? ""}
                     providerName={provider(run)?.name ?? run.provider}
                     local={provider(run)?.location === "local"}
                     liveText={liveText(runs, run)}

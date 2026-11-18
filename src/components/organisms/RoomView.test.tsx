@@ -4,7 +4,8 @@ import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AgentRun, RunSnapshot } from "../../hooks/agentRunState";
-import type { Message, Room } from "../../hooks/useRooms";
+import type { Message, Participant, Room } from "../../hooks/useRooms";
+import type { Agent } from "../../hooks/useTeams";
 import { I18nProvider } from "../../i18n/I18nProvider";
 import { RoomView } from "./RoomView";
 
@@ -25,6 +26,12 @@ const room: Room = {
     { id: "a2", name: "Bob", role: "Developer" },
   ],
 };
+
+const workspaceAgents: Agent[] = [
+  { id: "a1", team_id: "t1", name: "Ana", role: "QA Engineer", x: 0, y: 0 },
+  { id: "a2", team_id: "t1", name: "Bob", role: "Developer", x: 0, y: 0 },
+  { id: "a3", team_id: "t1", name: "Cleo", role: "Designer", x: 0, y: 0 },
+];
 
 const providers = [
   { key: "ollama", name: "Ollama", location: "local", models: [] },
@@ -68,7 +75,7 @@ function token(seq: number, text: string, attempt = 1, roomId = "r1") {
   emit("agent_run:token", { run_id: "run1", room_id: roomId, attempt, seq, text });
 }
 
-type Detail = { room: Room; messages: Message[]; runs: AgentRun[]; partials: RunSnapshot[]; proposed_agent_id: string | null };
+type Detail = { room: Room; former_agents: Participant[]; messages: Message[]; runs: AgentRun[]; partials: RunSnapshot[]; proposed_agent_id: string | null };
 
 function core(handlers: Record<string, (args: Record<string, unknown>) => unknown>) {
   invokeMock.mockImplementation(async (command, args) => {
@@ -80,13 +87,13 @@ function core(handlers: Record<string, (args: Record<string, unknown>) => unknow
 }
 
 function detail(overrides: Partial<Detail> = {}): Detail {
-  return { room, messages: [], runs: [], partials: [], proposed_agent_id: null, ...overrides };
+  return { room, former_agents: [], messages: [], runs: [], partials: [], proposed_agent_id: null, ...overrides };
 }
 
 async function renderRoom() {
   render(
     <I18nProvider locale="en">
-      <RoomView roomId="r1" busy={false} deleteErrorMessage={null} onBack={() => {}} onDelete={async () => {}} onClearDeleteError={() => {}} />
+      <RoomView roomId="r1" agents={workspaceAgents} busy={false} deleteErrorMessage={null} onBack={() => {}} onDelete={async () => {}} onClearDeleteError={() => {}} />
     </I18nProvider>,
   );
   await screen.findByRole("heading", { name: "Daily" });
@@ -519,7 +526,7 @@ describe("following a run", () => {
     core({ get_room: () => new Promise<Detail>((resolve) => (resolveRoom = resolve)) });
     render(
       <I18nProvider locale="en">
-        <RoomView roomId="r1" busy={false} deleteErrorMessage={null} onBack={() => {}} onDelete={async () => {}} onClearDeleteError={() => {}} />
+        <RoomView roomId="r1" agents={workspaceAgents} busy={false} deleteErrorMessage={null} onBack={() => {}} onDelete={async () => {}} onClearDeleteError={() => {}} />
       </I18nProvider>,
     );
     await vi.waitFor(() => expect(invokeMock).toHaveBeenCalledWith("get_room", { roomId: "r1" }));
@@ -580,5 +587,76 @@ describe("following a run", () => {
       "Groq has no API key in this workspace.",
       "The agent's instructions and this request are too long for this model. Shorten the instructions or use another model.",
     ]);
+  });
+});
+
+describe("people joining and leaving", () => {
+  function participants() {
+    return within(screen.getByRole("region", { name: "Participants" }));
+  }
+
+  it("invites agents who are not in the room yet", async () => {
+    core({
+      get_room: () => detail(),
+      add_room_agents: () => ({ agents: [...room.agents, { id: "a3", name: "Cleo", role: "Designer" }], former_agents: [] }),
+    });
+    const user = userEvent.setup();
+    await renderRoom();
+
+    await user.click(participants().getByRole("button", { name: "Invite agents" }));
+    const dialog = within(screen.getByRole("dialog", { name: "Invite agents" }));
+    expect(dialog.queryByRole("option", { name: /Ana/ })).not.toBeInTheDocument();
+    await user.click(dialog.getByRole("option", { name: /Cleo/ }));
+    await user.click(dialog.getByRole("button", { name: "Invite" }));
+
+    expect(invokeMock).toHaveBeenCalledWith("add_room_agents", { roomId: "r1", agentIds: ["a3"] });
+    expect(await participants().findByText("Cleo")).toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("removes an agent and keeps its name on what it said", async () => {
+    core({
+      get_room: () => detail({ messages: [message("m1", "Hi"), message("m2", "Hello there", { agent_id: "a1" })] }),
+      remove_room_agent: () => ({ agents: [room.agents[1]], former_agents: [room.agents[0]] }),
+    });
+    const user = userEvent.setup();
+    await renderRoom();
+
+    await user.click(participants().getByRole("button", { name: "Remove Ana from the room" }));
+
+    expect(invokeMock).toHaveBeenCalledWith("remove_room_agent", { roomId: "r1", agentId: "a1" });
+    await vi.waitFor(() => expect(participants().queryByText("Ana")).not.toBeInTheDocument());
+    expect(within(screen.getByRole("list", { name: "Messages" })).getByText("Ana")).toBeInTheDocument();
+    expect(screen.getByText("1 agent")).toBeInTheDocument();
+  });
+
+  it("names agents who had already left when the room opens", async () => {
+    core({
+      get_room: () =>
+        detail({
+          room: { ...room, agents: [] },
+          former_agents: [{ id: "a1", name: "Ana", role: "QA Engineer" }],
+          messages: [message("m1", "Done", { agent_id: "a1" })],
+        }),
+    });
+    await renderRoom();
+
+    expect(within(screen.getByRole("list", { name: "Messages" })).getByText("Ana")).toBeInTheDocument();
+  });
+
+  it("explains why an agent could not be removed", async () => {
+    core({
+      get_room: () => detail(),
+      remove_room_agent: () => {
+        throw "agent_not_found";
+      },
+    });
+    const user = userEvent.setup();
+    await renderRoom();
+
+    await user.click(participants().getByRole("button", { name: "Remove Bob from the room" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("That agent no longer exists.");
+    expect(participants().getByText("Bob")).toBeInTheDocument();
   });
 });

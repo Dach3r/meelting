@@ -12,13 +12,13 @@ import {
   emptyRunState,
   loadRunState,
 } from "./agentRunState";
-import type { Message, Room } from "./useRooms";
+import type { Message, Participant, Room } from "./useRooms";
 
 const recentMessages = 100;
 const interventionTimeoutMs = 15000;
 const interventionTries = 3;
 
-type RoomDetail = { room: Room; messages: Message[]; runs: AgentRun[]; partials: RunSnapshot[]; proposed_agent_id: string | null };
+type RoomDetail = { room: Room; former_agents: Participant[]; messages: Message[]; runs: AgentRun[]; partials: RunSnapshot[]; proposed_agent_id: string | null };
 
 export type Selection = { kind: "auto"; agent_id: string | null } | { kind: "nobody" } | { kind: "agent" | "confirmed"; agent_id: string };
 
@@ -31,6 +31,8 @@ export type SendResult = "sent" | "failed" | Choice;
 type InterventionSent =
   | { outcome: "sent"; message: Message; run: AgentRun | null; partial: RunSnapshot | null }
   | ({ outcome: "choose" } & Choice);
+
+type Roster = { agents: Participant[]; former_agents: Participant[] };
 
 type RoomState = { messages: Message[]; runs: RunState; proposal: string | null };
 
@@ -68,6 +70,9 @@ export function useRoom(roomId: string) {
   const [errorKey, setErrorKey] = useState<string | null>(null);
   const [sendErrorKey, setSendErrorKey] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
+  const [formerAgents, setFormerAgents] = useState<Participant[]>([]);
+  const [rosterErrorKey, setRosterErrorKey] = useState<string | null>(null);
+  const [rosterBusy, setRosterBusy] = useState(false);
 
   useEffect(() => {
     let current = true;
@@ -100,6 +105,7 @@ export function useRoom(roomId: string) {
         if (!current) return;
         loaded = true;
         setRoom(detail.room);
+        setFormerAgents(detail.former_agents);
         setState(
           waiting.splice(0).reduce((s, change) => change(s), {
             messages: detail.messages,
@@ -163,8 +169,40 @@ export function useRoom(roomId: string) {
     }
   }
 
-  const proposal = room?.agents.some((agent) => agent.id === state.proposal) ? state.proposal : null;
-  const detail = room ? { room, messages: state.messages, runs: state.runs, proposal } : null;
+  async function changeRoster(command: string, args: Record<string, unknown>) {
+    setRosterBusy(true);
+    setRosterErrorKey(null);
+    try {
+      const roster = await invoke<Roster>(command, { roomId, ...args });
+      setRoom((current) => current && { ...current, agents: roster.agents });
+      setFormerAgents(roster.former_agents);
+      return true;
+    } catch (error) {
+      setRosterErrorKey(String(error));
+      return false;
+    } finally {
+      setRosterBusy(false);
+    }
+  }
 
-  return { detail, errorKey, sendErrorKey, sending, sendIntervention, cancelRun };
+  const addAgents = (agentIds: string[]) => changeRoster("add_room_agents", { agentIds });
+  const removeAgent = (agentId: string) => changeRoster("remove_room_agent", { agentId });
+  const clearRosterError = () => setRosterErrorKey(null);
+
+  const proposal = room?.agents.some((agent) => agent.id === state.proposal) ? state.proposal : null;
+  const detail = room ? { room, formerAgents, messages: state.messages, runs: state.runs, proposal } : null;
+
+  return {
+    detail,
+    errorKey,
+    sendErrorKey,
+    sending,
+    sendIntervention,
+    cancelRun,
+    rosterErrorKey,
+    rosterBusy,
+    addAgents,
+    removeAgent,
+    clearRosterError,
+  };
 }

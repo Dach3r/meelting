@@ -1,4 +1,4 @@
-import { ArrowLeft, RefreshCw, Trash2 } from "lucide-react";
+import { ArrowLeft, RefreshCw, Trash2, UserPlus } from "lucide-react";
 import { useState } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
 import { type Locale, formatAgentCount, translateError, translateRunError, translateWith } from "../../i18n/translate";
@@ -7,14 +7,17 @@ import { type AgentAvailability, useAgentAvailability } from "../../hooks/useAge
 import type { LlmProvider } from "../../hooks/useLlmProviders";
 import { useLlmProviders } from "../../hooks/useLlmProviders";
 import { useRoom } from "../../hooks/useRoom";
+import type { Agent } from "../../hooks/useTeams";
 import { Button } from "../atoms/Button";
 import { Alert } from "../molecules/Alert";
+import { InviteAgentsForm } from "../molecules/InviteAgentsForm";
 import { Modal } from "../molecules/Modal";
 import { type ParticipantStatus, ParticipantTile } from "../molecules/ParticipantTile";
 import { RoomChat } from "./RoomChat";
 
 type Props = {
   roomId: string;
+  agents: Agent[];
   busy: boolean;
   deleteErrorMessage: string | null;
   onBack: () => void;
@@ -22,17 +25,35 @@ type Props = {
   onClearDeleteError: () => void;
 };
 
-export function RoomView({ roomId, busy, deleteErrorMessage, onBack, onDelete, onClearDeleteError }: Props) {
+export function RoomView({ roomId, agents, busy, deleteErrorMessage, onBack, onDelete, onClearDeleteError }: Props) {
   const { t, locale } = useI18n();
-  const { detail, errorKey, sendErrorKey, sending, sendIntervention, cancelRun } = useRoom(roomId);
+  const { detail, errorKey, sendErrorKey, sending, sendIntervention, cancelRun, rosterErrorKey, rosterBusy, addAgents, removeAgent, clearRosterError } =
+    useRoom(roomId);
   const providers = useLlmProviders();
   const finishedRuns = detail ? Object.values(detail.runs.runs).filter(isFinal).length : 0;
   const { availability, checking, recheck } = useAgentAvailability(roomId, finishedRuns);
   const [confirming, setConfirming] = useState(false);
+  const [inviting, setInviting] = useState(false);
 
   function closeConfirm() {
     onClearDeleteError();
     setConfirming(false);
+  }
+
+  function openInvite() {
+    clearRosterError();
+    setInviting(true);
+  }
+
+  function closeInvite() {
+    clearRosterError();
+    setInviting(false);
+  }
+
+  async function invite(agentIds: string[]) {
+    if (!(await addAgents(agentIds))) return;
+    setInviting(false);
+    recheck();
   }
 
   const back = (
@@ -52,7 +73,8 @@ export function RoomView({ roomId, busy, deleteErrorMessage, onBack, onDelete, o
   }
 
   if (!detail) return null;
-  const { room, messages, runs, proposal } = detail;
+  const { room, formerAgents, messages, runs, proposal } = detail;
+  const invitable = agents.filter((agent) => !room.agents.some((present) => present.id === agent.id));
   const activeRuns = Object.values(runs.runs).filter(isActive);
 
   function status(agentId: string): ParticipantStatus | undefined {
@@ -80,6 +102,17 @@ export function RoomView({ roomId, busy, deleteErrorMessage, onBack, onDelete, o
           </div>
         </Modal>
       )}
+      {inviting && (
+        <Modal title={t("rooms.invite.title")} onClose={closeInvite}>
+          <InviteAgentsForm
+            agents={invitable}
+            busy={rosterBusy}
+            errorMessage={rosterErrorKey ? translateError(locale, rosterErrorKey) : null}
+            onSubmit={invite}
+            onCancel={closeInvite}
+          />
+        </Modal>
+      )}
       <header className="flex flex-col gap-2">
         {back}
         <h1 className="truncate text-2xl font-bold text-ink">{room.name}</h1>
@@ -93,12 +126,38 @@ export function RoomView({ roomId, busy, deleteErrorMessage, onBack, onDelete, o
           <ul className="grid grid-cols-[repeat(auto-fill,minmax(10rem,1fr))] gap-4">
             <ParticipantTile name={t("rooms.you")} role={t("rooms.supervisor")} />
             {room.agents.map((agent) => (
-              <ParticipantTile key={agent.id} name={agent.name} role={agent.role} status={status(agent.id)} />
+              <ParticipantTile
+                key={agent.id}
+                name={agent.name}
+                role={agent.role}
+                status={status(agent.id)}
+                removal={{
+                  label: translateWith(locale, "rooms.leave", { name: agent.name }),
+                  disabled: rosterBusy,
+                  onRemove: () => removeAgent(agent.id),
+                }}
+              />
             ))}
+            <li>
+              <button
+                type="button"
+                onClick={openInvite}
+                className="flex h-full min-h-40 w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-line p-5 text-sm text-muted transition-colors hover:bg-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+              >
+                <UserPlus aria-hidden className="size-5" />
+                {t("rooms.invite.action")}
+              </button>
+            </li>
           </ul>
+          {rosterErrorKey && !inviting && (
+            <div className="mt-4">
+              <Alert message={translateError(locale, rosterErrorKey)} />
+            </div>
+          )}
         </section>
         <RoomChat
           room={room}
+          formerAgents={formerAgents}
           messages={messages}
           runs={runs}
           proposedAgentId={proposal}

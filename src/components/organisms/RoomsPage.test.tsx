@@ -140,7 +140,7 @@ describe("creating a room", () => {
     core({
       list_rooms: () => ({ rooms: [], featured_messages: [] }),
       create_room: () => ({ ...daily, agents: [{ id: "a2", name: "Bob", role: "Software Developer" }] }),
-      get_room: () => ({ room: { ...daily, agents: [{ id: "a2", name: "Bob", role: "Software Developer" }] }, messages: [], runs: [], partials: [] }),
+      get_room: () => ({ room: { ...daily, agents: [{ id: "a2", name: "Bob", role: "Software Developer" }] }, former_agents: [], messages: [], runs: [], partials: [] }),
     });
     const user = userEvent.setup();
     renderPage();
@@ -179,7 +179,7 @@ describe("creating a room", () => {
     core({
       list_rooms: () => ({ rooms: [], featured_messages: [] }),
       create_room: () => retro,
-      get_room: () => ({ room: retro, messages: [], runs: [], partials: [] }),
+      get_room: () => ({ room: retro, former_agents: [], messages: [], runs: [], partials: [] }),
     });
     const user = userEvent.setup();
     renderPage([]);
@@ -216,7 +216,7 @@ describe("inside a room", () => {
   async function openDaily(handlers: Record<string, (args: Record<string, unknown>) => unknown> = {}) {
     core({
       list_rooms: () => ({ rooms: [daily], featured_messages: [] }),
-      get_room: () => ({ room: daily, messages: [message("m1", "Hello team")], runs: [], partials: [] }),
+      get_room: () => ({ room: daily, former_agents: [], messages: [message("m1", "Hello team")], runs: [], partials: [] }),
       ...handlers,
     });
     const user = userEvent.setup();
@@ -253,7 +253,7 @@ describe("inside a room", () => {
     const sent = message("m100", "Newest");
     const scrollIntoView = vi.spyOn(Element.prototype, "scrollIntoView");
     const user = await openDaily({
-      get_room: () => ({ room: daily, messages: [message("m0", "Hello team"), ...history.slice(1)], runs: [], partials: [], proposed_agent_id: null }),
+      get_room: () => ({ room: daily, former_agents: [], messages: [message("m0", "Hello team"), ...history.slice(1)], runs: [], partials: [], proposed_agent_id: null }),
       send_intervention: () => plain(sent),
     });
     scrollIntoView.mockClear();

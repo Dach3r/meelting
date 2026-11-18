@@ -211,7 +211,7 @@
       "title": "New room",
       "name": "Room name",
       "agents": "Agents",
-      "agentsHint": "Optional. Agents can come from any team; they can't be changed later.",
+      "agentsHint": "Optional. Agents can come from any team; you can also invite or remove them later.",
       "selected": "Selected agents",
       "remove": "Remove",
       "search": "Search agents by name",
@@ -242,6 +242,12 @@
       "needs_connection": "Needs a connection",
       "recheck": "Check availability",
       "connectionDetail": "The last request to {provider} could not connect. Check your internet connection."
+    },
+    "leave": "Remove {name} from the room",
+    "invite": {
+      "action": "Invite agents",
+      "title": "Invite agents",
+      "submit": "Invite"
     }
   },
   "agentRun": {

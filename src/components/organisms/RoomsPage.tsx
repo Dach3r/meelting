@@ -51,6 +51,7 @@ export function RoomsPage({ agents }: { agents: Agent[] }) {
       <RoomView
         key={openRoomId}
         roomId={openRoomId}
+        agents={agents}
         busy={busy}
         deleteErrorMessage={actionErrorMessage}
         onBack={leaveRoom}

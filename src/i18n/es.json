@@ -211,7 +211,7 @@
       "title": "Nueva sala",
       "name": "Nombre de la sala",
       "agents": "Agentes",
-      "agentsHint": "Opcional. Pueden ser de cualquier equipo; no se podrán cambiar después.",
+      "agentsHint": "Opcional. Pueden ser de cualquier equipo; también podrás invitarlos o quitarlos después.",
       "selected": "Agentes elegidos",
       "remove": "Quitar a",
       "search": "Buscar agentes por nombre",
@@ -242,6 +242,12 @@
       "needs_connection": "Requiere conexión",
       "recheck": "Comprobar disponibilidad",
       "connectionDetail": "La última solicitud a {provider} no pudo conectarse. Revisa tu conexión a internet."
+    },
+    "leave": "Quitar a {name} de la sala",
+    "invite": {
+      "action": "Invitar agentes",
+      "title": "Invitar agentes",
+      "submit": "Invitar"
     }
   },
   "agentRun": {

@@ -38,7 +38,7 @@ export function FeaturedRoom({ room, messages, onOpen }: Props) {
         ) : (
           <ul className="divide-y divide-line/60">
             {messages.map((message) => {
-              const author = authorName(t, room, message);
+              const author = authorName(t, room.agents, message);
               return (
                 <li key={message.id} className="flex items-start gap-3 py-3 text-sm first:pt-1 last:pb-0">
                   <Avatar seed={author} label={author} className="mt-0.5 size-7 rounded-full text-xs" />
