@@ -1,6 +1,6 @@
 use crate::catalogs::agent_roles;
 use crate::domain::team::{AgentEdit, Team};
-use crate::repositories::{agents, teams};
+use crate::repositories::{agents, canvas_positions, teams};
 use crate::services::session_load::{self, SessionError};
 use crate::services::teams_list;
 use sqlx::SqlitePool;
@@ -15,12 +15,23 @@ pub async fn run(
         return Err(SessionError::InvalidAgent);
     }
     let workspace_id = session_load::require(pool).await?.current_workspace_id;
-    if !teams::exists(pool, &workspace_id, &edit.team_id).await? {
+    let mut transaction = pool.begin().await?;
+    if !teams::exists(&mut *transaction, &workspace_id, &edit.team_id).await? {
         return Err(SessionError::TeamNotFound);
     }
-    if !agents::update(pool, &workspace_id, agent_id, &edit).await? {
-        return Err(SessionError::AgentNotFound);
+    let current = agents::get(&mut *transaction, &workspace_id, agent_id)
+        .await?
+        .ok_or(SessionError::AgentNotFound)?;
+    agents::update(&mut *transaction, &workspace_id, agent_id, &edit)
+        .await
+        .map_err(|error| match error.as_database_error() {
+            Some(database) if database.is_foreign_key_violation() => SessionError::TeamNotFound,
+            _ => SessionError::Database(error),
+        })?;
+    if current.team_id != edit.team_id {
+        canvas_positions::delete(&mut *transaction, &workspace_id, agent_id).await?;
     }
+    transaction.commit().await?;
     teams_list::run(pool).await
 }
 
@@ -28,7 +39,7 @@ pub async fn run(
 mod tests {
     use super::*;
     use crate::domain::locale::Locale;
-    use crate::domain::team::AgentDraft;
+    use crate::domain::team::{AgentDraft, Position};
     use crate::repositories::database::open_for_test;
     use crate::services::{agent_create, first_launch, team_create, workspace_create};
 
@@ -72,6 +83,32 @@ mod tests {
         assert!(teams[0].agents.is_empty());
         assert_eq!(teams[1].agents[0].name, "Bea");
         assert_eq!(teams[1].agents[0].role, "Software Developer");
+    }
+
+    #[tokio::test]
+    async fn resets_the_canvas_position_only_when_the_team_changes() {
+        let (pool, _dir) = open_for_test().await;
+        let (agent_id, team_id, other_team) = setup(&pool).await;
+        let workspace_id = session_load::require(&pool)
+            .await
+            .unwrap()
+            .current_workspace_id;
+        let position = |x: f64| Position {
+            node_id: agent_id.clone(),
+            x,
+            y: 5.0,
+        };
+        canvas_positions::save(&pool, &workspace_id, &position(10.0))
+            .await
+            .unwrap();
+
+        run(&pool, &agent_id, edit(&team_id)).await.unwrap();
+        let kept = canvas_positions::list(&pool, &workspace_id).await.unwrap();
+        assert_eq!(kept.len(), 1);
+
+        run(&pool, &agent_id, edit(&other_team)).await.unwrap();
+        let reset = canvas_positions::list(&pool, &workspace_id).await.unwrap();
+        assert!(reset.is_empty());
     }
 
     #[tokio::test]
