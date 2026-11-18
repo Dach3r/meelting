@@ -13,7 +13,7 @@
 ## Alcance y exclusiones
 
 **Incluye**
-- Catálogo con 25 plantillas, una por cada rol predefinido, como archivos YAML embebidos en la app. La categoría de una plantilla (Producto, Ingeniería, Datos, Diseño y soporte, Negocio) sale del grupo de su rol; el catálogo se muestra como una fila horizontal por categoría (ícono, nombre y cantidad) y cada tarjeta lleva la inicial del nombre en un círculo neutro. El usuario busca por nombre, rol o descripción y filtra por categoría; las categorías sin coincidencias no se muestran.
+- Catálogo con 25 plantillas, una por cada rol predefinido, como archivos YAML embebidos en la app. La categoría de una plantilla (Producto, Ingeniería, Datos, Diseño y soporte, Negocio) sale del grupo de su rol; el catálogo se muestra como una sección por categoría (ícono, nombre y cantidad) cuyas tarjetas se acomodan en una cuadrícula que se rellena según el ancho y cada tarjeta lleva la inicial del nombre en un círculo neutro. El usuario busca por nombre, rol o descripción y filtra por categoría; las categorías sin coincidencias no se muestran.
 - Tabla `agents` perteneciente a un workspace, con copia de los valores de la plantilla.
 - Secciones separadas: **Catálogo de agentes** y **Equipos**.
 - Contratar desde el catálogo, crear agentes personalizados sin plantilla, ver, editar y eliminar.
