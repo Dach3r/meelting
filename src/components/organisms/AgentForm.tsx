@@ -4,7 +4,6 @@ import type { AgentDraft, Team } from "../../hooks/useTeams";
 import { Button } from "../atoms/Button";
 import { Field } from "../atoms/Field";
 import { Alert } from "../molecules/Alert";
-import { CloseButton } from "../molecules/Modal";
 
 type Props = {
   team: Team;
@@ -80,12 +79,9 @@ export function AgentForm({ team, busy, errorMessage, onSubmit, onCancel }: Prop
         </ol>
       </div>
       <div className="flex flex-col gap-10 p-6 sm:p-10">
-        <div className="flex items-start justify-between gap-4">
-          <div className="grid gap-2">
-            <h3 className="text-2xl font-bold text-ink">{t(`teams.agent.${current}Title`)}</h3>
-            <p className="text-sm text-muted">{t(`teams.agent.${current}Subtitle`)}</p>
-          </div>
-          <CloseButton onClick={onCancel} label={t("teams.close")} />
+        <div className="grid gap-2">
+          <h3 className="text-2xl font-bold text-ink">{t(`teams.agent.${current}Title`)}</h3>
+          <p className="text-sm text-muted">{t(`teams.agent.${current}Subtitle`)}</p>
         </div>
         <div className="grid flex-1 content-start gap-7">
           {current === "identity" && (
