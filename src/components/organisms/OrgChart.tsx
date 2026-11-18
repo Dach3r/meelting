@@ -63,9 +63,9 @@ export function OrgChart({ teams, zoom, tool, onNewTeam, onNewAgent }: Props) {
       onMouseMove={movePan}
       onMouseUp={endPan}
       onMouseLeave={endPan}
-      className={`absolute inset-0 overflow-auto ${tool === "pan" ? (panning ? "cursor-grabbing" : "cursor-grab") : ""}`}
+      className={`absolute inset-0 flex overflow-auto ${tool === "pan" ? (panning ? "cursor-grabbing" : "cursor-grab") : ""}`}
     >
-      <div style={{ zoom }} className="mx-auto flex w-max flex-col items-center px-16 py-20">
+      <div style={{ zoom }} className="m-auto flex w-max flex-col items-center px-16 py-20">
         <OrgCard
           seed={rootId}
           name={t("teams.chart.you")}
