@@ -423,7 +423,7 @@ describe("workspace shell", () => {
       await user.click(screen.getByRole("button", { name: "Reset layout" }));
 
       expect(invokeMock).toHaveBeenCalledWith("reset_canvas_positions", {});
-      await waitFor(() => expect(card.closest("li")?.style.transform).toBe("translate(0px, 0px)"));
+      await waitFor(() => expect(card.closest("li")?.style.transform).toBe("translate(0px)"));
     });
 
     it("does not drag when the pointer starts on the toggle button", async () => {
