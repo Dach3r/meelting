@@ -4,7 +4,20 @@ AI workspace / virtual office: the user builds a virtual office with specialized
 
 ## Current scope
 
-Phases 0–2 complete, Phase 3 next: Tauri 2 scaffold; local SQLite (`sqlx`, migrations `workspaces` and `profile`) with the commands `load_session`, `complete_first_launch`, `create_workspace` and `switch_workspace`; teams and agents (migrations `teams` and `agents`, commands `list_teams`, `create_team`, `create_agent`, `list_agent_templates`, `list_agent_roles`, `list_llm_providers`), the embedded agent template catalog and `llm.yml` provider/model catalog, and the hire form with its cloud/local model picker, plus the settings page (`change_locale`, `change_theme`); the UI shell (first launch, rail, topbar, workspace switcher) with Tailwind v4 Grafito tokens and `es`/`en` i18n; plus the Phase 0 core: the keychain commands `save_secret`, `secret_last_four` and `delete_secret` (crate `keyring` 3), the `run_in_worktree` spike (`git worktree` + PTY with live output) and the `stream_completion` spike (SSE streaming from an OpenAI-compatible Chat Completions endpoint, optional key from the keychain). Everything else described in `docs/` (agent edit/delete, rooms, agent execution, LLM providers, local models, tools, Docker, approvals, integrations, settings) is **planned, not built**; do not add it unless asked. Check the real code before assuming a feature exists.
+Phases 0–2 complete; Phase 3 in progress (rooms built, `AgentRun` next). Built today:
+
+- **Foundations and workspaces:** Tauri 2 scaffold; local SQLite (`sqlx`, migrations `workspaces`, `profile`, `add_theme_to_profile`); first launch, UI shell (rail, topbar, workspace switcher) with Tailwind v4 Grafito tokens and `es`/`en` i18n; settings page. Commands `load_session`, `complete_first_launch`, `create_workspace`, `switch_workspace`, `change_locale`, `change_theme`.
+- **Teams, agents and org chart:** migrations `teams`, `agents`, `canvas_positions`, `add_id_workspace_id_index_to_agents`; the embedded agent template catalog, the role catalog and the `llm.yml` provider/model catalog (Anthropic, OpenAI, Groq in the cloud; Ollama, LM Studio local); hire form with the cloud/local model picker and local model detection; edit and delete agents (`update_agent` cannot change provider or model); draggable org chart with persisted positions. Commands `list_teams`, `create_team`, `create_agent`, `get_agent`, `update_agent`, `delete_agent`, `save_canvas_positions`, `reset_canvas_positions`, `list_agent_templates`, `list_agent_roles`, `list_llm_providers`, `detect_local_models`.
+- **Rooms, participants and messages:** migrations `rooms`, `room_agents`, `messages`; user messages only (4000-character limit applies to user messages only), event `message:created`. Commands `list_rooms`, `create_room`, `get_room`, `delete_room`, `send_message`.
+- **Phase 0 core:** keychain commands `save_secret`, `secret_last_four`, `delete_secret` (crate `keyring` 3); the `run_in_worktree` spike (`git worktree` + PTY with live output) and the `stream_completion` spike (SSE from an OpenAI-compatible Chat Completions endpoint).
+
+**Next:** `AgentRun` (agent execution with streaming, cancellation and adapters for the five catalog providers). Its technical proposal, `docs/architecture/agent-run.md`, and its `agent_runs` migration are pending approval: do not implement before it is approved.
+
+**Documented, not built:** conversational meetings (Track R) and voice (STT, TTS, agent voices); tasks, worktrees, tools, approvals, Docker, integrations, AI keys screen, daily limits. Do not add them unless asked. Approved and pending decisions live in `docs/product/decisions.md`.
+
+**Hybrid online/offline:** local and cloud providers are user-configurable and can be mixed; local works offline, cloud reports when unavailable, and nothing ever switches provider or model silently.
+
+Check the real code before assuming a feature exists.
 
 ## Ground rules
 
