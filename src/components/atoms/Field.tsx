@@ -16,7 +16,7 @@ export function Field({ label, value, onChange, multiline = false, icon: Icon, .
   const id = useId();
   return (
     <div className="grid gap-2">
-      <label htmlFor={id} className="pl-3 text-sm font-medium text-muted">
+      <label htmlFor={id} className="text-sm font-medium text-muted">
         {label}
       </label>
       {multiline ? (
