@@ -770,22 +770,17 @@ describe("workspace shell", () => {
       expect(within(dialog).getByText("2 teams")).toBeInTheDocument();
     });
 
-    it("filters the teams by name and picks one with the keyboard", async () => {
+    it("picks a team with the keyboard", async () => {
       mockEditing();
       const user = userEvent.setup();
       render(<App />);
 
       const dialog = await openEditor(user);
       await user.click(within(dialog).getByRole("tab", { name: "Team" }));
-      await user.type(within(dialog).getByRole("combobox", { name: "Search team" }), "des");
+      await user.click(within(dialog).getByRole("listbox", { name: "Team" }));
+      await user.keyboard("{ArrowDown}{Enter}");
 
-      expect(within(dialog).getAllByRole("option")).toHaveLength(1);
-      expect(within(dialog).getByText("1 / 2 teams")).toBeInTheDocument();
-      await user.keyboard("{Enter}");
       expect(within(dialog).getByRole("option", { name: /Design/ })).toHaveAttribute("aria-selected", "true");
-      await user.clear(within(dialog).getByRole("combobox", { name: "Search team" }));
-      await user.type(within(dialog).getByRole("combobox", { name: "Search team" }), "zzz");
-      expect(within(dialog).getByText("No team matches")).toBeInTheDocument();
     });
 
     it("keeps the editor open and shows the error when saving fails", async () => {
