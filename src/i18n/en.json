@@ -80,6 +80,8 @@
       "restoreTemplate": "Restore template",
       "identityTitle": "Who is this agent?",
       "engineTitle": "Which model does it use?",
+      "teamTitle": "Which team is it in?",
+      "teamSubtitle": "The team this agent belongs to in your office.",
       "behaviorTitle": "How does it work?",
       "identitySubtitle": "The name and role your team will see.",
       "engineSubtitle": "The provider and model that will answer for this agent.",

@@ -80,6 +80,8 @@
       "restoreTemplate": "Restaurar plantilla",
       "identityTitle": "¿Quién es este agente?",
       "engineTitle": "¿Con qué modelo trabaja?",
+      "teamTitle": "¿En qué equipo está?",
+      "teamSubtitle": "Equipo al que pertenece este agente en tu oficina.",
       "behaviorTitle": "¿Cómo trabaja?",
       "identitySubtitle": "Nombre y rol con los que lo verá tu equipo.",
       "engineSubtitle": "Proveedor y modelo que responderán por este agente.",

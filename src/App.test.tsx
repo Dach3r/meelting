@@ -722,34 +722,35 @@ describe("workspace shell", () => {
       return screen.findByRole("dialog", { name: "Edit agent \u00b7 Ana" });
     }
 
-    it("loads the agent, skips the model step and saves the changes with the new team", async () => {
+    it("saves each tab on its own and keeps the editor open", async () => {
       mockEditing();
       const user = userEvent.setup();
       render(<App />);
 
-      const dialog = await openEditor(user);
+      await openEditor(user);
       expect(invokeMock).toHaveBeenCalledWith("get_agent", { agentId: "a1" });
-      expect(screen.getByLabelText("Name")).toHaveValue("Ana");
-      expect(within(dialog).queryByText("Model")).not.toBeInTheDocument();
+      expect(screen.queryByRole("tab", { name: "Model" })).not.toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Save changes" })).toBeDisabled();
       await user.clear(screen.getByLabelText("Name"));
       await user.type(screen.getByLabelText("Name"), "Bea");
+      await user.click(screen.getByRole("tab", { name: "Team" }));
       await user.selectOptions(screen.getByLabelText("Team"), "t2");
-      await user.click(screen.getByRole("button", { name: "Continue" }));
-      expect(screen.getByLabelText("Instructions")).toHaveValue("Be careful");
       await user.click(screen.getByRole("button", { name: "Save changes" }));
 
       expect(invokeMock).toHaveBeenCalledWith("update_agent", {
         agentId: "a1",
         edit: {
           team_id: "t2",
-          name: "Bea",
+          name: "Ana",
           role: "Software Developer",
           description: "Writes code",
           instructions: "Be careful",
         },
       });
-      await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
       expect(await screen.findByRole("button", { name: "Bea" })).toBeInTheDocument();
+      expect(screen.getByRole("dialog", { name: "Edit agent \u00b7 Ana" })).toBeInTheDocument();
+      await user.click(screen.getByRole("tab", { name: "Instructions" }));
+      expect(screen.getByLabelText("Instructions")).toHaveValue("Be careful");
     });
 
     it("keeps the editor open and shows the error when saving fails", async () => {
@@ -760,7 +761,8 @@ describe("workspace shell", () => {
       render(<App />);
 
       await openEditor(user);
-      await user.click(screen.getByRole("button", { name: "Continue" }));
+      await user.click(screen.getByRole("tab", { name: "Instructions" }));
+      await user.type(screen.getByLabelText("Instructions"), "!");
       await user.click(screen.getByRole("button", { name: "Save changes" }));
 
       expect(await screen.findByRole("alert")).toHaveTextContent("That agent no longer exists.");

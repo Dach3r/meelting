@@ -1,13 +1,13 @@
 import { ArrowRight, Check, Cloud, Cpu, FileText, HardDrive, RotateCcw, User, type LucideIcon } from "lucide-react";
-import { useId, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
 import { useAgentRoles } from "../../hooks/useAgentRoles";
 import type { AgentTemplate } from "../../hooks/useAgentTemplates";
 import { useLlmProviders, type LlmProvider } from "../../hooks/useLlmProviders";
 import { useLocalModels } from "../../hooks/useLocalModels";
-import type { AgentDetail, AgentDraft, Team } from "../../hooks/useTeams";
+import type { AgentDraft, Team } from "../../hooks/useTeams";
 import { Button } from "../atoms/Button";
-import { Field, fieldClasses } from "../atoms/Field";
+import { Field } from "../atoms/Field";
 import { roleGroupIcons } from "../atoms/roleGroupIcons";
 import { SelectField } from "../atoms/SelectField";
 import { Alert } from "../molecules/Alert";
@@ -16,36 +16,32 @@ import { SegmentedControl } from "../molecules/SegmentedControl";
 type Props = {
   team: Team;
   template?: AgentTemplate;
-  edit?: { agent: AgentDetail; teams: Team[] };
   busy: boolean;
   errorMessage: string | null;
   onSubmit: (draft: AgentDraft) => Promise<boolean>;
   onCancel: () => void;
 };
 
-const createSteps = ["identity", "engine", "behavior"] as const;
-const editSteps = ["identity", "behavior"] as const;
+const steps = ["identity", "engine", "behavior"] as const;
 
 const locations: LlmProvider["location"][] = ["cloud", "local"];
 
-const stepIcons: Record<(typeof createSteps)[number], LucideIcon> = { identity: User, engine: Cpu, behavior: FileText };
+const stepIcons: Record<(typeof steps)[number], LucideIcon> = { identity: User, engine: Cpu, behavior: FileText };
 
-export function AgentForm({ team, template, edit, busy, errorMessage, onSubmit, onCancel }: Props) {
+export function AgentForm({ team, template, busy, errorMessage, onSubmit, onCancel }: Props) {
   const { t } = useI18n();
   const providers = useLlmProviders();
-  const teamId = useId();
   const roleGroups = useAgentRoles().map(({ group, roles }) => ({
     id: group,
     label: t(`teams.agent.roleGroups.${group}`),
     icon: roleGroupIcons[group],
     options: roles,
   }));
-  const steps = edit ? editSteps : createSteps;
   const [step, setStep] = useState(0);
   const [location, setLocation] = useState<LlmProvider["location"]>("cloud");
   const [localKey, setLocalKey] = useState("");
   const [draft, setDraft] = useState<AgentDraft>(
-    edit?.agent ?? {
+    {
       team_id: team.id,
       template_key: template?.key ?? null,
       name: template?.name ?? "",
@@ -65,7 +61,7 @@ export function AgentForm({ team, template, edit, busy, errorMessage, onSubmit, 
   };
   const localProviders = providers.filter((provider) => provider.location === "local");
   const localProvider = localProviders.find((provider) => provider.key === localKey) ?? localProviders[0];
-  const detected = useLocalModels(!edit && location === "local");
+  const detected = useLocalModels(location === "local");
   const localState = detected?.find((entry) => entry.key === localProvider?.key);
   const localModels = localState?.models ?? [];
   const modelGroups = providers
@@ -134,20 +130,6 @@ export function AgentForm({ team, template, edit, busy, errorMessage, onSubmit, 
                 groups={roleGroups}
                 onChange={set("role")}
               />
-              {edit && (
-                <div className="grid gap-2">
-                  <label htmlFor={teamId} className="text-sm font-medium text-muted">
-                    {t("teams.agent.team")}
-                  </label>
-                  <select id={teamId} value={draft.team_id} onChange={(event) => set("team_id")(event.target.value)} className={fieldClasses}>
-                    {edit.teams.map((option) => (
-                      <option key={option.id} value={option.id}>
-                        {option.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
             </>
           )}
           {current === "engine" && (
@@ -262,7 +244,7 @@ export function AgentForm({ team, template, edit, busy, errorMessage, onSubmit, 
           )}
           <Button type="submit" size="pill" disabled={busy || !complete[current]}>
             {last ? <Check aria-hidden className="size-4" /> : <ArrowRight aria-hidden className="size-4" />}
-            {last ? t(edit ? "teams.agent.save" : template ? "teams.hire.submit" : "teams.agent.submit") : t("teams.hire.next")}
+            {last ? t(template ? "teams.hire.submit" : "teams.agent.submit") : t("teams.hire.next")}
           </Button>
         </div>
       </div>

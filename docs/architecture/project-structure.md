@@ -128,7 +128,7 @@ src/
 └── components/            Atomic design (overview.md §8)
     ├── atoms/             Avatar, Button, CardSelect, Field, Icons, Logo
     ├── molecules/         AgentTemplateDetail, Alert, IslandMenu, LocaleSwitcher, Modal, NavItem, OrgAgentCard, OrgCard, OrgDrawer, OrgNode, SegmentedControl, SettingsRow, SwitchingOverlay, TeamForm, ThemeSwitcher, WorkspaceSwitcher, ZoomControls
-    ├── organisms/         AgentCatalogPage, AgentForm, NewWorkspacePage, OrgChart, Rail, SettingsPage, TeamsPage, Topbar
+    ├── organisms/         AgentCatalogPage, AgentEditForm, AgentForm, NewWorkspacePage, OrgChart, Rail, SettingsPage, TeamsPage, Topbar
     └── templates/         Workspace (riel + topbar + contenido)
 ```
 

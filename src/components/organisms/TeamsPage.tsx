@@ -7,7 +7,7 @@ import { Alert } from "../molecules/Alert";
 import { Modal } from "../molecules/Modal";
 import { TeamForm } from "../molecules/TeamForm";
 import { ZoomControls } from "../molecules/ZoomControls";
-import { AgentForm } from "./AgentForm";
+import { AgentEditForm } from "./AgentEditForm";
 import { OrgChart } from "./OrgChart";
 
 type Props = {
@@ -88,15 +88,13 @@ export function TeamsPage({
       )}
       {editing && (
         <Modal title={`${t("teams.agent.edit")} · ${editing.name}`} onClose={close} bare>
-          <AgentForm
-            team={teams.find((team) => team.id === editing.team_id) ?? teams[0]}
-            edit={{ agent: editing, teams }}
+          <AgentEditForm
+            agent={editing}
+            teams={teams}
             busy={busy}
             errorMessage={actionErrorMessage}
-            onSubmit={({ team_id, name, role, description, instructions }) =>
-              onUpdateAgent(editing.id, { team_id, name, role, description, instructions })
-            }
-            onCancel={close}
+            onSubmit={(edit) => onUpdateAgent(editing.id, edit)}
+            onClose={close}
           />
         </Modal>
       )}
