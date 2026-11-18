@@ -121,7 +121,7 @@ export function AgentCatalogPage({ team, busy, actionErrorMessage, onCreateAgent
               <h3 className="text-xs font-semibold tracking-wider uppercase">{t(`teams.agent.roleGroups.${group}`)}</h3>
               <span className="text-sm">{items.length}</span>
             </div>
-            <ul className="grid grid-cols-[repeat(auto-fill,minmax(16rem,1fr))] gap-3">
+            <ul className="grid grid-cols-[repeat(auto-fill,minmax(22rem,1fr))] gap-3">
               {items.map((template) => (
                 <li key={template.key} className="grid content-between gap-4 rounded-2xl border border-line bg-hi/70 p-4">
                   <div className="grid gap-3">
