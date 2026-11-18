@@ -58,7 +58,7 @@ export function TeamsPage({
       <div className="board-dots relative min-h-112 flex-1 overflow-hidden rounded-2xl border border-line bg-surface">
         <OrgChart teams={teams} zoom={zoom} onNewTeam={openTeamForm} onNewAgent={onHireAgent} />
         {teams.length > 0 && (
-          <div className="absolute right-4 bottom-4">
+          <div className="absolute bottom-4 left-4">
             <ZoomControls zoom={zoom} onChange={setZoom} />
           </div>
         )}

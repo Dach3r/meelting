@@ -22,8 +22,9 @@ export function OrgChart({ teams, zoom, onNewTeam, onNewAgent }: Props) {
     return { selected: selectedId === id, onSelect: () => setSelectedId(selectedId === id ? null : id) };
   }
 
-  const selectedTeam = teams.find((team) => team.agents.some((agent) => agent.id === selectedId));
-  const selectedAgent = selectedTeam?.agents.find((agent) => agent.id === selectedId);
+  const [drawerAgentId, setDrawerAgentId] = useState<string | null>(null);
+  const drawerTeam = teams.find((team) => team.agents.some((agent) => agent.id === drawerAgentId));
+  const drawerAgent = drawerTeam?.agents.find((agent) => agent.id === drawerAgentId);
 
   function toggle(id: string) {
     const next = new Set(collapsed);
@@ -72,7 +73,16 @@ export function OrgChart({ teams, zoom, onNewTeam, onNewAgent }: Props) {
                       <ul className="org-stack">
                         {team.agents.map((agent) => (
                           <li key={agent.id} className="org-leaf">
-                            <OrgAgentCard seed={agent.id} name={agent.name} role={agent.role} {...selection(agent.id)} />
+                            <OrgAgentCard
+                              seed={agent.id}
+                              name={agent.name}
+                              role={agent.role}
+                              selected={selectedId === agent.id}
+                              onSelect={() => {
+                                selection(agent.id).onSelect();
+                                setDrawerAgentId(agent.id);
+                              }}
+                            />
                           </li>
                         ))}
                       </ul>
@@ -84,13 +94,13 @@ export function OrgChart({ teams, zoom, onNewTeam, onNewAgent }: Props) {
           )}
         </div>
       </div>
-      {selectedTeam && selectedAgent && (
+      {drawerTeam && drawerAgent && (
         <AgentDrawer
-          seed={selectedAgent.id}
-          name={selectedAgent.name}
-          role={selectedAgent.role}
-          teamName={selectedTeam.name}
-          onClose={() => setSelectedId(null)}
+          seed={drawerAgent.id}
+          name={drawerAgent.name}
+          role={drawerAgent.role}
+          teamName={drawerTeam.name}
+          onClose={() => setDrawerAgentId(null)}
         />
       )}
     </>

@@ -1,44 +1,57 @@
-import { X } from "lucide-react";
+import { Briefcase, Users, X } from "lucide-react";
 import { useI18n } from "../../i18n/I18nProvider";
-import { Avatar } from "../atoms/Avatar";
+import { Avatar, hueOf } from "../atoms/Avatar";
 
 type Props = { seed: string; name: string; role: string; teamName: string; onClose: () => void };
 
 export function AgentDrawer({ seed, name, role, teamName, onClose }: Props) {
   const { t } = useI18n();
+  const hue = hueOf(seed);
   const rows = [
-    [t("teams.agent.team"), teamName],
-    [t("teams.agent.role"), role],
+    { Icon: Users, label: t("teams.agent.team"), value: teamName },
+    { Icon: Briefcase, label: t("teams.agent.role"), value: role },
   ];
   return (
     <aside
       aria-label={name}
       onClick={(event) => event.stopPropagation()}
-      className="absolute top-4 right-4 bottom-20 flex w-72 flex-col gap-4 rounded-2xl border border-line bg-surface p-4 shadow-sm"
+      className="absolute top-4 right-4 bottom-4 flex w-80 flex-col overflow-hidden rounded-3xl border border-line bg-surface shadow-2xl shadow-black/30"
     >
-      <button
-        type="button"
-        aria-label={t("teams.close")}
-        onClick={onClose}
-        className="absolute top-3 right-3 grid size-8 cursor-pointer place-items-center rounded-lg text-muted transition-colors hover:bg-primary hover:text-ink focus-visible:outline-2 focus-visible:outline-ink"
+      <div
+        style={{ backgroundImage: `linear-gradient(135deg, hsl(${hue} 45% 30%), hsl(${(hue + 50) % 360} 55% 18%))` }}
+        className="relative h-24 shrink-0"
       >
-        <X className="size-4" aria-hidden="true" />
-      </button>
-      <div className="flex items-center gap-3 pr-8">
-        <Avatar seed={seed} label={name} className="size-12 rounded-full text-lg" />
-        <div className="min-w-0 leading-tight">
-          <h3 className="truncate text-base font-semibold tracking-tight text-ink">{name}</h3>
-          <p className="truncate text-sm font-medium text-muted">{role}</p>
-        </div>
+        <button
+          type="button"
+          aria-label={t("teams.close")}
+          onClick={onClose}
+          className="absolute top-3 right-3 grid size-8 cursor-pointer place-items-center rounded-full bg-black/30 text-white/80 backdrop-blur transition-colors hover:bg-black/50 hover:text-white focus-visible:outline-2 focus-visible:outline-white"
+        >
+          <X className="size-4" aria-hidden="true" />
+        </button>
       </div>
-      <dl>
-        {rows.map(([label, value]) => (
-          <div key={label} className="flex justify-between gap-4 border-b border-line py-2 text-sm last:border-0">
-            <dt className="text-muted">{label}</dt>
-            <dd className="truncate font-medium text-ink">{value}</dd>
+      <div className="grid content-start gap-4 px-5 pb-5">
+        <div className="-mt-10 grid gap-2">
+          <Avatar seed={seed} label={name} className="relative size-20 rounded-full text-3xl ring-4 ring-surface" />
+          <div className="min-w-0 leading-tight">
+            <h3 className="truncate text-xl font-bold tracking-tight text-ink">{name}</h3>
+            <p className="mt-1 truncate text-sm font-medium text-muted">{role}</p>
           </div>
-        ))}
-      </dl>
+        </div>
+        <dl className="grid gap-2">
+          {rows.map(({ Icon, label, value }) => (
+            <div key={label} className="flex items-center gap-3 rounded-2xl bg-raised p-3">
+              <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-surface text-muted">
+                <Icon className="size-4" aria-hidden="true" />
+              </span>
+              <div className="min-w-0 leading-tight">
+                <dt className="text-xs font-medium text-muted">{label}</dt>
+                <dd className="mt-0.5 truncate text-sm font-semibold text-ink">{value}</dd>
+              </div>
+            </div>
+          ))}
+        </dl>
+      </div>
     </aside>
   );
 }

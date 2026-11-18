@@ -1,4 +1,4 @@
-function hueOf(seed: string) {
+export function hueOf(seed: string) {
   let hue = 0;
   for (const char of seed) hue = (hue * 31 + char.charCodeAt(0)) % 360;
   return hue;

@@ -326,6 +326,8 @@ describe("workspace shell", () => {
     const drawer = screen.getByRole("complementary", { name: "Ada" });
     expect(within(drawer).getByText("General")).toBeInTheDocument();
     expect(within(drawer).getAllByText("Backend dev").length).toBeGreaterThan(0);
+    await user.click(screen.getByTestId("board"));
+    expect(screen.getByRole("complementary", { name: "Ada" })).toBeInTheDocument();
     await user.click(within(drawer).getByRole("button", { name: "Close" }));
     expect(screen.queryByRole("complementary", { name: "Ada" })).toBeNull();
   });
