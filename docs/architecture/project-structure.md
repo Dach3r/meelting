@@ -33,7 +33,7 @@ src-tauri/src/
 │   ├── keychain.rs        ✅ save_secret, secret_last_four, delete_secret
 │   ├── worktree.rs        ✅ run_in_worktree
 │   ├── completion.rs      ✅ stream_completion
-│   └── session.rs         ✅ load_session, complete_first_launch, create_workspace, switch_workspace, list_teams, create_team, create_agent, list_agent_templates, list_agent_roles, list_llm_providers, change_locale, change_theme
+│   └── session.rs         ✅ load_session, complete_first_launch, create_workspace, switch_workspace, list_teams, create_team, create_agent, get_agent, update_agent, list_agent_templates, list_agent_roles, list_llm_providers, change_locale, change_theme
 ├── services/              Capa 2: acciones de negocio (verbos)
 │   ├── worktree_run.rs    ✅ crea un worktree y ejecuta un comando en él
 │   ├── completion_stream.rs ✅ lee la clave del keychain y hace streaming de una respuesta
@@ -46,6 +46,8 @@ src-tauri/src/
 │   ├── theme_change.rs    ✅ guarda el tema del perfil
 │   ├── team_create.rs     ✅ crea un equipo y devuelve la lista actualizada
 │   ├── agent_create.rs    ✅ valida y crea un agente (personalizado o desde plantilla) y devuelve la lista actualizada
+│   ├── agent_get.rs       ✅ detalle completo de un agente del workspace actual
+│   ├── agent_update.rs    ✅ valida y edita nombre, rol, descripción, instrucciones y equipo de un agente
 │   ├── agent_roles_list.rs ✅ roles predefinidos del catálogo, agrupados por área
 │   ├── agent_templates_list.rs ✅ plantillas del catálogo en el idioma del perfil
 │   └── llm_providers_list.rs ✅ proveedores y modelos del catálogo
@@ -112,7 +114,7 @@ src/
 ├── i18n/                  es.json, en.json, translate.ts (texto y errores) e I18nProvider
 ├── hooks/                 Acceso al núcleo y estado asociado
 │   ├── useSession.ts      ✅ invoke load_session, complete_first_launch, create_workspace, switch_workspace, change_locale, change_theme
-│   ├── useTeams.ts        ✅ invoke list_teams, create_team, create_agent
+│   ├── useTeams.ts        ✅ invoke list_teams, create_team, create_agent, get_agent, update_agent
 │   ├── useAgentTemplates.ts ✅ invoke list_agent_templates (recarga al cambiar el idioma)
 │   └── useAgentRoles.ts   ✅ invoke list_agent_roles
 ├── test/setup.ts          Configuración de Vitest (jest-dom)

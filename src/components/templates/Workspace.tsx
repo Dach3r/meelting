@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { Theme } from "../../hooks/useSession";
 import type { Locale } from "../../i18n/translate";
-import type { AgentDraft, Team } from "../../hooks/useTeams";
+import type { AgentDetail, AgentDraft, AgentEdit, Team } from "../../hooks/useTeams";
 import type { WorkspaceSwitcherProps } from "../molecules/WorkspaceSwitcher";
 import { SwitchingOverlay } from "../molecules/SwitchingOverlay";
 import { AgentCatalogPage } from "../organisms/AgentCatalogPage";
@@ -28,6 +28,8 @@ type WorkspaceProps = WorkspaceSwitcherProps & {
   teamsBusy: boolean;
   onCreateTeam: (name: string) => Promise<boolean>;
   onCreateAgent: (draft: AgentDraft) => Promise<boolean>;
+  onLoadAgent: (agentId: string) => Promise<AgentDetail | null>;
+  onUpdateAgent: (agentId: string, edit: AgentEdit) => Promise<boolean>;
   onClearTeamsActionError: () => void;
   locale: Locale;
   theme: Theme;
@@ -44,6 +46,8 @@ export function Workspace({
   teamsBusy,
   onCreateTeam,
   onCreateAgent,
+  onLoadAgent,
+  onUpdateAgent,
   onClearTeamsActionError,
   locale,
   theme,
@@ -124,6 +128,8 @@ export function Workspace({
                   busy={teamsBusy}
                   onCreateTeam={onCreateTeam}
                   onHireAgent={setCatalogTeamId}
+                  onLoadAgent={onLoadAgent}
+                  onUpdateAgent={onUpdateAgent}
                   onClearActionError={onClearTeamsActionError}
                 />
               )}

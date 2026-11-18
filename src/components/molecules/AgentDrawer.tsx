@@ -1,10 +1,11 @@
-import { Briefcase, Users, X } from "lucide-react";
+import { Briefcase, Pencil, Users, X } from "lucide-react";
 import { useI18n } from "../../i18n/I18nProvider";
 import { Avatar, hueOf } from "../atoms/Avatar";
+import { Button } from "../atoms/Button";
 
-type Props = { seed: string; name: string; role: string; teamName: string; onClose: () => void };
+type Props = { seed: string; name: string; role: string; teamName: string; onEdit: () => void; onClose: () => void };
 
-export function AgentDrawer({ seed, name, role, teamName, onClose }: Props) {
+export function AgentDrawer({ seed, name, role, teamName, onEdit, onClose }: Props) {
   const { t } = useI18n();
   const hue = hueOf(seed);
   const rows = [
@@ -30,7 +31,7 @@ export function AgentDrawer({ seed, name, role, teamName, onClose }: Props) {
           <X className="size-4" aria-hidden="true" />
         </button>
       </div>
-      <div className="grid content-start gap-4 px-5 pb-5">
+      <div className="flex flex-1 flex-col gap-4 px-5 pb-5">
         <div className="-mt-10 grid gap-2">
           <Avatar seed={seed} label={name} className="relative size-20 rounded-full text-3xl ring-4 ring-surface" />
           <div className="min-w-0 leading-tight">
@@ -51,6 +52,10 @@ export function AgentDrawer({ seed, name, role, teamName, onClose }: Props) {
             </div>
           ))}
         </dl>
+        <Button type="button" size="pill" onClick={onEdit} className="mt-auto">
+          <Pencil aria-hidden className="size-4" />
+          {t("teams.agent.edit")}
+        </Button>
       </div>
     </aside>
   );

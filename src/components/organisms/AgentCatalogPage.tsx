@@ -1,4 +1,4 @@
-import { Briefcase, ChartColumn, ChevronRight, Code, LayoutGrid, Package, PenLine, Search, type LucideIcon } from "lucide-react";
+import { ChevronRight, LayoutGrid, Search } from "lucide-react";
 import { useState } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
 import { useAgentRoles } from "../../hooks/useAgentRoles";
@@ -6,6 +6,7 @@ import { useAgentTemplates, type AgentTemplate } from "../../hooks/useAgentTempl
 import type { AgentDraft, Team } from "../../hooks/useTeams";
 import { translateError } from "../../i18n/translate";
 import { Button } from "../atoms/Button";
+import { roleGroupIcons } from "../atoms/roleGroupIcons";
 import { Alert } from "../molecules/Alert";
 import { AgentTemplateDetail } from "../molecules/AgentTemplateDetail";
 import { Modal } from "../molecules/Modal";
@@ -21,26 +22,12 @@ type Props = {
   onBack: () => void;
 };
 
-const roleGroupIcons: Record<string, LucideIcon> = {
-  product: Package,
-  engineering: Code,
-  data: ChartColumn,
-  design_support: PenLine,
-  business: Briefcase,
-};
-
 type Dialog = { kind: "detail" | "hire"; template: AgentTemplate } | { kind: "custom" } | null;
 
 export function AgentCatalogPage({ team, busy, actionErrorMessage, onCreateAgent, onClearActionError, onBack }: Props) {
   const { t, locale } = useI18n();
   const { templates, errorKey } = useAgentTemplates(locale);
   const rolesByGroup = useAgentRoles();
-  const roleGroups = rolesByGroup.map(({ group, roles }) => ({
-    id: group,
-    label: t(`teams.agent.roleGroups.${group}`),
-    icon: roleGroupIcons[group],
-    options: roles,
-  }));
   const [dialog, setDialog] = useState<Dialog>(null);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("all");
@@ -180,7 +167,6 @@ export function AgentCatalogPage({ team, busy, actionErrorMessage, onCreateAgent
             key={dialog.template.key}
             team={team}
             template={dialog.template}
-            roleGroups={roleGroups}
             busy={busy}
             errorMessage={actionErrorMessage}
             onSubmit={create}
@@ -190,7 +176,7 @@ export function AgentCatalogPage({ team, busy, actionErrorMessage, onCreateAgent
       )}
       {dialog?.kind === "custom" && (
         <Modal title={`${t("teams.newAgent")} · ${team.name}`} onClose={close} bare>
-          <AgentForm team={team} roleGroups={roleGroups} busy={busy} errorMessage={actionErrorMessage} onSubmit={create} onCancel={close} />
+          <AgentForm team={team} busy={busy} errorMessage={actionErrorMessage} onSubmit={create} onCancel={close} />
         </Modal>
       )}
     </div>

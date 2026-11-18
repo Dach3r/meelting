@@ -487,6 +487,90 @@ describe("workspace shell", () => {
     expect(await screen.findByText("Ana")).toBeInTheDocument();
     expect(screen.queryByRole("listbox", { name: "Role" })).not.toBeInTheDocument();
   });
+
+  describe("editing an agent", () => {
+    const teams = [
+      { id: "t1", name: "General", agents: [{ id: "a1", team_id: "t1", name: "Ana", role: "Software Developer" }] },
+      { id: "t2", name: "Design", agents: [] },
+    ];
+    const moved = [
+      { id: "t1", name: "General", agents: [] },
+      { id: "t2", name: "Design", agents: [{ id: "a1", team_id: "t2", name: "Bea", role: "Software Developer" }] },
+    ];
+    const detail = {
+      id: "a1",
+      team_id: "t1",
+      template_key: null,
+      name: "Ana",
+      role: "Software Developer",
+      description: "Writes code",
+      instructions: "Be careful",
+      provider: "openai",
+      model: "gpt-5",
+    };
+
+    function mockEditing(update: () => unknown = () => moved) {
+      invokeMock.mockImplementation(async (command) => {
+        if (command === "list_teams") return teams;
+        if (command === "list_agent_roles") return roles;
+        if (command === "list_llm_providers") return providers;
+        if (command === "get_agent") return detail;
+        if (command === "update_agent") return update();
+        return session({ locale: "en" });
+      });
+    }
+
+    async function openEditor(user: ReturnType<typeof userEvent.setup>) {
+      await user.click(await screen.findByRole("button", { name: "Ana" }));
+      await user.click(screen.getByRole("button", { name: "Edit agent" }));
+      return screen.findByRole("dialog", { name: "Edit agent \u00b7 Ana" });
+    }
+
+    it("loads the agent, skips the model step and saves the changes with the new team", async () => {
+      mockEditing();
+      const user = userEvent.setup();
+      render(<App />);
+
+      await openEditor(user);
+      expect(invokeMock).toHaveBeenCalledWith("get_agent", { agentId: "a1" });
+      expect(screen.getByLabelText("Name")).toHaveValue("Ana");
+      expect(screen.queryByText("Model")).not.toBeInTheDocument();
+      await user.clear(screen.getByLabelText("Name"));
+      await user.type(screen.getByLabelText("Name"), "Bea");
+      await user.selectOptions(screen.getByLabelText("Team"), "t2");
+      await user.click(screen.getByRole("button", { name: "Continue" }));
+      expect(screen.getByLabelText("Instructions")).toHaveValue("Be careful");
+      await user.click(screen.getByRole("button", { name: "Save changes" }));
+
+      expect(invokeMock).toHaveBeenCalledWith("update_agent", {
+        agentId: "a1",
+        edit: {
+          team_id: "t2",
+          name: "Bea",
+          role: "Software Developer",
+          description: "Writes code",
+          instructions: "Be careful",
+        },
+      });
+      await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+      expect(await screen.findByRole("button", { name: "Bea" })).toBeInTheDocument();
+    });
+
+    it("keeps the editor open and shows the error when saving fails", async () => {
+      mockEditing(() => {
+        throw "agent_not_found";
+      });
+      const user = userEvent.setup();
+      render(<App />);
+
+      await openEditor(user);
+      await user.click(screen.getByRole("button", { name: "Continue" }));
+      await user.click(screen.getByRole("button", { name: "Save changes" }));
+
+      expect(await screen.findByRole("alert")).toHaveTextContent("That agent no longer exists.");
+      expect(screen.getByRole("dialog", { name: "Edit agent \u00b7 Ana" })).toBeInTheDocument();
+    });
+  });
 });
 
 describe("agent catalog", () => {

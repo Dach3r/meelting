@@ -12,9 +12,10 @@ type Props = {
   zoom: number;
   onNewTeam: () => void;
   onNewAgent: (teamId: string) => void;
+  onEditAgent: (agentId: string) => void;
 };
 
-export function OrgChart({ teams, zoom, onNewTeam, onNewAgent }: Props) {
+export function OrgChart({ teams, zoom, onNewTeam, onNewAgent, onEditAgent }: Props) {
   const { t } = useI18n();
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -95,6 +96,7 @@ export function OrgChart({ teams, zoom, onNewTeam, onNewAgent }: Props) {
           name={drawerAgent.name}
           role={drawerAgent.role}
           teamName={drawerTeam.name}
+          onEdit={() => onEditAgent(drawerAgent.id)}
           onClose={() => setSelectedId(null)}
         />
       )}

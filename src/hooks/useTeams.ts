@@ -16,6 +16,10 @@ export type AgentDraft = {
   model: string;
 };
 
+export type AgentEdit = Pick<AgentDraft, "team_id" | "name" | "role" | "description" | "instructions">;
+
+export type AgentDetail = AgentDraft & { id: string };
+
 export function useTeams(workspaceId: string | null) {
   const [teams, setTeams] = useState<Team[]>([]);
   const [errorKey, setErrorKey] = useState<string | null>(null);
@@ -55,7 +59,17 @@ export function useTeams(workspaceId: string | null) {
 
   const createTeam = (name: string) => run("create_team", { name });
   const createAgent = (draft: AgentDraft) => run("create_agent", { draft });
+  const updateAgent = (agentId: string, edit: AgentEdit) => run("update_agent", { agentId, edit });
+  const loadAgent = async (agentId: string) => {
+    setActionErrorKey(null);
+    try {
+      return await invoke<AgentDetail>("get_agent", { agentId });
+    } catch (error) {
+      setActionErrorKey(String(error));
+      return null;
+    }
+  };
   const clearActionError = () => setActionErrorKey(null);
 
-  return { teams, errorKey, actionErrorKey, busy, createTeam, createAgent, clearActionError };
+  return { teams, errorKey, actionErrorKey, busy, createTeam, createAgent, updateAgent, loadAgent, clearActionError };
 }

@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
-import type { Team } from "../../hooks/useTeams";
+import type { AgentDetail, AgentEdit, Team } from "../../hooks/useTeams";
 import { Alert } from "../molecules/Alert";
 import { Modal } from "../molecules/Modal";
 import { TeamForm } from "../molecules/TeamForm";
 import { ZoomControls } from "../molecules/ZoomControls";
+import { AgentForm } from "./AgentForm";
 import { OrgChart } from "./OrgChart";
 
 type Props = {
@@ -14,6 +15,8 @@ type Props = {
   busy: boolean;
   onCreateTeam: (name: string) => Promise<boolean>;
   onHireAgent: (teamId: string) => void;
+  onLoadAgent: (agentId: string) => Promise<AgentDetail | null>;
+  onUpdateAgent: (agentId: string, edit: AgentEdit) => Promise<boolean>;
   onClearActionError: () => void;
 };
 
@@ -24,10 +27,13 @@ export function TeamsPage({
   busy,
   onCreateTeam,
   onHireAgent,
+  onLoadAgent,
+  onUpdateAgent,
   onClearActionError,
 }: Props) {
   const { t } = useI18n();
   const [creatingTeam, setCreatingTeam] = useState(false);
+  const [editing, setEditing] = useState<AgentDetail | null>(null);
   const [zoom, setZoom] = useState(1);
 
   function openTeamForm() {
@@ -38,6 +44,12 @@ export function TeamsPage({
   function close() {
     onClearActionError();
     setCreatingTeam(false);
+    setEditing(null);
+  }
+
+  async function editAgent(agentId: string) {
+    const agent = await onLoadAgent(agentId);
+    if (agent) setEditing(agent);
   }
 
   if (errorMessage) {
@@ -55,8 +67,22 @@ export function TeamsPage({
           <TeamForm busy={busy} errorMessage={actionErrorMessage} onSubmit={onCreateTeam} onCancel={close} />
         </Modal>
       )}
+      {editing && (
+        <Modal title={`${t("teams.agent.edit")} · ${editing.name}`} onClose={close} bare>
+          <AgentForm
+            team={teams.find((team) => team.id === editing.team_id) ?? teams[0]}
+            edit={{ agent: editing, teams }}
+            busy={busy}
+            errorMessage={actionErrorMessage}
+            onSubmit={({ team_id, name, role, description, instructions }) =>
+              onUpdateAgent(editing.id, { team_id, name, role, description, instructions })
+            }
+            onCancel={close}
+          />
+        </Modal>
+      )}
       <div className="board-dots relative min-h-112 flex-1 overflow-hidden rounded-2xl border border-line bg-surface">
-        <OrgChart teams={teams} zoom={zoom} onNewTeam={openTeamForm} onNewAgent={onHireAgent} />
+        <OrgChart teams={teams} zoom={zoom} onNewTeam={openTeamForm} onNewAgent={onHireAgent} onEditAgent={editAgent} />
         {teams.length > 0 && (
           <div className="absolute bottom-4 left-4">
             <ZoomControls zoom={zoom} onChange={setZoom} />

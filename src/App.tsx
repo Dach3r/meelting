@@ -26,6 +26,8 @@ function App() {
     busy: teamsBusy,
     createTeam,
     createAgent,
+    updateAgent,
+    loadAgent,
     clearActionError: clearTeamsActionError,
   } = useTeams(session?.current_workspace_id ?? null);
   const [draftLocale, setDraftLocale] = useState<Locale>("en");
@@ -73,6 +75,8 @@ function App() {
           teamsBusy={teamsBusy}
           onCreateTeam={createTeam}
           onCreateAgent={createAgent}
+          onLoadAgent={loadAgent}
+          onUpdateAgent={updateAgent}
           onClearTeamsActionError={clearTeamsActionError}
           locale={session.locale}
           theme={session.theme}
