@@ -1,6 +1,6 @@
 # Reuniones conversacionales con agentes
 
-> **Estado:** propuesta, **no implementada**. Nada de este documento existe en el código salvo lo marcado «✅ implementado». Depende de `AgentRun` (Fase 3, sin construir). Las decisiones ya tomadas por el responsable del producto están en [decisions.md](decisions.md); el resto se marca **pendiente**. Ningún cambio de esquema queda aprobado por este documento.
+> **Estado:** propuesta, **no implementada** salvo la conversación dirigida por texto (R1, ✅ implementada) y lo marcado «✅ implementado». Depende de `AgentRun` (Fase 3, sin construir). Las decisiones ya tomadas por el responsable del producto están en [decisions.md](decisions.md); el resto se marca **pendiente**. Ningún cambio de esquema queda aprobado por este documento.
 >
 > Documentos técnicos: [motor conversacional](../architecture/conversation-engine.md) y [motor de voz](../architecture/voice-engine.md). Salas actuales: [rooms.md](rooms.md). Ejecución: [agent-execution.md](agent-execution.md).
 
@@ -41,7 +41,7 @@
 
 - **Modo dirigido** es el inicial recomendado y el primero que se construye: el usuario controla quién responde y no hay ejecuciones innecesarias.
 - **Preguntar al equipo** solo es posible eligiendo «Equipo» (selector o vocativo «Equipo», «Team», «todos»). Nunca se activa por omisión.
-- **Destinatario por defecto (pendiente, recomendado):** si el usuario no nombra a nadie y la última respuesta de la sesión fue de un único agente que respondía al usuario, el destinatario propuesto es ese agente («Respondiendo a Backend»), visible y modificable antes de enviar. Resuelve seguimientos como «Explícame mejor lo de PKCE». Sin sesión previa, no hay destinatario.
+- **Destinatario por defecto (✅ implementado, D19):** si el usuario no nombra a nadie y el último agente que respondió con éxito en la sala durante esta ejecución de la app sigue participando, el destinatario propuesto es ese agente («Respondiendo a Backend»), visible y modificable antes de enviar. Resuelve seguimientos como «Explícame mejor lo de PKCE». Sin sesión previa, no hay destinatario.
 
 ### Menciones y ambigüedad
 

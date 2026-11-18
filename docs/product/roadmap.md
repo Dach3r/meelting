@@ -63,7 +63,8 @@ flowchart LR
     R2 --> R6
 ```
 
-### R1 — Conversación dirigida por texto
+### R1 — Conversación dirigida por texto ✅
+- **Estado:** implementada (D19–D23). Detalle en [conversation-engine.md](../architecture/conversation-engine.md#r1-implementado).
 - **Objetivo:** que el usuario hable con un agente concreto en una conversación que conserva el contexto.
 - **Incluye:** selector de destinatario y menciones `@`; ambigüedad; destinatario por defecto (P5); prompt de reunión con nombre y rol de cada emisor; estado visual de los agentes; disponibilidad real por agente.
 - **Módulos:** servicio de intervención (sucede a `message_send`), dominio de menciones, `BuildPrompt`, `useRoom`, `MessageComposer`, `ParticipantTile`.

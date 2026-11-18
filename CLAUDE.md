@@ -4,7 +4,7 @@ AI workspace / virtual office: the user builds a virtual office with specialized
 
 ## Current scope
 
-Phases 0–2 complete; Phase 3 in progress (rooms and `AgentRun` built). Built today:
+Phases 0–2 complete; Phase 3 in progress (rooms and `AgentRun` built); Track R stage R1 (text-directed conversation) built. Built today:
 
 - **Foundations and workspaces:** Tauri 2 scaffold; local SQLite (`sqlx`, migrations `workspaces`, `profile`, `add_theme_to_profile`); first launch, UI shell (rail, topbar, workspace switcher) with Tailwind v4 Grafito tokens and `es`/`en` i18n; settings page. Commands `load_session`, `complete_first_launch`, `create_workspace`, `switch_workspace`, `change_locale`, `change_theme`.
 - **Teams, agents and org chart:** migrations `teams`, `agents`, `canvas_positions`, `add_id_workspace_id_index_to_agents`; the embedded agent template catalog, the role catalog and the `llm.yml` provider/model catalog (Anthropic, OpenAI, Groq in the cloud; Ollama, LM Studio local); hire form with the cloud/local model picker and local model detection; edit and delete agents (`update_agent` can change provider and model, validated against the catalog only when they change; existing runs keep the values they copied); draggable org chart with persisted positions. Commands `list_teams`, `create_team`, `create_agent`, `get_agent`, `update_agent`, `delete_agent`, `save_canvas_positions`, `reset_canvas_positions`, `list_agent_templates`, `list_agent_roles`, `list_llm_providers`, `detect_local_models`.
@@ -14,7 +14,7 @@ Phases 0–2 complete; Phase 3 in progress (rooms and `AgentRun` built). Built t
 
 **Next:** the «AI keys» screen.
 
-**Documented, not built:** conversational meetings (Track R) and voice (STT, TTS, agent voices); tasks, worktrees, tools, approvals, Docker, integrations, AI keys screen, daily limits. Do not add them unless asked. Approved and pending decisions live in `docs/product/decisions.md`.
+**Documented, not built:** multi-agent coordination and the rest of Track R (R2+) and voice (STT, TTS, agent voices); tasks, worktrees, tools, approvals, Docker, integrations, AI keys screen, daily limits. Do not add them unless asked. Approved and pending decisions live in `docs/product/decisions.md`.
 
 **Hybrid online/offline:** local and cloud providers are user-configurable and can be mixed; local works offline, cloud reports when unavailable, and nothing ever switches provider or model silently.
 
