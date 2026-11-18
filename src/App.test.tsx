@@ -380,6 +380,19 @@ describe("workspace shell", () => {
     expect(screen.queryByLabelText("Team name")).not.toBeInTheDocument();
   });
 
+  it("previews the team name in the org chart while typing it", async () => {
+    mockCore(session({ locale: "en" }));
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "New team" }));
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByText("This is how it will look in your office")).toBeInTheDocument();
+    await user.type(screen.getByLabelText("Team name"), "Design");
+
+    expect(within(dialog).getAllByText("Design", { selector: "span" }).length).toBeGreaterThan(0);
+  });
+
   it("closes the team form from the close button of the modal", async () => {
     mockCore(session({ locale: "en" }));
     const user = userEvent.setup();
