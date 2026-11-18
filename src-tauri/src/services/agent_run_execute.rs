@@ -245,6 +245,7 @@ async fn load_context(
         .filter(|(room_id, _)| *room_id == run.room_id)
         .map(|(_, participant)| participant)
         .collect();
+    let former = room_agents::former(&mut *transaction, &workspace_id, &run.room_id).await?;
     let history = messages::before(
         &mut *transaction,
         &run.room_id,
@@ -272,6 +273,7 @@ async fn load_context(
                     .and_then(|id| {
                         participants
                             .iter()
+                            .chain(&former)
                             .find(|participant| participant.id == *id)
                     })
                     .map_or(Author::User, |participant| Author::UserTo {
@@ -281,6 +283,7 @@ async fn load_context(
                 Some(id) if id == run.agent_id => Author::Own,
                 Some(id) => participants
                     .iter()
+                    .chain(&former)
                     .find(|participant| participant.id == id)
                     .map_or(Author::User, |participant| Author::Other {
                         name: participant.name.clone(),
@@ -530,6 +533,28 @@ mod tests {
         assert_eq!(
             body["messages"][1]["content"],
             "[User → Agent0 · QA Engineer] How would you do OAuth?\n\n[Agent0 · QA Engineer] Use PKCE.\n\n[User → Agent1 · QA Engineer] typed by hand\n\nAny risks?"
+        );
+    }
+
+    #[tokio::test]
+    async fn the_history_still_names_agents_that_left_the_room() {
+        let server = server_with(chat(&["Use PKCE."])).await;
+        let h = harness(&server.uri(), fast_limits(), &[LOCAL, LOCAL]).await;
+        let first = h.send(0, "How would you do OAuth?").await.unwrap();
+        h.finished(&first.run.id).await;
+        crate::services::room_agent_remove::run(&h.engine, &h.room_id, &h.agents[0])
+            .await
+            .unwrap();
+
+        let second = h.send(1, "Any risks?").await.unwrap();
+        h.finished(&second.run.id).await;
+
+        let body: serde_json::Value = server.received_requests().await.unwrap()[1]
+            .body_json()
+            .unwrap();
+        assert_eq!(
+            body["messages"][1]["content"],
+            "[User → Agent0 · QA Engineer] How would you do OAuth?\n\n[Agent0 · QA Engineer] Use PKCE.\n\nAny risks?"
         );
     }
 

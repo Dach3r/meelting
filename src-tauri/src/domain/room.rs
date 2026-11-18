@@ -21,6 +21,12 @@ pub struct Room {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct Roster {
+    pub agents: Vec<Participant>,
+    pub former_agents: Vec<Participant>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct Message {
     pub id: String,
     pub room_id: String,
@@ -38,6 +44,7 @@ pub struct RoomList {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct RoomDetail {
     pub room: Room,
+    pub former_agents: Vec<Participant>,
     pub messages: Vec<Message>,
     pub runs: Vec<AgentRun>,
     pub partials: Vec<Partial>,

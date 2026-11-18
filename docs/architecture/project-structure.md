@@ -33,7 +33,7 @@ src-tauri/src/
 │   ├── keychain.rs        ✅ save_secret, secret_last_four, delete_secret
 │   ├── worktree.rs        ✅ run_in_worktree
 │   ├── agent_runs.rs      ✅ send_intervention, resolve_recipient, check_agent_availability, cancel_agent_run y el emisor de eventos del motor (agent_run:status, agent_run:token, message:created)
-│   ├── rooms.rs           ✅ list_rooms, create_room, get_room (con ejecuciones e instantáneas), delete_room
+│   ├── rooms.rs           ✅ list_rooms, create_room, get_room (con ejecuciones, instantáneas y agentes que salieron), delete_room, add_room_agents, remove_room_agent
 │   └── session.rs         ✅ load_session, complete_first_launch, create_workspace, switch_workspace, list_teams, create_team, create_agent, get_agent, update_agent, delete_agent, save_canvas_positions, reset_canvas_positions, list_agent_templates, list_agent_roles, list_llm_providers, detect_local_models, change_locale, change_theme
 ├── services/              Capa 2: acciones de negocio (verbos)
 │   ├── worktree_run.rs    ✅ crea un worktree y ejecuta un comando en él
@@ -53,7 +53,9 @@ src-tauri/src/
 │   ├── rooms_list.rs      ✅ salas del workspace actual por actividad reciente, con sus agentes y los últimos 3 mensajes de la primera
 │   ├── recipient_resolve.rs ✅ resolve_recipient: vista previa del destinatario con las mismas reglas que send_intervention, sin guardar nada
 │   ├── room_create.rs     ✅ valida el nombre, deduplica los agentes y crea la sala con sus participantes en una transacción
-│   ├── room_get.rs        ✅ sala del workspace actual con sus agentes, sus últimos 100 mensajes, sus ejecuciones, las instantáneas del buffer (tomadas antes de leer la base) y el destinatario propuesto si sigue participando
+│   ├── room_get.rs        ✅ sala del workspace actual con sus agentes presentes y los que salieron, sus últimos 100 mensajes, sus ejecuciones, las instantáneas del buffer (tomadas antes de leer la base) y el destinatario propuesto si sigue participando
+│   ├── room_agents_add.rs ✅ invita agentes a una sala existente (deduplica, valida el workspace, reincorpora a quien había salido) y devuelve presentes y salidos
+│   ├── room_agent_remove.rs ✅ saca a un agente de la sala (marca left_at) y cancela su ejecución activa en la misma transacción
 │   ├── room_delete.rs     ✅ elimina una sala (participaciones, mensajes y ejecuciones en cascada), cancela sus ejecuciones activas y devuelve la lista actualizada
 │   ├── message_send.rs    ✅ guarda un mensaje del usuario sin ejecución y actualiza la actividad de la sala en una transacción (lo usa intervention_send)
 │   ├── intervention_send.rs ✅ send_intervention: valida, deduplica por client_request_id, resuelve el destinatario con domain/recipient dentro de la transacción y guarda el mensaje del usuario (con la ejecución queued si hay agente) o devuelve los candidatos para elegir sin guardar nada
@@ -85,7 +87,7 @@ src-tauri/src/
 │   ├── teams.rs           ✅ consultas de la tabla teams
 │   ├── agents.rs          ✅ consultas de la tabla agents
 │   ├── rooms.rs           ✅ consultas de la tabla rooms
-│   ├── room_agents.rs     ✅ consultas de la tabla room_agents
+│   ├── room_agents.rs     ✅ consultas de la tabla room_agents: alta o reincorporación, salida (left_at), presentes y salidos
 │   ├── messages.rs        ✅ consultas de la tabla messages
 │   └── agent_runs.rs      ✅ consultas y transiciones con guarda de agent_runs, y las pruebas de integridad del esquema
 ├── domain/                Modelos y lógica pura, sin I/O
@@ -148,7 +150,7 @@ src/
 │   ├── useSession.ts      ✅ invoke load_session, complete_first_launch, create_workspace, switch_workspace, change_locale, change_theme
 │   ├── useTeams.ts        ✅ invoke list_teams, create_team, create_agent, get_agent, update_agent, delete_agent, save_canvas_positions (con debounce de 500 ms), reset_canvas_positions
 │   ├── useRooms.ts        ✅ invoke list_rooms, create_room, delete_room
-│   ├── useRoom.ts         ✅ invoke get_room, send_intervention (un client_request_id por envío, reutilizado en los reintentos automáticos y tras un timeout del IPC; sin reintentos si el destinatario es «Nadie») y cancel_agent_run; listen message:created, agent_run:status y agent_run:token antes de cargar la sala, con los eventos de la carga en espera
+│   ├── useRoom.ts         ✅ invoke get_room, send_intervention (un client_request_id por envío, reutilizado en los reintentos automáticos y tras un timeout del IPC; sin reintentos si el destinatario es «Nadie») cancel_agent_run, add_room_agents y remove_room_agent; listen message:created, agent_run:status y agent_run:token antes de cargar la sala, con los eventos de la carga en espera
 │   ├── useAgentAvailability.ts ✅ invoke check_agent_availability al abrir la sala, al terminar una ejecución y a petición («Comprobar disponibilidad»); nunca al escribir
 │   ├── useRecipientPreview.ts ✅ invoke resolve_recipient 150 ms después del último cambio del borrador (IPC local, sin red); descarta respuestas obsoletas
 │   ├── agentRunState.ts   ✅ estado puro de las ejecuciones: orden lógico de estados (queued n = 2n, running n = 2n − 1, final al final), tokens por (attempt, seq), instantáneas y texto en vivo
@@ -157,8 +159,8 @@ src/
 ├── test/setup.ts          Configuración de Vitest (jest-dom)
 └── components/            Atomic design (overview.md §8)
     ├── atoms/             Avatar, Button, CardSelect, Field, Icons, Logo
-    ├── molecules/         AgentPicker, AgentRunStatus, AgentTemplateDetail, Alert, ChatMessage, EnginePicker, IslandMenu, LocaleSwitcher, MentionSuggestions, MessageComposer, Modal, NavItem, OrgAgentCard, OrgCard, OrgDrawer, OrgNode, ParticipantTile, RoomCard, RoomForm, SegmentedControl, SettingsRow, SwitchingOverlay, TeamForm, TeamPicker, ThemeSwitcher, WorkspaceSwitcher, ZoomControls; agentLabel.ts omite el rol cuando repite el nombre; mentionDraft.ts detecta la mención en curso, filtra agentes por nombre o rol e inserta la elegida
-    ├── organisms/         AgentCatalogPage, AgentEditForm, AgentForm, FeaturedRoom, NewWorkspacePage, OrgChart, Rail, RoomChat, RoomView, RoomsPage, SettingsPage, TeamsPage, Topbar; authorName.ts resuelve el autor de un mensaje
+    ├── molecules/         AgentPicker, AgentRunStatus, AgentTemplateDetail, Alert, ChatMessage, EnginePicker, InviteAgentsForm, IslandMenu, LocaleSwitcher, MentionSuggestions, MessageComposer, Modal, NavItem, OrgAgentCard, OrgCard, OrgDrawer, OrgNode, ParticipantTile, RoomCard, RoomForm, SegmentedControl, SettingsRow, SwitchingOverlay, TeamForm, TeamPicker, ThemeSwitcher, WorkspaceSwitcher, ZoomControls; agentLabel.ts omite el rol cuando repite el nombre; mentionDraft.ts detecta la mención en curso, filtra agentes por nombre o rol e inserta la elegida
+    ├── organisms/         AgentCatalogPage, AgentEditForm, AgentForm, FeaturedRoom, NewWorkspacePage, OrgChart, Rail, RoomChat, RoomView, RoomsPage, SettingsPage, TeamsPage, Topbar; authorName.ts resuelve el autor de un mensaje entre los agentes presentes y los que salieron
     └── templates/         Workspace (riel + topbar + contenido)
 ```
 

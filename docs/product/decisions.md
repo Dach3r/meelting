@@ -88,6 +88,12 @@ Las decisiones aprobadas en la revisión de `AgentRun` sustituyen a P14 (ahora D
 | D22 | **El prompt indica a quién iba dirigida cada pregunta anterior del usuario** («Usuario → QA»), derivado de `agent_runs.request_message_id` y de los participantes validados por el núcleo, nunca de etiquetas escritas por el usuario. Sin columnas nuevas; mismo aislamiento por workspace, contexto congelado y presupuestos | Evita que un agente tome como propia una pregunta dirigida a otro | No indicar el destinatario |
 | D23 | **Intervenciones durante una ejecución:** se mantiene el comportamiento actual: el mismo agente ocupado responde `agent_busy`; otro agente puede ejecutar en paralelo dentro de los límites de concurrencia; un mensaje sin destinatario siempre se guarda; nada se cancela automáticamente (P3 queda para R2) | Sin cambios de comportamiento en el motor | Cancelar la ejecución anterior al intervenir |
 
+### Aprobadas (2026-11-18, participantes de una sala)
+
+| # | Decisión | Justificación | Alternativas descartadas |
+|---|---|---|---|
+| D24 | **Los agentes entran y salen de una sala ya creada, como en una reunión real.** Salir es una salida suave: migración `add_left_at_to_room_agents` con `left_at TEXT NULL` y `CHECK (left_at IS NULL OR left_at >= created_at)`; la participación no se borra, así que sus mensajes y ejecuciones se conservan con su nombre. Quien salió no aparece como participante, no recibe instrucciones ni es destinatario propuesto; volver a invitarlo pone `left_at` a `NULL`. Si tenía una ejecución activa en la sala, se cancela (`cancelled`) en la misma transacción | La FK `messages (room_id, agent_id) → room_agents` impide borrar la participación de quien ya habló; borrar su historial rompería la inmutabilidad de los mensajes | Quitar solo agentes sin actividad (`agent_has_activity`); borrar sus mensajes y ejecuciones; bloquear la salida mientras responde (`agent_busy`) |
+
 ### Riesgos y dependencias
 
 Ver los riesgos en [conversation-engine.md §14](../architecture/conversation-engine.md#14-riesgos) y [voice-engine.md §12](../architecture/voice-engine.md#12-riesgos), y las dependencias de etapas en [roadmap.md](roadmap.md#pista-r--reuniones-conversacionales).

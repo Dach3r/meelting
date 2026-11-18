@@ -213,6 +213,23 @@ pub async fn cancel<'e>(
     .await
 }
 
+pub async fn cancel_active<'e>(
+    executor: impl SqliteExecutor<'e>,
+    room_id: &str,
+    agent_id: &str,
+) -> Result<Option<AgentRun>, sqlx::Error> {
+    one(
+        executor,
+        sqlx::query_as(sqlx::AssertSqlSafe(format!(
+            "UPDATE agent_runs SET status = 'failed', error_kind = 'cancelled', finished_at = {NOW} \
+             WHERE room_id = ? AND agent_id = ? AND status IN ('queued', 'running') RETURNING {COLUMNS}"
+        )))
+        .bind(room_id.to_string())
+        .bind(agent_id.to_string()),
+    )
+    .await
+}
+
 pub async fn expire_active<'e>(executor: impl SqliteExecutor<'e>) -> Result<u64, sqlx::Error> {
     let result = sqlx::query(sqlx::AssertSqlSafe(format!(
         "UPDATE agent_runs SET status = 'failed', error_kind = 'expired', finished_at = {NOW} \
@@ -269,7 +286,7 @@ mod tests {
         "INSERT INTO teams VALUES ('t1', 'w1', 'General', 'x', 'x'), ('t2', 'w2', 'Other', 'x', 'x')",
         "INSERT INTO agents VALUES ('a1', 'w1', 't1', NULL, 'Ana', 'QA', '', '', 'ollama', 'qwen', 'x', 'x'), ('a2', 'w1', 't1', NULL, 'Bob', 'Dev', '', '', 'ollama', 'qwen', 'x', 'x'), ('a3', 'w2', 't2', NULL, 'Eva', 'QA', '', '', 'ollama', 'qwen', 'x', 'x'), ('a4', 'w1', 't1', NULL, 'Idle', 'QA', '', '', 'ollama', 'qwen', 'x', 'x')",
         "INSERT INTO rooms VALUES ('r1', 'w1', 'Sala', 'x', 'x'), ('r2', 'w1', 'Otra', 'x', 'x'), ('r3', 'w2', 'Ajena', 'x', 'x')",
-        "INSERT INTO room_agents VALUES ('r1', 'a1', 'w1', 'x'), ('r1', 'a2', 'w1', 'x'), ('r2', 'a1', 'w1', 'x'), ('r3', 'a3', 'w2', 'x'), ('r1', 'a4', 'w1', 'x')",
+        "INSERT INTO room_agents (room_id, agent_id, workspace_id, created_at) VALUES ('r1', 'a1', 'w1', 'x'), ('r1', 'a2', 'w1', 'x'), ('r2', 'a1', 'w1', 'x'), ('r3', 'a3', 'w2', 'x'), ('r1', 'a4', 'w1', 'x')",
         "INSERT INTO messages VALUES ('u1', 'r1', NULL, 'hola', 'x'), ('u2', 'r1', NULL, 'otra', 'x'), ('u3', 'r2', NULL, 'hola', 'x'), ('u4', 'r3', NULL, 'hola', 'x'), ('g1', 'r1', 'a1', 'hi', 'x'), ('g2', 'r1', 'a2', 'hi', 'x'), ('g3', 'r2', 'a1', 'hi', 'x'), ('g4', 'r3', 'a3', 'hi', 'x')",
     ];
 
@@ -969,7 +986,7 @@ mod transition_tests {
             "INSERT INTO teams VALUES ('t1', 'w1', 'General', 'x', 'x')",
             "INSERT INTO agents VALUES ('a1', 'w1', 't1', NULL, 'Ana', 'QA', '', '', 'ollama', 'qwen', 'x', 'x')",
             "INSERT INTO rooms VALUES ('r1', 'w1', 'Sala', 'x', 'x')",
-            "INSERT INTO room_agents VALUES ('r1', 'a1', 'w1', 'x')",
+            "INSERT INTO room_agents (room_id, agent_id, workspace_id, created_at) VALUES ('r1', 'a1', 'w1', 'x')",
             "INSERT INTO messages VALUES ('u1', 'r1', NULL, 'hola', '2026-01-01T00:00:00.000Z'), ('u2', 'r1', NULL, 'otra', '2026-01-01T00:00:01.000Z'), ('g1', 'r1', 'a1', 'hi', '2026-01-01T00:00:02.000Z')",
         ] {
             sqlx::query(sql).execute(&pool).await.unwrap();
@@ -1079,6 +1096,18 @@ mod transition_tests {
     }
 
     #[tokio::test]
+    async fn cancels_the_active_run_of_an_agent_in_a_room() {
+        let (pool, _dir) = seeded().await;
+        queued(&pool, "run1", "u1", CLIENT).await;
+
+        let cancelled = cancel_active(&pool, "r1", "a1").await.unwrap().unwrap();
+
+        assert_eq!(cancelled.id, "run1");
+        assert_eq!(cancelled.error_kind, Some(ErrorKind::Cancelled));
+        assert_eq!(cancel_active(&pool, "r1", "a1").await.unwrap(), None);
+    }
+
+    #[tokio::test]
     async fn cancelling_from_another_workspace_changes_nothing() {
         let (pool, _dir) = seeded().await;
         queued(&pool, "run1", "u1", CLIENT).await;
@@ -1100,7 +1129,7 @@ mod transition_tests {
             .execute(&pool)
             .await
             .unwrap();
-        sqlx::query("INSERT INTO room_agents VALUES ('r1', 'a2', 'w1', 'x')")
+        sqlx::query("INSERT INTO room_agents (room_id, agent_id, workspace_id, created_at) VALUES ('r1', 'a2', 'w1', 'x')")
             .execute(&pool)
             .await
             .unwrap();

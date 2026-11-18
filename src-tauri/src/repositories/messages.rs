@@ -120,7 +120,7 @@ mod tests {
             "INSERT INTO teams VALUES ('t1', 'w1', 'General', 'x', 'x')",
             "INSERT INTO agents VALUES ('a1', 'w1', 't1', NULL, 'Ana', 'QA', '', '', 'openai', 'gpt', 'x', 'x'), ('a2', 'w1', 't1', NULL, 'Bob', 'Dev', '', '', 'openai', 'gpt', 'x', 'x')",
             "INSERT INTO rooms VALUES ('r1', 'w1', 'Sala', 'x', 'x'), ('r2', 'w1', 'Otra', 'x', 'x')",
-            "INSERT INTO room_agents VALUES ('r1', 'a1', 'w1', 'x'), ('r2', 'a2', 'w1', 'x')",
+            "INSERT INTO room_agents (room_id, agent_id, workspace_id, created_at) VALUES ('r1', 'a1', 'w1', 'x'), ('r2', 'a2', 'w1', 'x')",
         ] {
             sqlx::query(sql).execute(pool).await.unwrap();
         }

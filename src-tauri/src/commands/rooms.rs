@@ -1,7 +1,9 @@
-use crate::domain::room::{Room, RoomDetail, RoomList};
+use crate::domain::room::{Room, RoomDetail, RoomList, Roster};
 use crate::services::agent_run_engine::Engine;
 use crate::services::session_load::SessionError;
-use crate::services::{room_create, room_delete, room_get, rooms_list};
+use crate::services::{
+    room_agent_remove, room_agents_add, room_create, room_delete, room_get, rooms_list,
+};
 use sqlx::SqlitePool;
 use std::sync::Arc;
 use tauri::State;
@@ -34,4 +36,22 @@ pub async fn delete_room(
     room_id: String,
 ) -> Result<RoomList, SessionError> {
     room_delete::run(&engine.pool, &engine.registry, &room_id).await
+}
+
+#[tauri::command]
+pub async fn add_room_agents(
+    pool: State<'_, SqlitePool>,
+    room_id: String,
+    agent_ids: Vec<String>,
+) -> Result<Roster, SessionError> {
+    room_agents_add::run(&pool, &room_id, agent_ids).await
+}
+
+#[tauri::command]
+pub async fn remove_room_agent(
+    engine: State<'_, Arc<Engine>>,
+    room_id: String,
+    agent_id: String,
+) -> Result<Roster, SessionError> {
+    room_agent_remove::run(&engine, &room_id, &agent_id).await
 }

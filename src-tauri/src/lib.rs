@@ -59,6 +59,8 @@ pub fn run() {
             commands::rooms::create_room,
             commands::rooms::get_room,
             commands::rooms::delete_room,
+            commands::rooms::add_room_agents,
+            commands::rooms::remove_room_agent,
             commands::agent_runs::send_intervention,
             commands::agent_runs::resolve_recipient,
             commands::agent_runs::check_agent_availability,

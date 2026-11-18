@@ -9,7 +9,8 @@ pub async fn insert<'e>(
 ) -> Result<(), sqlx::Error> {
     sqlx::query(
         "INSERT INTO room_agents (room_id, agent_id, workspace_id, created_at) \
-         VALUES (?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))",
+         VALUES (?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) \
+         ON CONFLICT (room_id, agent_id) DO UPDATE SET left_at = NULL",
     )
     .bind(room_id)
     .bind(agent_id)
@@ -19,6 +20,24 @@ pub async fn insert<'e>(
     Ok(())
 }
 
+pub async fn leave<'e>(
+    executor: impl SqliteExecutor<'e>,
+    room_id: &str,
+    agent_id: &str,
+    workspace_id: &str,
+) -> Result<bool, sqlx::Error> {
+    let result = sqlx::query(
+        "UPDATE room_agents SET left_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') \
+         WHERE room_id = ? AND agent_id = ? AND workspace_id = ? AND left_at IS NULL",
+    )
+    .bind(room_id)
+    .bind(agent_id)
+    .bind(workspace_id)
+    .execute(executor)
+    .await?;
+    Ok(result.rows_affected() > 0)
+}
+
 pub async fn list<'e>(
     executor: impl SqliteExecutor<'e>,
     workspace_id: &str,
@@ -26,7 +45,8 @@ pub async fn list<'e>(
     let rows: Vec<(String, String, String, String)> = sqlx::query_as(
         "SELECT room_agents.room_id, agents.id, agents.name, agents.role FROM room_agents \
          JOIN agents ON agents.id = room_agents.agent_id \
-         WHERE room_agents.workspace_id = ? ORDER BY agents.name, agents.id",
+         WHERE room_agents.workspace_id = ? AND room_agents.left_at IS NULL \
+         ORDER BY agents.name, agents.id",
     )
     .bind(workspace_id)
     .fetch_all(executor)
@@ -34,6 +54,27 @@ pub async fn list<'e>(
     Ok(rows
         .into_iter()
         .map(|(room_id, id, name, role)| (room_id, Participant { id, name, role }))
+        .collect())
+}
+
+pub async fn former<'e>(
+    executor: impl SqliteExecutor<'e>,
+    workspace_id: &str,
+    room_id: &str,
+) -> Result<Vec<Participant>, sqlx::Error> {
+    let rows: Vec<(String, String, String)> = sqlx::query_as(
+        "SELECT agents.id, agents.name, agents.role FROM room_agents \
+         JOIN agents ON agents.id = room_agents.agent_id \
+         WHERE room_agents.workspace_id = ? AND room_agents.room_id = ? \
+         AND room_agents.left_at IS NOT NULL ORDER BY agents.name, agents.id",
+    )
+    .bind(workspace_id)
+    .bind(room_id)
+    .fetch_all(executor)
+    .await?;
+    Ok(rows
+        .into_iter()
+        .map(|(id, name, role)| Participant { id, name, role })
         .collect())
 }
 
@@ -74,13 +115,83 @@ mod tests {
         );
     }
 
+    async fn names(pool: &sqlx::SqlitePool) -> Vec<String> {
+        list(pool, "w1")
+            .await
+            .unwrap()
+            .into_iter()
+            .map(|(_, agent)| agent.name)
+            .collect()
+    }
+
     #[tokio::test]
-    async fn rejects_an_agent_twice_in_the_same_room() {
+    async fn keeps_one_participation_when_an_agent_is_added_twice() {
+        let (pool, _dir) = open_for_test().await;
+        seed(&pool).await;
+        insert(&pool, "r1", "a1", "w1").await.unwrap();
+        insert(&pool, "r1", "a1", "w1").await.unwrap();
+
+        let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM room_agents")
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+        assert_eq!(count, 1);
+    }
+
+    #[tokio::test]
+    async fn leaving_keeps_the_participation_as_former() {
+        let (pool, _dir) = open_for_test().await;
+        seed(&pool).await;
+        insert(&pool, "r1", "a1", "w1").await.unwrap();
+        insert(&pool, "r1", "a2", "w1").await.unwrap();
+
+        assert!(leave(&pool, "r1", "a1", "w1").await.unwrap());
+        assert!(!leave(&pool, "r1", "a1", "w1").await.unwrap());
+
+        assert_eq!(names(&pool).await, ["Ana"]);
+        let former: Vec<String> = former(&pool, "w1", "r1")
+            .await
+            .unwrap()
+            .into_iter()
+            .map(|agent| agent.name)
+            .collect();
+        assert_eq!(former, ["Bea"]);
+    }
+
+    #[tokio::test]
+    async fn rejoining_clears_the_departure() {
+        let (pool, _dir) = open_for_test().await;
+        seed(&pool).await;
+        insert(&pool, "r1", "a1", "w1").await.unwrap();
+        leave(&pool, "r1", "a1", "w1").await.unwrap();
+
+        insert(&pool, "r1", "a1", "w1").await.unwrap();
+
+        assert_eq!(names(&pool).await, ["Bea"]);
+        assert!(former(&pool, "w1", "r1").await.unwrap().is_empty());
+    }
+
+    #[tokio::test]
+    async fn does_not_leave_rooms_of_another_workspace() {
+        let (pool, _dir) = open_for_test().await;
+        seed(&pool).await;
+        insert(&pool, "r2", "a3", "w2").await.unwrap();
+
+        assert!(!leave(&pool, "r2", "a3", "w1").await.unwrap());
+        assert!(former(&pool, "w1", "r2").await.unwrap().is_empty());
+    }
+
+    #[tokio::test]
+    async fn rejects_a_departure_before_joining() {
         let (pool, _dir) = open_for_test().await;
         seed(&pool).await;
         insert(&pool, "r1", "a1", "w1").await.unwrap();
 
-        assert!(insert(&pool, "r1", "a1", "w1").await.is_err());
+        let result = sqlx::query("UPDATE room_agents SET left_at = '2000-01-01T00:00:00.000Z'")
+            .execute(&pool)
+            .await;
+
+        assert!(result.is_err());
     }
 
     #[tokio::test]

@@ -17,6 +17,7 @@ pub async fn run(
         .await?
         .ok_or(SessionError::RoomNotFound)?;
     let participants = room_agents::list(&mut *transaction, &workspace_id).await?;
+    let former_agents = room_agents::former(&mut *transaction, &workspace_id, room_id).await?;
     let messages = messages::recent(&mut *transaction, room_id, RECENT_MESSAGES).await?;
     let runs = agent_runs::for_room(&mut *transaction, room_id, RECENT_MESSAGES).await?;
     transaction.commit().await?;
@@ -26,6 +27,7 @@ pub async fn run(
         .filter(|agent_id| room.agents.iter().any(|agent| agent.id == *agent_id));
     Ok(RoomDetail {
         room,
+        former_agents,
         messages,
         runs,
         partials,
