@@ -75,7 +75,7 @@ export function AgentForm({ team, template, roleGroups, busy, errorMessage, onSu
   }
 
   return (
-    <form onSubmit={submit} className="grid min-h-[38rem] sm:grid-cols-[17rem_1fr]">
+    <form onSubmit={submit} className="grid min-h-[38rem] sm:h-[38rem] sm:grid-cols-[17rem_1fr] sm:grid-rows-[minmax(0,1fr)]">
       <div className="grid content-start bg-raised/50 sm:border-r sm:border-line px-4 py-6 sm:px-5 sm:py-10">
         <ol aria-label={t("teams.newAgent")} className="overflow-hidden rounded-2xl border border-line bg-surface">
           {steps.map((key, index) => {
@@ -102,12 +102,12 @@ export function AgentForm({ team, template, roleGroups, busy, errorMessage, onSu
           })}
         </ol>
       </div>
-      <div className="flex flex-col gap-10 p-6 sm:px-10 sm:pt-10 sm:pb-6">
+      <div className="flex min-h-0 flex-col gap-10 p-6 sm:px-10 sm:pt-10 sm:pb-6">
         <div className="grid gap-2">
           <h3 className="text-2xl font-bold text-ink">{t(`teams.agent.${current}Title`)}</h3>
           <p className="text-sm text-muted">{t(`teams.agent.${current}Subtitle`)}</p>
         </div>
-        <div className="grid flex-1 content-start gap-7">
+        <div className="grid min-h-0 flex-1 content-start gap-7 sm:overflow-y-auto">
           {current === "identity" && (
             <>
               <Field label={t("teams.agent.name")} value={draft.name} onChange={set("name")} maxLength={80} icon={User} autoFocus />
@@ -162,7 +162,7 @@ export function AgentForm({ team, template, roleGroups, busy, errorMessage, onSu
                 onChange={set("instructions")}
                 maxLength={10000}
                 multiline
-                rows={10}
+                rows={5}
                 hint={t("teams.agent.instructionsHint")}
                 placeholder={t("teams.agent.instructionsPlaceholder")}
                 action={
