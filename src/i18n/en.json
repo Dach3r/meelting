@@ -80,6 +80,8 @@
       "restoreTemplate": "Restore template",
       "identityTitle": "Who is this agent?",
       "engineTitle": "Which model does it use?",
+      "teamSearch": "Search team",
+      "teamEmpty": "No team matches",
       "teamTitle": "Which team is it in?",
       "teamSubtitle": "The team this agent belongs to in your office.",
       "behaviorTitle": "How does it work?",

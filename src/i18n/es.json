@@ -80,6 +80,8 @@
       "restoreTemplate": "Restaurar plantilla",
       "identityTitle": "¿Quién es este agente?",
       "engineTitle": "¿Con qué modelo trabaja?",
+      "teamSearch": "Buscar equipo",
+      "teamEmpty": "Ningún equipo coincide",
       "teamTitle": "¿En qué equipo está?",
       "teamSubtitle": "Equipo al que pertenece este agente en tu oficina.",
       "behaviorTitle": "¿Cómo trabaja?",

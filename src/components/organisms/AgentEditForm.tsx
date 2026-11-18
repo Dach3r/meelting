@@ -4,7 +4,7 @@ import { useI18n } from "../../i18n/I18nProvider";
 import { useAgentRoles } from "../../hooks/useAgentRoles";
 import type { AgentDetail, AgentEdit, Team } from "../../hooks/useTeams";
 import { Button } from "../atoms/Button";
-import { Field, fieldClasses } from "../atoms/Field";
+import { Field } from "../atoms/Field";
 import { roleGroupIcons } from "../atoms/roleGroupIcons";
 import { SelectField } from "../atoms/SelectField";
 import { Alert } from "../molecules/Alert";
@@ -34,7 +34,7 @@ const pickEdit = ({ team_id, name, role, description, instructions }: AgentEdit)
 
 export function AgentEditForm({ agent, teams, busy, errorMessage, onSubmit, onClose }: Props) {
   const { t } = useI18n();
-  const teamId = useId();
+  const panelId = useId();
   const roleGroups = useAgentRoles().map(({ group, roles }) => ({
     id: group,
     label: t(`teams.agent.roleGroups.${group}`),
@@ -57,7 +57,7 @@ export function AgentEditForm({ agent, teams, busy, errorMessage, onSubmit, onCl
   }
 
   return (
-    <div className="grid min-h-[38rem] sm:grid-cols-[17rem_1fr]">
+    <div className="grid min-h-[44rem] sm:grid-cols-[17rem_1fr]">
       <div className="grid content-start bg-raised/50 sm:border-r sm:border-line px-4 py-6 sm:px-5 sm:py-10">
         <div role="tablist" aria-orientation="vertical" aria-label={t("teams.agent.edit")} className="overflow-hidden rounded-2xl border border-line bg-surface">
           {tabs.map(({ key, icon: TabIcon }, index) => (
@@ -65,9 +65,9 @@ export function AgentEditForm({ agent, teams, busy, errorMessage, onSubmit, onCl
               key={key}
               type="button"
               role="tab"
-              id={`${teamId}-${key}-tab`}
+              id={`${panelId}-${key}-tab`}
               aria-selected={index === tab}
-              aria-controls={`${teamId}-panel`}
+              aria-controls={`${panelId}-panel`}
               onClick={() => setTab(index)}
               className={`flex w-full cursor-pointer items-center gap-4 px-4 py-4 text-left not-last:border-b not-last:border-line focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ink ${index === tab ? "bg-hi" : "hover:bg-hi/50"}`}
             >
@@ -86,8 +86,8 @@ export function AgentEditForm({ agent, teams, busy, errorMessage, onSubmit, onCl
       <form
         onSubmit={submit}
         role="tabpanel"
-        id={`${teamId}-panel`}
-        aria-labelledby={`${teamId}-${current.key}-tab`}
+        id={`${panelId}-panel`}
+        aria-labelledby={`${panelId}-${current.key}-tab`}
         className="flex flex-col gap-10 p-6 sm:px-10 sm:pt-10 sm:pb-6"
       >
         <div className="grid gap-2">
@@ -109,18 +109,14 @@ export function AgentEditForm({ agent, teams, busy, errorMessage, onSubmit, onCl
             </>
           )}
           {current.key === "team" && (
-            <div className="grid gap-2">
-              <label htmlFor={teamId} className="text-sm font-medium text-muted">
-                {t("teams.agent.team")}
-              </label>
-              <select id={teamId} value={draft.team_id} onChange={(event) => set("team_id")(event.target.value)} className={fieldClasses}>
-                {teams.map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {option.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <SelectField
+              label={t("teams.agent.team")}
+              searchPlaceholder={t("teams.agent.teamSearch")}
+              emptyMessage={t("teams.agent.teamEmpty")}
+              value={teams.find((team) => team.id === draft.team_id)?.name ?? ""}
+              groups={[{ id: "teams", label: t("teams.agent.team"), icon: Users, options: teams.map((team) => team.name) }]}
+              onChange={(name) => set("team_id")(teams.find((team) => team.name === name)?.id ?? draft.team_id)}
+            />
           )}
           {current.key === "behavior" && (
             <>

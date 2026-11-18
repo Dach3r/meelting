@@ -68,7 +68,7 @@ export function SelectField({ label, searchPlaceholder, emptyMessage, value, gro
             className="w-full bg-transparent py-3.5 pr-4 pl-10 text-base text-ink outline-none placeholder:text-muted"
           />
         </div>
-        <div id={`${id}-list`} role="listbox" aria-labelledby={`${id}-label`} className="max-h-64 overflow-y-auto overscroll-contain p-1.5">
+        <div id={`${id}-list`} role="listbox" aria-labelledby={`${id}-label`} className="h-64 overflow-y-auto overscroll-contain p-1.5">
           {flat.length === 0 && <p className="px-3 py-4 text-center text-sm text-muted">{emptyMessage}</p>}
           {visible.map(({ id: groupId, label: groupLabel, icon: GroupIcon, options }) => (
             <div key={groupId} role="group" aria-label={groupLabel}>

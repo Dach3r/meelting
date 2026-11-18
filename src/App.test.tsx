@@ -734,7 +734,7 @@ describe("workspace shell", () => {
       await user.clear(screen.getByLabelText("Name"));
       await user.type(screen.getByLabelText("Name"), "Bea");
       await user.click(screen.getByRole("tab", { name: "Team" }));
-      await user.selectOptions(screen.getByLabelText("Team"), "t2");
+      await user.click(screen.getByRole("option", { name: "Design" }));
       await user.click(screen.getByRole("button", { name: "Save changes" }));
 
       expect(invokeMock).toHaveBeenCalledWith("update_agent", {
