@@ -107,7 +107,8 @@
       "delete": "Eliminar agente",
       "deleteTitle": "¿Eliminar a {name}?",
       "deleteBody": "El agente saldrá de tu oficina y no podrás recuperarlo.",
-      "save": "Guardar cambios"
+      "save": "Guardar cambios",
+      "modelRetired": "Este modelo ya no está en el catálogo. Elige otro para que el agente vuelva a responder."
     },
     "hireAgent": "Contratar agente",
     "catalog": {

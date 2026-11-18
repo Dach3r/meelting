@@ -85,6 +85,8 @@ pub struct AgentEdit {
     pub role: String,
     pub description: String,
     pub instructions: String,
+    pub provider: String,
+    pub model: String,
 }
 
 impl AgentEdit {
@@ -95,14 +97,17 @@ impl AgentEdit {
             role: self.role.trim().to_string(),
             description: self.description.trim().to_string(),
             instructions: self.instructions.trim().to_string(),
+            provider: self.provider.trim().to_string(),
+            model: self.model.trim().to_string(),
         };
-        identity_is_valid(
+        let valid = identity_is_valid(
             &edit.name,
             &edit.role,
             &edit.description,
             &edit.instructions,
-        )
-        .then_some(edit)
+        ) && !edit.provider.is_empty()
+            && !edit.model.is_empty();
+        valid.then_some(edit)
     }
 }
 
@@ -190,13 +195,22 @@ mod tests {
             role: "Developer".into(),
             description,
             instructions: String::new(),
+            provider: " ollama ".into(),
+            model: "qwen".into(),
         };
 
         assert_eq!(
             edit("  Ana ", String::new()).normalize().unwrap().name,
             "Ana"
         );
+        assert_eq!(
+            edit("Ana", String::new()).normalize().unwrap().provider,
+            "ollama"
+        );
         assert_eq!(edit(" ", String::new()).normalize(), None);
+        let mut blank_model = edit("Ana", String::new());
+        blank_model.model = "  ".into();
+        assert_eq!(blank_model.normalize(), None);
         assert_eq!(
             edit("Ana", "a".repeat(DESCRIPTION_MAX_CHARS + 1)).normalize(),
             None

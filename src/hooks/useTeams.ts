@@ -20,7 +20,7 @@ export type AgentDraft = {
   model: string;
 };
 
-export type AgentEdit = Pick<AgentDraft, "team_id" | "name" | "role" | "description" | "instructions">;
+export type AgentEdit = Pick<AgentDraft, "team_id" | "name" | "role" | "description" | "instructions" | "provider" | "model">;
 
 export type AgentDetail = AgentDraft & { id: string };
 

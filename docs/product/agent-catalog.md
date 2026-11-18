@@ -60,7 +60,7 @@ Detalle completo en [../architecture/overview.md](../architecture/overview.md#mo
 
 **`teams`:** `id`, `workspace_id`, `name` (1–80), timestamps.
 
-**Validaciones:** se reflejan en la base con `CHECK`; `provider` y `model` se validan contra `llm.yml` al crear (hecho) o cuando cambian (un agente cuyo modelo salió del catálogo sigue siendo editable y avisa que debe elegir otro).
+**Validaciones:** se reflejan en la base con `CHECK`; `provider` y `model` se validan contra `llm.yml` al crear y cuando cambian (hecho); un agente cuyo modelo salió del catálogo sigue siendo editable y su pestaña «Modelo» avisa que debe elegir otro.
 
 **Avatar:** los agentes no tienen imagen elegible; `AgentAvatar` dibuja un círculo con las iniciales (máx. 2) de las dos primeras palabras del nombre.
 
@@ -98,7 +98,7 @@ El frontend no accede a SQLite directamente; los comandos son delgados y llaman 
 - [ ] Se puede contratar la misma plantilla más de una vez y crear un agente personalizado.
 - [ ] Cambiar el idioma no modifica agentes ya contratados.
 - [ ] `name` y `role` compuestos solo de espacios son inválidos.
-- [ ] Un agente se edita (incluidos proveedor y modelo) y se elimina con confirmación. Editar y eliminar ya existen; cambiar el proveedor y el modelo no está disponible y se evaluará más adelante (D12 en [decisions.md](decisions.md)).
+- [x] Un agente se edita (incluidos proveedor y modelo, D18 en [decisions.md](decisions.md)) y se elimina con confirmación.
 - [ ] Cada agente usa su proveedor y modelo, elegidos de un selector dependiente alimentado por `llm.yml`. Un proveedor sin clave se puede elegir con una advertencia.
 - [ ] Un agente de otro workspace no aparece ni se puede modificar al cambiar de workspace.
 - [ ] Errores de validación visibles en el formulario; textos completos en `es` y `en`.

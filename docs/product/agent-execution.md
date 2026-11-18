@@ -44,7 +44,7 @@
 - [x] Los errores transitorios se reintentan (máximo 3 intentos, espera creciente, respetando `retry-after`); los permanentes fallan de inmediato con un mensaje claro.
 - [x] Una ejecución no se procesa dos veces ni crea dos respuestas; hay una sola ejecución activa por agente y sala (`client_request_id` único e índice parcial).
 - [x] Al iniciar la app, toda ejecución `running` huérfana pasa a `failed` con `error_kind = expired`.
-- [x] Cada agente usa su proveedor y modelo; cada ejecución conserva los que copió al crearse (hoy no se pueden cambiar en un agente, D12).
+- [x] Cada agente usa su proveedor y modelo; cada ejecución conserva los que copió al crearse, aunque después se cambien en el agente (D18).
 - [x] Si falta la clave de un proveedor, solo falla ese proveedor con `provider_not_configured`.
 - [x] La clave nunca llega a la UI, a los logs ni a los eventos; no se registran prompts ni razonamiento.
 - [ ] Con solo el proveedor local, la app funciona sin conexión a internet.
@@ -52,7 +52,7 @@
 - [x] Estados vacíos, errores y confirmaciones en `es` y `en`.
 
 ## Reglas de negocio
-- **Proveedor y modelo:** cada agente tiene `provider` y `model` (por defecto `anthropic` / `claude-sonnet-5-5`), elegidos entre los de `llm.yml`. Se pueden elegir proveedores sin clave: el agente muestra una advertencia y la ejecución falla con `provider_not_configured`. Si un modelo sale del catálogo, el agente sigue siendo editable y sus ejecuciones fallan con `model_unavailable`. Los proveedores locales (`ollama`, `lmstudio`) no declaran modelos: se descubren con `GET /v1/models`. Hoy el proveedor y el modelo de un agente no se pueden cambiar después de crearlo (D12); el cambio explícito está aprobado como entrega aparte (D18). Los agentes con un modelo retirado del catálogo (`gpt-5`, `gpt-5-mini`, `llama-3.3-70b-versatile`) conservan sus datos y sus ejecuciones fallan con `model_unavailable` sin llamar al proveedor.
+- **Proveedor y modelo:** cada agente tiene `provider` y `model` (por defecto `anthropic` / `claude-sonnet-5-5`), elegidos entre los de `llm.yml`. Se pueden elegir proveedores sin clave: el agente muestra una advertencia y la ejecución falla con `provider_not_configured`. Si un modelo sale del catálogo, el agente sigue siendo editable y sus ejecuciones fallan con `model_unavailable`. Los proveedores locales (`ollama`, `lmstudio`) no declaran modelos: se descubren con `GET /v1/models`. El usuario puede cambiar el proveedor y el modelo de un agente desde su edición (pestaña «Modelo», D18); el par nuevo se valida contra el catálogo y las ejecuciones existentes conservan los que copiaron. Los agentes con un modelo retirado del catálogo (`gpt-5`, `gpt-5-mini`, `llama-3.3-70b-versatile`) conservan sus datos y sus ejecuciones fallan con `model_unavailable` sin llamar al proveedor.
 - **Historia fija:** el run copia `provider` y `model` del agente al crearse y no se sobrescriben.
 - **Contexto:** instrucciones del agente, nombre de la sala (no existe columna de objetivo, D11) y mensajes de esa sala anteriores a la instrucción, congelados al empezar la ejecución y reutilizados en los reintentos, hasta 100 mensajes y un tope interno de caracteres (menor para los modelos locales; es una aproximación, no la ventana en tokens). Los mensajes de otros se envían con su nombre.
 - **Generación:** la extensión de la respuesta se controla con el parámetro de tokens de salida que admite cada proveedor, con el valor que declara el catálogo para el modelo; otros parámetros (p. ej. `effort`) solo si el catálogo los declara. Sin `temperature`. Solo se persiste el texto final; el texto parcial vive en memoria durante el streaming y el razonamiento se descarta. `llm.yml` declara el máximo de salida documentado de cada modelo de la nube y Meelting pide el menor entre ese máximo y su tope interno (16 000 en la nube, 2048 en local).
@@ -77,7 +77,7 @@
 - Posible resultado «pasar» (`succeeded` sin mensaje) en el modo equipo: afecta a los `CHECK` portados de Rails.
 - Cancelación por intervención y por sala, además de por ejecución.
 - El siguiente turno lo crea el coordinador, nunca la ejecución anterior.
-- `update_agent` no permite cambiar el proveedor ni el modelo de un agente (limitación vigente, D12), así que «cambiar de modelo» no está disponible como alternativa cuando un proveedor falla.
+- «Cambiar de modelo» es una acción explícita del usuario en la edición del agente (D18); nunca es automática cuando un proveedor falla.
 
 ## Claves de API
 

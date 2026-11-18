@@ -1,4 +1,4 @@
-import { Check, FileText, User, Users, type LucideIcon } from "lucide-react";
+import { Check, Cpu, FileText, User, Users, type LucideIcon } from "lucide-react";
 import { useId, useState, type FormEvent } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
 import { useAgentRoles } from "../../hooks/useAgentRoles";
@@ -9,6 +9,7 @@ import { Field } from "../atoms/Field";
 import { roleGroupIcons } from "../atoms/roleGroupIcons";
 import { SelectField } from "../atoms/SelectField";
 import { Alert } from "../molecules/Alert";
+import { EnginePicker } from "../molecules/EnginePicker";
 import { TeamPicker } from "../molecules/TeamPicker";
 
 type Props = {
@@ -23,15 +24,18 @@ type Props = {
 const tabs = [
   { key: "identity", icon: User, fields: ["name", "role"] },
   { key: "team", icon: Users, fields: ["team_id"] },
+  { key: "engine", icon: Cpu, fields: ["provider", "model"] },
   { key: "behavior", icon: FileText, fields: ["description", "instructions"] },
 ] as const satisfies readonly { key: string; icon: LucideIcon; fields: readonly (keyof AgentEdit)[] }[];
 
-const pickEdit = ({ team_id, name, role, description, instructions }: AgentEdit): AgentEdit => ({
+const pickEdit = ({ team_id, name, role, description, instructions, provider, model }: AgentEdit): AgentEdit => ({
   team_id,
   name,
   role,
   description,
   instructions,
+  provider,
+  model,
 });
 
 export function AgentEditForm({ agent, teams, busy, errorMessage, onSubmit, onClose }: Props) {
@@ -119,6 +123,9 @@ export function AgentEditForm({ agent, teams, busy, errorMessage, onSubmit, onCl
           )}
           {current.key === "team" && (
             <TeamPicker teams={teams} currentId={saved.team_id} value={draft.team_id} onChange={set("team_id")} />
+          )}
+          {current.key === "engine" && (
+            <EnginePicker provider={draft.provider} model={draft.model} onChange={(provider, model) => setDraft({ ...draft, provider, model })} />
           )}
           {current.key === "behavior" && (
             <>

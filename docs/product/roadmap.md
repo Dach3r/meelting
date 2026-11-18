@@ -42,7 +42,7 @@ Fase 0 completada (2026-11-17): scaffold Tauri 2 (React + TypeScript + Vite), sp
 - ✅ Salas, participantes y chat persistente ([rooms.md](rooms.md)).
 - ✅ Adaptadores para los cinco proveedores del catálogo real: `anthropic`, `openai`, `groq`, `ollama` y `lmstudio` (decisión aprobada D9). Verificados con `wiremock`; con proveedor real, solo Ollama hasta ahora.
 - ✅ `AgentRun` con estados, reintentos, idempotencia, expiración al arrancar y cancelación, con los ajustes que necesitan las reuniones: prompt construido en `claim` y tokens con secuencia ([agent-run.md](../architecture/agent-run.md), aprobado y construido).
-- Cambio explícito de proveedor y modelo de un agente (D18), entrega pequeña e independiente del motor.
+- ✅ Cambio explícito de proveedor y modelo de un agente (D18), entrega independiente del motor.
 - Claves de IA en keychain con verificación previa (pantalla «Claves de IA», entrega separada de `AgentRun`).
 
 **Resultado esperado:** todos los criterios de [agent-execution.md](agent-execution.md), más streaming y cancelación; funciona sin conexión con un proveedor local en ejecución.

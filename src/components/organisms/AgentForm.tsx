@@ -1,17 +1,15 @@
-import { ArrowRight, Check, Cloud, Cpu, FileText, HardDrive, RotateCcw, User, type LucideIcon } from "lucide-react";
+import { ArrowRight, Check, Cpu, FileText, RotateCcw, User, type LucideIcon } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
 import { useAgentRoles } from "../../hooks/useAgentRoles";
 import type { AgentTemplate } from "../../hooks/useAgentTemplates";
-import { useLlmProviders, type LlmProvider } from "../../hooks/useLlmProviders";
-import { useLocalModels } from "../../hooks/useLocalModels";
 import type { AgentDraft, Team } from "../../hooks/useTeams";
 import { Button } from "../atoms/Button";
 import { Field } from "../atoms/Field";
 import { roleGroupIcons } from "../atoms/roleGroupIcons";
 import { SelectField } from "../atoms/SelectField";
 import { Alert } from "../molecules/Alert";
-import { SegmentedControl } from "../molecules/SegmentedControl";
+import { EnginePicker } from "../molecules/EnginePicker";
 
 type Props = {
   team: Team;
@@ -24,13 +22,10 @@ type Props = {
 
 const steps = ["identity", "engine", "behavior"] as const;
 
-const locations: LlmProvider["location"][] = ["cloud", "local"];
-
 const stepIcons: Record<(typeof steps)[number], LucideIcon> = { identity: User, engine: Cpu, behavior: FileText };
 
 export function AgentForm({ team, template, busy, errorMessage, onSubmit, onCancel }: Props) {
   const { t } = useI18n();
-  const providers = useLlmProviders();
   const roleGroups = useAgentRoles().map(({ group, roles }) => ({
     id: group,
     label: t(`teams.agent.roleGroups.${group}`),
@@ -38,8 +33,6 @@ export function AgentForm({ team, template, busy, errorMessage, onSubmit, onCanc
     options: roles,
   }));
   const [step, setStep] = useState(0);
-  const [location, setLocation] = useState<LlmProvider["location"]>("cloud");
-  const [localKey, setLocalKey] = useState("");
   const [draft, setDraft] = useState<AgentDraft>(
     {
       team_id: team.id,
@@ -59,14 +52,6 @@ export function AgentForm({ team, template, busy, errorMessage, onSubmit, onCanc
     engine: filled(draft.provider, draft.model),
     behavior: true,
   };
-  const localProviders = providers.filter((provider) => provider.location === "local");
-  const localProvider = localProviders.find((provider) => provider.key === localKey) ?? localProviders[0];
-  const detected = useLocalModels(location === "local");
-  const localState = detected?.find((entry) => entry.key === localProvider?.key);
-  const localModels = localState?.models ?? [];
-  const modelGroups = providers
-    .filter((provider) => provider.location === "cloud")
-    .map((provider) => ({ id: provider.key, label: provider.name, icon: Cloud, options: provider.models }));
   const current = steps[step];
   const last = step === steps.length - 1;
 
@@ -133,66 +118,7 @@ export function AgentForm({ team, template, busy, errorMessage, onSubmit, onCanc
             </>
           )}
           {current === "engine" && (
-            <>
-              <SegmentedControl
-                label={t("teams.agent.location")}
-                options={locations.map((value) => ({ value, label: t(`teams.agent.locations.${value}`) }))}
-                value={location}
-                onChange={(value) => {
-                  setLocation(value);
-                  setDraft({ ...draft, provider: "", model: "" });
-                }}
-              />
-              {location === "cloud" && (
-                <SelectField
-                  label={t("teams.agent.model")}
-                  searchPlaceholder={t("teams.agent.modelSearch")}
-                  emptyMessage={t("teams.agent.modelEmpty")}
-                  value={draft.model}
-                  groups={modelGroups}
-                  onChange={(model, provider) => setDraft({ ...draft, provider, model })}
-                  autoFocus
-                />
-              )}
-              {location === "local" && localProvider && (
-                <>
-                  <SegmentedControl
-                    label={t("teams.agent.runtime")}
-                    options={localProviders.map((provider) => ({ value: provider.key, label: provider.name }))}
-                    value={localProvider.key}
-                    onChange={(value) => {
-                      setLocalKey(value);
-                      setDraft({ ...draft, provider: "", model: "" });
-                    }}
-                  />
-                  {detected === null && <p className="text-sm text-muted">{t("teams.agent.localDetecting")}</p>}
-                  {localModels.length > 0 && (
-                    <SelectField
-                      key={localProvider.key}
-                      label={t("teams.agent.model")}
-                      searchPlaceholder={t("teams.agent.modelSearch")}
-                      emptyMessage={t("teams.agent.modelEmpty")}
-                      value={draft.model}
-                      groups={[{ id: localProvider.key, label: localProvider.name, icon: HardDrive, options: localModels }]}
-                      onChange={(model) => setDraft({ ...draft, provider: localProvider.key, model })}
-                      autoFocus
-                    />
-                  )}
-                  {detected !== null && localModels.length === 0 && (
-                    <>
-                      <Alert message={t(localState?.running ? "teams.agent.localNoModels" : "teams.agent.localStopped")} />
-                      <Field
-                        label={t("teams.agent.modelName")}
-                        value={draft.model}
-                        onChange={(model) => setDraft({ ...draft, provider: localProvider.key, model })}
-                        maxLength={200}
-                        icon={HardDrive}
-                      />
-                    </>
-                  )}
-                </>
-              )}
-            </>
+            <EnginePicker provider={draft.provider} model={draft.model} onChange={(provider, model) => setDraft({ ...draft, provider, model })} />
           )}
           {current === "behavior" && (
             <>

@@ -98,7 +98,7 @@ pub async fn update<'e>(
     edit: &AgentEdit,
 ) -> Result<bool, sqlx::Error> {
     let result = sqlx::query(
-        "UPDATE agents SET team_id = ?, name = ?, role = ?, description = ?, instructions = ?, \
+        "UPDATE agents SET team_id = ?, name = ?, role = ?, description = ?, instructions = ?, provider = ?, model = ?, \
          updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ? AND workspace_id = ?",
     )
     .bind(&edit.team_id)
@@ -106,6 +106,8 @@ pub async fn update<'e>(
     .bind(&edit.role)
     .bind(&edit.description)
     .bind(&edit.instructions)
+    .bind(&edit.provider)
+    .bind(&edit.model)
     .bind(id)
     .bind(workspace_id)
     .execute(executor)
@@ -235,7 +237,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn updates_the_editable_fields_and_keeps_the_engine() {
+    async fn updates_the_editable_fields_including_the_engine() {
         let (pool, _dir) = open_for_test().await;
         for sql in [
             "INSERT INTO workspaces VALUES ('w1', 'A', 'x', 'x')",
@@ -250,6 +252,8 @@ mod tests {
             role: "Developer".into(),
             description: "Writes code".into(),
             instructions: "Be careful".into(),
+            provider: "anthropic".into(),
+            model: "claude-haiku-5-5".into(),
         };
 
         assert!(update(&pool, "w1", "a1", &edit).await.unwrap());
@@ -261,7 +265,7 @@ mod tests {
         assert_eq!(agent.template_key.as_deref(), Some("qa_engineer"));
         assert_eq!(
             (agent.provider.as_str(), agent.model.as_str()),
-            ("openai", "gpt")
+            ("anthropic", "claude-haiku-5-5")
         );
     }
 
@@ -281,6 +285,8 @@ mod tests {
             role: "QA".into(),
             description: String::new(),
             instructions: String::new(),
+            provider: "openai".into(),
+            model: "gpt".into(),
         };
 
         assert_eq!(get(&pool, "w1", "a2").await.unwrap(), None);

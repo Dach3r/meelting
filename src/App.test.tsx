@@ -745,7 +745,7 @@ describe("workspace shell", () => {
 
       await openEditor(user);
       expect(invokeMock).toHaveBeenCalledWith("get_agent", { agentId: "a1" });
-      expect(screen.queryByRole("tab", { name: "Model" })).not.toBeInTheDocument();
+      expect(screen.getByRole("tab", { name: "Model" })).toBeInTheDocument();
       expect(screen.getByRole("button", { name: "Save changes" })).toBeDisabled();
       await user.clear(screen.getByLabelText("Name"));
       await user.type(screen.getByLabelText("Name"), "Bea");
@@ -761,12 +761,56 @@ describe("workspace shell", () => {
           role: "Software Developer",
           description: "Writes code",
           instructions: "Be careful",
+          provider: "openai",
+          model: "gpt-5",
         },
       });
       expect(await screen.findByRole("button", { name: "Bea" })).toBeInTheDocument();
       expect(screen.getByRole("dialog", { name: "Edit agent \u00b7 Ana" })).toBeInTheDocument();
       await user.click(screen.getByRole("tab", { name: "Instructions" }));
       expect(screen.getByRole("textbox", { name: "Instructions" })).toHaveValue("Be careful");
+    });
+
+    it("changes the provider and model only when the user picks another one", async () => {
+      mockEditing();
+      const user = userEvent.setup();
+      render(<App />);
+
+      const dialog = await openEditor(user);
+      await user.click(within(dialog).getByRole("tab", { name: "Model" }));
+      expect(within(dialog).getByRole("button", { name: "Save changes" })).toBeDisabled();
+      await user.click(within(dialog).getByRole("option", { name: "claude-opus-5-5" }));
+      await user.click(within(dialog).getByRole("button", { name: "Save changes" }));
+
+      expect(invokeMock).toHaveBeenCalledWith("update_agent", {
+        agentId: "a1",
+        edit: {
+          team_id: "t1",
+          name: "Ana",
+          role: "Software Developer",
+          description: "Writes code",
+          instructions: "Be careful",
+          provider: "anthropic",
+          model: "claude-opus-5-5",
+        },
+      });
+    });
+
+    it("warns when the agent's model is no longer in the catalog", async () => {
+      invokeMock.mockImplementation(async (command) => {
+        if (command === "list_teams") return teams;
+        if (command === "list_agent_roles") return roles;
+        if (command === "list_llm_providers") return providers;
+        if (command === "get_agent") return { ...detail, model: "gpt-4-retired" };
+        return session({ locale: "en" });
+      });
+      const user = userEvent.setup();
+      render(<App />);
+
+      const dialog = await openEditor(user);
+      await user.click(within(dialog).getByRole("tab", { name: "Model" }));
+
+      expect(within(dialog).getByRole("alert")).toHaveTextContent("This model is no longer in the catalog.");
     });
 
     it("shows the current team and each team with its agent count", async () => {

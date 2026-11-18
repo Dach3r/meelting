@@ -1,4 +1,4 @@
-use crate::catalogs::agent_roles;
+use crate::catalogs::{agent_roles, llm};
 use crate::domain::team::{AgentEdit, Team};
 use crate::repositories::{agents, canvas_positions, teams};
 use crate::services::session_load::{self, SessionError};
@@ -22,6 +22,10 @@ pub async fn run(
     let current = agents::get(&mut *transaction, &workspace_id, agent_id)
         .await?
         .ok_or(SessionError::AgentNotFound)?;
+    let engine_changed = current.provider != edit.provider || current.model != edit.model;
+    if engine_changed && !llm::exists(&edit.provider, &edit.model) {
+        return Err(SessionError::InvalidAgent);
+    }
     agents::update(&mut *transaction, &workspace_id, agent_id, &edit)
         .await
         .map_err(|error| match error.as_database_error() {
@@ -70,6 +74,8 @@ mod tests {
             role: "Software Developer".into(),
             description: "Writes code".into(),
             instructions: "Be careful".into(),
+            provider: "anthropic".into(),
+            model: "claude-sonnet-5-5".into(),
         }
     }
 
@@ -148,5 +154,109 @@ mod tests {
             run(&pool, &agent_id, edit(&team_id)).await,
             Err(SessionError::TeamNotFound)
         ));
+    }
+
+    #[tokio::test]
+    async fn changes_the_provider_and_model_to_another_pair_of_the_catalog() {
+        let (pool, _dir) = open_for_test().await;
+        let (agent_id, team_id, _) = setup(&pool).await;
+        let mut local = edit(&team_id);
+        local.provider = "ollama".into();
+        local.model = "qwen2.5:0.5b".into();
+
+        run(&pool, &agent_id, local).await.unwrap();
+
+        let workspace_id = session_load::require(&pool)
+            .await
+            .unwrap()
+            .current_workspace_id;
+        let agent = agents::get(&pool, &workspace_id, &agent_id)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            (agent.provider.as_str(), agent.model.as_str()),
+            ("ollama", "qwen2.5:0.5b")
+        );
+    }
+
+    #[tokio::test]
+    async fn rejects_a_new_pair_outside_the_catalog() {
+        let (pool, _dir) = open_for_test().await;
+        let (agent_id, team_id, _) = setup(&pool).await;
+        let mut retired = edit(&team_id);
+        retired.provider = "openai".into();
+        retired.model = "gpt-5".into();
+        let mut mismatched = edit(&team_id);
+        mismatched.model = "gpt-6.1-sol".into();
+
+        assert!(matches!(
+            run(&pool, &agent_id, retired).await,
+            Err(SessionError::InvalidAgent)
+        ));
+        assert!(matches!(
+            run(&pool, &agent_id, mismatched).await,
+            Err(SessionError::InvalidAgent)
+        ));
+    }
+
+    #[tokio::test]
+    async fn an_agent_on_a_retired_model_stays_editable_and_can_move_to_a_current_one() {
+        let (pool, _dir) = open_for_test().await;
+        let (agent_id, team_id, _) = setup(&pool).await;
+        sqlx::query("UPDATE agents SET provider = 'openai', model = 'gpt-5'")
+            .execute(&pool)
+            .await
+            .unwrap();
+        let mut rename = edit(&team_id);
+        rename.provider = "openai".into();
+        rename.model = "gpt-5".into();
+
+        run(&pool, &agent_id, rename).await.unwrap();
+        let mut upgrade = edit(&team_id);
+        upgrade.provider = "openai".into();
+        upgrade.model = "gpt-6.1-sol".into();
+        run(&pool, &agent_id, upgrade).await.unwrap();
+
+        let model: String = sqlx::query_scalar("SELECT model FROM agents")
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+        assert_eq!(model, "gpt-6.1-sol");
+    }
+
+    #[tokio::test]
+    async fn existing_runs_keep_the_provider_and_model_they_copied() {
+        let (pool, _dir) = open_for_test().await;
+        let (agent_id, team_id, _) = setup(&pool).await;
+        let room = crate::services::room_create::run(&pool, "Daily", vec![agent_id.clone()])
+            .await
+            .unwrap();
+        let request = crate::services::message_send::run(&pool, &room.id, "hola")
+            .await
+            .unwrap();
+        sqlx::query(
+            "INSERT INTO agent_runs (id, room_id, agent_id, request_message_id, client_request_id, status, attempts, provider, model, created_at) \
+             VALUES ('run1', ?, ?, ?, '0196f3a0-0000-7000-8000-000000000001', 'queued', 0, 'anthropic', 'claude-sonnet-5-5', ?)",
+        )
+        .bind(&room.id)
+        .bind(&agent_id)
+        .bind(&request.id)
+        .bind(&request.created_at)
+        .execute(&pool)
+        .await
+        .unwrap();
+        let mut local = edit(&team_id);
+        local.provider = "ollama".into();
+        local.model = "qwen2.5:0.5b".into();
+
+        run(&pool, &agent_id, local).await.unwrap();
+
+        let copied: (String, String) =
+            sqlx::query_as("SELECT provider, model FROM agent_runs WHERE id = 'run1'")
+                .fetch_one(&pool)
+                .await
+                .unwrap();
+        assert_eq!(copied, ("anthropic".into(), "claude-sonnet-5-5".into()));
     }
 }

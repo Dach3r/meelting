@@ -47,7 +47,7 @@ src-tauri/src/
 │   ├── team_create.rs     ✅ crea un equipo y devuelve la lista actualizada
 │   ├── agent_create.rs    ✅ valida y crea un agente (personalizado o desde plantilla) y devuelve la lista actualizada
 │   ├── agent_get.rs       ✅ detalle completo de un agente del workspace actual
-│   ├── agent_update.rs    ✅ valida y edita nombre, rol, descripción, instrucciones y equipo de un agente
+│   ├── agent_update.rs    ✅ valida y edita nombre, rol, descripción, instrucciones, equipo, proveedor y modelo de un agente (el par se valida contra el catálogo solo si cambia)
 │   ├── agent_delete.rs    ✅ elimina un agente del workspace actual y devuelve la lista actualizada; con mensajes o ejecuciones falla con agent_has_activity
 │   ├── rooms_list.rs      ✅ salas del workspace actual por actividad reciente, con sus agentes y los últimos 3 mensajes de la primera
 │   ├── room_create.rs     ✅ valida el nombre, deduplica los agentes y crea la sala con sus participantes en una transacción
@@ -152,7 +152,7 @@ src/
 ├── test/setup.ts          Configuración de Vitest (jest-dom)
 └── components/            Atomic design (overview.md §8)
     ├── atoms/             Avatar, Button, CardSelect, Field, Icons, Logo
-    ├── molecules/         AgentPicker, AgentRunStatus, AgentTemplateDetail, Alert, ChatMessage, IslandMenu, LocaleSwitcher, MessageComposer, Modal, NavItem, OrgAgentCard, OrgCard, OrgDrawer, OrgNode, ParticipantTile, RoomCard, RoomForm, SegmentedControl, SettingsRow, SwitchingOverlay, TeamForm, TeamPicker, ThemeSwitcher, WorkspaceSwitcher, ZoomControls
+    ├── molecules/         AgentPicker, AgentRunStatus, AgentTemplateDetail, Alert, ChatMessage, EnginePicker, IslandMenu, LocaleSwitcher, MessageComposer, Modal, NavItem, OrgAgentCard, OrgCard, OrgDrawer, OrgNode, ParticipantTile, RoomCard, RoomForm, SegmentedControl, SettingsRow, SwitchingOverlay, TeamForm, TeamPicker, ThemeSwitcher, WorkspaceSwitcher, ZoomControls
     ├── organisms/         AgentCatalogPage, AgentEditForm, AgentForm, FeaturedRoom, NewWorkspacePage, OrgChart, Rail, RoomChat, RoomView, RoomsPage, SettingsPage, TeamsPage, Topbar; authorName.ts resuelve el autor de un mensaje
     └── templates/         Workspace (riel + topbar + contenido)
 ```

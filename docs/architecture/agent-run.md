@@ -399,7 +399,7 @@ Todos los datos de esta sección se contrastaron el 2026-11-18 con la documentac
 | `gpt-6.1-sol`, `gpt-6.1-terra` | 128 000, incluido el razonamiento | [deprecations](https://developers.openai.com/api/docs/deprecations) (reemplazos de `gpt-5` y `gpt-5-mini`) | Activos |
 | `openai/gpt-oss-120b` | 65 536 | [deprecations](https://console.groq.com/docs/deprecations) (reemplazo de `llama-3.3-70b-versatile`) | Activo |
 
-**Modelos retirados (A8b, aprobada).** `gpt-5` y `gpt-5-mini` (se apagan el 2026-12-11) y `llama-3.3-70b-versatile` (apagado en planes no empresariales) salen del catálogo para las selecciones nuevas, sustituidos por `gpt-6.1-sol`, `gpt-6.1-terra` y `openai/gpt-oss-120b`. Los agentes existentes **no se modifican**: conservan su proveedor y su modelo, y como el modelo ya no está en el catálogo su ejecución falla con `model_unavailable` sin llamar al proveedor. Nunca hay sustitución automática de modelo. Permitir que el usuario cambie explícitamente el proveedor y el modelo de un agente (D12) es una entrega pequeña e independiente, separada del motor.
+**Modelos retirados (A8b, aprobada).** `gpt-5` y `gpt-5-mini` (se apagan el 2026-12-11) y `llama-3.3-70b-versatile` (apagado en planes no empresariales) salen del catálogo para las selecciones nuevas, sustituidos por `gpt-6.1-sol`, `gpt-6.1-terra` y `openai/gpt-oss-120b`. Los agentes existentes **no se modifican**: conservan su proveedor y su modelo, y como el modelo ya no está en el catálogo su ejecución falla con `model_unavailable` sin llamar al proveedor. Nunca hay sustitución automática de modelo. El usuario puede cambiar explícitamente el proveedor y el modelo de un agente en su edición (D18, entrega separada del motor).
 
 ### 9.3 Protocolos (verificados)
 
