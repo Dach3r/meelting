@@ -66,10 +66,10 @@ export function AgentForm({ team, busy, errorMessage, onSubmit, onCancel }: Prop
             <li
               key={key}
               aria-current={index === step ? "step" : undefined}
-              className={`flex items-center gap-3 rounded-2xl p-3 ${index === step ? "bg-raised" : ""}`}
+              className={`flex items-center gap-3 rounded-2xl p-3 ${index === step ? "bg-hi" : ""}`}
             >
               <span
-                className={`grid size-7 shrink-0 place-items-center rounded-full text-xs font-semibold ${index === step ? "bg-ink text-surface" : index < step ? "bg-hi text-ink" : "border border-line text-muted"}`}
+                className={`grid size-7 shrink-0 place-items-center rounded-full text-xs font-semibold ${index === step ? "bg-ink text-surface" : index < step ? "bg-hi text-ink" : "border border-muted text-muted"}`}
               >
                 {index + 1}
               </span>
