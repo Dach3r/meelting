@@ -206,13 +206,29 @@ describe("workspace shell", () => {
     localStorage.clear();
   });
 
-  it("marks only Teams as the current page and the rest as coming soon", async () => {
+  it("marks only Teams as the current page and the unbuilt sections as coming soon", async () => {
     mockCore(session({ locale: "en" }));
     render(<App />);
 
     const nav = within(await screen.findByRole("navigation", { name: "Main navigation" }));
     expect(nav.getByText("Teams").closest("[aria-current]")).toHaveAttribute("aria-current", "page");
-    expect(nav.getByText("Rooms").closest("[aria-disabled]")).toHaveAttribute("aria-disabled", "true");
+    expect(nav.getByRole("button", { name: "Rooms" })).not.toHaveAttribute("aria-current");
+    expect(nav.getByText("Tasks").closest("[aria-disabled]")).toHaveAttribute("aria-disabled", "true");
+  });
+
+  it("opens the rooms of the workspace from the rail", async () => {
+    invokeMock.mockImplementation(async (command) => {
+      if (command === "list_teams") return [];
+      if (command === "list_rooms") return { rooms: [], featured_messages: [] };
+      return session({ locale: "en" });
+    });
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "Rooms" }));
+
+    expect(await screen.findByText("No rooms yet")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Rooms" })).toHaveAttribute("aria-current", "page");
   });
 
   it("lists the teams of the workspace with their agents", async () => {

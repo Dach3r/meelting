@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import en from "./en.json";
 import es from "./es.json";
-import { translate, translateError } from "./translate";
+import { formatAgentCount, translate, translateError } from "./translate";
 
 function keys(node: unknown, prefix = ""): string[] {
   return Object.entries(node as Record<string, unknown>).flatMap(
@@ -27,6 +27,12 @@ describe("translate", () => {
       "Escribe un nombre de hasta 80 caracteres.",
     );
     expect(translateError("en", "weird")).toBe(translate("en", "errors.unknown"));
+  });
+
+  it("counts the agents of a room in words", () => {
+    expect(formatAgentCount("en", 0)).toBe("No agents");
+    expect(formatAgentCount("es", 1)).toBe("1 agente");
+    expect(formatAgentCount("en", 3)).toBe("3 agents");
   });
 
   it("has the same keys in both languages", () => {

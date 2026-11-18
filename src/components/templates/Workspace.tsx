@@ -6,6 +6,7 @@ import type { WorkspaceSwitcherProps } from "../molecules/WorkspaceSwitcher";
 import { SwitchingOverlay } from "../molecules/SwitchingOverlay";
 import { AgentCatalogPage } from "../organisms/AgentCatalogPage";
 import { Rail, type View } from "../organisms/Rail";
+import { RoomsPage } from "../organisms/RoomsPage";
 import { SettingsPage } from "../organisms/SettingsPage";
 import { TeamsPage } from "../organisms/TeamsPage";
 import { Topbar } from "../organisms/Topbar";
@@ -117,6 +118,8 @@ export function Workspace({
                   onChangeLocale={onChangeLocale}
                   onChangeTheme={onChangeTheme}
                 />
+              ) : view === "rooms" ? (
+                <RoomsPage key={props.currentId} agents={teams.flatMap((team) => team.agents)} />
               ) : catalogTeam ? (
                 <AgentCatalogPage
                   team={catalogTeam}

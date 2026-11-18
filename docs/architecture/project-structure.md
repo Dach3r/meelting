@@ -128,17 +128,19 @@ src/
 ├── styles.css             Tailwind v4, tokens Grafito (@theme) con light-dark() y `html[data-theme]` para forzar claro u oscuro (por defecto sigue al sistema), fuentes Inter y Rubik, y las clases de disposición del organigrama (org-*)
 ├── App.tsx                Elige entre la página de nuevo workspace (primer arranque o «crear otro») y el shell según la sesión
 ├── assets/fonts/          Inter y Rubik (woff2)
-├── i18n/                  es.json, en.json, translate.ts (texto y errores) e I18nProvider
+├── i18n/                  es.json, en.json, translate.ts (texto, errores, fecha y número de agentes) e I18nProvider
 ├── hooks/                 Acceso al núcleo y estado asociado
 │   ├── useSession.ts      ✅ invoke load_session, complete_first_launch, create_workspace, switch_workspace, change_locale, change_theme
 │   ├── useTeams.ts        ✅ invoke list_teams, create_team, create_agent, get_agent, update_agent, delete_agent, save_canvas_positions (con debounce de 500 ms), reset_canvas_positions
+│   ├── useRooms.ts        ✅ invoke list_rooms, create_room, delete_room
+│   ├── useRoom.ts         ✅ invoke get_room, send_message y listen message:created (sin duplicar por id)
 │   ├── useAgentTemplates.ts ✅ invoke list_agent_templates (recarga al cambiar el idioma)
 │   └── useAgentRoles.ts   ✅ invoke list_agent_roles
 ├── test/setup.ts          Configuración de Vitest (jest-dom)
 └── components/            Atomic design (overview.md §8)
     ├── atoms/             Avatar, Button, CardSelect, Field, Icons, Logo
-    ├── molecules/         AgentTemplateDetail, Alert, IslandMenu, LocaleSwitcher, Modal, NavItem, OrgAgentCard, OrgCard, OrgDrawer, OrgNode, SegmentedControl, SettingsRow, SwitchingOverlay, TeamForm, TeamPicker, ThemeSwitcher, WorkspaceSwitcher, ZoomControls
-    ├── organisms/         AgentCatalogPage, AgentEditForm, AgentForm, NewWorkspacePage, OrgChart, Rail, SettingsPage, TeamsPage, Topbar
+    ├── molecules/         AgentPicker, AgentTemplateDetail, Alert, ChatMessage, IslandMenu, LocaleSwitcher, MessageComposer, Modal, NavItem, OrgAgentCard, OrgCard, OrgDrawer, OrgNode, ParticipantTile, RoomCard, RoomForm, SegmentedControl, SettingsRow, SwitchingOverlay, TeamForm, TeamPicker, ThemeSwitcher, WorkspaceSwitcher, ZoomControls
+    ├── organisms/         AgentCatalogPage, AgentEditForm, AgentForm, FeaturedRoom, NewWorkspacePage, OrgChart, Rail, RoomChat, RoomView, RoomsPage, SettingsPage, TeamsPage, Topbar; authorName.ts resuelve el autor de un mensaje
     └── templates/         Workspace (riel + topbar + contenido)
 ```
 
@@ -148,7 +150,7 @@ src/
 | `hooks/` | Único lugar que llama a `invoke` o `listen`. Un hook por caso de uso, nombrado `use<Verbo><Objeto>` |
 | `App.tsx` | Compone organismos o templates; sin lógica |
 
-Los tests con Vitest viven junto al código (`App.test.tsx`, `translate.test.ts`). Los spikes de Fase 0 que tenían interfaz (`run_in_worktree`, `stream_completion`) conservan su comando y servicio en el núcleo, pero ya no tienen pantalla; la interfaz definitiva llega con las fases 3 y 4.
+Los tests con Vitest viven junto al código (`App.test.tsx`, `translate.test.ts`, `RoomsPage.test.tsx`). Los spikes de Fase 0 que tenían interfaz (`run_in_worktree`, `stream_completion`) conservan su comando y servicio en el núcleo, pero ya no tienen pantalla; la interfaz definitiva llega con las fases 3 y 4.
 
 ## Dónde poner lo nuevo
 

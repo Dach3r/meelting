@@ -20,3 +20,13 @@ export function translateError(locale: Locale, code: string): string {
   const text = translate(locale, key);
   return text === key ? translate(locale, "errors.unknown") : text;
 }
+
+export function formatDateTime(locale: Locale, iso: string): string {
+  return new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(new Date(iso));
+}
+
+export function formatAgentCount(locale: Locale, count: number): string {
+  if (count === 0) return translate(locale, "rooms.agentsNone");
+  if (count === 1) return translate(locale, "rooms.agentsOne");
+  return translate(locale, "rooms.agentsMany").replace("{count}", String(count));
+}
