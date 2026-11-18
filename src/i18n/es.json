@@ -236,7 +236,16 @@
   "agentRun": {
     "askLabel": "Pedir a",
     "nobody": "Nadie, solo un mensaje",
+    "auto": "Según el mensaje",
     "busy": "{agent} todavía está trabajando en una solicitud.",
+    "mentions": "Agentes de la sala",
+    "preview": {
+      "agent": "Responderá {agent}.",
+      "nobody": "Nadie responderá: se guardará como mensaje. Menciona a un agente con @ para preguntarle.",
+      "ambiguous": "Varios agentes coinciden con ese nombre: al enviar podrás elegir.",
+      "several": "Mencionaste a varios agentes: al enviar tendrás que elegir uno.",
+      "conflict": "La mención no coincide con el agente elegido: al enviar podrás aclararlo."
+    },
     "queued": "Esperando a {agent}…",
     "retrying": "{agent} tuvo un problema temporal. Reintentando (intento {attempt} de 3)…",
     "running": "{agent} está trabajando…",

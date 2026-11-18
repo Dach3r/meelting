@@ -79,7 +79,7 @@ export function RoomChat({ room, messages, runs, providers, sending, errorMessag
         </ol>
       )}
       {errorMessage && <Alert message={errorMessage} />}
-      <MessageComposer agents={room.agents} busyAgentIds={busyAgentIds} sending={sending} onSend={onSend} />
+      <MessageComposer roomId={room.id} agents={room.agents} busyAgentIds={busyAgentIds} sending={sending} onSend={onSend} />
     </section>
   );
 }

@@ -1,7 +1,8 @@
-use crate::domain::recipient::Selection;
+use crate::domain::recipient::{Resolution, Selection};
 use crate::services::agent_run_cancel;
 use crate::services::agent_run_engine::{Emit, Engine, RunEvent};
 use crate::services::intervention_send::{self, Intervention, InterventionSent};
+use crate::services::recipient_resolve;
 use crate::services::session_load::SessionError;
 use std::sync::Arc;
 use tauri::{AppHandle, Emitter, State};
@@ -36,6 +37,17 @@ pub async fn send_intervention(
         },
     )
     .await
+}
+
+#[tauri::command]
+pub async fn resolve_recipient(
+    engine: State<'_, Arc<Engine>>,
+    room_id: String,
+    body: String,
+    selection: Selection,
+    mention_ids: Vec<String>,
+) -> Result<Resolution, SessionError> {
+    recipient_resolve::run(&engine.pool, &room_id, &body, &selection, &mention_ids).await
 }
 
 #[tauri::command]

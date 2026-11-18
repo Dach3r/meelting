@@ -13,6 +13,8 @@ Conversación dirigida por texto (decisiones D19–D23 en [decisions.md](../prod
   - Vocativo: de una a cuatro palabras antes de la primera `,` o `:`, que deben coincidir por completo. Solo se usa si no hay menciones.
   - `mention_ids`: los agentes elegidos en el autocompletado. Solo desambiguan una mención que ya coincide; un id ajeno a la sala no resuelve nada.
 - **Respuesta:** `{outcome: "sent", message, run|null, partial}` o `{outcome: "choose", reason, candidates}`. `reason` puede ser `ambiguous` (un nombre coincide con varios agentes), `several` (varios agentes distintos, D20) o `conflict` (agente elegido frente a una mención a otro). Con `choose` no se guarda nada, no se emite ningún evento y la UI pide elegir. La elección se reenvía como `confirmed`.
+- **Vista previa:** `resolve_recipient` (mismos argumentos, sin `client_request_id`) aplica las mismas reglas sin guardar nada. La UI la pide 150 ms después del último cambio del borrador. Es IPC local, sin llamadas de red.
+- **Compositor:** el selector «Pedir a» ofrece «Según el mensaje» (por defecto), «Nadie» y los agentes de la sala. Al escribir `@` aparecen los participantes (nombre y rol, filtrados por cualquiera de los dos), que se recorren con ↑↓ y se eligen con Enter o Tab; Esc cierra la lista. Bajo el texto se indica quién responderá, que nadie lo hará o qué habrá que aclarar, y si el agente resuelto está ocupado se desactiva el envío.
 - **Agentes como autores:** la resolución solo se aplica a la intervención del usuario. Las menciones escritas por un agente nunca crean ejecuciones.
 
 ## 1. Principio de diseño

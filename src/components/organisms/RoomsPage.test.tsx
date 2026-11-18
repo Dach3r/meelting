@@ -33,8 +33,8 @@ function plain(sent: Message) {
   return { outcome: "sent", message: sent, run: null, partial: null };
 }
 
-function nobody(body: string) {
-  return { roomId: "r1", body, selection: { kind: "nobody" }, mentionIds: [], clientRequestId: expect.any(String) };
+function automatic(body: string) {
+  return { roomId: "r1", body, selection: { kind: "auto" }, mentionIds: [], clientRequestId: expect.any(String) };
 }
 
 const handlers = new Map<string, EventCallback<unknown>>();
@@ -204,7 +204,7 @@ describe("inside a room", () => {
     expect(participants.getByText("You")).toBeInTheDocument();
     expect(participants.getByText("Ana")).toBeInTheDocument();
     expect(participants.getByText("QA Engineer")).toBeInTheDocument();
-    expect(screen.getByRole("combobox", { name: "Ask" })).toHaveDisplayValue("No one, just a message");
+    expect(screen.getByRole("combobox", { name: "Ask" })).toHaveDisplayValue("From the message");
   });
 
   it("sends a message with Enter and shows it once even when its event also arrives", async () => {
@@ -214,7 +214,7 @@ describe("inside a room", () => {
     await user.type(screen.getByLabelText("Message"), "Let's start{Enter}");
     act(() => emit({ event: "message:created", id: 1, payload: sent }));
 
-    expect(invokeMock).toHaveBeenCalledWith("send_intervention", nobody("Let's start"));
+    expect(invokeMock).toHaveBeenCalledWith("send_intervention", automatic("Let's start"));
     expect(screen.getAllByText("Let's start")).toHaveLength(1);
     expect(screen.getByLabelText("Message")).toHaveValue("");
   });
@@ -297,7 +297,7 @@ describe("inside a room", () => {
     expect(screen.getByLabelText("Message")).not.toHaveAttribute("aria-invalid", "true");
     await user.click(send);
 
-    expect(invokeMock).toHaveBeenCalledWith("send_intervention", nobody(`  ${"😀".repeat(4000)}\n`));
+    expect(invokeMock).toHaveBeenCalledWith("send_intervention", automatic(`  ${"😀".repeat(4000)}\n`));
   });
 
   it("deletes the room after confirming and goes back to the list", async () => {

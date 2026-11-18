@@ -132,7 +132,7 @@ async fn store(
     {
         Resolution::Nobody => return Ok(Stored::Nobody),
         Resolution::Choose { reason, candidates } => return Ok(Stored::Choose(reason, candidates)),
-        Resolution::Agent(agent_id) => agent_id,
+        Resolution::Agent { agent_id } => agent_id,
     };
     if agent_runs::has_active(&mut *transaction, room_id, &agent_id).await? {
         return Err(SessionError::AgentBusy);

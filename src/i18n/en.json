@@ -236,7 +236,16 @@
   "agentRun": {
     "askLabel": "Ask",
     "nobody": "No one, just a message",
+    "auto": "From the message",
     "busy": "{agent} is still working on a request.",
+    "mentions": "Agents in the room",
+    "preview": {
+      "agent": "{agent} will reply.",
+      "nobody": "Nobody will reply: it will be saved as a message. Mention an agent with @ to ask them.",
+      "ambiguous": "Several agents match that name: you can pick one when sending.",
+      "several": "You mentioned several agents: you'll pick one when sending.",
+      "conflict": "The mention doesn't match the chosen agent: you can settle it when sending."
+    },
     "queued": "Waiting for {agent}…",
     "retrying": "{agent} hit a temporary problem. Retrying (attempt {attempt} of 3)…",
     "running": "{agent} is working…",

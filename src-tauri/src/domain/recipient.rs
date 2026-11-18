@@ -22,10 +22,13 @@ pub enum ChoiceReason {
     Conflict,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
 pub enum Resolution {
     Nobody,
-    Agent(String),
+    Agent {
+        agent_id: String,
+    },
     Choose {
         reason: ChoiceReason,
         candidates: Vec<String>,
@@ -44,11 +47,15 @@ pub fn resolve(
     let participates = |id: &str| participants.iter().any(|participant| participant.id == id);
     match selection {
         Selection::Nobody => Ok(Resolution::Nobody),
-        Selection::Confirmed(id) if participates(id) => Ok(Resolution::Agent(id.clone())),
+        Selection::Confirmed(id) if participates(id) => Ok(Resolution::Agent {
+            agent_id: id.clone(),
+        }),
         Selection::Agent(id) if participates(id) => {
             let references = references(body, mention_ids, participants);
             if references.iter().all(|candidates| candidates.contains(id)) {
-                return Ok(Resolution::Agent(id.clone()));
+                return Ok(Resolution::Agent {
+                    agent_id: id.clone(),
+                });
             }
             let mut candidates = vec![id.clone()];
             candidates.extend(distinct(&references));
@@ -63,9 +70,9 @@ pub fn resolve(
             let candidates = ordered(distinct(&references), participants);
             Ok(match candidates.as_slice() {
                 [] => Resolution::Nobody,
-                [only] if references.iter().all(|found| found.len() == 1) => {
-                    Resolution::Agent(only.clone())
-                }
+                [only] if references.iter().all(|found| found.len() == 1) => Resolution::Agent {
+                    agent_id: only.clone(),
+                },
                 _ => Resolution::Choose {
                     reason: if references.iter().all(|found| found.len() == 1) {
                         ChoiceReason::Several
@@ -214,7 +221,9 @@ mod tests {
     }
 
     fn agent(id: &str) -> Resolution {
-        Resolution::Agent(id.into())
+        Resolution::Agent {
+            agent_id: id.into(),
+        }
     }
 
     fn choose(reason: ChoiceReason, candidates: &[&str]) -> Resolution {
@@ -357,6 +366,23 @@ mod tests {
                 &room()
             ),
             Ok(agent("be"))
+        );
+    }
+
+    #[test]
+    fn the_resolution_is_written_for_the_ui() {
+        let json = |resolution: Resolution| serde_json::to_value(resolution).unwrap();
+        assert_eq!(
+            json(Resolution::Nobody),
+            serde_json::json!({ "kind": "nobody" })
+        );
+        assert_eq!(
+            json(agent("be")),
+            serde_json::json!({ "kind": "agent", "agent_id": "be" })
+        );
+        assert_eq!(
+            json(choose(ChoiceReason::Several, &["be", "qa"])),
+            serde_json::json!({ "kind": "choose", "reason": "several", "candidates": ["be", "qa"] })
         );
     }
 

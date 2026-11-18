@@ -135,14 +135,20 @@ describe("asking an agent", () => {
     expect(within(screen.getByRole("region", { name: "Participants" })).getByText("Thinking…")).toBeInTheDocument();
   });
 
-  it("an empty «Ask» still sends a plain message", async () => {
-    core({ get_room: () => detail(), send_intervention: () => sent(message("m1", "Hello"), null) });
+  it("sends from the message by default and lets you choose nobody explicitly", async () => {
+    core({ get_room: () => detail(), resolve_recipient: () => ({ kind: "nobody" }), send_intervention: () => sent(message("m1", "Hello"), null) });
     const user = userEvent.setup();
     await renderRoom();
 
     await user.type(screen.getByLabelText("Message"), "Hello{Enter}");
+    await user.selectOptions(screen.getByRole("combobox", { name: "Ask" }), "No one, just a message");
+    await user.type(screen.getByLabelText("Message"), "@Ana just a note{Enter}");
 
-    expect(invokeMock).toHaveBeenCalledWith("send_intervention", expect.objectContaining({ body: "Hello", selection: { kind: "nobody" } }));
+    const calls = invokeMock.mock.calls.filter(([command]) => command === "send_intervention").map(([, args]) => args);
+    expect(calls).toEqual([
+      expect.objectContaining({ body: "Hello", selection: { kind: "auto" }, mentionIds: [] }),
+      expect.objectContaining({ body: "@Ana just a note", selection: { kind: "nobody" } }),
+    ]);
   });
 
   it("retries a failed invocation with the same id and uses a new id for the next instruction", async () => {
@@ -241,6 +247,88 @@ describe("asking an agent", () => {
     await ask(user, "Ana · QA Engineer", "Second");
 
     expect(screen.getByText("Ana is still working on a request.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Send" })).toBeDisabled();
+  });
+});
+
+describe("mentioning an agent", () => {
+  it("suggests only this room's agents by name or role and inserts the chosen one with the keyboard", async () => {
+    core({ get_room: () => detail(), resolve_recipient: () => ({ kind: "agent", agent_id: "a2" }), send_intervention: () => sent(message("m1", "@Bob how?"), run("queued", 0, { agent_id: "a2" })) });
+    const user = userEvent.setup();
+    await renderRoom();
+    const field = screen.getByRole("combobox", { name: "Message" });
+
+    await user.type(field, "@");
+    const list = screen.getByRole("listbox", { name: "Agents in the room" });
+    expect(within(list).getAllByRole("option").map((option) => option.textContent)).toEqual(["AAnaQA Engineer", "BBobDeveloper"]);
+    await user.type(field, "dev");
+    expect(within(list).getAllByRole("option")).toHaveLength(1);
+    await user.keyboard("{Enter}");
+    expect(field).toHaveValue("@Bob ");
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+    await user.type(field, "how?");
+    expect(await screen.findByText("Bob will reply.")).toBeInTheDocument();
+    await user.keyboard("{Enter}");
+
+    expect(invokeMock).toHaveBeenCalledWith("resolve_recipient", { roomId: "r1", body: "@Bob how?", selection: { kind: "auto" }, mentionIds: ["a2"] });
+    expect(invokeMock).toHaveBeenCalledWith(
+      "send_intervention",
+      expect.objectContaining({ body: "@Bob how?", selection: { kind: "auto" }, mentionIds: ["a2"] }),
+    );
+  });
+
+  it("moves through suggestions with the arrows and closes them with Escape", async () => {
+    core({ get_room: () => detail(), resolve_recipient: () => ({ kind: "nobody" }) });
+    const user = userEvent.setup();
+    await renderRoom();
+    const field = screen.getByRole("combobox", { name: "Message" });
+
+    await user.type(field, "Hi @");
+    await user.keyboard("{ArrowDown}");
+    expect(screen.getByRole("option", { name: /Bob/, selected: true })).toBeInTheDocument();
+    await user.keyboard("{ArrowDown}");
+    expect(screen.getByRole("option", { name: /Ana/, selected: true })).toBeInTheDocument();
+    await user.keyboard("{Escape}");
+
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+    expect(field).toHaveValue("Hi @");
+  });
+
+  it("forgets a chosen mention once its text is removed", async () => {
+    core({ get_room: () => detail(), resolve_recipient: () => ({ kind: "nobody" }), send_intervention: () => sent(message("m1", "x"), null) });
+    const user = userEvent.setup();
+    await renderRoom();
+    const field = screen.getByRole("combobox", { name: "Message" });
+
+    await user.type(field, "@a");
+    await user.keyboard("{Enter}");
+    await user.clear(field);
+    await user.type(field, "Plain text{Enter}");
+
+    expect(invokeMock).toHaveBeenLastCalledWith("send_intervention", expect.objectContaining({ body: "Plain text", mentionIds: [] }));
+  });
+
+  it("tells you who will reply, or why it must be settled, before sending", async () => {
+    let resolution: unknown = { kind: "nobody" };
+    core({ get_room: () => detail(), resolve_recipient: () => resolution });
+    const user = userEvent.setup();
+    await renderRoom();
+
+    await user.type(screen.getByLabelText("Message"), "Note");
+    expect(await screen.findByText("Nobody will reply: it will be saved as a message. Mention an agent with @ to ask them.")).toBeInTheDocument();
+    resolution = { kind: "choose", reason: "ambiguous", candidates: ["a1", "a2"] };
+    await user.type(screen.getByLabelText("Message"), "!");
+    expect(await screen.findByText("Several agents match that name: you can pick one when sending.")).toBeInTheDocument();
+  });
+
+  it("does not send to a busy agent resolved from the message", async () => {
+    core({ get_room: () => detail({ messages: [message("m1", "First")], runs: [run("running", 1)] }), resolve_recipient: () => ({ kind: "agent", agent_id: "a1" }) });
+    const user = userEvent.setup();
+    await renderRoom();
+
+    await user.type(screen.getByLabelText("Message"), "Ana, again");
+
+    expect(await screen.findByText("Ana is still working on a request.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Send" })).toBeDisabled();
   });
 });

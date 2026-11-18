@@ -17,6 +17,7 @@ pub mod llm_providers_list;
 pub mod local_models_detect;
 pub mod locale_change;
 pub mod message_send;
+pub mod recipient_resolve;
 pub mod room_create;
 pub mod room_delete;
 pub mod room_get;
