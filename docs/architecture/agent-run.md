@@ -1,6 +1,6 @@
 # AgentRun: propuesta técnica de la Fase 3
 
-> **Estado:** propuesta, **revisión 3**. Nada de este documento está implementado y ninguna migración está creada. La dirección arquitectónica y la mayoría de las decisiones están aprobadas (2026-11-18, ver §16). El SQL íntegro (A1, A13) y el YAML íntegro (A8) esperan su validación final antes de implementar. Producto: [agent-execution.md](../product/agent-execution.md). Decisiones: [decisions.md](../product/decisions.md). Relación con las reuniones: [conversation-engine.md](conversation-engine.md).
+> **Estado:** **aprobada** (revisión 3, aprobación final del 2026-11-18, ver §16 y D17 en [decisions.md](../product/decisions.md)). Implementación autorizada en tres entregas: núcleo y persistencia, ejecución real, interfaz. Este documento describe el diseño; lo que ya existe en el código se indica en [project-structure.md](project-structure.md). Producto: [agent-execution.md](../product/agent-execution.md). Decisiones: [decisions.md](../product/decisions.md). Relación con las reuniones: [conversation-engine.md](conversation-engine.md).
 >
 > **Existe hoy:** salas, participantes, mensajes del usuario y el evento `message:created`; el catálogo `llm.yml` (proveedores, ubicación, modelos y `base_url` de los locales); el keychain con `save_secret`, `secret_last_four` y `delete_secret`; el spike `stream_completion` (Chat Completions con SSE, sin reintentos ni persistencia y sin uso desde la UI).
 
@@ -156,8 +156,7 @@ En los pasos 1–6 no se guarda nada.
 - Si el usuario cambia el texto o el agente antes de que haya respuesta, es otro envío, con otro id.
 
 **Errores del comando:**
-- **Aprobados:** `client_request_conflict` y `agent_has_activity` (este último, de `delete_agent`).
-- **Propuestos:** `invalid_client_request_id` y `agent_busy`. `agent_busy` ya figuraba en las reglas de [agent-execution.md](../product/agent-execution.md), pero no existe en el código.
+- **Nuevos (aprobados):** `invalid_client_request_id`, `agent_busy`, `client_request_conflict` y `agent_has_activity` (este último, de `delete_agent`).
 - **Reutilizados:** `invalid_message`, `room_not_found` y `agent_not_found`.
 
 Todos son códigos estables con texto en `es`/`en`. Los errores de SQLite y los textos de los proveedores nunca llegan a la UI.
@@ -230,7 +229,7 @@ Condiciones:
    - un token cuenta solo si su `(attempt, seq)` es mayor que el último aplicado para esa ejecución;
    - un `attempt` mayor reinicia el texto;
    - se ignoran los `seq` repetidos y los tokens de ejecuciones en estado final;
-   - un `agent_run:status` con menos `attempts` que el conocido se ignora, y un estado final nunca se sustituye por uno no final;
+   - los `agent_run:status` se ordenan por su **posición lógica** en el ciclo de vida, calculada solo con `status` y `attempts` (sin columna nueva): `queued` con `attempts = n` vale `2n`, `running` con `attempts = n` vale `2n − 1` y un estado final vale más que cualquier otro. Así `running (1) → queued (1)` (reintento) queda ordenado aunque tengan el mismo intento: un `running (1)` tardío vale 1 y no sustituye a `queued (1)`, que vale 2. Un evento solo se aplica si su posición es mayor que la conocida; un estado final nunca se sustituye;
    - `message:created` sustituye el texto provisional y se deduplica por `id`.
 
 Tras reiniciar la app no hay nada que recuperar: el buffer desapareció y la ejecución quedó `expired`.
@@ -367,9 +366,9 @@ Todos los datos de esta sección se contrastaron el 2026-11-18 con la documentac
   protocol: openai_responses
   base_url: https://api.openai.com/v1
   models:
-    - key: gpt-5
+    - key: gpt-6.1-sol
       max_output_tokens: 128000
-    - key: gpt-5-mini
+    - key: gpt-6.1-terra
       max_output_tokens: 128000
 - key: groq
   name: Groq
@@ -378,8 +377,8 @@ Todos los datos de esta sección se contrastaron el 2026-11-18 con la documentac
   base_url: https://api.groq.com/openai/v1
   output_tokens_param: max_completion_tokens
   models:
-    - key: llama-3.3-70b-versatile
-      max_output_tokens: 32768
+    - key: openai/gpt-oss-120b
+      max_output_tokens: 65536
 - key: ollama
   name: Ollama
   location: local
@@ -397,13 +396,10 @@ Todos los datos de esta sección se contrastaron el 2026-11-18 con la documentac
 | Modelo | Máximo de salida | Fuente | Estado del modelo |
 |---|---|---|---|
 | `claude-sonnet-5-5`, `claude-opus-5-5`, `claude-haiku-5-5` | 128 000 (Messages API síncrona, sin cabeceras beta) | [Models overview](https://platform.claude.com/docs/en/about-claude/models/overview) | Activos; retirada no antes de septiembre u octubre de 2027 ([deprecations](https://platform.claude.com/docs/en/about-claude/model-deprecations)) |
-| `gpt-5`, `gpt-5-mini` | 128 000, incluido el razonamiento | [gpt-5](https://developers.openai.com/api/docs/models/gpt-5), [gpt-5-mini](https://developers.openai.com/api/docs/models/gpt-5-mini) | **Obsoletos; se apagan el 2026-12-11.** Reemplazos recomendados: `gpt-6.1-sol` y `gpt-6.1-terra` ([deprecations](https://developers.openai.com/api/docs/deprecations)) |
-| `llama-3.3-70b-versatile` | 32 768 (ventana de 131 072) | [Groq model](https://console.groq.com/docs/model/llama-3.3-70b-versatile) | **Apagado el 2026-08-16** en los planes gratuito y de desarrollo; sigue en contratos empresariales. Reemplazos: `openai/gpt-oss-120b` o `qwen/qwen3.6-27b` ([deprecations](https://console.groq.com/docs/deprecations)) |
+| `gpt-6.1-sol`, `gpt-6.1-terra` | 128 000, incluido el razonamiento | [deprecations](https://developers.openai.com/api/docs/deprecations) (reemplazos de `gpt-5` y `gpt-5-mini`) | Activos |
+| `openai/gpt-oss-120b` | 65 536 | [deprecations](https://console.groq.com/docs/deprecations) (reemplazo de `llama-3.3-70b-versatile`) | Activo |
 
-**Problema del catálogo actual, que no es de A8.** El YAML conserva los modelos que ya existen en el código, porque cambiarlos es otra decisión (§16, A8b). Con estos modelos:
-- las ejecuciones de agentes con `gpt-5` o `gpt-5-mini` fallarán con `model_unavailable` desde el 2026-12-11;
-- las de `llama-3.3-70b-versatile` ya fallarían hoy en los planes no empresariales;
-- y como el proveedor y el modelo de un agente no se pueden cambiar (D12), esos agentes quedarían inutilizables.
+**Modelos retirados (A8b, aprobada).** `gpt-5` y `gpt-5-mini` (se apagan el 2026-12-11) y `llama-3.3-70b-versatile` (apagado en planes no empresariales) salen del catálogo para las selecciones nuevas, sustituidos por `gpt-6.1-sol`, `gpt-6.1-terra` y `openai/gpt-oss-120b`. Los agentes existentes **no se modifican**: conservan su proveedor y su modelo, y como el modelo ya no está en el catálogo su ejecución falla con `model_unavailable` sin llamar al proveedor. Nunca hay sustitución automática de modelo. Permitir que el usuario cambie explícitamente el proveedor y el modelo de un agente (D12) es una entrega pequeña e independiente, separada del motor.
 
 ### 9.3 Protocolos (verificados)
 
@@ -435,7 +431,7 @@ Todos los datos de esta sección se contrastaron el 2026-11-18 con la documentac
 
 | Límite | Nube | Local | Estado |
 |---|---|---|---|
-| Tokens de salida pedidos | mín(máximo del modelo, **16 000**) | **2048** | Propuesto |
+| Tokens de salida pedidos | mín(máximo del modelo, **16 000**) | **2048** | Aprobado (A8c, valores iniciales) |
 | Presupuesto de `BuildPrompt` | 24 000 caracteres y 100 mensajes | 8000 caracteres y 100 mensajes | Aprobado |
 | Conexión / inactividad / duración máxima | 10 s / 45 s / 15 min | 10 s / 120 s / 45 min | Aprobado |
 | Ejecuciones simultáneas | 4 | 1 compartida | Aprobado |
@@ -581,26 +577,24 @@ Estados:
 
 | # | Decisión recomendada | Justificación | Riesgos | Impacto en AgentRun | Base de datos | Estado |
 |---|---|---|---|---|---|---|
-| A1 | Esquema `agent_runs` íntegro de §2.2: FK compuestas a `messages` y `room_agents`, `request_message_id` y `response_message_id` únicos, `CHECK` de estado, error, fechas e intentos, e índices | La base impide cruces de sala, agente o workspace y estados incoherentes; 45 casos verificados | El origen del usuario depende del servicio; cambiar un `CHECK` obliga a copiar la tabla; R2 cambiará índices | Tabla del motor | Migración `create_agent_runs` | Enfoque aprobado; **SQL íntegro pendiente de validación** |
-| A1b | `error_kind` nuevo `context_too_large` (incluido en el SQL de A1) | Error controlado cuando el contexto mínimo no cabe (§6), en lugar de un prompt incompleto | Instrucciones largas con modelos locales fallarán: es lo pedido, se explica en la UI | `BuildPrompt` y textos `es`/`en` | Parte del `CHECK` de A1 | **Pendiente** |
-| A2 | `send_instruction` con el contrato de §3: id obligatorio del cliente, repetición sin efectos que devuelve el estado actual, `client_request_conflict`, nuevo intento manual = id nuevo | Idempotencia atómica ante timeouts del IPC; ningún reintento automático crea otra ejecución | Depende de que la UI respete el ciclo de vida del id (con pruebas) | Única entrada para crear ejecuciones | Índice `(room_id, client_request_id)` | Id obligatorio, repetición y conflicto **aprobados**; errores `invalid_client_request_id` y `agent_busy` **pendientes** |
+| A1 | Esquema `agent_runs` íntegro de §2.2: FK compuestas a `messages` y `room_agents`, `request_message_id` y `response_message_id` únicos, `CHECK` de estado, error, fechas e intentos, e índices | La base impide cruces de sala, agente o workspace y estados incoherentes; 45 casos verificados | El origen del usuario depende del servicio; cambiar un `CHECK` obliga a copiar la tabla; R2 cambiará índices | Tabla del motor | Migración `create_agent_runs` | **Aprobada** (SQL íntegro, 2026-11-18) |
+| A1b | `error_kind` nuevo `context_too_large` (incluido en el SQL de A1) | Error controlado cuando el contexto mínimo no cabe (§6), en lugar de un prompt incompleto | Instrucciones largas con modelos locales fallarán: es lo pedido, se explica en la UI | `BuildPrompt` y textos `es`/`en` | Parte del `CHECK` de A1 | **Aprobada** |
+| A2 | `send_instruction` con el contrato de §3: id obligatorio del cliente, repetición sin efectos que devuelve el estado actual, `client_request_conflict`, nuevo intento manual = id nuevo | Idempotencia atómica ante timeouts del IPC; ningún reintento automático crea otra ejecución | Depende de que la UI respete el ciclo de vida del id (con pruebas) | Única entrada para crear ejecuciones | Índice `(room_id, client_request_id)` | **Aprobada**, con los errores `invalid_client_request_id` y `agent_busy` |
 | A3 | Buffer en memoria por ejecución, acotado por L1, limpio al finalizar o cancelar, vacío en cada intento y recuperable con `get_room` y con la repetición | Progreso visible sin guardar parciales | Carreras con la carga, resueltas por `(attempt, seq)` y la suscripción previa (§5) | Registro de ejecuciones; `get_room` y `send_instruction` devuelven la instantánea | Ninguno | Aprobada |
 | A4 | Contexto congelado en el primer `claim`, reutilizado en los reintentos, con historial hasta la solicitud y presupuesto que lo cuenta todo | Reintentos idénticos y nada de mensajes nuevos | Memoria por ejecución activa (acotada) | `BuildPrompt` corre una vez | Ninguno | Aprobada |
 | A5 | `cancel_agent_run` idempotente, filtrado por workspace en la misma sentencia, que libera plaza, buffer y petición HTTP | Nunca actúa fuera del workspace ni deja mensajes | Ninguno relevante | Comando nuevo | Ninguno | Aprobada |
 | A6 | Conexión 10 s; inactividad 45/120 s; duración máxima 15/45 min desde el primer intento, sumando reintentos y esperas, terminando en `failed/timeout` | Distingue cuelgues, lentitud y flujos infinitos | Valores iniciales, no garantías | Temporizadores en el bucle | Ninguno | Aprobada (valores iniciales) |
 | A7 | Expirar `queued` y `running` al arrancar | La cola y el buffer no sobreviven al cierre | Se pierde el trabajo en curso al cerrar | Servicio de arranque | Ninguno | Aprobada |
-| A8 | Estructura de `llm.yml` de §9: `protocol`, `base_url`, `output_tokens_param` en Chat Completions y `max_output_tokens` documentado por modelo; límites internos fuera del catálogo | Separa los cuatro niveles; evita que Ollama ignore el tope; valores verificados en fuentes oficiales | Cambia la forma de `models` (la UI sigue recibiendo nombres) | Selección de adaptador, parámetro y tope de salida | Ninguno (YAML) | Estructura conceptual aprobada; **YAML íntegro pendiente** |
-| A8b | Qué hacer con los modelos retirados del catálogo: `gpt-5` y `gpt-5-mini` (se apagan el 2026-12-11) y `llama-3.3-70b-versatile` (apagado en planes no empresariales) | Sin esta decisión, esos agentes fallarán con `model_unavailable` y no se pueden reasignar (D12) | Ver §17 | Agentes de OpenAI y Groq | Ninguno | **Pendiente: decisión nueva** |
-| A8c | Topes internos de salida: nube mín(máximo del modelo, 16 000); local 2048 | Coherentes con L1, con la duración máxima y con la ventana de 4096 de Ollama | 2048 puede quedarse corto con modelos locales grandes; se mide | Valor pedido al proveedor | Ninguno | **Pendiente** |
+| A8 | Estructura de `llm.yml` de §9: `protocol`, `base_url`, `output_tokens_param` en Chat Completions y `max_output_tokens` documentado por modelo; límites internos fuera del catálogo | Separa los cuatro niveles; evita que Ollama ignore el tope; valores verificados en fuentes oficiales | Cambia la forma de `models` (la UI sigue recibiendo nombres) | Selección de adaptador, parámetro y tope de salida | Ninguno (YAML) | **Aprobada** (con los modelos de A8b) |
+| A8b | Sustituir en el catálogo `gpt-5` → `gpt-6.1-sol`, `gpt-5-mini` → `gpt-6.1-terra` (128 000 de salida, `openai_responses`) y `llama-3.3-70b-versatile` → `openai/gpt-oss-120b` (65 536, `chat_completions` con `max_completion_tokens`); los agentes existentes no cambian y fallan con `model_unavailable` | Modelos retirados o a punto de retirarse | Agentes antiguos sin modelo hasta que el usuario lo cambie (entrega D12 aparte) | Agentes de OpenAI y Groq | Ninguno | **Aprobada** |
+| A8c | Topes internos de salida: nube mín(máximo del modelo, 16 000); local 2048 | Coherentes con L1, con la duración máxima y con la ventana de 4096 de Ollama | 2048 puede quedarse corto con modelos locales grandes; se mide | Valor pedido al proveedor | Ninguno | **Aprobada** (valores iniciales, ajustables solo en la configuración interna del motor) |
 | A9 | Semáforos en el núcleo: 1 plaza local global en la instancia (Ollama + LM Studio), 4 en la nube; plaza **liberada durante el backoff**; orden de llegada; límites en una estructura inyectable sin UI | Recursos compartidos; la espera no bloquea a otros; el límite por agente y sala sigue vigente | Un reintento vuelve al final de la cola y puede agotar su duración máxima esperando | Planificador | Ninguno | Aprobada (con el ajuste de liberar la plaza) |
 | A10 | Límites diarios fuera del primer corte | Necesitan `settings` | Sin freno de coste diario | Ninguno | Ninguno | Aprobada |
 | A11 | Keychain existente; CI con `wiremock`; pruebas reales con variables de entorno; procedimiento manual solo de desarrollo y sin registrar secretos (§12); sin interfaz temporal | Las claves de ahora valdrán para la pantalla definitiva | Error humano en el procedimiento manual | Lee el keychain al ejecutar | Ninguno | Aprobada |
 | A12 | Eliminar el spike `stream_completion` (comando, servicio y pruebas) al sustituirlo, reutilizando su parser SSE en `chat_completions` | Sin código muerto | Ninguno | Base del adaptador Chat Completions | Ninguno | Aprobada |
-| A13 | Índices únicos `messages (id, room_id)` y `messages (id, room_id, agent_id)` | SQLite los exige para las FK compuestas; no pueden fallar con datos existentes | Dos índices más por mensaje | Habilita A1 | Dos migraciones solo de índices | Enfoque aprobado; **SQL íntegro pendiente de validación** |
+| A13 | Índices únicos `messages (id, room_id)` y `messages (id, room_id, agent_id)` | SQLite los exige para las FK compuestas; no pueden fallar con datos existentes | Dos índices más por mensaje | Habilita A1 | Dos migraciones solo de índices | **Aprobada** (SQL íntegro, 2026-11-18) |
 
-**Errores de la UI:**
-- **Aprobados:** `client_request_conflict` y `agent_has_activity`.
-- **Pendientes:** `invalid_client_request_id`, `agent_busy` y `context_too_large`.
+**Errores de la UI (todos aprobados):** `client_request_conflict`, `agent_has_activity`, `invalid_client_request_id`, `agent_busy` y `context_too_large`.
 
 **Cubiertas por decisiones anteriores:** D9 (proveedores), D10 (4000 caracteres solo para el usuario), D11 (sin objetivo de sala), D12 (proveedor y modelo fijos), D13 (voz fuera), D14 (dirección de `AgentRun`) y D15 (L1).
 
@@ -608,7 +602,7 @@ Estados:
 
 | Riesgo | Mitigación | Evidencia necesaria |
 |---|---|---|
-| Modelos del catálogo retirados o a punto de retirarse (A8b) | Decidir antes de implementar: actualizar el catálogo y revisar D12 | Decisión del responsable; máximos de los reemplazos verificados |
+| Agentes existentes con modelos retirados (A8b) | Fallan con `model_unavailable` sin llamar al proveedor; el cambio explícito de modelo llega en la entrega D12 | Entrega D12 |
 | Solicitud que no es del usuario | Solo `send_instruction` crea ejecuciones; prueba dedicada | Prueba del servicio |
 | Groq: `stream_options` y lugar del uso | Leer `usage` y `x_groq.usage`; tokens nulos si no llegan | `wiremock` y prueba real opcional |
 | Recorte silencioso del contexto en Ollama y política desconocida de LM Studio | Presupuesto local conservador y tope de salida de 2048 | Medición con modelos reales |
