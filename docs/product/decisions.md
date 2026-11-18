@@ -58,11 +58,20 @@ Contexto: [voice-meetings.md](voice-meetings.md), [conversation-engine.md](../ar
 | P18 | Política de fallback explícita configurable | Fuera del MVP; diseñarla con su propia propuesta | Posterior |
 | P19 | Resúmenes y memoria de reuniones largas | No implementar; opción futura de resumen explícito como mensaje visible | Posterior |
 | P20 | Una voz por agente e idioma (`agent_voices.locale`) | Sí | R3 |
-| P22 | Límite de ejecuciones simultáneas | Ver la propuesta de `AgentRun` ([agent-run.md](../architecture/agent-run.md)) | Fase 3 |
+| P22 | Alcance del límite de ejecuciones locales simultáneas | Una plaza compartida por máquina (A9 en [agent-run.md](../architecture/agent-run.md)) | Fase 3 |
 | P23 | ¿Los consumos del coordinador IA cuentan para los límites diarios? | Sí | R2 |
 | P24 | Licencia del TTS neuronal local en español (fonemizador GPL) | Revisión legal antes de incluir Piper o Kokoro | R3 |
 
 Las decisiones aprobadas en la revisión de `AgentRun` sustituyen a P14 (ahora D9), P15 (D10) y P21 (D11).
+
+### Aprobadas (2026-11-18, revisión de la propuesta de `AgentRun`)
+
+| # | Decisión | Justificación | Alternativas descartadas |
+|---|---|---|---|
+| D14 | **Dirección arquitectónica de `AgentRun`:** estados `queued → running → succeeded` o `failed`, con `cancelled` y `expired` dentro de `failed`, transiciones con guarda, éxito (mensaje + `succeeded`) en una sola transacción, eventos después del commit, `agent_run:status` y `agent_run:token` con intento y secuencia, índice único `(room_id, client_request_id)`, hasta 3 intentos solo ante errores transitorios respetando `retry-after`, expiración de `queued` y `running` al arrancar, cancelación idempotente, una ejecución activa por agente y sala, control de concurrencia local y 4 simultáneas en la nube como punto de partida. Fuera del primer corte: coordinación, voz, herramientas, límites diarios y tareas | Portado de Rails y reforzado para streaming local | — |
+| D15 | **L1: máximo 256 KiB de texto por respuesta**, medido en UTF-8 durante el streaming; al superarse, `failed/output_truncated` sin guardar nada y con un error traducido. Es un límite de seguridad interno, no del proveedor | Protege memoria y base ante servidores que ignoren el tope de tokens; muy por encima de cualquier respuesta válida | Sin límite técnico (depender solo del proveedor) |
+
+Quedan pendientes de revisión final el esquema (A1 y A13), la estructura de `llm.yml` (A8) y el resto de contratos marcados en [agent-run.md §16](../architecture/agent-run.md#16-decisiones-a1a13).
 
 ### Riesgos y dependencias
 
