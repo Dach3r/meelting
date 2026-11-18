@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
 import type { Team } from "../../hooks/useTeams";
 import { Alert } from "../molecules/Alert";
-import { BoardTools, type BoardTool } from "../molecules/BoardTools";
 import { Modal } from "../molecules/Modal";
 import { TeamForm } from "../molecules/TeamForm";
 import { ZoomControls } from "../molecules/ZoomControls";
@@ -30,7 +29,6 @@ export function TeamsPage({
   const { t } = useI18n();
   const [creatingTeam, setCreatingTeam] = useState(false);
   const [zoom, setZoom] = useState(1);
-  const [tool, setTool] = useState<BoardTool>("select");
 
   function openTeamForm() {
     onClearActionError();
@@ -58,16 +56,11 @@ export function TeamsPage({
         </Modal>
       )}
       <div className="board-dots relative min-h-112 flex-1 overflow-hidden rounded-2xl border border-line bg-surface">
-        <OrgChart teams={teams} zoom={zoom} tool={tool} onNewTeam={openTeamForm} onNewAgent={onHireAgent} />
+        <OrgChart teams={teams} zoom={zoom} onNewTeam={openTeamForm} onNewAgent={onHireAgent} />
         {teams.length > 0 && (
-          <>
-            <div className="absolute top-1/2 left-4 -translate-y-1/2">
-              <BoardTools tool={tool} onChange={setTool} />
-            </div>
-            <div className="absolute right-4 bottom-4">
-              <ZoomControls zoom={zoom} onChange={setZoom} />
-            </div>
-          </>
+          <div className="absolute right-4 bottom-4">
+            <ZoomControls zoom={zoom} onChange={setZoom} />
+          </div>
         )}
       </div>
       {teams.length === 0 && (

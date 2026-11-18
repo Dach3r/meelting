@@ -33,10 +33,6 @@
       "team": "Team",
       "toggle": "Show or hide"
     },
-    "board": {
-      "select": "Select",
-      "pan": "Move board"
-    },
     "zoom": {
       "in": "Zoom in",
       "out": "Zoom out",

@@ -1,7 +1,6 @@
-import { useRef, useState, type MouseEvent } from "react";
+import { useState } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
 import type { Team } from "../../hooks/useTeams";
-import type { BoardTool } from "../molecules/BoardTools";
 import { OrgAgentCard } from "../molecules/OrgAgentCard";
 import { OrgCard } from "../molecules/OrgCard";
 
@@ -10,42 +9,16 @@ const rootId = "root";
 type Props = {
   teams: Team[];
   zoom: number;
-  tool: BoardTool;
   onNewTeam: () => void;
   onNewAgent: (teamId: string) => void;
 };
 
-export function OrgChart({ teams, zoom, tool, onNewTeam, onNewAgent }: Props) {
+export function OrgChart({ teams, zoom, onNewTeam, onNewAgent }: Props) {
   const { t } = useI18n();
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [panning, setPanning] = useState(false);
-  const viewport = useRef<HTMLDivElement>(null);
-  const grab = useRef<{ x: number; y: number; left: number; top: number } | null>(null);
-  const selectable = tool === "select";
-
-  function startPan(event: MouseEvent<HTMLDivElement>) {
-    if (tool !== "pan" || !viewport.current) return;
-    const { scrollLeft, scrollTop } = viewport.current;
-    grab.current = { x: event.clientX, y: event.clientY, left: scrollLeft, top: scrollTop };
-    setPanning(true);
-  }
-
-  function movePan(event: MouseEvent<HTMLDivElement>) {
-    if (!grab.current || !viewport.current) return;
-    viewport.current.scrollLeft = grab.current.left - (event.clientX - grab.current.x);
-    viewport.current.scrollTop = grab.current.top - (event.clientY - grab.current.y);
-  }
-
-  function endPan() {
-    grab.current = null;
-    setPanning(false);
-  }
-
   function selection(id: string) {
-    return selectable
-      ? { selected: selectedId === id, onSelect: () => setSelectedId(selectedId === id ? null : id) }
-      : {};
+    return { selected: selectedId === id, onSelect: () => setSelectedId(selectedId === id ? null : id) };
   }
 
   function toggle(id: string) {
@@ -56,14 +29,9 @@ export function OrgChart({ teams, zoom, tool, onNewTeam, onNewAgent }: Props) {
 
   return (
     <div
-      ref={viewport}
       data-testid="board"
       onClick={() => setSelectedId(null)}
-      onMouseDown={startPan}
-      onMouseMove={movePan}
-      onMouseUp={endPan}
-      onMouseLeave={endPan}
-      className={`absolute inset-0 flex overflow-auto ${tool === "pan" ? (panning ? "cursor-grabbing" : "cursor-grab") : ""}`}
+      className="absolute inset-0 flex overflow-auto"
     >
       <div style={{ zoom }} className="m-auto flex w-max flex-col items-center px-16 pb-40 pt-20">
         <OrgCard

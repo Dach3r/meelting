@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
@@ -310,30 +310,6 @@ describe("workspace shell", () => {
     await user.click(card);
     await user.click(card);
     expect(card).toHaveAttribute("aria-pressed", "false");
-  });
-
-  it("switches to the move tool, which grabs the board instead of selecting", async () => {
-    invokeMock.mockImplementation(async (command) =>
-      command === "list_teams" ? [{ id: "t1", name: "General", agents: [] }] : session({ locale: "en" }),
-    );
-    const user = userEvent.setup();
-    render(<App />);
-
-    const pan = await screen.findByRole("button", { name: "Move board" });
-    const select = screen.getByRole("button", { name: "Select" });
-    const board = screen.getByTestId("board");
-    expect(select).toHaveAttribute("aria-pressed", "true");
-    await user.click(pan);
-    expect(pan).toHaveAttribute("aria-pressed", "true");
-    expect(screen.queryByRole("button", { name: "General" })).not.toBeInTheDocument();
-    expect(board).toHaveClass("cursor-grab");
-    fireEvent.mouseDown(board, { clientX: 100, clientY: 100 });
-    expect(board).toHaveClass("cursor-grabbing");
-    fireEvent.mouseMove(board, { clientX: 60, clientY: 80 });
-    fireEvent.mouseUp(board);
-    expect(board).toHaveClass("cursor-grab");
-    await user.click(select);
-    expect(screen.getByRole("button", { name: "General" })).toBeInTheDocument();
   });
 
   it("offers no zoom while there are no teams", async () => {

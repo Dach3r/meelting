@@ -33,10 +33,6 @@
       "team": "Equipo",
       "toggle": "Mostrar u ocultar"
     },
-    "board": {
-      "select": "Seleccionar",
-      "pan": "Mover tablero"
-    },
     "zoom": {
       "in": "Acercar",
       "out": "Alejar",
