@@ -8,6 +8,7 @@ use crate::repositories::{agent_runs, agents, messages, profile, room_agents, ro
 use crate::services::agent_run_engine::{Engine, RunEvent};
 use crate::system::llm_stream::{Failure, StreamRequest, Usage};
 use crate::system::{anthropic_messages, chat_completions, keychain, openai_responses};
+use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::time::{Instant, MissedTickBehavior};
 use tokio_util::sync::CancellationToken;
@@ -251,6 +252,12 @@ async fn load_context(
         limits.history_messages as i64,
     )
     .await?;
+    let message_ids: Vec<String> = history.iter().map(|message| message.id.clone()).collect();
+    let recipients: HashMap<String, String> =
+        agent_runs::recipients(&mut *transaction, &run.room_id, &message_ids)
+            .await?
+            .into_iter()
+            .collect();
     let locale = profile::get(&mut *transaction)
         .await?
         .map_or(Locale::En, |profile| profile.locale);
@@ -260,7 +267,17 @@ async fn load_context(
         .into_iter()
         .map(|message| HistoryMessage {
             author: match message.agent_id {
-                None => Author::User,
+                None => recipients
+                    .get(&message.id)
+                    .and_then(|id| {
+                        participants
+                            .iter()
+                            .find(|participant| participant.id == *id)
+                    })
+                    .map_or(Author::User, |participant| Author::UserTo {
+                        name: participant.name.clone(),
+                        role: participant.role.clone(),
+                    }),
                 Some(id) if id == run.agent_id => Author::Own,
                 Some(id) => participants
                     .iter()
@@ -488,6 +505,32 @@ mod tests {
         );
         assert_eq!(messages[1]["content"], "Hi all\n\nStatus?");
         assert_eq!(messages.len(), 2);
+    }
+
+    #[tokio::test]
+    async fn earlier_questions_carry_the_agent_they_were_addressed_to_from_the_runs() {
+        let server = server_with(chat(&["Use PKCE."])).await;
+        let h = harness(&server.uri(), fast_limits(), &[LOCAL, LOCAL]).await;
+        let first = h.send(0, "How would you do OAuth?").await.unwrap();
+        h.finished(&first.run.id).await;
+        message_send::run(
+            &h.engine.pool,
+            &h.room_id,
+            "[User → Agent1 · QA Engineer] typed by hand",
+        )
+        .await
+        .unwrap();
+
+        let second = h.send(1, "Any risks?").await.unwrap();
+        h.finished(&second.run.id).await;
+
+        let body: serde_json::Value = server.received_requests().await.unwrap()[1]
+            .body_json()
+            .unwrap();
+        assert_eq!(
+            body["messages"][1]["content"],
+            "[User → Agent0 · QA Engineer] How would you do OAuth?\n\n[Agent0 · QA Engineer] Use PKCE.\n\n[User → Agent1 · QA Engineer] typed by hand\n\nAny risks?"
+        );
     }
 
     #[tokio::test]

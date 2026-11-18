@@ -22,6 +22,7 @@ Conversación dirigida por texto (decisiones D19–D23 en [decisions.md](../prod
   - **Actividad:** las tarjetas muestran primero la actividad real de la ejecución: «Pensando…» (`running`), «En cola» (`queued`, intento 0) o «Reintentando…» (`queued` tras un intento). El motivo de cada problema aparece al pasar el cursor y para lectores de pantalla.
   - **Cuándo se recalcula:** al abrir la sala, cuando termina una ejecución y con «Comprobar disponibilidad». Nunca mientras se escribe.
   - **Sin bloqueos:** la disponibilidad no impide enviar; si el agente no puede responder, la ejecución falla con su `error_kind` como antes, sin cambiar de proveedor ni de modelo.
+- **Contexto con destinatarios (D22):** al congelar el contexto, cada pregunta anterior del usuario que originó una ejecución lleva la etiqueta `[Usuario → Nombre · Rol]` (`[User → …]` en inglés). El destinatario sale de `agent_runs.request_message_id` dentro de la misma sala, y el nombre y el rol, de los participantes validados por el núcleo. El texto escrito por el usuario nunca se interpreta como etiqueta. El marco del sistema explica la etiqueta. Mismo presupuesto, mismo recorte y mismo contexto congelado en los reintentos.
 - **Agentes como autores:** la resolución solo se aplica a la intervención del usuario. Las menciones escritas por un agente nunca crean ejecuciones.
 
 ## 1. Principio de diseño

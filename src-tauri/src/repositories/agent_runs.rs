@@ -241,6 +241,22 @@ pub async fn for_room<'e>(
     rows.into_iter().map(AgentRun::try_from).collect()
 }
 
+pub async fn recipients<'e>(
+    executor: impl SqliteExecutor<'e>,
+    room_id: &str,
+    message_ids: &[String],
+) -> Result<Vec<(String, String)>, sqlx::Error> {
+    let ids = serde_json::to_string(message_ids).expect("message ids serialize");
+    sqlx::query_as(
+        "SELECT request_message_id, agent_id FROM agent_runs \
+         WHERE room_id = ? AND request_message_id IN (SELECT value FROM json_each(?))",
+    )
+    .bind(room_id)
+    .bind(ids)
+    .fetch_all(executor)
+    .await
+}
+
 #[cfg(test)]
 mod tests {
     use crate::repositories::database::open_for_test;
@@ -1122,5 +1138,26 @@ mod transition_tests {
         cancel(&pool, "w1", "run1").await.unwrap();
         assert!(for_room(&pool, "r1", 1).await.unwrap().is_empty());
         assert!(for_room(&pool, "missing", 100).await.unwrap().is_empty());
+    }
+
+    #[tokio::test]
+    async fn finds_who_each_message_was_addressed_to_within_the_room() {
+        let (pool, _dir) = seeded().await;
+        queued(&pool, "run1", "u1", CLIENT).await;
+        let ids = |list: &[&str]| list.iter().map(|id| id.to_string()).collect::<Vec<_>>();
+
+        assert_eq!(
+            recipients(&pool, "r1", &ids(&["u1", "u2", "g1"]))
+                .await
+                .unwrap(),
+            [("u1".to_string(), "a1".to_string())]
+        );
+        assert!(
+            recipients(&pool, "r2", &ids(&["u1"]))
+                .await
+                .unwrap()
+                .is_empty()
+        );
+        assert!(recipients(&pool, "r1", &[]).await.unwrap().is_empty());
     }
 }

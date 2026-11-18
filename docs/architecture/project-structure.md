@@ -91,7 +91,7 @@ src-tauri/src/
 ├── domain/                Modelos y lógica pura, sin I/O
 │   ├── agent_run.rs       ✅ estados, error_kind, ejecución, instantánea, límites internos inyectables y política de reintentos
 │   ├── recipient.rs       ✅ resolución del destinatario: selección (automática, nadie, agente, confirmada), menciones @ por nombre o rol sin mayúsculas ni tildes, vocativo inicial, ambigüedad, varios agentes y conflicto
-│   ├── prompt.rs          ✅ BuildPrompt: instrucciones, marco, historial etiquetado y presupuesto; context_too_large si el mínimo no cabe
+│   ├── prompt.rs          ✅ BuildPrompt: instrucciones, marco, historial etiquetado (autor y, en las preguntas del usuario, el agente al que iban dirigidas) y presupuesto; context_too_large si el mínimo no cabe
 │   ├── provider_error.rs  ✅ normalización de errores del proveedor por estado HTTP y código
 │   ├── local_provider.rs  ✅ proveedor local detectado (clave, en ejecución, modelos)
 │   ├── locale.rs          ✅ idioma es/en
