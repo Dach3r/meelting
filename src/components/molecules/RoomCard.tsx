@@ -13,7 +13,7 @@ export function RoomCard({ room, onOpen }: { room: Room; onOpen: () => void }) {
   const seated = room.agents.slice(0, SEATS);
   const extra = room.agents.length - seated.length;
   return (
-    <li className="board-dots flex flex-col gap-3 rounded-[20px] border border-line bg-shell p-3">
+    <li className="flex flex-col gap-3 rounded-[20px] border border-line bg-shell p-3">
       <ul aria-label={t("rooms.participants")} className="grid grid-cols-3 gap-1.5">
         {seated.map((agent) => (
           <li key={agent.id} className="relative grid h-26 place-items-center rounded-xl bg-surface">
