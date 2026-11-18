@@ -21,7 +21,7 @@ export function OrgCard({ seed, name, role, asHeading = false, count = 0, expand
   const { t } = useI18n();
   const Name = asHeading ? "h2" : "p";
   return (
-    <div className={`group relative flex h-16 w-60 items-center gap-3 rounded-2xl border bg-raised p-2 pr-3 transition-colors hover:bg-hi ${selected ? "border-accent" : "border-line"}`}>
+    <div className={`group relative flex h-16 w-60 items-center gap-3 rounded-2xl border bg-raised p-2 pr-3 transition-colors hover:bg-hi ${selected ? "border-accent/55" : "border-line"}`}>
       <Avatar seed={seed} label={name} className="size-11 rounded-full" />
       <div className="min-w-0 flex-1 leading-tight">
         <Name className="truncate text-base font-bold tracking-tight text-ink">{name}</Name>
