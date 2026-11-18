@@ -22,7 +22,7 @@ type Props = {
 
 export function RoomView({ roomId, busy, deleteErrorMessage, onBack, onDelete, onClearDeleteError }: Props) {
   const { t, locale } = useI18n();
-  const { detail, errorKey, sendErrorKey, sending, sendMessage, sendInstruction, cancelRun } = useRoom(roomId);
+  const { detail, errorKey, sendErrorKey, sending, sendIntervention, cancelRun } = useRoom(roomId);
   const providers = useLlmProviders();
   const [confirming, setConfirming] = useState(false);
 
@@ -50,10 +50,6 @@ export function RoomView({ roomId, busy, deleteErrorMessage, onBack, onDelete, o
   if (!detail) return null;
   const { room, messages, runs } = detail;
   const thinking = new Set(Object.values(runs.runs).filter(isActive).map((run) => run.agent_id));
-
-  function send(body: string, agentId: string | null) {
-    return agentId ? sendInstruction(agentId, body) : sendMessage(body);
-  }
 
   return (
     <div className="flex min-h-[44rem] w-full flex-1 flex-col gap-5 lg:min-h-[34rem]">
@@ -97,7 +93,7 @@ export function RoomView({ roomId, busy, deleteErrorMessage, onBack, onDelete, o
           providers={providers}
           sending={sending}
           errorMessage={sendErrorKey ? translateError(locale, sendErrorKey) : null}
-          onSend={send}
+          onSend={sendIntervention}
           onCancel={cancelRun}
         />
       </div>

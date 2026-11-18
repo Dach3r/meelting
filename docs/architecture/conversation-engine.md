@@ -2,6 +2,19 @@
 
 > **Estado:** propuesta, **no implementada**. Describe la arquitectura objetivo de las reuniones conversacionales ([voice-meetings.md](../product/voice-meetings.md)) y su relación con `AgentRun` ([agent-execution.md](../product/agent-execution.md)), que tampoco existe todavía. Hoy existen salas, participantes, mensajes del usuario y el evento `message:created` ([rooms.md](../product/rooms.md)). Ningún nombre de comando, evento, módulo o tabla de este documento es definitivo. Ningún cambio de esquema está aprobado. La propuesta concreta de `AgentRun` (esquema, estados, streaming, cancelación) está en [agent-run.md](agent-run.md) y prevalece sobre §10 y §12 en lo que toque a `AgentRun`. Decisiones: [decisions.md](../product/decisions.md).
 
+## R1 implementado
+
+Conversación dirigida por texto (decisiones D19–D23 en [decisions.md](../product/decisions.md)). Lo que sigue describe el código actual. El resto del documento sigue siendo la propuesta para R2 en adelante.
+
+- **Comando `send_intervention`** (`room_id`, `body`, `selection`, `mention_ids`, `client_request_id`). Sustituye a `send_message` y `send_instruction` y conserva sus garantías: cuerpo de 1 a 4000 puntos de código, sala del workspace actual, `client_request_id` obligatorio e idempotente cuando hay ejecución, `agent_busy`, `client_request_conflict`, mensaje y ejecución en una transacción `BEGIN IMMEDIATE` y eventos después del commit. Un mensaje sin destinatario no tiene idempotencia (como el antiguo `send_message`), por eso la UI no lo reintenta.
+- **Selección** (`selection.kind`): `auto` (resuelven las menciones y el vocativo), `nobody` («Nadie» explícito: mensaje sin ejecución; las menciones quedan como texto), `agent` (agente elegido: gana, salvo una mención a otro agente) y `confirmed` (elección hecha al aclarar: ignora las menciones).
+- **Resolución** (`domain/recipient.rs`, pura): se compara sin mayúsculas ni tildes con el nombre y el rol de los participantes de la sala, admitiendo un prefijo de palabras completas («Backend» → «Backend Developer»).
+  - Mención: `@` al inicio o tras un carácter no alfanumérico (un correo electrónico no cuenta). Se elige la coincidencia más larga; una `@` sin coincidencia es texto.
+  - Vocativo: de una a cuatro palabras antes de la primera `,` o `:`, que deben coincidir por completo. Solo se usa si no hay menciones.
+  - `mention_ids`: los agentes elegidos en el autocompletado. Solo desambiguan una mención que ya coincide; un id ajeno a la sala no resuelve nada.
+- **Respuesta:** `{outcome: "sent", message, run|null, partial}` o `{outcome: "choose", reason, candidates}`. `reason` puede ser `ambiguous` (un nombre coincide con varios agentes), `several` (varios agentes distintos, D20) o `conflict` (agente elegido frente a una mención a otro). Con `choose` no se guarda nada, no se emite ningún evento y la UI pide elegir. La elección se reenvía como `confirmed`.
+- **Agentes como autores:** la resolución solo se aplica a la intervención del usuario. Las menciones escritas por un agente nunca crean ejecuciones.
+
 ## 1. Principio de diseño
 
 Hay cinco responsabilidades conceptuales: motor conversacional, coordinador, ejecución (`AgentRun`), reconocimiento de voz y síntesis de voz, más captura y reproducción de audio. Son **responsabilidades, no módulos**. La propuesta las reparte en las capas existentes con el menor número de piezas nuevas:

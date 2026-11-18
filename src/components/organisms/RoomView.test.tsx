@@ -56,6 +56,10 @@ function run(status: AgentRun["status"], attempts: number, overrides: Partial<Ag
   };
 }
 
+function sent(request: Message, started: AgentRun | null, partial: RunSnapshot | null = null) {
+  return { outcome: "sent", message: request, run: started, partial };
+}
+
 function emit(event: string, payload: unknown) {
   act(() => handlers.get(event)?.({ event, id: 0, payload } as Parameters<EventCallback<unknown>>[0]));
 }
@@ -111,17 +115,18 @@ describe("asking an agent", () => {
   it("sends an instruction to the chosen agent and shows that it is waiting", async () => {
     core({
       get_room: () => detail(),
-      send_instruction: () => ({ message: message("m1", "Review it"), run: run("queued", 0), partial: null }),
+      send_intervention: () => sent(message("m1", "Review it"), run("queued", 0)),
     });
     const user = userEvent.setup();
     await renderRoom();
 
     await ask(user, "Ana · QA Engineer", "Review it");
 
-    expect(invokeMock).toHaveBeenCalledWith("send_instruction", {
+    expect(invokeMock).toHaveBeenCalledWith("send_intervention", {
       roomId: "r1",
-      agentId: "a1",
       body: "Review it",
+      selection: { kind: "agent", agent_id: "a1" },
+      mentionIds: [],
       clientRequestId: expect.stringMatching(uuid),
     });
     expect(screen.getByText("Review it")).toBeInTheDocument();
@@ -131,24 +136,23 @@ describe("asking an agent", () => {
   });
 
   it("an empty «Ask» still sends a plain message", async () => {
-    core({ get_room: () => detail(), send_message: () => message("m1", "Hello") });
+    core({ get_room: () => detail(), send_intervention: () => sent(message("m1", "Hello"), null) });
     const user = userEvent.setup();
     await renderRoom();
 
     await user.type(screen.getByLabelText("Message"), "Hello{Enter}");
 
-    expect(invokeMock).toHaveBeenCalledWith("send_message", { roomId: "r1", body: "Hello" });
-    expect(invokeMock).not.toHaveBeenCalledWith("send_instruction", expect.anything());
+    expect(invokeMock).toHaveBeenCalledWith("send_intervention", expect.objectContaining({ body: "Hello", selection: { kind: "nobody" } }));
   });
 
   it("retries a failed invocation with the same id and uses a new id for the next instruction", async () => {
     let calls = 0;
     core({
       get_room: () => detail(),
-      send_instruction: () => {
+      send_intervention: () => {
         calls += 1;
         if (calls === 1) throw new Error("ipc closed");
-        return { message: message(`m${calls}`, "Review it"), run: run("queued", 0, { id: `run${calls}`, request_message_id: `m${calls}` }), partial: null };
+        return sent(message(`m${calls}`, "Review it"), run("queued", 0, { id: `run${calls}`, request_message_id: `m${calls}` }));
       },
     });
     const user = userEvent.setup();
@@ -157,7 +161,7 @@ describe("asking an agent", () => {
     await ask(user, "Ana · QA Engineer", "Review it");
     await ask(user, "Bob · Developer", "Next one");
 
-    const ids = invokeMock.mock.calls.filter(([command]) => command === "send_instruction").map(([, args]) => (args as { clientRequestId: string }).clientRequestId);
+    const ids = invokeMock.mock.calls.filter(([command]) => command === "send_intervention").map(([, args]) => (args as { clientRequestId: string }).clientRequestId);
     expect(ids).toHaveLength(3);
     expect(ids[1]).toBe(ids[0]);
     expect(ids[2]).not.toBe(ids[0]);
@@ -168,10 +172,10 @@ describe("asking an agent", () => {
     let calls = 0;
     core({
       get_room: () => detail(),
-      send_instruction: () => {
+      send_intervention: () => {
         calls += 1;
         if (calls === 1) return new Promise(() => {});
-        return { message: message("m1", "Review it"), run: run("running", 1), partial: { run_id: "run1", attempt: 1, seq: 2, text: "Half" } };
+        return sent(message("m1", "Review it"), run("running", 1), { run_id: "run1", attempt: 1, seq: 2, text: "Half" });
       },
     });
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
@@ -181,16 +185,42 @@ describe("asking an agent", () => {
     await user.type(screen.getByLabelText("Message"), "Review it{Enter}");
     await act(() => vi.advanceTimersByTimeAsync(15000));
 
-    const ids = invokeMock.mock.calls.filter(([command]) => command === "send_instruction").map(([, args]) => (args as { clientRequestId: string }).clientRequestId);
+    const ids = invokeMock.mock.calls.filter(([command]) => command === "send_intervention").map(([, args]) => (args as { clientRequestId: string }).clientRequestId);
     expect(ids).toEqual([ids[0], ids[0]]);
     expect(await screen.findByText("Half")).toBeInTheDocument();
     expect(screen.getAllByText("Review it")).toHaveLength(1);
   });
 
+  it("asks who the message is for when the core finds a conflict and sends the confirmed choice", async () => {
+    let calls = 0;
+    core({
+      get_room: () => detail(),
+      send_intervention: () => {
+        calls += 1;
+        if (calls === 1) return { outcome: "choose", reason: "conflict", candidates: ["a1", "a2"] };
+        return sent(message("m1", "@Bob review it"), run("queued", 0, { agent_id: "a2" }));
+      },
+    });
+    const user = userEvent.setup();
+    await renderRoom();
+
+    await ask(user, "Ana · QA Engineer", "@Bob review it");
+    const choice = within(screen.getByRole("group", { name: "The chosen recipient and the mention don't match. Who is it for?" }));
+    expect(screen.queryByText("@Bob review it", { selector: "li *" })).not.toBeInTheDocument();
+    await user.click(choice.getByRole("button", { name: "Bob · Developer" }));
+
+    expect(invokeMock).toHaveBeenLastCalledWith(
+      "send_intervention",
+      expect.objectContaining({ body: "@Bob review it", selection: { kind: "confirmed", agent_id: "a2" } }),
+    );
+    expect(screen.queryByRole("group")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Message")).toHaveValue("");
+  });
+
   it("shows command errors translated and keeps the text", async () => {
     core({
       get_room: () => detail(),
-      send_instruction: () => {
+      send_intervention: () => {
         throw "agent_busy";
       },
     });

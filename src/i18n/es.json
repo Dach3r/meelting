@@ -261,6 +261,11 @@
       "cancelled": "Cancelada.",
       "expired": "Se detuvo porque Meelting se cerró.",
       "unknown": "La solicitud a {provider} falló."
+    },
+    "choose": {
+      "ambiguous": "Varios agentes coinciden con ese nombre. ¿A quién se lo envías?",
+      "several": "Mencionaste a varios agentes. Por ahora, elige uno:",
+      "conflict": "El destinatario elegido y la mención no coinciden. ¿A quién se lo envías?"
     }
   }
 }

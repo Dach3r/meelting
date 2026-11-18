@@ -117,6 +117,8 @@ CREATE INDEX agent_runs_room_id_agent_id ON agent_runs (room_id, agent_id);
 
 ## 3. Contrato de `send_instruction` e idempotencia (A2)
 
+> Con R1, `send_instruction` se sustituyó por `send_intervention`, que mantiene este contrato cuando el destinatario es un agente ([conversation-engine.md](conversation-engine.md#r1-implementado)).
+
 Comando nuevo. `send_message` no cambia: sigue siendo el mensaje sin destinatario.
 
 **Entrada:** `room_id`, `agent_id`, `body`, `client_request_id` (obligatorio, generado por el cliente).

@@ -12,7 +12,7 @@ pub mod agent_update;
 pub mod canvas_positions_reset;
 pub mod canvas_positions_save;
 pub mod first_launch;
-pub mod instruction_send;
+pub mod intervention_send;
 pub mod llm_providers_list;
 pub mod local_models_detect;
 pub mod locale_change;

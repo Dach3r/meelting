@@ -29,6 +29,14 @@ function message(id: string, body: string, overrides: Partial<Message> = {}): Me
   return { id, room_id: "r1", agent_id: null, body, created_at: "2026-11-18T10:00:00.000Z", ...overrides };
 }
 
+function plain(sent: Message) {
+  return { outcome: "sent", message: sent, run: null, partial: null };
+}
+
+function nobody(body: string) {
+  return { roomId: "r1", body, selection: { kind: "nobody" }, mentionIds: [], clientRequestId: expect.any(String) };
+}
+
 const handlers = new Map<string, EventCallback<unknown>>();
 
 function emit(event: { event: string; id: number; payload: unknown }) {
@@ -201,12 +209,12 @@ describe("inside a room", () => {
 
   it("sends a message with Enter and shows it once even when its event also arrives", async () => {
     const sent = message("m2", "Let's start");
-    const user = await openDaily({ send_message: () => sent });
+    const user = await openDaily({ send_intervention: () => plain(sent) });
 
     await user.type(screen.getByLabelText("Message"), "Let's start{Enter}");
     act(() => emit({ event: "message:created", id: 1, payload: sent }));
 
-    expect(invokeMock).toHaveBeenCalledWith("send_message", { roomId: "r1", body: "Let's start" });
+    expect(invokeMock).toHaveBeenCalledWith("send_intervention", nobody("Let's start"));
     expect(screen.getAllByText("Let's start")).toHaveLength(1);
     expect(screen.getByLabelText("Message")).toHaveValue("");
   });
@@ -217,7 +225,7 @@ describe("inside a room", () => {
     const scrollIntoView = vi.spyOn(Element.prototype, "scrollIntoView");
     const user = await openDaily({
       get_room: () => ({ room: daily, messages: [message("m0", "Hello team"), ...history.slice(1)], runs: [], partials: [] }),
-      send_message: () => sent,
+      send_intervention: () => plain(sent),
     });
     scrollIntoView.mockClear();
 
@@ -254,7 +262,7 @@ describe("inside a room", () => {
 
   it("keeps the text and shows the error when sending fails", async () => {
     const user = await openDaily({
-      send_message: () => {
+      send_intervention: () => {
         throw "room_not_found";
       },
     });
@@ -272,11 +280,11 @@ describe("inside a room", () => {
     await user.type(screen.getByLabelText("Message"), "   {Enter}");
 
     expect(screen.getByRole("button", { name: "Send" })).toBeDisabled();
-    expect(invokeMock).not.toHaveBeenCalledWith("send_message", expect.anything());
+    expect(invokeMock).not.toHaveBeenCalledWith("send_intervention", expect.anything());
   });
 
   it("counts emojis as one character like the core does", async () => {
-    const user = await openDaily({ send_message: ({ body }) => message("m2", String(body)) });
+    const user = await openDaily({ send_intervention: ({ body }) => plain(message("m2", String(body))) });
     const send = screen.getByRole("button", { name: "Send" });
 
     await user.click(screen.getByLabelText("Message"));
@@ -289,7 +297,7 @@ describe("inside a room", () => {
     expect(screen.getByLabelText("Message")).not.toHaveAttribute("aria-invalid", "true");
     await user.click(send);
 
-    expect(invokeMock).toHaveBeenCalledWith("send_message", { roomId: "r1", body: `  ${"😀".repeat(4000)}\n` });
+    expect(invokeMock).toHaveBeenCalledWith("send_intervention", nobody(`  ${"😀".repeat(4000)}\n`));
   });
 
   it("deletes the room after confirming and goes back to the list", async () => {

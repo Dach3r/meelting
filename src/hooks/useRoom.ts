@@ -15,12 +15,22 @@ import {
 import type { Message, Room } from "./useRooms";
 
 const recentMessages = 100;
-const instructionTimeoutMs = 15000;
-const instructionTries = 3;
+const interventionTimeoutMs = 15000;
+const interventionTries = 3;
 
 type RoomDetail = { room: Room; messages: Message[]; runs: AgentRun[]; partials: RunSnapshot[] };
 
-type InstructionSent = { message: Message; run: AgentRun; partial: RunSnapshot | null };
+export type Selection = { kind: "auto" } | { kind: "nobody" } | { kind: "agent" | "confirmed"; agent_id: string };
+
+export type Draft = { body: string; selection: Selection; mentionIds: string[] };
+
+export type Choice = { reason: "ambiguous" | "several" | "conflict"; candidates: string[] };
+
+export type SendResult = "sent" | "failed" | Choice;
+
+type InterventionSent =
+  | { outcome: "sent"; message: Message; run: AgentRun | null; partial: RunSnapshot | null }
+  | ({ outcome: "choose" } & Choice);
 
 type Update = (state: { messages: Message[]; runs: RunState }) => { messages: Message[]; runs: RunState };
 
@@ -30,7 +40,7 @@ function withMessage(messages: Message[], message: Message) {
 
 function invokeWithTimeout<T>(command: string, args: Record<string, unknown>) {
   return new Promise<T>((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error("timeout")), instructionTimeoutMs);
+    const timer = setTimeout(() => reject(new Error("timeout")), interventionTimeoutMs);
     invoke<T>(command, args).then(
       (value) => {
         clearTimeout(timer);
@@ -98,46 +108,38 @@ export function useRoom(roomId: string) {
     };
   }, [roomId]);
 
-  async function sendMessage(body: string) {
-    setSending(true);
-    setSendErrorKey(null);
-    try {
-      const message = await invoke<Message>("send_message", { roomId, body });
-      setState((s) => ({ ...s, messages: withMessage(s.messages, message) }));
-      return true;
-    } catch (error) {
-      setSendErrorKey(String(error));
-      return false;
-    } finally {
-      setSending(false);
-    }
-  }
-
-  async function sendInstruction(agentId: string, body: string) {
+  async function sendIntervention({ body, selection, mentionIds }: Draft): Promise<SendResult> {
     setSending(true);
     setSendErrorKey(null);
     const clientRequestId = crypto.randomUUID();
+    const tries = selection.kind === "nobody" ? 1 : interventionTries;
     try {
-      for (let attempt = 1; attempt <= instructionTries; attempt += 1) {
+      for (let attempt = 1; attempt <= tries; attempt += 1) {
         try {
-          const sent = await invokeWithTimeout<InstructionSent>("send_instruction", { roomId, agentId, body, clientRequestId });
-          setState((s) => {
-            const runs = applyStatus(s.runs, sent.run);
-            return {
-              messages: withMessage(s.messages, sent.message),
-              runs: sent.partial ? applySnapshot(runs, sent.partial) : runs,
-            };
+          const sent = await invokeWithTimeout<InterventionSent>("send_intervention", {
+            roomId,
+            body,
+            selection,
+            mentionIds,
+            clientRequestId,
           });
-          return true;
+          if (sent.outcome === "choose") return { reason: sent.reason, candidates: sent.candidates };
+          setState((s) => {
+            const messages = withMessage(s.messages, sent.message);
+            if (!sent.run) return { ...s, messages };
+            const runs = applyStatus(s.runs, sent.run);
+            return { messages, runs: sent.partial ? applySnapshot(runs, sent.partial) : runs };
+          });
+          return "sent";
         } catch (error) {
           if (typeof error === "string") {
             setSendErrorKey(error);
-            return false;
+            return "failed";
           }
         }
       }
       setSendErrorKey("unknown");
-      return false;
+      return "failed";
     } finally {
       setSending(false);
     }
@@ -154,5 +156,5 @@ export function useRoom(roomId: string) {
 
   const detail = room ? { room, messages: state.messages, runs: state.runs } : null;
 
-  return { detail, errorKey, sendErrorKey, sending, sendMessage, sendInstruction, cancelRun };
+  return { detail, errorKey, sendErrorKey, sending, sendIntervention, cancelRun };
 }

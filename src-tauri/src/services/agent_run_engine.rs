@@ -65,11 +65,13 @@ impl Engine {
 pub mod testing {
     use super::*;
     use crate::catalogs::llm;
-    use crate::domain::agent_run::RunStatus;
+    use crate::domain::agent_run::{Partial, RunStatus};
     use crate::domain::locale::Locale;
+    use crate::domain::recipient::Selection;
+    use crate::domain::room::Message;
     use crate::domain::team::AgentDraft;
     use crate::repositories::database::open_for_test;
-    use crate::services::instruction_send::{self, Instruction, InstructionSent};
+    use crate::services::intervention_send::{self, Intervention, InterventionSent};
     use crate::services::session_load::SessionError;
     use crate::services::{agent_create, first_launch, room_create, team_create};
     use std::sync::Mutex;
@@ -77,6 +79,13 @@ pub mod testing {
     use tokio::io::{AsyncReadExt, AsyncWriteExt};
     use uuid::Uuid;
     use wiremock::ResponseTemplate;
+
+    #[derive(Debug)]
+    pub struct Sent {
+        pub message: Message,
+        pub run: AgentRun,
+        pub partial: Option<Partial>,
+    }
 
     pub struct Harness {
         pub engine: Arc<Engine>,
@@ -150,11 +159,7 @@ pub mod testing {
     }
 
     impl Harness {
-        pub async fn send(
-            &self,
-            agent: usize,
-            body: &str,
-        ) -> Result<InstructionSent, SessionError> {
+        pub async fn send(&self, agent: usize, body: &str) -> Result<Sent, SessionError> {
             self.send_with(agent, body, &Uuid::now_v7().to_string())
                 .await
         }
@@ -164,17 +169,31 @@ pub mod testing {
             agent: usize,
             body: &str,
             client_request_id: &str,
-        ) -> Result<InstructionSent, SessionError> {
-            instruction_send::run(
+        ) -> Result<Sent, SessionError> {
+            let selection = Selection::Agent(self.agents[agent].clone());
+            match intervention_send::run(
                 &self.engine,
-                Instruction {
+                Intervention {
                     room_id: &self.room_id,
-                    agent_id: &self.agents[agent],
                     body,
+                    selection: &selection,
+                    mention_ids: &[],
                     client_request_id,
                 },
             )
-            .await
+            .await?
+            {
+                InterventionSent::Sent {
+                    message,
+                    run: Some(run),
+                    partial,
+                } => Ok(Sent {
+                    message,
+                    run: *run,
+                    partial,
+                }),
+                other => panic!("expected a run, got {other:?}"),
+            }
         }
 
         pub async fn run(&self, run_id: &str) -> AgentRun {

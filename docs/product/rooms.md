@@ -53,7 +53,7 @@
 
 ## Evolución prevista
 
-Los contratos actuales (`list_rooms`, `create_room`, `get_room`, `delete_room`, `send_message`, `message:created`) no cambian con esta evolución. Cuando se construya la intervención, `send_message` se extiende o se sustituye por un comando nuevo, sin romper el comportamiento descrito arriba.
+✅ Con R1, `send_intervention` sustituye a `send_message` y a `send_instruction`: un mensaje sin destinatario se guarda igual que antes (mismas validaciones, `rooms.updated_at` y `message:created`), y uno dirigido a un agente crea además su `AgentRun`. El núcleo resuelve el destinatario ([conversation-engine.md](../architecture/conversation-engine.md#r1-implementado)). `list_rooms`, `create_room`, `get_room`, `delete_room` y `message:created` no cambian.
 
 | Nivel | Estado | Qué añade | Documento |
 |---|---|---|---|

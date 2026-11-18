@@ -261,6 +261,11 @@
       "cancelled": "Cancelled.",
       "expired": "Stopped because Meelting was closed.",
       "unknown": "The request to {provider} failed."
+    },
+    "choose": {
+      "ambiguous": "Several agents match that name. Who is it for?",
+      "several": "You mentioned several agents. For now, pick one:",
+      "conflict": "The chosen recipient and the mention don't match. Who is it for?"
     }
   }
 }

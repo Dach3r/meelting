@@ -922,22 +922,15 @@ mod tests {
             .await
             .unwrap();
         assert!(other_detail.partials.is_empty());
-        let repeated = crate::services::instruction_send::run(
-            &h.engine,
-            crate::services::instruction_send::Instruction {
-                room_id: &h.room_id,
-                agent_id: &h.agents[0],
-                body: "Say hello",
-                client_request_id: &sqlx::query_scalar::<_, String>(
-                    "SELECT client_request_id FROM agent_runs",
-                )
+        let client_request_id =
+            sqlx::query_scalar::<_, String>("SELECT client_request_id FROM agent_runs")
                 .fetch_one(&h.engine.pool)
                 .await
-                .unwrap(),
-            },
-        )
-        .await
-        .unwrap();
+                .unwrap();
+        let repeated = h
+            .send_with(0, "Say hello", &client_request_id)
+            .await
+            .unwrap();
         assert_eq!(
             repeated.partial.map(|partial| partial.text).as_deref(),
             Some("Hel")
@@ -1201,20 +1194,28 @@ mod tests {
             .await
             .unwrap();
 
-        let sent = crate::services::instruction_send::run(
+        let sent = crate::services::intervention_send::run(
             &engine,
-            crate::services::instruction_send::Instruction {
+            crate::services::intervention_send::Intervention {
                 room_id: &room.id,
-                agent_id: &agent,
                 body: "Hi",
+                selection: &crate::domain::recipient::Selection::Agent(agent.clone()),
+                mention_ids: &[],
                 client_request_id: "0196f3a0-0000-7000-8000-000000000001",
             },
         )
         .await
         .unwrap();
+        let crate::services::intervention_send::InterventionSent::Sent {
+            run: Some(sent_run),
+            ..
+        } = sent
+        else {
+            panic!("expected a run");
+        };
         for _ in 0..500 {
             let status: String = sqlx::query_scalar("SELECT status FROM agent_runs WHERE id = ?")
-                .bind(&sent.run.id)
+                .bind(&sent_run.id)
                 .fetch_one(&pool)
                 .await
                 .unwrap();

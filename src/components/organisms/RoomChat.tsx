@@ -3,6 +3,7 @@ import { useI18n } from "../../i18n/I18nProvider";
 import { translateWith } from "../../i18n/translate";
 import { type AgentRun, type RunState, isActive, liveText } from "../../hooks/agentRunState";
 import type { LlmProvider } from "../../hooks/useLlmProviders";
+import type { Draft, SendResult } from "../../hooks/useRoom";
 import type { Message, Room } from "../../hooks/useRooms";
 import { Alert } from "../molecules/Alert";
 import { AgentRunStatus } from "../molecules/AgentRunStatus";
@@ -17,7 +18,7 @@ type Props = {
   providers: LlmProvider[];
   sending: boolean;
   errorMessage: string | null;
-  onSend: (body: string, agentId: string | null) => Promise<boolean>;
+  onSend: (draft: Draft) => Promise<SendResult>;
   onCancel: (runId: string) => void;
 };
 

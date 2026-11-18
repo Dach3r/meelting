@@ -1,6 +1,7 @@
+use crate::domain::recipient::Selection;
 use crate::services::agent_run_cancel;
 use crate::services::agent_run_engine::{Emit, Engine, RunEvent};
-use crate::services::instruction_send::{self, Instruction, InstructionSent};
+use crate::services::intervention_send::{self, Intervention, InterventionSent};
 use crate::services::session_load::SessionError;
 use std::sync::Arc;
 use tauri::{AppHandle, Emitter, State};
@@ -16,19 +17,21 @@ pub fn emitter(app: AppHandle) -> Emit {
 }
 
 #[tauri::command]
-pub async fn send_instruction(
+pub async fn send_intervention(
     engine: State<'_, Arc<Engine>>,
     room_id: String,
-    agent_id: String,
     body: String,
+    selection: Selection,
+    mention_ids: Vec<String>,
     client_request_id: String,
-) -> Result<InstructionSent, SessionError> {
-    instruction_send::run(
+) -> Result<InterventionSent, SessionError> {
+    intervention_send::run(
         &engine,
-        Instruction {
+        Intervention {
             room_id: &room_id,
-            agent_id: &agent_id,
             body: &body,
+            selection: &selection,
+            mention_ids: &mention_ids,
             client_request_id: &client_request_id,
         },
     )

@@ -32,8 +32,8 @@ src-tauri/src/
 ├── commands/              Capa 1: comandos Tauri (delgados)
 │   ├── keychain.rs        ✅ save_secret, secret_last_four, delete_secret
 │   ├── worktree.rs        ✅ run_in_worktree
-│   ├── agent_runs.rs      ✅ send_instruction, cancel_agent_run y el emisor de eventos del motor (agent_run:status, agent_run:token, message:created)
-│   ├── rooms.rs           ✅ list_rooms, create_room, get_room (con ejecuciones e instantáneas), delete_room, send_message (emite message:created)
+│   ├── agent_runs.rs      ✅ send_intervention, cancel_agent_run y el emisor de eventos del motor (agent_run:status, agent_run:token, message:created)
+│   ├── rooms.rs           ✅ list_rooms, create_room, get_room (con ejecuciones e instantáneas), delete_room
 │   └── session.rs         ✅ load_session, complete_first_launch, create_workspace, switch_workspace, list_teams, create_team, create_agent, get_agent, update_agent, delete_agent, save_canvas_positions, reset_canvas_positions, list_agent_templates, list_agent_roles, list_llm_providers, detect_local_models, change_locale, change_theme
 ├── services/              Capa 2: acciones de negocio (verbos)
 │   ├── worktree_run.rs    ✅ crea un worktree y ejecuta un comando en él
@@ -53,8 +53,8 @@ src-tauri/src/
 │   ├── room_create.rs     ✅ valida el nombre, deduplica los agentes y crea la sala con sus participantes en una transacción
 │   ├── room_get.rs        ✅ sala del workspace actual con sus agentes, sus últimos 100 mensajes, sus ejecuciones y las instantáneas del buffer (tomadas antes de leer la base)
 │   ├── room_delete.rs     ✅ elimina una sala (participaciones, mensajes y ejecuciones en cascada), cancela sus ejecuciones activas y devuelve la lista actualizada
-│   ├── message_send.rs    ✅ guarda un mensaje del usuario y actualiza la actividad de la sala en una transacción
-│   ├── instruction_send.rs ✅ send_instruction: valida, deduplica por client_request_id, guarda el mensaje del usuario y la ejecución queued en una transacción y la entrega al motor
+│   ├── message_send.rs    ✅ guarda un mensaje del usuario sin ejecución y actualiza la actividad de la sala en una transacción (lo usa intervention_send)
+│   ├── intervention_send.rs ✅ send_intervention: valida, deduplica por client_request_id, resuelve el destinatario con domain/recipient dentro de la transacción y guarda el mensaje del usuario (con la ejecución queued si hay agente) o devuelve los candidatos para elegir sin guardar nada
 │   ├── agent_run_engine.rs ✅ motor de ejecución: pool, registro, catálogo, límites, semáforos local (1) y nube (4) y emisor de eventos; lanza cada ejecución como tarea tokio
 │   ├── agent_run_execute.rs ✅ tarea de una ejecución: espera de plaza, claim, contexto congelado, llamada al adaptador, tokens agrupados cada 50 ms, reintentos con plaza liberada, duración máxima, éxito atómico y fallos
 │   ├── agent_run_registry.rs ✅ registro en memoria de ejecuciones aceptadas: texto del intento acotado por L1, secuencia, prompt congelado y token de cancelación
@@ -88,6 +88,7 @@ src-tauri/src/
 │   └── agent_runs.rs      ✅ consultas y transiciones con guarda de agent_runs, y las pruebas de integridad del esquema
 ├── domain/                Modelos y lógica pura, sin I/O
 │   ├── agent_run.rs       ✅ estados, error_kind, ejecución, instantánea, límites internos inyectables y política de reintentos
+│   ├── recipient.rs       ✅ resolución del destinatario: selección (automática, nadie, agente, confirmada), menciones @ por nombre o rol sin mayúsculas ni tildes, vocativo inicial, ambigüedad, varios agentes y conflicto
 │   ├── prompt.rs          ✅ BuildPrompt: instrucciones, marco, historial etiquetado y presupuesto; context_too_large si el mínimo no cabe
 │   ├── provider_error.rs  ✅ normalización de errores del proveedor por estado HTTP y código
 │   ├── local_provider.rs  ✅ proveedor local detectado (clave, en ejecución, modelos)
@@ -145,7 +146,7 @@ src/
 │   ├── useSession.ts      ✅ invoke load_session, complete_first_launch, create_workspace, switch_workspace, change_locale, change_theme
 │   ├── useTeams.ts        ✅ invoke list_teams, create_team, create_agent, get_agent, update_agent, delete_agent, save_canvas_positions (con debounce de 500 ms), reset_canvas_positions
 │   ├── useRooms.ts        ✅ invoke list_rooms, create_room, delete_room
-│   ├── useRoom.ts         ✅ invoke get_room, send_message, send_instruction (un client_request_id por envío, reutilizado en los reintentos automáticos y tras un timeout del IPC) y cancel_agent_run; listen message:created, agent_run:status y agent_run:token antes de cargar la sala, con los eventos de la carga en espera
+│   ├── useRoom.ts         ✅ invoke get_room, send_intervention (un client_request_id por envío, reutilizado en los reintentos automáticos y tras un timeout del IPC; sin reintentos si el destinatario es «Nadie») y cancel_agent_run; listen message:created, agent_run:status y agent_run:token antes de cargar la sala, con los eventos de la carga en espera
 │   ├── agentRunState.ts   ✅ estado puro de las ejecuciones: orden lógico de estados (queued n = 2n, running n = 2n − 1, final al final), tokens por (attempt, seq), instantáneas y texto en vivo
 │   ├── useAgentTemplates.ts ✅ invoke list_agent_templates (recarga al cambiar el idioma)
 │   └── useAgentRoles.ts   ✅ invoke list_agent_roles

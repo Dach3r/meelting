@@ -59,8 +59,7 @@ pub fn run() {
             commands::rooms::create_room,
             commands::rooms::get_room,
             commands::rooms::delete_room,
-            commands::rooms::send_message,
-            commands::agent_runs::send_instruction,
+            commands::agent_runs::send_intervention,
             commands::agent_runs::cancel_agent_run
         ])
         .run(tauri::generate_context!())
