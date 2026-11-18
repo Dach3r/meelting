@@ -1,3 +1,4 @@
+import { Briefcase, Cpu, Server, User } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
 import type { AgentDraft, Team } from "../../hooks/useTeams";
@@ -86,14 +87,14 @@ export function AgentForm({ team, busy, errorMessage, onSubmit, onCancel }: Prop
         <div className="grid flex-1 content-start gap-7">
           {current === "identity" && (
             <>
-              <Field label={t("teams.agent.name")} value={draft.name} onChange={set("name")} maxLength={80} autoFocus />
-              <Field label={t("teams.agent.role")} value={draft.role} onChange={set("role")} maxLength={80} />
+              <Field label={t("teams.agent.name")} value={draft.name} onChange={set("name")} maxLength={80} icon={User} autoFocus />
+              <Field label={t("teams.agent.role")} value={draft.role} onChange={set("role")} maxLength={80} icon={Briefcase} />
             </>
           )}
           {current === "engine" && (
             <>
-              <Field label={t("teams.agent.provider")} value={draft.provider} onChange={set("provider")} autoFocus />
-              <Field label={t("teams.agent.model")} value={draft.model} onChange={set("model")} />
+              <Field label={t("teams.agent.provider")} value={draft.provider} onChange={set("provider")} icon={Server} autoFocus />
+              <Field label={t("teams.agent.model")} value={draft.model} onChange={set("model")} icon={Cpu} />
             </>
           )}
           {current === "behavior" && (
