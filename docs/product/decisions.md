@@ -26,34 +26,43 @@ Contexto: [voice-meetings.md](voice-meetings.md), [conversation-engine.md](../ar
 | D7 | **Interrupción:** si la generación terminó, el mensaje completo se persiste aunque el audio se cortara; la marca «interrumpido» vive solo en memoria durante la sesión. Si la generación se canceló, no hay mensaje (`failed/cancelled`) | Mantiene la inmutabilidad y la regla aprobada de `AgentRun` sin cambiar el esquema | Marca persistida (columna nueva); guardar el parcial cancelado (cambia la regla de `AgentRun`); guardar solo lo escuchado |
 | D8 | **Voz por agente en una tabla aparte** (`agent_voices`), independiente del proveedor LLM; sin fila, voz por defecto estable. **El esquema concreto sigue pendiente de aprobación** | Separa identidad y presentación, admite varios motores y no toca `agents` | Columnas en `agents`; no persistir al principio |
 
+### Aprobadas (2026-11-18, revisión para `AgentRun`)
+
+| # | Decisión | Justificación | Alternativas descartadas |
+|---|---|---|---|
+| D9 | **Proveedores de la Fase 3 = catálogo real de `llm.yml`:** Anthropic, OpenAI y Groq (nube); Ollama y LM Studio (local). Sin DeepSeek, MiniMax ni un proveedor genérico `local` en esta fase. Cada proveedor usa su protocolo propio y solo las capacidades que declara el catálogo. Añadir un proveedor después es una entrada nueva en el catálogo y, solo si su protocolo no existe aún, un adaptador nuevo con uso real (antes era P14) | El catálogo ya está en el código y en el selector de modelo de los agentes: los agentes existentes solo pueden tener estos cinco proveedores. Implementar adaptadores sin agentes que los usen sería código muerto | Ampliar el catálogo con DeepSeek y MiniMax (adaptadores sin demanda real); un único `local` (el catálogo y la UI ya distinguen Ollama y LM Studio) |
+| D10 | **El límite de 4000 caracteres es solo para los mensajes escritos por el usuario.** Las respuestas de los agentes no tienen límite de caracteres: su extensión la acotan los parámetros de generación que admite cada proveedor (`max_output_tokens` o equivalente) y los límites de contexto del catálogo. Una respuesta incompleta o cortada nunca se guarda recortada ni en silencio: la ejecución falla con su `error_kind` (`output_truncated`, `content_filtered`) y no se crea mensaje. Los mensajes siguen siendo inmutables y **no cambia el esquema de `messages`** (antes era P15) | Cortar por caracteres rompería respuestas válidas (código, listas) y ocultaría que faltaba texto; el límite natural de un modelo son sus tokens de salida. Es lo que ya implementan el `CHECK` de `messages` y [rooms.md](rooms.md) | 4000 caracteres para todos (respuestas cortadas o fallidas sin motivo); truncar al guardar con una marca (exige cambiar `messages`) |
+| D11 | **Sin objetivo de sala por ahora:** `rooms` no cambia. `BuildPrompt` usa el nombre de la sala y no asume ninguna columna que no exista (antes era P21) | Evita un cambio de esquema sin evidencia de que el nombre no baste | Columna `goal` en `rooms` desde ya |
+| D12 | **El proveedor y el modelo de un agente no se pueden cambiar todavía:** `update_agent` mantiene su limitación actual (nombre, rol, descripción, instrucciones y equipo). Se evaluará más adelante, junto con su efecto en las ejecuciones existentes (que de todos modos conservan el proveedor y el modelo copiados al crearse) | Mantener el alcance; la ejecución no lo necesita | Habilitar el cambio dentro de `AgentRun` |
+| D13 | **Voz fuera del alcance inmediato:** STT, TTS y configuración de voces no se construyen con `AgentRun`, y `AgentRun` no depende del audio | Confirma D1; la voz consume mensajes persistidos y no condiciona el motor de ejecución | Diseñar `AgentRun` con ganchos de audio |
+
 ### Pendientes
 
 | # | Decisión | Recomendación | Bloquea |
 |---|---|---|---|
-| P1 | ¿Se persiste la sesión de reunión? | No: estado en memoria del núcleo | R2 |
+| P1 | ¿Se persiste la sesión de reunión (plan de turnos, último interlocutor, cola de audio, estado del micrófono)? No confundir con C1, la propuesta de índice de `agent_runs` en [conversation-engine.md §12](../architecture/conversation-engine.md#12-persistencia-y-modelo-de-datos) | No: estado en memoria del núcleo. No bloquea `AgentRun` | R2 |
 | P2 | Al salir de la reunión, ¿siguen las ejecuciones en curso? | Sí (regla aprobada de `AgentRun`), pero sin turnos nuevos ni audio | R2 |
 | P3 | Una intervención nueva con ejecuciones activas de la anterior | Cancelarlas (prioridad del usuario y coste) | R2 |
 | P4 | ¿Se envía sola la transcripción? | Sí si el destinatario está resuelto; si no, queda como borrador | R4 |
 | P5 | Destinatario por defecto = último interlocutor | Sí, visible y modificable | R1 |
 | P6 | ¿El límite de 4 también se aplica a «Equipo»? | Sí: un solo presupuesto por intervención | R2 |
-| P7 | Mecanismo «pasar» y `succeeded` sin mensaje | Sí; revisar los `CHECK` de `agent_runs` | Fase 3 / R2 |
+| P7 | Mecanismo «pasar» y `succeeded` sin mensaje | Decidir en R2. Si se aprueba, exige reconstruir `agent_runs` (SQLite no permite cambiar un `CHECK` sin copiar la tabla) | R2 |
 | P8 | Cómo se pide una discusión | Destinatario explícito «Discusión» + lista localizada de verbos | R2 |
 | P9 | Alcance de `settings` (global o por workspace) para el modelo coordinador y los motores | Por workspace para lo que usa claves; global para los dispositivos | R2 |
 | P10 | ¿Pueden los agentes pedir la participación de otro? | No en el MVP; después, como sugerencia que el usuario acepta | R2+ |
 | P11 | Distribución de modelos de voz | Descarga bajo consentimiento con catálogo y `sha256` | R3 |
 | P12 | Retención de audio | Ninguna: el micrófono en memoria hasta transcribir, el TTS sin guardar | R3 |
 | P13 | Dónde se reproduce el audio | En el núcleo; confirmar con S6 | R3 |
-| P14 | Conjunto de proveedores de la Fase 3: catálogo real (`anthropic`, `openai`, `groq`, `ollama`, `lmstudio`) frente a los docs (`deepseek`, `minimax`, `local`) | Alinear los docs con `llm.yml` o ampliar el catálogo, decisión explícita | Fase 3 |
-| P15 | Límite de longitud de la respuesta del agente: 4000 en [agent-execution.md](agent-execution.md) frente a sin límite en [rooms.md](rooms.md) y en el esquema | Sin límite de caracteres; acotada por `max_output_tokens` | Fase 3 |
 | P16 | Generación en paralelo con reproducción ordenada (prelectura) | No al principio; medir en R5 | R5 |
 | P17 | Atajo de push-to-talk | Solo con la ventana enfocada, sin atajo global; tecla por definir | R4 |
 | P18 | Política de fallback explícita configurable | Fuera del MVP; diseñarla con su propia propuesta | Posterior |
 | P19 | Resúmenes y memoria de reuniones largas | No implementar; opción futura de resumen explícito como mensaje visible | Posterior |
 | P20 | Una voz por agente e idioma (`agent_voices.locale`) | Sí | R3 |
-| P21 | Objetivo de la sala para el prompt (`rooms` no tiene `goal`) | Usar el nombre; proponer `goal` solo si se demuestra necesario | Fase 3 |
-| P22 | Límite global de ejecuciones simultáneas por workspace | Sí, valor por medir con modelos locales | Fase 3 / R2 |
+| P22 | Límite de ejecuciones simultáneas | Ver la propuesta de `AgentRun` ([agent-run.md](../architecture/agent-run.md)) | Fase 3 |
 | P23 | ¿Los consumos del coordinador IA cuentan para los límites diarios? | Sí | R2 |
 | P24 | Licencia del TTS neuronal local en español (fonemizador GPL) | Revisión legal antes de incluir Piper o Kokoro | R3 |
+
+Las decisiones aprobadas en la revisión de `AgentRun` sustituyen a P14 (ahora D9), P15 (D10) y P21 (D11).
 
 ### Riesgos y dependencias
 

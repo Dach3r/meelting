@@ -18,7 +18,7 @@
 - Secciones separadas: **Catálogo de agentes** y **Equipos**.
 - Contratar desde el catálogo, crear agentes personalizados sin plantilla, ver, editar y eliminar.
 - Equipos como pantalla de inicio, con organigrama arrastrable: equipos que agrupan agentes bajo "Tú" (todo agente pertenece a un equipo), arrastrar libremente equipos y agentes (los agentes siguen a su equipo); el equipo de un agente se cambia al editarlo, en una tabla de equipos ordenada por nombre, con los agentes de cada equipo y el equipo actual marcado (al cambiar de equipo se descarta su posición guardada y reaparece en la disposición automática del equipo nuevo; guardar sin cambiar de equipo la conserva).
-- Selector de proveedor y modelo por agente, incluido el proveedor `local`.
+- Selector de proveedor y modelo por agente, incluidos los proveedores locales Ollama y LM Studio.
 
 **Excluye**
 - Colaboración entre agentes, métricas, consumo de tokens y estadísticas en las tarjetas.
@@ -98,7 +98,7 @@ El frontend no accede a SQLite directamente; los comandos son delgados y llaman 
 - [ ] Se puede contratar la misma plantilla más de una vez y crear un agente personalizado.
 - [ ] Cambiar el idioma no modifica agentes ya contratados.
 - [ ] `name` y `role` compuestos solo de espacios son inválidos.
-- [ ] Un agente se edita (incluidos proveedor y modelo) y se elimina con confirmación.
+- [ ] Un agente se edita (incluidos proveedor y modelo) y se elimina con confirmación. Editar y eliminar ya existen; cambiar el proveedor y el modelo no está disponible y se evaluará más adelante (D12 en [decisions.md](decisions.md)).
 - [ ] Cada agente usa su proveedor y modelo, elegidos de un selector dependiente alimentado por `llm.yml`. Un proveedor sin clave se puede elegir con una advertencia.
 - [ ] Un agente de otro workspace no aparece ni se puede modificar al cambiar de workspace.
 - [ ] Errores de validación visibles en el formulario; textos completos en `es` y `en`.

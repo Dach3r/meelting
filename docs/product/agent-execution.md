@@ -1,6 +1,6 @@
 # Ejecución de agentes
 
-> **Estado:** planificado (Fases 3 y 5). Comportamiento portado del producto Rails y ampliado con streaming, proveedor local, cancelación, tareas con worktree y herramientas.
+> **Estado:** planificado (Fases 3 y 5), no implementado. Comportamiento portado del producto Rails y ampliado con streaming, proveedores locales, cancelación, tareas con worktree y herramientas. Las reglas marcadas como decisión aprobada están en [decisions.md](decisions.md); el diseño técnico de la Fase 3 es una **propuesta pendiente de aprobación** en [agent-run.md](../architecture/agent-run.md). Hoy solo existe el spike `stream_completion` (Chat Completions con SSE).
 
 **Problema:** el usuario tiene agentes y salas, pero los agentes no hacen nada.
 **Objetivo:** que el usuario dirija una instrucción a un agente de una sala y reciba su respuesta, generada por un proveedor de IA (en la nube o local), de forma asíncrona, persistente, cancelable y observable en vivo. En una segunda etapa, que el agente trabaje sobre un repositorio real dentro de un worktree aislado.
@@ -12,10 +12,10 @@
 - Selector de agente en el compositor («Pedir a»): vacío es un mensaje normal; con un agente es una instrucción dirigida.
 - Ejecución asíncrona como tarea `tokio`, con estados visibles (`queued`, `running`, `succeeded`, `failed`) y respuesta del agente como mensaje persistente.
 - **Streaming de tokens** a la UI mediante eventos Tauri.
-- **Cinco proveedores:** OpenAI (Responses API), Anthropic (Messages API), DeepSeek (Chat Completions), MiniMax (protocolo Anthropic-compatible) y **local** (Chat Completions compatible con OpenAI: Ollama en `localhost:11434`, LM Studio en `localhost:1234`). Cada agente usa el proveedor y modelo que se le configuran.
+- **Cinco proveedores, los del catálogo real** (decisión aprobada D9): Anthropic (Messages API), OpenAI (Responses API), Groq (Chat Completions compatible con OpenAI) en la nube, y Ollama (`localhost:11434`) y LM Studio (`localhost:1234`) en local, ambos con Chat Completions compatible con OpenAI. Cada agente usa el proveedor y modelo que se le configuran. Sin DeepSeek, MiniMax ni un `local` genérico en esta fase.
 - Catálogo de proveedores y modelos en `llm.yml`; las claves se guardan en el keychain del SO.
 - Errores, reintentos acotados, timeouts, idempotencia, **cancelación** y registro de tokens.
-- Límites diarios opcionales por workspace.
+- Límites diarios opcionales por workspace (propuestos para después del primer corte de `AgentRun`, A10).
 
 **Incluye (Fases 4–5)**
 - Tareas con `git worktree` aislado, herramientas del agente acotadas al worktree y aprobaciones humanas. Ver [Herramientas y aprobaciones](#herramientas-y-aprobaciones).
@@ -44,7 +44,7 @@
 - [ ] Los errores transitorios se reintentan (máximo 3 intentos, espera creciente, respetando `retry-after`); los permanentes fallan de inmediato con un mensaje claro.
 - [ ] Una ejecución no se procesa dos veces ni crea dos respuestas; hay una sola ejecución activa por agente y sala (`client_request_id` único e índice parcial).
 - [ ] Al iniciar la app, toda ejecución `running` huérfana pasa a `failed` con `error_kind = expired`.
-- [ ] Cada agente usa su proveedor y modelo; cambiarlos no altera ejecuciones anteriores, que conservan los suyos.
+- [ ] Cada agente usa su proveedor y modelo; cada ejecución conserva los que copió al crearse (hoy no se pueden cambiar en un agente, D12).
 - [ ] Si falta la clave de un proveedor, solo falla ese proveedor con `provider_not_configured`.
 - [ ] La clave nunca llega a la UI, a los logs ni a los eventos; no se registran prompts ni razonamiento.
 - [ ] Con solo el proveedor local, la app funciona sin conexión a internet.
@@ -52,33 +52,32 @@
 - [ ] Estados vacíos, errores y confirmaciones en `es` y `en`.
 
 ## Reglas de negocio
-- **Proveedor y modelo:** cada agente tiene `provider` y `model` (por defecto `anthropic` / `claude-sonnet-5-5`), elegidos entre los de `llm.yml`. Se pueden elegir proveedores sin clave: el agente muestra una advertencia y la ejecución falla con `provider_not_configured`. Si un modelo sale del catálogo, el agente sigue siendo editable y sus ejecuciones fallan con `model_unavailable`. El proveedor `local` no declara modelos: se descubren con `GET /v1/models`.
+- **Proveedor y modelo:** cada agente tiene `provider` y `model` (por defecto `anthropic` / `claude-sonnet-5-5`), elegidos entre los de `llm.yml`. Se pueden elegir proveedores sin clave: el agente muestra una advertencia y la ejecución falla con `provider_not_configured`. Si un modelo sale del catálogo, el agente sigue siendo editable y sus ejecuciones fallan con `model_unavailable`. Los proveedores locales (`ollama`, `lmstudio`) no declaran modelos: se descubren con `GET /v1/models`. Hoy el proveedor y el modelo de un agente no se pueden cambiar después de crearlo (D12).
 - **Historia fija:** el run copia `provider` y `model` del agente al crearse y no se sobrescriben; `response_model` guarda lo que reportó el proveedor.
-- **Contexto:** instrucciones del agente, objetivo de la sala y mensajes anteriores, hasta 24 000 caracteres y 100 mensajes (tope configurable para modelos locales con poca ventana). Los mensajes de otros se envían con su nombre.
-- **Generación:** `max_output_tokens` por modelo y `effort` solo si el modelo lo declara. Sin `temperature`. Solo se persiste el texto final; el texto parcial vive en memoria durante el streaming y el razonamiento se descarta.
-- **Timeout:** 45 s por llamada al proveedor (`limits.timeout_seconds` en `llm.yml`), ampliable para modelos locales lentos.
+- **Contexto:** instrucciones del agente, nombre de la sala (no existe columna de objetivo, D11) y mensajes anteriores de esa sala, hasta 24 000 caracteres y 100 mensajes (tope configurable para modelos locales con poca ventana). Los mensajes de otros se envían con su nombre.
+- **Generación:** la extensión de la respuesta se controla con el parámetro de tokens de salida que admite cada proveedor, con el valor que declara el catálogo para el modelo; otros parámetros (p. ej. `effort`) solo si el catálogo los declara. Sin `temperature`. Solo se persiste el texto final; el texto parcial vive en memoria durante el streaming y el razonamiento se descarta. Hoy `llm.yml` no declara límites: añadirlos forma parte de la propuesta de [agent-run.md](../architecture/agent-run.md).
+- **Timeout:** por proveedor, declarado en el catálogo (45 s en la nube como en Rails; mayor para modelos locales lentos). Valores propuestos en [agent-run.md](../architecture/agent-run.md).
 - **Idempotencia:** el compositor genera un `client_request_id` (UUID) por intento de envío; si ya existe una ejecución con el mismo `(sala, client_request_id)` se devuelve su mensaje sin crear otra. Un id ausente o inválido se reemplaza por uno nuevo (sin idempotencia). Si el agente ya tiene una ejecución activa en la sala, la instrucción se rechaza con `agent_busy` y no se guarda nada.
 - **Mensajes de error:** la UI los resuelve por `error_kind` (con el nombre del proveedor); uno desconocido muestra el genérico. Nunca se muestra el texto del proveedor ni claves.
 - **Reintentos:** 3 intentos con espera creciente; el cliente HTTP usa `max_retries = 0` y solo el motor reintenta.
 - **Errores transitorios:** `rate_limited`, `timeout`, `provider_unavailable`. **Permanentes:** `provider_not_configured`, `model_unavailable`, `provider_auth_failed`, `provider_billing`, `provider_rejected`, `content_filtered`, `output_truncated`, `invalid_response`, además de `cancelled` y `expired`. Un `connection_refused` contra `localhost` es `provider_unavailable` y la UI muestra «Ollama no está en ejecución».
-- **Límites diarios (opcionales):** 50 ejecuciones y 500 000 tokens en 24 horas, desactivados para `local`. Protección inicial, no presupuesto estricto.
+- **Límites diarios (opcionales):** 50 ejecuciones y 500 000 tokens en 24 horas, desactivados para los proveedores locales. Protección inicial, no presupuesto estricto. Fuera del primer corte de `AgentRun`: necesitan la tabla `settings` (propuesta A10 en [agent-run.md](../architecture/agent-run.md)).
 - **Registro:** por ejecución se guardan proveedor, modelo solicitado y reportado, tokens de entrada, salida y caché, `finish_reason` normalizado (`stop`, `length`, `content_filter`, `other`) e id de solicitud del proveedor.
 - **Eliminar un agente** con mensajes o ejecuciones no está permitido. **Eliminar una sala** elimina sus ejecuciones y mensajes y cancela las ejecuciones en curso.
-- Respuesta limitada a 4000 caracteres, como todo mensaje. **En conflicto** con [rooms.md](rooms.md) y con el `CHECK` de `messages`, que solo limitan los mensajes del usuario; pendiente de decisión ([decisions.md](decisions.md) P15).
+- **Longitud de la respuesta (decisión aprobada D10):** el límite de 4000 caracteres es solo para los mensajes del usuario. La respuesta del agente no tiene límite de caracteres; la acotan los tokens de salida del modelo y los límites de contexto. Nunca se trunca en silencio: si el proveedor corta la respuesta (`finish_reason` de longitud) la ejecución falla con `output_truncated` y no se crea mensaje; si la filtra, con `content_filtered`. El esquema de `messages` no cambia.
 
 ## Implicaciones de las reuniones conversacionales
 
 > **Propuesta, pendiente.** Nada de esta sección reemplaza las reglas anteriores mientras no se apruebe. Detalle en [conversation-engine.md §10](../architecture/conversation-engine.md#10-adaptaciones-de-agentrun).
 
 - `AgentRun` sigue siendo **independiente del audio**: la voz consume el mensaje persistido y la entrada por voz llega como texto transcrito.
-- **Conflicto con la regla de idempotencia:** `client_request_id` único impide que una intervención a «Equipo» cree varias ejecuciones. Se propone que sea único por `(room_id, client_request_id, agent_id)` (P1 en [conversation-engine.md](../architecture/conversation-engine.md#12-persistencia-y-modelo-de-datos)).
+- **Idempotencia con varias ejecuciones por intervención:** un `client_request_id` único impediría que una intervención a «Equipo» cree varias ejecuciones (C1 en [conversation-engine.md](../architecture/conversation-engine.md#12-persistencia-y-modelo-de-datos); se resuelve en [agent-run.md](../architecture/agent-run.md)).
 - El prompt se construye al hacer `claim`, para que cada turno vea las respuestas anteriores.
 - Los tokens llevan `run_id` y una secuencia; al reintentar se reinicia el texto provisional y la voz solo usa el texto final.
 - Posible resultado «pasar» (`succeeded` sin mensaje) en el modo equipo: afecta a los `CHECK` portados de Rails.
 - Cancelación por intervención y por sala, además de por ejecución.
 - El siguiente turno lo crea el coordinador, nunca la ejecución anterior.
-- **Proveedores:** el catálogo real (`llm.yml`) tiene `anthropic`, `openai`, `groq`, `ollama` y `lmstudio`; este documento lista DeepSeek, MiniMax y un `local` único, y no menciona Groq. Pendiente de alinear (P14).
-- `update_agent` no permite hoy cambiar el proveedor ni el modelo de un agente, así que «cambiar de modelo» no está disponible como alternativa cuando un proveedor falla.
+- `update_agent` no permite cambiar el proveedor ni el modelo de un agente (limitación vigente, D12), así que «cambiar de modelo» no está disponible como alternativa cuando un proveedor falla.
 
 ## Claves de API
 
@@ -98,6 +97,7 @@ Planificado (Fases 4–5); se documenta con [feature-template.md](feature-templa
 - Cada llamada queda en `tool_calls` para auditoría.
 
 ## Dependencias
+- Diseño técnico propuesto: [agent-run.md](../architecture/agent-run.md).
 - Agentes, salas y mensajes ([agent-catalog.md](agent-catalog.md), [rooms.md](rooms.md)).
 - Keychain del SO, SQLite y eventos Tauri ([overview](../architecture/overview.md)).
 
@@ -107,7 +107,7 @@ Planificado (Fases 4–5); se documenta con [feature-template.md](feature-templa
 - Un razonamiento que agota `max_output_tokens` falla como `output_truncated`.
 - Las respuestas se muestran como texto plano, sin markdown.
 - Una ejecución fallida no se puede reintentar: hay que enviar la instrucción de nuevo.
-- Las capacidades de los modelos de OpenAI y MiniMax y el formato de uso de MiniMax solo se confirman con las pruebas reales opcionales y claves válidas.
+- Los parámetros exactos de cada proveedor (nombre del parámetro de tokens de salida, uso en streaming de Groq, Ollama y LM Studio) se fijan con pruebas `wiremock` y se confirman con las pruebas reales opcionales y claves válidas.
 
 **Prioridad:** Must Have
 **Métrica de éxito:** porcentaje de salas con al menos una ejecución `succeeded`, tasa de ejecuciones `failed` por `error_kind` y proveedor, tokens por ejecución y proveedor.

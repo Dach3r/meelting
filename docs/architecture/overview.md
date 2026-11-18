@@ -1,6 +1,6 @@
 # Arquitectura
 
-> **Estado:** Fases 0–2 completadas; Fase 3 con salas y mensajes construidos (sin ejecución de agentes). Hoy existe el scaffold Tauri 2 (React 19 + TypeScript + Vite + Tailwind v4), SQLite con `profile` y `workspaces`, el primer arranque, el shell y el cambio de workspace, el módulo `keychain` con los comandos `save_secret`, `secret_last_four` y `delete_secret`, y los spikes `run_in_worktree` (git worktree + PTY con salida en vivo) y `stream_completion` (streaming SSE desde un proveedor compatible con Chat Completions, como Ollama). La organización de carpetas está en [project-structure.md](project-structure.md). El resto de este documento describe la arquitectura **objetivo**; cada sección marca lo que ya existe.
+> **Estado:** Fases 0–2 completadas; Fase 3 con salas y mensajes construidos (sin ejecución de agentes). Hoy existe el scaffold Tauri 2 (React 19 + TypeScript + Vite + Tailwind v4), SQLite con `profile`, `workspaces`, `teams`, `agents`, `canvas_positions`, `rooms`, `room_agents` y `messages`, el primer arranque, el shell y el cambio de workspace, equipos, agentes y organigrama, salas con participantes y mensajes del usuario, el módulo `keychain` con los comandos `save_secret`, `secret_last_four` y `delete_secret`, y los spikes `run_in_worktree` (git worktree + PTY con salida en vivo) y `stream_completion` (streaming SSE desde un proveedor compatible con Chat Completions, como Ollama). La organización de carpetas está en [project-structure.md](project-structure.md). El resto de este documento describe la arquitectura **objetivo**; cada sección marca lo que ya existe.
 >
 > Este producto reemplaza al SaaS Rails (repositorio `meelting`), congelado como referencia de diseño: modelo de dominio, estados, errores, textos, plantillas y specs como casos de prueba.
 
@@ -68,6 +68,7 @@
 - **Integración con el SO** (`system/`): procesos hijo (`git`), PTY y keychain; sin reglas de negocio.
 - **Dominio puro** (modelos, `BuildPrompt`, normalización de proveedores, path jail) separado del código de integración con el SO, para poder testearlo sin I/O.
 - **Eventos** (`emit`) del núcleo a la UI: `message:created` (✅, tras confirmar la transacción), y previstos `agent_run:token`, `agent_run:status`, `tool_call:output`. Los eventos propuestos para las reuniones y la voz (plan, disponibilidad, captura, transcripción, reproducción) están en [conversation-engine.md §11](conversation-engine.md#11-contratos-ipc-propuestos-nombres-no-definitivos).
+- **Ejecución de agentes** (propuesta pendiente de aprobación): [agent-run.md](agent-run.md).
 - **Reuniones conversacionales y voz** (propuesta): [conversation-engine.md](conversation-engine.md) y [voice-engine.md](voice-engine.md). La captura y la reproducción de audio irían en el núcleo; `AgentRun` permanece independiente del audio.
 
 El webview **no recibe acceso directo a `fs` ni `shell`**: las capabilities de Tauri se declaran mínimas, solo los comandos propios.
@@ -124,8 +125,8 @@ Reglas generales:
 | `rooms` | `id`, `workspace_id`, `name` (1–80), `created_at`, `updated_at` | Única `(id, workspace_id)`. `updated_at` es la última actividad: igual a `created_at` al crear y se actualiza con cada mensaje en la misma transacción. Índice `(workspace_id, updated_at DESC, id DESC)` para el listado |
 | `room_agents` | `room_id`, `agent_id`, `workspace_id`, `created_at` | PK `(room_id, agent_id)`, sin `id` ni `updated_at`. FK compuestas `(room_id, workspace_id) → rooms` y `(agent_id, workspace_id) → agents`, ambas `ON DELETE CASCADE`; la segunda usa el índice único `agents (id, workspace_id)` |
 | `messages` | `id`, `room_id`, `agent_id` (NULL = usuario), `body`, `created_at` | Inmutables, sin `updated_at`. `body` no vacío; máximo 4000 caracteres solo si es del usuario (`agent_id IS NULL`). `room_id → rooms` `ON DELETE CASCADE`; `(room_id, agent_id) → room_agents` `ON DELETE NO ACTION`: un agente solo escribe en salas donde participa, y un agente con mensajes no se puede eliminar ni quitar de la sala. Al eliminar la sala, la comprobación al final de la sentencia permite borrar participaciones y mensajes juntos |
-| `agent_runs` | `id`, `room_id`, `agent_id`, `request_message_id`, `response_message_id`, `client_request_id`, `status`, `error_kind`, `attempts`, `provider`, `model`, `response_model`, `input_tokens`, `output_tokens`, `cached_input_tokens`, `finish_reason`, `provider_request_id`, `started_at`, `finished_at`, timestamps | Los 7 `CHECK` del producto Rails. Únicas: `client_request_id` y una ejecución activa por `(agent_id, room_id)` (índice parcial `WHERE status IN ('queued','running')`) |
-| `llm_providers_configured` | `provider`, `base_url`, `updated_at` | Qué proveedores tienen clave; la clave vive en el keychain |
+| `agent_runs` | Propuesta final pendiente de aprobación en [agent-run.md §2](agent-run.md#2-modelo-de-datos-migración-create_agent_runs): `id`, `room_id`, `agent_id`, `request_message_id`, `response_message_id`, `client_request_id`, `status`, `error_kind`, `attempts`, `provider`, `model`, `input_tokens`, `output_tokens`, `created_at`, `started_at`, `finished_at` | Únicas: `(room_id, client_request_id)` y una ejecución activa por `(room_id, agent_id)` (índice parcial). No porta de Rails `user_id`, `updated_at`, `finish_reason`, `response_model`, `cached_input_tokens` ni `provider_request_id` |
+| `llm_providers_configured` | `provider`, `base_url`, `updated_at` | Planificada para la pantalla «Claves de IA»; `AgentRun` no la necesita (consulta el keychain al ejecutar) |
 | `tasks` | `id`, `workspace_id`, `room_id`, `agent_id`, `title`, `repo_path`, `base_branch`, `branch`, `worktree_path`, `status`, `created_at`, `updated_at`, `finished_at` | Fase 4. `status`: `preparing`, `ready`, `running`, `waiting_approval`, `done`, `failed`, `discarded` |
 | `tool_calls` | `id`, `agent_run_id`, `task_id`, `tool`, `arguments` (JSON), `status`, `output`, `exit_code`, `created_at`, `finished_at` | Fase 5 |
 | `approvals` | `id`, `tool_call_id`, `decision` (`pending`/`approved`/`denied`), `decided_at`, `remember` (`never`/`task`/`workspace`) | Fase 5 |
@@ -135,25 +136,13 @@ Reglas generales:
 
 ## 6. Motor de agentes y proveedores
 
-Trait común:
+Proveedores de la Fase 3 (decisión aprobada D9): los cinco del catálogo real `src-tauri/src/catalogs/llm.yml`, con tres protocolos. Diseño propuesto, pendiente de aprobación, en [agent-run.md](agent-run.md): selección del adaptador con un `match` sobre el protocolo declarado en el catálogo, sin trait mientras haya tres casos.
 
-```rust
-#[async_trait]
-trait Provider {
-    async fn complete(&self, req: CompletionRequest, sink: &dyn TokenSink)
-        -> Result<Completion, LlmError>;
-}
-```
-
-| Adaptador | Protocolo | Notas |
+| Protocolo | Proveedores | Notas |
 |---|---|---|
-| `openai` | Responses API, SSE | `instructions` + `input`; `reasoning.effort` solo si el modelo lo declara; `store: false`; `insufficient_quota` → `BillingFailed` |
-| `anthropic` | Messages API, SSE | `system`, `messages`, `max_tokens`; `output_config.effort` solo si el modelo lo declara; texto = bloques `text` |
-| `deepseek` | Chat Completions (`https://api.deepseek.com`) | Instrucciones como `system`; descartar `reasoning_content` |
-| `minimax` | Anthropic-compatible (`https://api.minimax.io/anthropic`) | Mismo contrato que `anthropic`; nunca enviar `thinking`; `Authorization: Bearer` |
-| `local` | Chat Completions compatible con OpenAI (Ollama `:11434`, LM Studio `:1234`) | Sin API key; modelos con `GET /v1/models`; sin `effort`; timeout largo |
-
-> **Discrepancia pendiente** ([decisions.md](../product/decisions.md) P14): el catálogo real `src-tauri/src/catalogs/llm.yml` define `anthropic`, `openai` y `groq` (nube) y `ollama` y `lmstudio` (local). `deepseek` y `minimax` no están en el catálogo, `groq` (compatible con Chat Completions) no tiene adaptador en esta tabla y `local` está dividido en dos claves.
+| Messages API, SSE | `anthropic` | `system`, `messages`, `max_tokens`; texto = bloques `text` |
+| Responses API, SSE | `openai` | `instructions` + `input`; `store: false`; los tokens de razonamiento cuentan en `max_output_tokens` |
+| Chat Completions, SSE | `groq` (nube, con clave), `ollama` y `lmstudio` (local, sin clave; modelos con `GET /v1/models`) | Instrucciones como `system`; timeout más largo en local. Evoluciona el spike `stream_completion` |
 
 Reglas:
 - La clave solo se lee del keychain en el núcleo; **nunca llega a la UI, a logs ni a eventos**. No se registran prompts ni razonamiento.
@@ -165,9 +154,9 @@ Reglas:
 
 **Errores (`LlmError`):** transitorios `rate_limited`, `timeout`, `provider_unavailable`; permanentes `provider_not_configured`, `model_unavailable`, `provider_auth_failed`, `provider_billing`, `provider_rejected`, `content_filtered`, `output_truncated`, `invalid_response`. HTTP: 401/403 → auth, 402 → billing, 408 → timeout, 429 → rate limit (respetando `retry-after`), 5xx → unavailable, resto → rejected.
 
-**Máquina de estados de `AgentRun`:** `queued → running → succeeded | failed`. Transiciones solo por funciones del repositorio, atómicas: `claim`, `requeue` (suma `attempts`), `succeed`, `fail_with(kind)`, `expire`. Hasta 3 intentos con espera creciente. Idempotencia por `client_request_id` único e índice parcial. Al iniciar la app, toda ejecución `running` pasa a `failed` con `error_kind = expired`. La cancelación usa `CancellationToken` y termina en `failed` con `error_kind = cancelled`. El texto parcial se acumula en memoria; solo se persiste el mensaje final.
+**Máquina de estados de `AgentRun`:** `queued → running → succeeded | failed`. Transiciones solo por funciones del repositorio, atómicas: `claim`, `requeue` (suma `attempts`), `succeed`, `fail_with(kind)`, `expire`. Hasta 3 intentos con espera creciente. Idempotencia por `(room_id, client_request_id)` único e índice parcial. Al iniciar la app, toda ejecución `queued` o `running` pasa a `failed` con `error_kind = expired` (propuesta en [agent-run.md](agent-run.md)). La cancelación usa `CancellationToken` y termina en `failed` con `error_kind = cancelled`. El texto parcial se acumula en memoria; solo se persiste el mensaje final.
 
-**Contexto del prompt (`BuildPrompt`):** instrucciones del agente, objetivo de la sala y mensajes previos hasta 24 000 caracteres y 100 mensajes; los de otros se envían con su nombre.
+**Contexto del prompt (`BuildPrompt`):** instrucciones del agente, nombre de la sala (no hay columna de objetivo, D11) y mensajes previos de la sala hasta el tope de caracteres del catálogo y 100 mensajes; los de otros se envían con su nombre. **Longitud de la respuesta** (D10): sin límite de caracteres; la acotan los tokens de salida del catálogo y una respuesta cortada falla como `output_truncated` sin crear mensaje.
 
 ## 7. Tareas, worktrees y herramientas
 
@@ -247,7 +236,7 @@ Pantallas: equipos (organigrama), contratar y editar agentes, catálogo, salas (
 | Nivel | Herramienta | Cubre |
 |---|---|---|
 | Núcleo Rust | `cargo test` | Repositorios y `CHECK`, máquina de `AgentRun`, `BuildPrompt`, proveedores con servidor simulado (`wiremock`), path jail, bucle de herramientas |
-| Contrato de proveedores | Suite compartida | Mismos casos para los cinco adaptadores (éxito, tokens, cada `finish_reason`, cada error) sin APIs reales |
+| Contrato de proveedores | Suite compartida | Mismos casos para los tres protocolos (éxito, tokens, cada final, cada error) sin APIs reales |
 | Git | Repos temporales reales | Worktrees, huérfanos, rutas con espacios y Unicode |
 | Componentes | Vitest + Testing Library | Cada componente del atomic design |
 | E2E | `tauri-driver` en CI | Crear workspace, contratar agente, enviar instrucción con proveedor simulado, aprobar un comando, descartar una tarea |
@@ -271,7 +260,7 @@ CI (`.github/workflows/ci.yml`), tres trabajos en paralelo: `lint` (Ubuntu: `rus
 | 2 | Framework de UI | React (ya elegido en el scaffold; librería de grafos para el organigrama) |
 | 3 | Datos del Rails actual | No migrarlos, salvo que existan datos reales |
 | 4 | Política de cobertura | 100 % en el dominio del núcleo, alto en el resto, medido en CI |
-| 5 | Límites diarios | Opcionales y desactivados para `local` |
+| 5 | Límites diarios | Opcionales y desactivados para los proveedores locales; después del primer corte de `AgentRun` |
 | 6 | Cancelar ejecución | Incluirlo (imprescindible con modelos locales lentos) |
 | 7 | Autoactualización | Opcional vía GitHub Releases firmados |
 | 8 | Soporte mínimo de SO | macOS 12+, Windows 10+ (WebView2), Ubuntu 22.04+ |

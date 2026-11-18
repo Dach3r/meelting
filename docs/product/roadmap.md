@@ -40,9 +40,9 @@ Fase 0 completada (2026-11-17): scaffold Tauri 2 (React + TypeScript + Vite), sp
 ## Fase 3 — Salas y ejecución con streaming (3 semanas)
 
 - ✅ Salas, participantes y chat persistente ([rooms.md](rooms.md)).
-- Adaptadores por proveedor. **Discrepancia pendiente:** los docs listan `openai`, `anthropic`, `deepseek`, `minimax` y `local`, pero el catálogo real (`llm.yml`) tiene `anthropic`, `openai`, `groq`, `ollama` y `lmstudio`. Se decide antes de implementar ([decisions.md](decisions.md) P14).
-- `AgentRun` con estados, reintentos, idempotencia, expiración al arrancar y cancelación, con los ajustes que necesitan las reuniones: varios runs por intervención, prompt construido en `claim` y tokens con secuencia. Ver [conversation-engine.md §10](../architecture/conversation-engine.md#10-adaptaciones-de-agentrun).
-- Claves de IA en keychain con verificación previa.
+- Adaptadores para los cinco proveedores del catálogo real: `anthropic`, `openai`, `groq`, `ollama` y `lmstudio` (decisión aprobada D9).
+- `AgentRun` con estados, reintentos, idempotencia, expiración al arrancar y cancelación, con los ajustes que necesitan las reuniones: prompt construido en `claim` y tokens con secuencia. Propuesta técnica pendiente de aprobación: [agent-run.md](../architecture/agent-run.md).
+- Claves de IA en keychain con verificación previa (pantalla «Claves de IA», entrega separada de `AgentRun`).
 
 **Resultado esperado:** todos los criterios de [agent-execution.md](agent-execution.md), más streaming y cancelación; funciona sin conexión con un proveedor local en ejecución.
 
@@ -77,7 +77,7 @@ flowchart LR
 - **Objetivo:** preguntas al equipo, rondas y discusiones acotadas.
 - **Incluye:** coordinador híbrido (D2), sugerencia por IA con un modelo de Ajustes, ronda fija, «pasar» (P7), presupuesto de 4 (D3), sesión en memoria, «Detener», cancelación por intervención.
 - **Módulos:** dominio de planificación, registro de sesiones, servicios de intervención y cancelación, Ajustes (modelo coordinador), `useMeeting`.
-- **Base de datos:** `settings` (planificada, alcance P9); `agent_runs` con P1/P7. Requieren aprobación.
+- **Base de datos:** `settings` (planificada, alcance P9); `agent_runs` con C1/P7. Requieren aprobación.
 - **Riesgos:** coste en la nube, JSON inválido del coordinador (S7), bucles.
 - **Pruebas:** presupuesto, «ningún mensaje de agente crea runs», cancelación idempotente, eventos tardíos, sugerencia inválida.
 - **Aceptación:** criterios «Coordinación» de [voice-meetings.md](voice-meetings.md).

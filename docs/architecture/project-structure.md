@@ -13,7 +13,7 @@ meelting-desktop/
 ├── README.md
 ├── docs/
 │   ├── product/           Visión, roadmap, usuarios, oficina virtual, salas, agentes, reuniones y registro de decisiones
-│   └── architecture/      overview.md, este documento, motor conversacional y motor de voz (propuestas)
+│   └── architecture/      overview.md, este documento, AgentRun, motor conversacional y motor de voz (propuestas)
 ├── .github/workflows/     CI en macOS, Windows y Ubuntu
 ├── index.html             Entrada de Vite
 ├── package.json           Scripts y dependencias del frontend (pnpm)

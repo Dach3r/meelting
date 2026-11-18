@@ -1,6 +1,6 @@
 # Motor conversacional y coordinación de reuniones
 
-> **Estado:** propuesta, **no implementada**. Describe la arquitectura objetivo de las reuniones conversacionales ([voice-meetings.md](../product/voice-meetings.md)) y su relación con `AgentRun` ([agent-execution.md](../product/agent-execution.md)), que tampoco existe todavía. Hoy existen salas, participantes, mensajes del usuario y el evento `message:created` ([rooms.md](../product/rooms.md)). Ningún nombre de comando, evento, módulo o tabla de este documento es definitivo. Ningún cambio de esquema está aprobado. Decisiones: [decisions.md](../product/decisions.md).
+> **Estado:** propuesta, **no implementada**. Describe la arquitectura objetivo de las reuniones conversacionales ([voice-meetings.md](../product/voice-meetings.md)) y su relación con `AgentRun` ([agent-execution.md](../product/agent-execution.md)), que tampoco existe todavía. Hoy existen salas, participantes, mensajes del usuario y el evento `message:created` ([rooms.md](../product/rooms.md)). Ningún nombre de comando, evento, módulo o tabla de este documento es definitivo. Ningún cambio de esquema está aprobado. La propuesta concreta de `AgentRun` (esquema, estados, streaming, cancelación) está en [agent-run.md](agent-run.md) y prevalece sobre §10 y §12 en lo que toque a `AgentRun`. Decisiones: [decisions.md](../product/decisions.md).
 
 ## 1. Principio de diseño
 
@@ -334,9 +334,9 @@ stateDiagram-v2
 
 ## 9. Contexto del prompt
 
-Hoy (planificado en `BuildPrompt`): instrucciones del agente, objetivo de la sala y mensajes previos, hasta **24 000 caracteres y 100 mensajes**, con los mensajes de otros firmados con su nombre. Notas:
+Planificado en `BuildPrompt`: instrucciones del agente, nombre de la sala y mensajes previos, hasta **24 000 caracteres y 100 mensajes** (topes del catálogo), con los mensajes de otros firmados con su nombre. Notas:
 
-- `rooms` **no tiene objetivo** en el esquema actual (solo `name`). El «objetivo de la sala» de `BuildPrompt` no existe: o se usa el nombre o se propone una columna (**pendiente**).
+- `rooms` solo tiene `name`: el prompt usa el nombre y no asume ninguna columna de objetivo (decisión aprobada D11).
 - `agents.instructions` admite hasta 10 000 caracteres: puede ocupar hasta el 40 % del presupuesto antes de incluir historial.
 
 ### Composición propuesta para reuniones
@@ -370,7 +370,7 @@ Se valida la hipótesis: **`AgentRun` permanece independiente del audio.** Recib
 | 7 | Quién crea el siguiente run | — | El servicio de intervención o coordinación al terminar el anterior, nunca el run | Los agentes no se convocan |
 | 8 | Concurrencia | Una activa por agente y sala | Más un run de reunión activo por sala; límite global por workspace pendiente | Coste y recursos locales |
 | 9 | Disponibilidad | `error_kind` al fallar | Comprobación previa sin coste (p. ej. listar modelos) para pintar estados; `error_kind` sin cambios | Estados «Disponible», «Requiere conexión», etc. |
-| 10 | Límite de respuesta | Contradicción: 4000 caracteres en [agent-execution.md](../product/agent-execution.md) y sin límite en [rooms.md](../product/rooms.md) y en el esquema | Resolver antes de la Fase 3 | Afecta al TTS (respuestas largas) |
+| 10 | Límite de respuesta | Resuelto (D10): sin límite de caracteres para los agentes; extensión acotada por los tokens de salida del modelo; respuesta cortada = `output_truncated` sin mensaje | — | El TTS deberá tratar respuestas largas (R3) |
 
 Respuestas a las preguntas de diseño:
 - **¿Conoce `AgentRun` las modalidades?** No. Solo el marco de prompt puede llevar una indicación de estilo.
@@ -380,14 +380,9 @@ Respuestas a las preguntas de diseño:
 - **¿Qué pasa si se cancela durante el TTS?** Si el texto ya estaba persistido, el mensaje queda y solo se corta el audio (marca en memoria). Si aún se generaba, no hay mensaje.
 - **¿Cómo se evita la voz duplicada con reintentos?** El TTS solo actúa sobre mensajes persistidos, y cada mensaje se encola una sola vez por `message_id`.
 
-### Proveedores: discrepancia del catálogo
+### Proveedores
 
-| Fuente | Proveedores |
-|---|---|
-| `src-tauri/src/catalogs/llm.yml` (✅ real) | `anthropic`, `openai`, `groq` (nube); `ollama`, `lmstudio` (local) |
-| [agent-execution.md](../product/agent-execution.md), [overview.md](overview.md) §6, roadmap Fase 3 | `openai`, `anthropic`, `deepseek`, `minimax`, `local` |
-
-Groq (Chat Completions compatible) no tiene adaptador documentado; DeepSeek y MiniMax no están en el catálogo; `local` está dividido en dos claves. Hay que decidir el conjunto de la Fase 3 antes de implementar (**pendiente**). No se proponen adaptadores nuevos por las reuniones: la voz no depende del proveedor LLM.
+Resuelto (D9): los proveedores de la Fase 3 son los de `src-tauri/src/catalogs/llm.yml`: `anthropic`, `openai` y `groq` (nube); `ollama` y `lmstudio` (local). Sin DeepSeek, MiniMax ni un `local` genérico. No se proponen adaptadores nuevos por las reuniones: la voz no depende del proveedor LLM. Protocolos y capacidades: [agent-run.md](agent-run.md).
 
 ## 11. Contratos IPC propuestos (nombres no definitivos)
 
@@ -445,13 +440,15 @@ Groq (Chat Completions compatible) no tiene adaptador documentado; DeepSeek y Mi
 
 ### Cambios de esquema propuestos (ninguno aprobado)
 
-**P1. Ajuste de `agent_runs` (antes de crearla en la Fase 3)**
+Se numeran C1–C4 para no confundirlos con las decisiones pendientes P1–P24 de [decisions.md](../product/decisions.md).
+
+**C1. Ajuste de `agent_runs` (se decide en la propuesta de `AgentRun`)**
 - **Problema:** `client_request_id` único impide varios runs por intervención.
 - **Cambio:** índice único `(room_id, client_request_id, agent_id)` en lugar de `client_request_id` único; se mantiene el índice parcial de un run activo por `(agent_id, room_id)`. Revisar el `CHECK` que exige `response_message_id` en `succeeded` si se aprueba «pasar».
 - **Migraciones:** ninguna existente; se integra en la propuesta de `create_agent_runs`.
 - **Si no se hace:** `team` y la discusión necesitan un id artificial por run y se pierde la idempotencia de la intervención.
 
-**P2. `agent_voices` (dirección aprobada)**
+**C2. `agent_voices` (dirección aprobada)**
 
 | Columna | Tipo | Restricciones |
 |---|---|---|
@@ -468,7 +465,7 @@ Groq (Chat Completions compatible) no tiene adaptador documentado; DeepSeek y Mi
 - **Compatibilidad:** tabla nueva, sin tocar `agents`. Los agentes existentes quedan con la voz por defecto.
 - **Si no se hace:** las voces cambian al cambiar de motor o de máquina y no se pueden elegir.
 
-**P3. `settings` (ya planificada como `key`, `value`)**
+**C3. `settings` (ya planificada como `key`, `value`)**
 - **Claves propuestas:**
   - `meeting.coordinator_provider` y `meeting.coordinator_model`;
   - `voice.stt_engine` y `voice.stt_model`;
@@ -477,7 +474,7 @@ Groq (Chat Completions compatible) no tiene adaptador documentado; DeepSeek y Mi
 - **Pendiente:** las claves de API son por workspace (`<workspace>/<provider>`), así que el modelo coordinador y los motores en la nube deberían serlo también. Hay que decidir si `settings` lleva `workspace_id` (nullable para los ajustes globales) o si se usan claves con prefijo.
 - **Si no se hace:** sin modelo coordinador ni motores elegidos, la reunión cae a la ronda fija y no hay voz.
 
-**P4. Objetivo de la sala (opcional):** `add_goal_to_rooms` (`goal TEXT`, ≤ 500 caracteres). Solo si se quiere conservar el «objetivo» de `BuildPrompt`.
+**C4. Objetivo de la sala:** descartado por ahora (D11). `rooms` no cambia y el prompt usa el nombre de la sala.
 
 ```mermaid
 erDiagram
