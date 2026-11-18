@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
@@ -10,7 +10,10 @@ const invokeMock = vi.mocked(invoke);
 
 const acme = { id: "1", name: "Acme" };
 const globex = { id: "2", name: "Globex" };
-const roles = ["Product Owner", "Software Developer", "QA Engineer"];
+const roles = [
+  { group: "product", roles: ["Product Owner"] },
+  { group: "engineering", roles: ["Software Developer", "QA Engineer"] },
+];
 
 function session(overrides = {}) {
   return {
@@ -285,6 +288,48 @@ describe("workspace shell", () => {
     expect(zoomOut).toBeDisabled();
   });
 
+  it("selects a card on the board and clears the selection from the background", async () => {
+    invokeMock.mockImplementation(async (command) =>
+      command === "list_teams" ? [{ id: "t1", name: "General", agents: [] }] : session({ locale: "en" }),
+    );
+    const user = userEvent.setup();
+    render(<App />);
+
+    const card = await screen.findByRole("button", { name: "General" });
+    expect(card).toHaveAttribute("aria-pressed", "false");
+    await user.click(card);
+    expect(card).toHaveAttribute("aria-pressed", "true");
+    await user.click(screen.getByTestId("board"));
+    expect(card).toHaveAttribute("aria-pressed", "false");
+    await user.click(card);
+    await user.click(card);
+    expect(card).toHaveAttribute("aria-pressed", "false");
+  });
+
+  it("switches to the move tool, which grabs the board instead of selecting", async () => {
+    invokeMock.mockImplementation(async (command) =>
+      command === "list_teams" ? [{ id: "t1", name: "General", agents: [] }] : session({ locale: "en" }),
+    );
+    const user = userEvent.setup();
+    render(<App />);
+
+    const pan = await screen.findByRole("button", { name: "Move board" });
+    const select = screen.getByRole("button", { name: "Select" });
+    const board = screen.getByTestId("board");
+    expect(select).toHaveAttribute("aria-pressed", "true");
+    await user.click(pan);
+    expect(pan).toHaveAttribute("aria-pressed", "true");
+    expect(screen.queryByRole("button", { name: "General" })).not.toBeInTheDocument();
+    expect(board).toHaveClass("cursor-grab");
+    fireEvent.mouseDown(board, { clientX: 100, clientY: 100 });
+    expect(board).toHaveClass("cursor-grabbing");
+    fireEvent.mouseMove(board, { clientX: 60, clientY: 80 });
+    fireEvent.mouseUp(board);
+    expect(board).toHaveClass("cursor-grab");
+    await user.click(select);
+    expect(screen.getByRole("button", { name: "General" })).toBeInTheDocument();
+  });
+
   it("offers no zoom while there are no teams", async () => {
     mockCore(session({ locale: "en" }));
     render(<App />);
@@ -392,7 +437,15 @@ describe("workspace shell", () => {
     const next = screen.getByRole("button", { name: "Continue" });
     expect(next).toBeDisabled();
     await user.type(screen.getByLabelText("Name"), "Ana");
-    await user.selectOptions(screen.getByLabelText("Role"), "Software Developer");
+    expect(within(screen.getByRole("group", { name: "Engineering" })).getAllByRole("option")).toHaveLength(2);
+    await user.type(screen.getByLabelText("Search role"), "qa");
+    expect(screen.getAllByRole("option")).toHaveLength(1);
+    await user.clear(screen.getByLabelText("Search role"));
+    await user.type(screen.getByLabelText("Search role"), "zzz");
+    expect(screen.getByText("No role matches")).toBeInTheDocument();
+    await user.clear(screen.getByLabelText("Search role"));
+    await user.click(screen.getByRole("option", { name: "Software Developer" }));
+    expect(screen.getByRole("option", { name: "Software Developer" })).toHaveAttribute("aria-selected", "true");
     await user.click(next);
     expect(screen.getByRole("button", { name: "Continue" })).toBeDisabled();
     await user.type(screen.getByLabelText("Provider"), "openai");
@@ -413,7 +466,7 @@ describe("workspace shell", () => {
       },
     });
     expect(await screen.findByText("Ana")).toBeInTheDocument();
-    expect(screen.queryByLabelText("Role")).not.toBeInTheDocument();
+    expect(screen.queryByRole("listbox", { name: "Role" })).not.toBeInTheDocument();
   });
 });
 
@@ -489,7 +542,9 @@ describe("agent catalog", () => {
     await user.clear(screen.getByLabelText("Name"));
     await user.type(screen.getByLabelText("Name"), "Ana");
     await user.click(screen.getByRole("button", { name: "Continue" }));
-    expect(screen.getByLabelText("Role")).toHaveValue("Product Owner");
+    expect(screen.getByRole("option", { name: "Product Owner" })).toHaveAttribute("aria-selected", "true");
+    await user.keyboard("{ArrowDown}{Enter}");
+    expect(screen.getByRole("option", { name: "Software Developer" })).toHaveAttribute("aria-selected", "true");
     await user.click(screen.getByRole("button", { name: "Continue" }));
     expect(screen.getByLabelText("Description")).toHaveValue("Orders priorities.");
     await user.click(screen.getByRole("button", { name: "Continue" }));

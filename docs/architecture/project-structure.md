@@ -46,7 +46,7 @@ src-tauri/src/
 │   ├── theme_change.rs    ✅ guarda el tema del perfil
 │   ├── team_create.rs     ✅ crea un equipo y devuelve la lista actualizada
 │   ├── agent_create.rs    ✅ valida y crea un agente (personalizado o desde plantilla) y devuelve la lista actualizada
-│   ├── agent_roles_list.rs ✅ roles predefinidos del catálogo
+│   ├── agent_roles_list.rs ✅ roles predefinidos del catálogo, agrupados por área
 │   └── agent_templates_list.rs ✅ plantillas del catálogo en el idioma del perfil
 ├── system/                Capa 3: integración con el SO, sin reglas de negocio
 │   ├── git.rs             ✅ git por tokio::process (worktree add)
@@ -68,7 +68,7 @@ src-tauri/src/
 │   └── workspace.rs       ✅ workspace y validación del nombre
 └── catalogs/              Colecciones de solo lectura embebidas en la app
     ├── agent_roles.rs     ✅ carga los roles predefinidos de agente (YAML) y valida que un rol exista
-    ├── agent_roles.yml    ✅ lista de roles
+    ├── agent_roles.yml    ✅ roles agrupados por área
     ├── agent_templates.rs ✅ carga las plantillas de agente (YAML es/en) y valida claves
     ├── agent_templates/   ✅ product_owner, software_developer, qa_engineer, devops_engineer, project_manager (.yml)
     └── llm.yml            pendiente
@@ -115,8 +115,8 @@ src/
 │   └── useAgentRoles.ts   ✅ invoke list_agent_roles
 ├── test/setup.ts          Configuración de Vitest (jest-dom)
 └── components/            Atomic design (overview.md §8)
-    ├── atoms/             Avatar, Button, Field, Icons, Logo
-    ├── molecules/         AgentTemplateDetail, Alert, IslandMenu, LocaleSwitcher, Modal, NavItem, OrgAgentCard, OrgCard, SegmentedControl, SettingsRow, SwitchingOverlay, TeamForm, ThemeSwitcher, WorkspaceSwitcher, ZoomControls
+    ├── atoms/             Avatar, Button, CardSelect, Field, Icons, Logo
+    ├── molecules/         AgentTemplateDetail, Alert, BoardTools, IslandMenu, LocaleSwitcher, Modal, NavItem, OrgAgentCard, OrgCard, SegmentedControl, SettingsRow, SwitchingOverlay, TeamForm, ThemeSwitcher, WorkspaceSwitcher, ZoomControls
     ├── organisms/         AgentCatalogPage, AgentForm, HireWizard, NewWorkspacePage, OrgChart, Rail, SettingsPage, TeamsPage, Topbar
     └── templates/         Workspace (riel + topbar + contenido)
 ```

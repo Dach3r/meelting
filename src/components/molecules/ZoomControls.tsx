@@ -13,7 +13,7 @@ export function ZoomControls({ zoom, onChange }: Props) {
   const button =
     "grid size-9 cursor-pointer place-items-center rounded-lg text-muted transition-colors enabled:hover:bg-primary enabled:hover:text-ink disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-ink";
   return (
-    <div className="flex items-center gap-1 rounded-xl bg-pill-hover p-1">
+    <div className="flex items-center gap-1 rounded-2xl border border-line bg-raised p-1.5 shadow-sm">
       <button type="button" aria-label={t("teams.zoom.out")} disabled={zoom <= minZoom} onClick={() => move(-step)} className={button}>
         <Minus className="size-4" aria-hidden="true" />
       </button>

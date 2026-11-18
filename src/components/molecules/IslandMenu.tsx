@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from "react";
 
 type Props = {
   label: string;
@@ -34,15 +34,26 @@ export function IslandMenu({ label, trigger, children }: Props) {
           <feGaussianBlur in="SourceGraphic" stdDeviation="9" result="blur" />
           <feColorMatrix in="blur" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 20 -9" result="shape" />
           <feFlood className="[flood-color:var(--color-pill)] group-hover/island:[flood-color:var(--color-pill-hover)] group-data-open/island:[flood-color:var(--color-pill-open)]" result="paint" />
-          <feComposite in="paint" in2="shape" operator="in" />
+          <feComposite in="paint" in2="shape" operator="in" result="fill" />
+          <feMorphology in="shape" operator="dilate" radius="1" result="grown" />
+          <feFlood className="[flood-color:var(--color-line)]" result="line" />
+          <feComposite in="line" in2="grown" operator="in" result="ring" />
+          <feMerge>
+            <feMergeNode in="ring" />
+            <feMergeNode in="fill" />
+          </feMerge>
         </filter>
       </svg>
       <div
         className="pointer-events-none absolute -bottom-3 top-17 left-0 w-[calc(100%+0.75rem)] rounded-br-4xl bg-shell opacity-0 transition-opacity duration-150 before:absolute before:top-full before:left-0 before:size-6 before:bg-[radial-gradient(circle_at_100%_100%,transparent_23.5px,var(--color-shell)_24px)] after:absolute after:top-0 after:left-full after:size-6 after:bg-[radial-gradient(circle_at_100%_100%,transparent_23.5px,var(--color-shell)_24px)] group-data-open/island:opacity-100 group-data-open/island:duration-300 sm:top-18"
         aria-hidden="true"
       />
-      <div className="pointer-events-none absolute inset-0" style={{ filter: `url(#${filterId})` }} aria-hidden="true">
-        <div className="absolute inset-x-0 top-0 h-14 rounded-full bg-pill transition-colors group-hover/island:bg-pill-hover group-data-open/island:rounded-t-[1.75rem] group-data-open/island:rounded-b-none group-data-open/island:bg-pill-open sm:h-15 sm:group-data-open/island:rounded-t-[1.875rem]" />
+      <div
+        className="pointer-events-none absolute inset-0 group-data-open/island:[filter:var(--goo)]"
+        style={{ "--goo": `url(#${filterId})` } as CSSProperties}
+        aria-hidden="true"
+      >
+        <div className="absolute inset-x-0 top-0 h-14 rounded-full border border-line bg-pill transition-colors group-data-open/island:border-transparent group-hover/island:bg-pill-hover group-data-open/island:rounded-t-[1.75rem] group-data-open/island:rounded-b-none group-data-open/island:bg-pill-open sm:h-15 sm:group-data-open/island:rounded-t-[1.875rem]" />
         <div className="absolute inset-x-0 top-8 bottom-0 rounded-4xl bg-pill-open opacity-0 transition-opacity duration-300 group-data-open/island:opacity-100" />
       </div>
       <button

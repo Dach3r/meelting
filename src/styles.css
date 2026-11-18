@@ -23,7 +23,7 @@
   --color-raised: light-dark(#f3f4f6, #26262a);
   --color-pill: light-dark(#ffffff, #26262a);
   --color-pill-hover: light-dark(#f3f4f6, #303036);
-  --color-pill-open: light-dark(#ffffff, #303036);
+  --color-pill-open: light-dark(#ffffff, #26262a);
   --color-hi: light-dark(#e8eaee, #303036);
   --color-line: light-dark(#d1d5db, #3a3a40);
   --color-ink: light-dark(#111827, #f4f4f5);
@@ -97,6 +97,11 @@
     justify-content: center;
   }
 
+  .board-dots {
+    background-image: radial-gradient(var(--color-line) 1.2px, transparent 1.2px);
+    background-size: 24px 24px;
+  }
+
   .org-branch {
     position: relative;
     display: flex;
@@ -163,7 +168,7 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
-    width: 12.25rem;
+    width: 15rem;
     padding: 10px 0 0 2.5rem;
   }
 
@@ -177,7 +182,7 @@
     top: -10px;
     left: -16px;
     width: 16px;
-    height: 34px;
+    height: 38px;
     border-bottom: 2px solid var(--color-line);
     border-left: 2px solid var(--color-line);
     border-bottom-left-radius: 16px;
@@ -186,7 +191,7 @@
   .org-leaf:not(:last-child)::after {
     content: "";
     position: absolute;
-    top: 24px;
+    top: 28px;
     bottom: -10px;
     left: -16px;
     border-left: 2px solid var(--color-line);

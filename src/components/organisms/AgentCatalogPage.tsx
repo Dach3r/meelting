@@ -1,3 +1,4 @@
+import { ChartColumn, Code, Package, PenLine, type LucideIcon } from "lucide-react";
 import { useState } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
 import { useAgentRoles } from "../../hooks/useAgentRoles";
@@ -21,12 +22,23 @@ type Props = {
   onBack: () => void;
 };
 
+const roleGroupIcons: Record<string, LucideIcon> = {
+  product: Package,
+  engineering: Code,
+  data: ChartColumn,
+  design_support: PenLine,
+};
+
 type Dialog = { kind: "detail" | "hire"; template: AgentTemplate } | { kind: "custom" } | null;
 
 export function AgentCatalogPage({ team, busy, actionErrorMessage, onCreateAgent, onClearActionError, onBack }: Props) {
   const { t, locale } = useI18n();
   const { templates, errorKey } = useAgentTemplates(locale);
-  const roles = useAgentRoles();
+  const roleGroups = useAgentRoles().map(({ group, roles }) => ({
+    label: t(`teams.agent.roleGroups.${group}`),
+    icon: roleGroupIcons[group],
+    options: roles,
+  }));
   const [dialog, setDialog] = useState<Dialog>(null);
 
   function open(next: NonNullable<Dialog>) {
@@ -106,7 +118,7 @@ export function AgentCatalogPage({ team, busy, actionErrorMessage, onCreateAgent
             key={dialog.template.key}
             team={team}
             template={dialog.template}
-            roles={roles}
+            roleGroups={roleGroups}
             busy={busy}
             errorMessage={actionErrorMessage}
             onSubmit={create}
@@ -116,7 +128,7 @@ export function AgentCatalogPage({ team, busy, actionErrorMessage, onCreateAgent
       )}
       {dialog?.kind === "custom" && (
         <Modal title={`${t("teams.newAgent")} · ${team.name}`} onClose={close} bare>
-          <AgentForm team={team} roles={roles} busy={busy} errorMessage={actionErrorMessage} onSubmit={create} onCancel={close} />
+          <AgentForm team={team} roleGroups={roleGroups} busy={busy} errorMessage={actionErrorMessage} onSubmit={create} onCancel={close} />
         </Modal>
       )}
     </div>

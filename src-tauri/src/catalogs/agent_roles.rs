@@ -1,11 +1,21 @@
+use serde::{Deserialize, Serialize};
+
 const FILE: &str = include_str!("agent_roles.yml");
 
-pub fn all() -> Vec<String> {
+#[derive(Debug, Deserialize, Serialize)]
+pub struct RoleGroup {
+    pub group: String,
+    pub roles: Vec<String>,
+}
+
+pub fn groups() -> Vec<RoleGroup> {
     serde_yaml_ng::from_str(FILE).expect("embedded agent roles are valid YAML")
 }
 
 pub fn exists(role: &str) -> bool {
-    all().iter().any(|candidate| candidate == role)
+    groups()
+        .iter()
+        .any(|group| group.roles.iter().any(|candidate| candidate == role))
 }
 
 #[cfg(test)]
@@ -18,13 +28,29 @@ mod tests {
 
     #[test]
     fn loads_the_roles_without_duplicates() {
-        let roles = all();
+        let roles: Vec<String> = groups().into_iter().flat_map(|group| group.roles).collect();
 
         assert_eq!(roles.len(), 14);
         assert_eq!(roles.iter().collect::<HashSet<_>>().len(), roles.len());
         assert!(roles.iter().all(|role| {
             role == role.trim() && (1..=TEXT_MAX_CHARS).contains(&role.chars().count())
         }));
+    }
+
+    #[test]
+    fn groups_have_unique_keys_and_at_least_one_role() {
+        let groups = groups();
+
+        assert_eq!(groups.len(), 4);
+        assert_eq!(
+            groups
+                .iter()
+                .map(|group| &group.group)
+                .collect::<HashSet<_>>()
+                .len(),
+            groups.len()
+        );
+        assert!(groups.iter().all(|group| !group.roles.is_empty()));
     }
 
     #[test]

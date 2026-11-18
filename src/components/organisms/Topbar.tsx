@@ -7,7 +7,7 @@ export function Topbar(props: WorkspaceSwitcherProps) {
   return (
     <header className="relative z-10 flex h-22 shrink-0 items-start gap-3 bg-shell px-8 pt-4 pb-3">
       <WorkspaceSwitcher {...props} />
-      <label className="flex h-15 min-w-64 flex-1 items-center gap-4 rounded-full bg-pill pr-6 pl-5 text-muted transition-colors focus-within:bg-pill-hover">
+      <label className="flex h-15 min-w-64 flex-1 items-center gap-4 rounded-full border border-line bg-pill pr-6 pl-5 text-muted transition-colors focus-within:bg-pill-hover">
         <Search className="size-6 shrink-0" aria-hidden="true" />
         <input
           type="search"

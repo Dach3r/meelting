@@ -1,14 +1,22 @@
-- Product Owner
-- Software Developer
-- QA Engineer
-- DevOps Engineer
-- Project Manager
-- Tech Lead
-- Scrum Master
-- Business Analyst
-- UX/UI Designer
-- Data Analyst
-- Data Engineer
-- Security Engineer
-- Technical Writer
-- Support Engineer
+- group: product
+  roles:
+    - Product Owner
+    - Project Manager
+    - Scrum Master
+    - Business Analyst
+- group: engineering
+  roles:
+    - Software Developer
+    - Tech Lead
+    - QA Engineer
+    - DevOps Engineer
+    - Security Engineer
+- group: data
+  roles:
+    - Data Analyst
+    - Data Engineer
+- group: design_support
+  roles:
+    - UX/UI Designer
+    - Technical Writer
+    - Support Engineer

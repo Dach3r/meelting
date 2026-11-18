@@ -10,7 +10,7 @@ type Props = Omit<InputHTMLAttributes<HTMLInputElement>, "onChange"> & {
 };
 
 export const fieldClasses =
-  "w-full min-w-0 rounded-xl bg-raised px-4 py-4 text-base text-ink outline-none transition-colors placeholder:text-muted focus:bg-hi";
+  "w-full min-w-0 rounded-xl border border-line bg-raised px-4 py-4 text-base text-ink outline-none transition-colors placeholder:text-muted focus:bg-[color-mix(in_srgb,var(--color-raised)_75%,var(--color-surface))]";
 
 export function Field({ label, value, onChange, multiline = false, icon: Icon, ...rest }: Props) {
   const id = useId();

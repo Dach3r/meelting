@@ -1,6 +1,6 @@
 # Catálogo de agentes IA
 
-> **Estado:** en curso (Fase 2). Ya existen: listar equipos y agentes, crear equipos (solo nombre), el catálogo de 5 plantillas (YAML es/en embebido), el detalle de cada plantilla, contratar con un asistente por pasos, crear agentes personalizados con proveedor y modelo escritos a mano y un organigrama básico ("Tú" → equipos → agentes, con tarjetas, contraer y mostrar equipos y agentes, y zoom). Pendiente: «Contratar ahora con los datos de la plantilla» (requiere un proveedor y modelo por defecto de `llm.yml`), editar, eliminar, mover y arrastrar, resaltar la selección, minimapa, fijados, estado de cada agente, `llm.yml` y el equipo «General» inicial. Comportamiento portado del producto Rails, donde ya estaba implementado.
+> **Estado:** en curso (Fase 2). Ya existen: listar equipos y agentes, crear equipos (solo nombre), el catálogo de 5 plantillas (YAML es/en embebido), el detalle de cada plantilla, contratar con un asistente por pasos, crear agentes personalizados con proveedor y modelo escritos a mano y un organigrama en forma de tablero ("Tú" → equipos → agentes sobre un lienzo de puntos, con tarjetas, contraer y mostrar equipos y agentes, selección de tarjetas con manijas, herramienta de mover el tablero y zoom flotante). Pendiente: «Contratar ahora con los datos de la plantilla» (requiere un proveedor y modelo por defecto de `llm.yml`), editar, eliminar, mover y arrastrar tarjetas, minimapa, fijados, estado de cada agente, `llm.yml` y el equipo «General» inicial. Comportamiento portado del producto Rails, donde ya estaba implementado.
 
 **Problema:** el workspace nace vacío; el usuario no puede construir su equipo, que es la base de la oficina virtual.
 **Objetivo:** que el usuario contrate agentes desde un catálogo de plantillas, los personalice y los gestione como el equipo persistente de su workspace. Cada agente tiene su propio proveedor y modelo de IA y trabaja cuando el usuario le dirige una instrucción en una sala ([agent-execution.md](agent-execution.md)).
@@ -37,7 +37,7 @@
 
 **Equipos:** se crean, se renombran y se eliminan (solo sin agentes). Cada workspace nace con un equipo «General». Un agente se mueve de equipo desde su edición o arrastrando su tarjeta.
 
-**Agente personalizado:** desde Equipos, «Crear agente personalizado» abre un formulario de tres pasos (Identidad, Modelo, Instrucciones) y crea un agente con `template_key` nulo. El rol se elige de una lista cerrada de roles predefinidos (`catalogs/agent_roles.yml`); el núcleo rechaza cualquier rol que no esté en ella, también al contratar desde una plantilla.
+**Agente personalizado:** desde Equipos, «Crear agente personalizado» abre un formulario de tres pasos (Identidad, Modelo, Instrucciones) y crea un agente con `template_key` nulo. El rol se elige de una lista cerrada de roles predefinidos (`catalogs/agent_roles.yml`), agrupados por área (Producto, Ingeniería, Datos, Diseño y soporte) en una lista siempre abierta con buscador y teclado (flechas, Enter); el núcleo rechaza cualquier rol que no esté en ella, también al contratar desde una plantilla.
 
 **Idioma:** al contratar se copian los valores del idioma activo; el agente guardado no cambia si luego cambia el idioma de la interfaz.
 

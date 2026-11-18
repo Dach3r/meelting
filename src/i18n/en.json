@@ -32,6 +32,10 @@
       "team": "Team",
       "toggle": "Show or hide"
     },
+    "board": {
+      "select": "Select",
+      "pan": "Move board"
+    },
     "zoom": {
       "in": "Zoom in",
       "out": "Zoom out",
@@ -44,7 +48,14 @@
       "behavior": "Instructions",
       "name": "Name",
       "role": "Role",
-      "rolePlaceholder": "Select a role",
+      "roleSearch": "Search role",
+      "roleEmpty": "No role matches",
+      "roleGroups": {
+        "product": "Product",
+        "engineering": "Engineering",
+        "data": "Data",
+        "design_support": "Design & support"
+      },
       "provider": "Provider",
       "model": "Model",
       "description": "Description",

@@ -1,15 +1,15 @@
-import { ArrowRight, Briefcase, Check, Cpu, Server, User } from "lucide-react";
+import { ArrowRight, Check, Cpu, FileText, Server, User, type LucideIcon } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
 import type { AgentDraft, Team } from "../../hooks/useTeams";
 import { Button } from "../atoms/Button";
 import { Field } from "../atoms/Field";
-import { SelectField } from "../atoms/SelectField";
+import { SelectField, type SelectGroup } from "../atoms/SelectField";
 import { Alert } from "../molecules/Alert";
 
 type Props = {
   team: Team;
-  roles: string[];
+  roleGroups: SelectGroup[];
   busy: boolean;
   errorMessage: string | null;
   onSubmit: (draft: AgentDraft) => Promise<boolean>;
@@ -18,7 +18,9 @@ type Props = {
 
 const steps = ["identity", "engine", "behavior"] as const;
 
-export function AgentForm({ team, roles, busy, errorMessage, onSubmit, onCancel }: Props) {
+const stepIcons: Record<(typeof steps)[number], LucideIcon> = { identity: User, engine: Cpu, behavior: FileText };
+
+export function AgentForm({ team, roleGroups, busy, errorMessage, onSubmit, onCancel }: Props) {
   const { t } = useI18n();
   const [step, setStep] = useState(0);
   const [draft, setDraft] = useState<AgentDraft>({
@@ -58,27 +60,30 @@ export function AgentForm({ team, roles, busy, errorMessage, onSubmit, onCancel 
 
   return (
     <form onSubmit={submit} className="grid min-h-[38rem] sm:grid-cols-[17rem_1fr]">
-      <div className="grid content-start bg-raised/50 px-4 py-6 sm:px-5 sm:py-10">
-        <ol aria-label={t("teams.newAgent")} className="grid gap-3">
-          {steps.map((key, index) => (
-            <li
-              key={key}
-              aria-current={index === step ? "step" : undefined}
-              className={`flex items-center gap-4 rounded-2xl px-4 py-4 ${index === step ? "bg-hi" : ""}`}
-            >
-              <span
-                className={`grid size-7 shrink-0 place-items-center rounded-full text-xs font-semibold ${index === step ? "bg-ink text-surface" : index < step ? "bg-hi text-ink" : "border border-muted text-muted"}`}
+      <div className="grid content-start bg-raised/50 sm:border-r sm:border-line px-4 py-6 sm:px-5 sm:py-10">
+        <ol aria-label={t("teams.newAgent")} className="overflow-hidden rounded-2xl border border-line bg-surface">
+          {steps.map((key, index) => {
+            const StepIcon = index < step ? Check : stepIcons[key];
+            return (
+              <li
+                key={key}
+                aria-current={index === step ? "step" : undefined}
+                className={`flex items-center gap-4 px-4 py-4 not-last:border-b not-last:border-line ${index === step ? "bg-hi" : ""}`}
               >
-                {index + 1}
-              </span>
-              <span className="grid min-w-0">
-                <span className={`text-sm ${index === step ? "font-semibold text-ink" : "font-medium text-muted"}`}>
-                  {t(`teams.agent.${key}`)}
+                <span
+                  className={`grid size-7 shrink-0 place-items-center rounded-full text-xs font-semibold ${index === step ? "bg-ink text-surface" : index < step ? "bg-hi text-ink" : "border border-muted text-muted"}`}
+                >
+                  <StepIcon aria-hidden className="size-4" />
                 </span>
-                <span className="text-xs text-muted">{caption(index)}</span>
-              </span>
-            </li>
-          ))}
+                <span className="grid min-w-0">
+                  <span className={`text-sm ${index === step ? "font-semibold text-ink" : "font-medium text-muted"}`}>
+                    {t(`teams.agent.${key}`)}
+                  </span>
+                  <span className="text-xs text-muted">{caption(index)}</span>
+                </span>
+              </li>
+            );
+          })}
         </ol>
       </div>
       <div className="flex flex-col gap-10 p-6 sm:px-10 sm:pt-10 sm:pb-6">
@@ -92,11 +97,11 @@ export function AgentForm({ team, roles, busy, errorMessage, onSubmit, onCancel 
               <Field label={t("teams.agent.name")} value={draft.name} onChange={set("name")} maxLength={80} icon={User} autoFocus />
               <SelectField
                 label={t("teams.agent.role")}
-                placeholder={t("teams.agent.rolePlaceholder")}
+                searchPlaceholder={t("teams.agent.roleSearch")}
+                emptyMessage={t("teams.agent.roleEmpty")}
                 value={draft.role}
-                options={roles}
+                groups={roleGroups}
                 onChange={set("role")}
-                icon={Briefcase}
               />
             </>
           )}

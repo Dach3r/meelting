@@ -1,3 +1,4 @@
+use crate::catalogs::agent_roles::RoleGroup;
 use crate::catalogs::agent_templates::AgentTemplate;
 use crate::domain::locale::Locale;
 use crate::domain::session::Session;
@@ -63,7 +64,7 @@ pub async fn create_agent(
 }
 
 #[tauri::command]
-pub fn list_agent_roles() -> Vec<String> {
+pub fn list_agent_roles() -> Vec<RoleGroup> {
     agent_roles_list::run()
 }
 

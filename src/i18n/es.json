@@ -32,6 +32,10 @@
       "team": "Equipo",
       "toggle": "Mostrar u ocultar"
     },
+    "board": {
+      "select": "Seleccionar",
+      "pan": "Mover tablero"
+    },
     "zoom": {
       "in": "Acercar",
       "out": "Alejar",
@@ -44,7 +48,14 @@
       "behavior": "Instrucciones",
       "name": "Nombre",
       "role": "Rol",
-      "rolePlaceholder": "Selecciona un rol",
+      "roleSearch": "Buscar rol",
+      "roleEmpty": "Ningún rol coincide",
+      "roleGroups": {
+        "product": "Producto",
+        "engineering": "Ingeniería",
+        "data": "Datos",
+        "design_support": "Diseño y soporte"
+      },
       "provider": "Proveedor",
       "model": "Modelo",
       "description": "Descripción",
