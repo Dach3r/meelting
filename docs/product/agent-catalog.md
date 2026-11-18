@@ -30,7 +30,7 @@
 1. El usuario elige "Equipos" en el riel.
 2. Ve el organigrama con "Tú" en la raíz, equipos y agentes; clic en un equipo lo resalta y clic en la raíz vuelve a todos. "Nuevo equipo" abre un diálogo para nombrarlo.
 3. Con un equipo seleccionado pulsa "Contratar agente" y llega al **Catálogo de agentes** de ese equipo.
-4. "Ver detalles" muestra el detalle de la plantilla (avatar, rol, descripción e instrucciones por secciones). "Contratar" abre el mismo formulario por pasos de «Crear agente personalizado» (Identidad, Motor, Comportamiento, con indicador lateral de pasos, Atrás y Continuar), precargado con los datos de la plantilla; el último paso confirma con «Contratar».
+4. "Ver detalles" muestra el detalle de la plantilla (avatar, rol, descripción e instrucciones por secciones). "Contratar" abre el mismo formulario por pasos de «Crear agente personalizado» (Identidad, Motor, Comportamiento, con indicador lateral de pasos, Atrás y Continuar), precargado con los datos de la plantilla; el último paso confirma con «Contratar». En Comportamiento, cada campo trae una ayuda y un ejemplo; la descripción es corta y las instrucciones ocupan el espacio restante, ambos crecen según el texto, y con una plantilla aparece «Restaurar plantilla» cuando las instrucciones se editaron.
 5. Al confirmar se crea el agente en el workspace activo con el `template_key` de origen y se muestra su ficha con un toast.
 6. Desde Equipos puede ver, editar o eliminar (con confirmación) cada agente.
 7. La ficha del agente lista las salas en las que participa o un estado vacío.

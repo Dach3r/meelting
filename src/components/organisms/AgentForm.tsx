@@ -1,4 +1,4 @@
-import { ArrowRight, Check, Cloud, Cpu, FileText, HardDrive, User, type LucideIcon } from "lucide-react";
+import { ArrowRight, Check, Cloud, Cpu, FileText, HardDrive, RotateCcw, User, type LucideIcon } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
 import type { AgentTemplate } from "../../hooks/useAgentTemplates";
@@ -152,6 +152,9 @@ export function AgentForm({ team, template, roleGroups, busy, errorMessage, onSu
                 onChange={set("description")}
                 maxLength={500}
                 multiline
+                rows={2}
+                hint={t("teams.agent.descriptionHint")}
+                placeholder={t("teams.agent.descriptionPlaceholder")}
               />
               <Field
                 label={t("teams.agent.instructions")}
@@ -159,6 +162,21 @@ export function AgentForm({ team, template, roleGroups, busy, errorMessage, onSu
                 onChange={set("instructions")}
                 maxLength={10000}
                 multiline
+                rows={10}
+                hint={t("teams.agent.instructionsHint")}
+                placeholder={t("teams.agent.instructionsPlaceholder")}
+                action={
+                  template && draft.instructions !== template.instructions ? (
+                    <button
+                      type="button"
+                      onClick={() => set("instructions")(template.instructions)}
+                      className="inline-flex items-center gap-1 text-xs font-medium text-muted hover:text-ink"
+                    >
+                      <RotateCcw aria-hidden className="size-3" />
+                      {t("teams.agent.restoreTemplate")}
+                    </button>
+                  ) : undefined
+                }
               />
             </>
           )}

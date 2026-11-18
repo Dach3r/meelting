@@ -590,6 +590,24 @@ describe("agent catalog", () => {
     expect(dialog.getByText("Start with the problem.")).toBeInTheDocument();
   });
 
+  it("restores the template instructions after editing them", async () => {
+    mockCatalog();
+    const user = userEvent.setup();
+    render(<App />);
+    await openCatalog(user);
+
+    await user.click(await screen.findByRole("button", { name: "Hire Product Owner" }));
+    await user.click(screen.getByRole("button", { name: "Continue" }));
+    await user.click(screen.getByRole("option", { name: "gpt-5" }));
+    await user.click(screen.getByRole("button", { name: "Continue" }));
+
+    expect(screen.queryByRole("button", { name: "Restore template" })).not.toBeInTheDocument();
+    await user.type(screen.getByLabelText("Instructions"), " Extra.");
+    await user.click(screen.getByRole("button", { name: "Restore template" }));
+    expect(screen.getByLabelText("Instructions")).toHaveValue(templates[0].instructions);
+    expect(screen.queryByRole("button", { name: "Restore template" })).not.toBeInTheDocument();
+  });
+
   it("hires from a template through the wizard", async () => {
     mockCatalog();
     const user = userEvent.setup();
