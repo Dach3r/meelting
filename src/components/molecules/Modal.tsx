@@ -44,7 +44,7 @@ export function Modal({ title, onClose, bare = false, children }: Props) {
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className={`max-h-full w-full overflow-y-auto rounded-[28px] border border-line bg-surface shadow-2xl ${bare ? "max-w-3xl" : "max-w-2xl"}`}
+        className={`max-h-full w-full overflow-y-auto rounded-[28px] border border-line bg-surface shadow-2xl ${bare ? "max-w-4xl" : "max-w-2xl"}`}
       >
         {!bare && (
           <div className="flex items-center justify-between px-6 pt-6">

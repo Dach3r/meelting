@@ -55,18 +55,14 @@ export function AgentForm({ team, busy, errorMessage, onSubmit, onCancel }: Prop
   }
 
   return (
-    <form onSubmit={submit} className="grid min-h-[34rem] sm:grid-cols-[15rem_1fr]">
-      <div className="grid content-start gap-7 bg-raised/50 p-6 sm:p-8">
-        <div className="grid gap-1">
-          <h2 className="text-xl font-bold text-ink">{t("teams.newAgent")}</h2>
-          <p className="text-sm text-muted">{`${t("teams.agent.team")} ${team.name}`}</p>
-        </div>
-        <ol aria-label={t("teams.newAgent")} className="grid gap-1.5">
+    <form onSubmit={submit} className="grid min-h-[38rem] sm:grid-cols-[17rem_1fr]">
+      <div className="grid content-start bg-raised/50 p-6 sm:p-10">
+        <ol aria-label={t("teams.newAgent")} className="grid gap-3">
           {steps.map((key, index) => (
             <li
               key={key}
               aria-current={index === step ? "step" : undefined}
-              className={`flex items-center gap-3 rounded-2xl p-3 ${index === step ? "bg-hi" : ""}`}
+              className={`flex items-center gap-4 rounded-2xl px-4 py-4 ${index === step ? "bg-hi" : ""}`}
             >
               <span
                 className={`grid size-7 shrink-0 place-items-center rounded-full text-xs font-semibold ${index === step ? "bg-ink text-surface" : index < step ? "bg-hi text-ink" : "border border-muted text-muted"}`}
@@ -83,15 +79,15 @@ export function AgentForm({ team, busy, errorMessage, onSubmit, onCancel }: Prop
           ))}
         </ol>
       </div>
-      <div className="flex flex-col gap-8 p-6 sm:p-8">
+      <div className="flex flex-col gap-10 p-6 sm:p-10">
         <div className="flex items-start justify-between gap-4">
-          <div className="grid gap-1.5">
+          <div className="grid gap-2">
             <h3 className="text-2xl font-bold text-ink">{t(`teams.agent.${current}Title`)}</h3>
             <p className="text-sm text-muted">{t(`teams.agent.${current}Subtitle`)}</p>
           </div>
           <CloseButton onClick={onCancel} label={t("teams.close")} />
         </div>
-        <div className="grid flex-1 content-start gap-5">
+        <div className="grid flex-1 content-start gap-7">
           {current === "identity" && (
             <>
               <Field label={t("teams.agent.name")} value={draft.name} onChange={set("name")} maxLength={80} autoFocus />
