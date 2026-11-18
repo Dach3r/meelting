@@ -3,6 +3,7 @@ import { useId, useState, type FormEvent } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
 import { useAgentRoles } from "../../hooks/useAgentRoles";
 import type { AgentDetail, AgentEdit, Team } from "../../hooks/useTeams";
+import { Avatar } from "../atoms/Avatar";
 import { Button } from "../atoms/Button";
 import { Field } from "../atoms/Field";
 import { roleGroupIcons } from "../atoms/roleGroupIcons";
@@ -59,7 +60,14 @@ export function AgentEditForm({ agent, teams, busy, errorMessage, onSubmit, onCl
 
   return (
     <div className="grid min-h-[44rem] sm:grid-cols-[17rem_1fr]">
-      <div className="grid content-start bg-raised/50 sm:border-r sm:border-line px-4 py-6 sm:px-5 sm:py-10">
+      <div className="grid content-start gap-4 bg-raised/50 sm:border-r sm:border-line px-4 py-6 sm:px-5 sm:py-10">
+        <div className="flex items-center gap-3 rounded-2xl border border-line bg-surface p-3">
+          <Avatar seed={saved.name} label={saved.name} className="size-10 rounded-full text-base" />
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold text-ink">{saved.name}</p>
+            <p className="truncate text-xs text-muted">{saved.role}</p>
+          </div>
+        </div>
         <div role="tablist" aria-orientation="vertical" aria-label={t("teams.agent.edit")} className="overflow-hidden rounded-2xl border border-line bg-surface">
           {tabs.map(({ key, icon: TabIcon }, index) => (
             <button

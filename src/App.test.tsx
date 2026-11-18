@@ -763,6 +763,8 @@ describe("workspace shell", () => {
 
       expect(within(dialog).getByText("Now")).toBeInTheDocument();
       expect(within(dialog).getByText("You have one agent available")).toBeInTheDocument();
+      expect(within(dialog).getByText("Ana")).toBeInTheDocument();
+      expect(within(dialog).getByText("Software Developer")).toBeInTheDocument();
       const general = within(dialog).getByRole("option", { name: /General/ });
       expect(general).toHaveAttribute("aria-selected", "true");
       expect(general).toHaveTextContent("Current");
