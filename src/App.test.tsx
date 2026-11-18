@@ -530,6 +530,23 @@ describe("agent catalog", () => {
     expect(screen.queryByRole("heading", { name: "Agent catalog" })).not.toBeInTheDocument();
   });
 
+  it("groups the templates in one row per area and hides empty areas", async () => {
+    mockCatalog();
+    const user = userEvent.setup();
+    render(<App />);
+    await openCatalog(user);
+
+    const product = within(await screen.findByRole("region", { name: "Product" }));
+    const engineering = within(screen.getByRole("region", { name: "Engineering" }));
+    expect(product.getByRole("heading", { name: "Product Owner" })).toBeInTheDocument();
+    expect(product.queryByRole("heading", { name: "QA Engineer" })).not.toBeInTheDocument();
+    expect(engineering.getByRole("heading", { name: "QA Engineer" })).toBeInTheDocument();
+
+    await user.type(screen.getByRole("searchbox", { name: "Search templates" }), "defects");
+    expect(screen.queryByRole("region", { name: "Product" })).not.toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Engineering" })).toBeInTheDocument();
+  });
+
   it("filters the templates by search text and by category", async () => {
     mockCatalog();
     const user = userEvent.setup();

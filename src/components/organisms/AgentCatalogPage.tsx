@@ -5,7 +5,6 @@ import { useAgentRoles } from "../../hooks/useAgentRoles";
 import { useAgentTemplates, type AgentTemplate } from "../../hooks/useAgentTemplates";
 import type { AgentDraft, Team } from "../../hooks/useTeams";
 import { translateError } from "../../i18n/translate";
-import { Avatar } from "../atoms/Avatar";
 import { Button } from "../atoms/Button";
 import { Alert } from "../molecules/Alert";
 import { AgentTemplateDetail } from "../molecules/AgentTemplateDetail";
@@ -52,6 +51,10 @@ export function AgentCatalogPage({ team, busy, actionErrorMessage, onCreateAgent
       (category === "all" || groupOf(template) === category) &&
       [template.name, template.role, template.description].some((text) => text.toLowerCase().includes(needle)),
   );
+
+  const sections = rolesByGroup
+    .map(({ group }) => ({ group, items: visibleTemplates.filter((template) => groupOf(template) === group) }))
+    .filter(({ items }) => items.length > 0);
 
   function open(next: NonNullable<Dialog>) {
     onClearActionError();
@@ -109,39 +112,54 @@ export function AgentCatalogPage({ team, busy, actionErrorMessage, onCreateAgent
         />
       </div>
       {visibleTemplates.length === 0 && templates.length > 0 && <p className="py-6 text-center text-muted">{t("teams.catalog.empty")}</p>}
-      <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {visibleTemplates.map((template) => (
-          <li key={template.key} className="grid content-between gap-4 rounded-2xl border border-line bg-raised p-5">
-            <div className="grid gap-3">
-              <div className="flex items-center gap-3">
-                <Avatar seed={groupOf(template)} label={template.name} className="size-12 rounded-xl text-xl" />
-                <div className="min-w-0">
-                  <h3 className="truncate font-bold text-ink">{template.name}</h3>
-                  <p className="truncate text-sm text-muted">{template.role}</p>
-                </div>
-              </div>
-              <p className="text-sm text-muted">{template.description}</p>
+      {sections.map(({ group, items }) => {
+        const GroupIcon = roleGroupIcons[group];
+        return (
+          <section key={group} aria-label={t(`teams.agent.roleGroups.${group}`)} className="grid gap-3">
+            <div className="flex items-center gap-2.5 text-muted">
+              <GroupIcon aria-hidden className="size-4" />
+              <h3 className="text-xs font-semibold tracking-wider uppercase">{t(`teams.agent.roleGroups.${group}`)}</h3>
+              <span className="text-sm">{items.length}</span>
             </div>
-            <div className="flex gap-3">
-              <Button
-                variant="ghost"
-                size="pill"
-                aria-label={`${t("teams.catalog.details")} ${template.name}`}
-                onClick={() => open({ kind: "detail", template })}
-              >
-                {t("teams.catalog.details")}
-              </Button>
-              <Button
-                size="pill"
-                aria-label={`${t("teams.catalog.hire")} ${template.name}`}
-                onClick={() => open({ kind: "hire", template })}
-              >
-                {t("teams.catalog.hire")}
-              </Button>
-            </div>
-          </li>
-        ))}
-      </ul>
+            <ul className="-mx-1 flex snap-x gap-3 overflow-x-auto px-1 pb-2">
+              {items.map((template) => (
+                <li key={template.key} className="grid w-64 shrink-0 snap-start content-between gap-4 rounded-2xl border border-line bg-raised p-4">
+                  <div className="grid gap-3">
+                    <div className="flex items-center gap-3">
+                      <span
+                        aria-hidden
+                        className="grid size-11 shrink-0 place-items-center rounded-full border-[1.5px] border-line bg-pill-hover text-lg font-bold text-ink"
+                      >
+                        {template.name.trim().charAt(0).toUpperCase()}
+                      </span>
+                      <h4 className="min-w-0 truncate font-bold text-ink">{template.name}</h4>
+                    </div>
+                    <p className="line-clamp-3 text-sm text-muted">{template.description}</p>
+                  </div>
+                  <div className="flex justify-between gap-2">
+                    <Button
+                      variant="ghost"
+                      size="pill"
+                      className="px-0 hover:bg-transparent"
+                      aria-label={`${t("teams.catalog.details")} ${template.name}`}
+                      onClick={() => open({ kind: "detail", template })}
+                    >
+                      {t("teams.catalog.details")}
+                    </Button>
+                    <Button
+                      size="pill"
+                      aria-label={`${t("teams.catalog.hire")} ${template.name}`}
+                      onClick={() => open({ kind: "hire", template })}
+                    >
+                      {t("teams.catalog.hire")}
+                    </Button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </section>
+        );
+      })}
       {dialog?.kind === "detail" && (
         <Modal title={dialog.template.name} onClose={close}>
           <AgentTemplateDetail template={dialog.template} group={groupOf(dialog.template)} />
