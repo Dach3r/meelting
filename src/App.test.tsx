@@ -828,7 +828,7 @@ describe("workspace shell", () => {
 
       await user.click(await screen.findByRole("button", { name: "Ana" }));
       await user.click(screen.getByRole("button", { name: "Delete agent" }));
-      const dialog = await screen.findByRole("dialog", { name: "Delete agent \u00b7 Ana" });
+      const dialog = await screen.findByRole("dialog", { name: "Delete Ana?" });
       expect(invokeMock).not.toHaveBeenCalledWith("delete_agent", expect.anything());
       await user.click(within(dialog).getByRole("button", { name: "Delete agent" }));
 
@@ -848,11 +848,11 @@ describe("workspace shell", () => {
 
       await user.click(await screen.findByRole("button", { name: "Ana" }));
       await user.click(screen.getByRole("button", { name: "Delete agent" }));
-      const dialog = await screen.findByRole("dialog", { name: "Delete agent \u00b7 Ana" });
+      const dialog = await screen.findByRole("dialog", { name: "Delete Ana?" });
       await user.click(within(dialog).getByRole("button", { name: "Delete agent" }));
 
       expect(await screen.findByRole("alert")).toHaveTextContent("That agent no longer exists.");
-      expect(screen.getByRole("dialog", { name: "Delete agent \u00b7 Ana" })).toBeInTheDocument();
+      expect(screen.getByRole("dialog", { name: "Delete Ana?" })).toBeInTheDocument();
     });
   });
 });

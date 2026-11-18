@@ -101,8 +101,8 @@
       "submit": "Create agent",
       "edit": "Edit agent",
       "delete": "Delete agent",
-      "deleteTitle": "Delete agent",
-      "deleteBody": "The agent will leave your office. This cannot be undone.",
+      "deleteTitle": "Delete {name}?",
+      "deleteBody": "The agent will leave your office and can't be brought back.",
       "save": "Save changes"
     },
     "hireAgent": "Hire agent",

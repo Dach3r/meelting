@@ -101,8 +101,8 @@
       "submit": "Crear agente",
       "edit": "Editar agente",
       "delete": "Eliminar agente",
-      "deleteTitle": "Eliminar agente",
-      "deleteBody": "El agente saldrá de tu oficina. Esta acción no se puede deshacer.",
+      "deleteTitle": "¿Eliminar a {name}?",
+      "deleteBody": "El agente saldrá de tu oficina y no podrás recuperarlo.",
       "save": "Guardar cambios"
     },
     "hireAgent": "Contratar agente",

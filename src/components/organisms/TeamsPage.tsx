@@ -1,4 +1,4 @@
-import { LayoutDashboard } from "lucide-react";
+import { LayoutDashboard, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
 import type { Agent, AgentDetail, AgentEdit, Team } from "../../hooks/useTeams";
@@ -99,15 +99,23 @@ export function TeamsPage({
         </Modal>
       )}
       {deleting && (
-        <Modal title={`${t("teams.agent.deleteTitle")} · ${deleting.name}`} onClose={close}>
+        <Modal title={t("teams.agent.deleteTitle").replace("{name}", deleting.name)} onClose={close} bare narrow>
           <div className="grid gap-5 p-6">
-            <p className="text-muted">{t("teams.agent.deleteBody")}</p>
+            <div className="flex items-start gap-4">
+              <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-error/10 text-error">
+                <Trash2 aria-hidden className="size-5" />
+              </span>
+              <div className="grid gap-1.5">
+                <h2 className="text-lg font-bold text-ink">{t("teams.agent.deleteTitle").replace("{name}", deleting.name)}</h2>
+                <p className="text-sm text-muted">{t("teams.agent.deleteBody")}</p>
+              </div>
+            </div>
             {actionErrorMessage && <Alert message={actionErrorMessage} />}
             <div className="flex justify-end gap-3">
               <Button type="button" variant="ghost" size="compact" onClick={close}>
                 {t("teams.cancel")}
               </Button>
-              <Button type="button" size="compact" disabled={busy} onClick={() => confirmDelete(deleting)}>
+              <Button type="button" variant="destructive" size="compact" disabled={busy} onClick={() => confirmDelete(deleting)}>
                 {t("teams.agent.delete")}
               </Button>
             </div>
