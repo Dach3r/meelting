@@ -3,13 +3,13 @@ use crate::catalogs::agent_templates::AgentTemplate;
 use crate::catalogs::llm::Provider;
 use crate::domain::locale::Locale;
 use crate::domain::session::Session;
-use crate::domain::team::{AgentDetail, AgentDraft, AgentEdit, Team};
+use crate::domain::team::{AgentDetail, AgentDraft, AgentEdit, Position, Team};
 use crate::domain::theme::Theme;
 use crate::services::session_load::SessionError;
 use crate::services::{
     agent_create, agent_delete, agent_get, agent_roles_list, agent_templates_list, agent_update,
-    first_launch, llm_providers_list, locale_change, session_load, team_create, teams_list,
-    theme_change, workspace_create, workspace_switch,
+    canvas_positions_save, first_launch, llm_providers_list, locale_change, session_load,
+    team_create, teams_list, theme_change, workspace_create, workspace_switch,
 };
 use sqlx::SqlitePool;
 use tauri::State;
@@ -88,6 +88,14 @@ pub async fn delete_agent(
     agent_id: String,
 ) -> Result<Vec<Team>, SessionError> {
     agent_delete::run(&pool, &agent_id).await
+}
+
+#[tauri::command]
+pub async fn save_canvas_positions(
+    pool: State<'_, SqlitePool>,
+    positions: Vec<Position>,
+) -> Result<(), SessionError> {
+    canvas_positions_save::run(&pool, positions).await
 }
 
 #[tauri::command]

@@ -1,5 +1,5 @@
 use crate::domain::team::Team;
-use crate::repositories::agents;
+use crate::repositories::{agents, canvas_positions};
 use crate::services::session_load::{self, SessionError};
 use crate::services::teams_list;
 use sqlx::SqlitePool;
@@ -9,6 +9,7 @@ pub async fn run(pool: &SqlitePool, agent_id: &str) -> Result<Vec<Team>, Session
     if !agents::delete(pool, &workspace_id, agent_id).await? {
         return Err(SessionError::AgentNotFound);
     }
+    canvas_positions::delete(pool, &workspace_id, agent_id).await?;
     teams_list::run(pool).await
 }
 
@@ -47,6 +48,24 @@ mod tests {
 
         assert_eq!(teams.len(), 1);
         assert!(teams[0].agents.is_empty());
+    }
+
+    #[tokio::test]
+    async fn removes_the_saved_position_of_the_agent() {
+        let (pool, _dir) = open_for_test().await;
+        let agent_id = setup(&pool).await;
+        sqlx::query("INSERT INTO canvas_positions SELECT workspace_id, id, 1.0, 2.0 FROM agents")
+            .execute(&pool)
+            .await
+            .unwrap();
+
+        run(&pool, &agent_id).await.unwrap();
+
+        let left: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM canvas_positions")
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+        assert_eq!(left, 0);
     }
 
     #[tokio::test]

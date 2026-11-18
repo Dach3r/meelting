@@ -18,6 +18,8 @@ pub async fn list<'e>(
             team_id,
             name,
             role,
+            x: 0.0,
+            y: 0.0,
         })
         .collect())
 }
@@ -148,7 +150,9 @@ mod tests {
                 id: "a1".into(),
                 team_id: "t1".into(),
                 name: "Ana".into(),
-                role: "Developer".into()
+                role: "Developer".into(),
+                x: 0.0,
+                y: 0.0
             }]
         );
     }

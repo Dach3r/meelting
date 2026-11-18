@@ -1,11 +1,13 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct Agent {
     pub id: String,
     pub team_id: String,
     pub name: String,
     pub role: String,
+    pub x: f64,
+    pub y: f64,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -21,11 +23,20 @@ pub struct AgentDetail {
     pub model: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct Team {
     pub id: String,
     pub name: String,
+    pub x: f64,
+    pub y: f64,
     pub agents: Vec<Agent>,
+}
+
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+pub struct Position {
+    pub node_id: String,
+    pub x: f64,
+    pub y: f64,
 }
 
 pub const TEXT_MAX_CHARS: usize = 80;
