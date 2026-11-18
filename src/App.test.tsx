@@ -256,9 +256,9 @@ describe("workspace shell", () => {
     );
     render(<App />);
 
-    expect(await screen.findByText("You")).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "Show or hide You" })).toHaveTextContent("1");
+    expect(screen.getByText("You")).toBeInTheDocument();
     expect(screen.getByText("Supervisor")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Show or hide You" })).toHaveTextContent("1");
     expect(screen.getByRole("button", { name: "Show or hide General" })).toHaveTextContent("1");
   });
 
