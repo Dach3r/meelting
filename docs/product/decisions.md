@@ -1,0 +1,60 @@
+# Registro de decisiones
+
+Registro centralizado de decisiones de producto y arquitectura que no son evidentes en el código. Las decisiones técnicas anteriores siguen en [overview.md §13](../architecture/overview.md#13-decisiones-abiertas); las nuevas se registran aquí.
+
+**Estados:**
+- **Aprobada:** la tomó el responsable del producto.
+- **Pendiente:** hay una recomendación, pero falta la decisión.
+- **Descartada:** se evaluó y no se sigue.
+
+Una decisión aprobada no implica que esté implementada ni aprueba cambios de esquema: cada migración sigue necesitando su propuesta y su aprobación explícita.
+
+## Reuniones conversacionales y voz
+
+Contexto: [voice-meetings.md](voice-meetings.md), [conversation-engine.md](../architecture/conversation-engine.md), [voice-engine.md](../architecture/voice-engine.md).
+
+### Aprobadas (2026-11-18)
+
+| # | Decisión | Justificación | Alternativas descartadas |
+|---|---|---|---|
+| D1 | **Texto primero:** `AgentRun` → conversación dirigida por texto → coordinación multiagente por texto → voz de salida → voz de entrada | El contexto y la coordinación se validan sin depender del audio; la voz se apoya en un núcleo estable | MVP hablado temprano (coordinación diseñada con menos evidencia); reuniones solo después de tareas y herramientas |
+| D2 | **Coordinador híbrido con reglas primero e IA opcional:** las reglas resuelven destinatarios, menciones, límites y disponibilidad; solo ante «Equipo» se pide una sugerencia a un modelo coordinador elegido en Ajustes. Sin modelo, o si falla, se usa la ronda fija | Predecible, testeable, funciona offline y solo cuesta donde aporta | Solo reglas; coordinador 100 % IA; usar el modelo del primer agente (coste y privacidad implícitos) |
+| D3 | **Discusiones entre agentes acotadas:** solo si el usuario las pide, máximo 4 intervenciones automáticas, interrumpibles; al llegar al límite el turno vuelve al usuario | Habilita el escenario C sin bucles ni costes abiertos | Límite configurable por sala (requiere persistencia); sin discusiones en el MVP |
+| D4 | **Modo por intervención:** el modo (dirigido, ronda, equipo, discusión) se deriva del destinatario de cada mensaje; no se guarda | Sin esquema nuevo; cambiar de modo es elegir otro destinatario | Conmutador por sesión; columna en `rooms` |
+| D5 | **Push-to-talk** en la primera versión de entrada por voz | Simplifica el fin de turno, la interrupción y el eco; evita capturas accidentales | Escucha continua con VAD; ambos desde el inicio |
+| D6 | **Operación híbrida online/offline:** motores y modelos locales o en la nube, configurables por el usuario y combinables en una misma reunión, sin preferencia obligatoria. Lo local funciona sin conexión; lo que depende de la nube informa que no está disponible. Estados: requiere configuración, configurado, disponible, no disponible, requiere conexión. **Sin fallback silencioso:** nunca se cambia de proveedor o modelo sin consentimiento o una política explícita configurada | Aprovechar la nube cuando está disponible sin perder lo local cuando no lo está | Local primero con nube opcional; calidad primero (nube por defecto); solo local |
+| D7 | **Interrupción:** si la generación terminó, el mensaje completo se persiste aunque el audio se cortara; la marca «interrumpido» vive solo en memoria durante la sesión. Si la generación se canceló, no hay mensaje (`failed/cancelled`) | Mantiene la inmutabilidad y la regla aprobada de `AgentRun` sin cambiar el esquema | Marca persistida (columna nueva); guardar el parcial cancelado (cambia la regla de `AgentRun`); guardar solo lo escuchado |
+| D8 | **Voz por agente en una tabla aparte** (`agent_voices`), independiente del proveedor LLM; sin fila, voz por defecto estable. **El esquema concreto sigue pendiente de aprobación** | Separa identidad y presentación, admite varios motores y no toca `agents` | Columnas en `agents`; no persistir al principio |
+
+### Pendientes
+
+| # | Decisión | Recomendación | Bloquea |
+|---|---|---|---|
+| P1 | ¿Se persiste la sesión de reunión? | No: estado en memoria del núcleo | R2 |
+| P2 | Al salir de la reunión, ¿siguen las ejecuciones en curso? | Sí (regla aprobada de `AgentRun`), pero sin turnos nuevos ni audio | R2 |
+| P3 | Una intervención nueva con ejecuciones activas de la anterior | Cancelarlas (prioridad del usuario y coste) | R2 |
+| P4 | ¿Se envía sola la transcripción? | Sí si el destinatario está resuelto; si no, queda como borrador | R4 |
+| P5 | Destinatario por defecto = último interlocutor | Sí, visible y modificable | R1 |
+| P6 | ¿El límite de 4 también se aplica a «Equipo»? | Sí: un solo presupuesto por intervención | R2 |
+| P7 | Mecanismo «pasar» y `succeeded` sin mensaje | Sí; revisar los `CHECK` de `agent_runs` | Fase 3 / R2 |
+| P8 | Cómo se pide una discusión | Destinatario explícito «Discusión» + lista localizada de verbos | R2 |
+| P9 | Alcance de `settings` (global o por workspace) para el modelo coordinador y los motores | Por workspace para lo que usa claves; global para los dispositivos | R2 |
+| P10 | ¿Pueden los agentes pedir la participación de otro? | No en el MVP; después, como sugerencia que el usuario acepta | R2+ |
+| P11 | Distribución de modelos de voz | Descarga bajo consentimiento con catálogo y `sha256` | R3 |
+| P12 | Retención de audio | Ninguna: el micrófono en memoria hasta transcribir, el TTS sin guardar | R3 |
+| P13 | Dónde se reproduce el audio | En el núcleo; confirmar con S6 | R3 |
+| P14 | Conjunto de proveedores de la Fase 3: catálogo real (`anthropic`, `openai`, `groq`, `ollama`, `lmstudio`) frente a los docs (`deepseek`, `minimax`, `local`) | Alinear los docs con `llm.yml` o ampliar el catálogo, decisión explícita | Fase 3 |
+| P15 | Límite de longitud de la respuesta del agente: 4000 en [agent-execution.md](agent-execution.md) frente a sin límite en [rooms.md](rooms.md) y en el esquema | Sin límite de caracteres; acotada por `max_output_tokens` | Fase 3 |
+| P16 | Generación en paralelo con reproducción ordenada (prelectura) | No al principio; medir en R5 | R5 |
+| P17 | Atajo de push-to-talk | Solo con la ventana enfocada, sin atajo global; tecla por definir | R4 |
+| P18 | Política de fallback explícita configurable | Fuera del MVP; diseñarla con su propia propuesta | Posterior |
+| P19 | Resúmenes y memoria de reuniones largas | No implementar; opción futura de resumen explícito como mensaje visible | Posterior |
+| P20 | Una voz por agente e idioma (`agent_voices.locale`) | Sí | R3 |
+| P21 | Objetivo de la sala para el prompt (`rooms` no tiene `goal`) | Usar el nombre; proponer `goal` solo si se demuestra necesario | Fase 3 |
+| P22 | Límite global de ejecuciones simultáneas por workspace | Sí, valor por medir con modelos locales | Fase 3 / R2 |
+| P23 | ¿Los consumos del coordinador IA cuentan para los límites diarios? | Sí | R2 |
+| P24 | Licencia del TTS neuronal local en español (fonemizador GPL) | Revisión legal antes de incluir Piper o Kokoro | R3 |
+
+### Riesgos y dependencias
+
+Ver los riesgos en [conversation-engine.md §14](../architecture/conversation-engine.md#14-riesgos) y [voice-engine.md §12](../architecture/voice-engine.md#12-riesgos), y las dependencias de etapas en [roadmap.md](roadmap.md#pista-r--reuniones-conversacionales).

@@ -45,6 +45,8 @@ Meelting no es solo un chatbot, una herramienta de videollamadas ni un administr
 | Autonomía progresiva | Se empieza con capacidades controladas; la autonomía crece al existir mecanismos confiables de ejecución y supervisión. |
 | Resultados reales | El valor es completar trabajo verificable. La interfaz no sustituye la ejecución real. |
 | Experiencia premium | Interfaz minimalista, moderna, limpia, enfocada en productividad. |
+| Operación híbrida | Sin backend propio ni cuenta, los datos viven en la máquina. El usuario combina modelos y motores en la nube y locales, sin preferencia obligatoria. Lo local funciona sin conexión; lo que depende de la nube informa cuándo no está disponible, y nunca se cambia de proveedor sin consentimiento. |
+| Conversación como en una reunión | El usuario habla o escribe con sus agentes como en una reunión de trabajo, dirigiendo quién interviene. Ver [voice-meetings.md](voice-meetings.md). |
 
 ## Principio fundamental
 

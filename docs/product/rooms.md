@@ -52,8 +52,20 @@
 - SQLite y eventos Tauri.
 
 ## Evolución prevista
-- Tareas con worktree vinculadas a la sala (`tasks.room_id`); los mensajes siguen siendo solo conversación.
-- Panel de pantalla compartida alimentado por actividad real verificable (terminal y diff de la tarea).
+
+Los contratos actuales (`list_rooms`, `create_room`, `get_room`, `delete_room`, `send_message`, `message:created`) no cambian con esta evolución. Cuando se construya la intervención, `send_message` se extiende o se sustituye por un comando nuevo, sin romper el comportamiento descrito arriba.
+
+| Nivel | Estado | Qué añade | Documento |
+|---|---|---|---|
+| Sala actual | ✅ implementado | Sala, participantes, historial, mensajes del usuario | Este documento |
+| Conversación con `AgentRun` | Planificado (Fase 3) | Respuestas de un agente elegido en «Pedir a», con streaming y cancelación | [agent-execution.md](agent-execution.md) |
+| Conversación dirigida y multiagente | Propuesto (R1–R2) | Menciones, destinatario por intervención, «Equipo», discusiones acotadas, sesión de reunión en memoria | [voice-meetings.md](voice-meetings.md) |
+| Voz | Propuesto (R3–R5) | Voz por agente, push-to-talk, subtítulos | [voice-meetings.md](voice-meetings.md), [voice-engine.md](../architecture/voice-engine.md) |
+| Trabajo real | Planificado (Fases 4–5, R6) | Tareas con worktree vinculadas a la sala (`tasks.room_id`), pantalla compartida con terminal y diff reales. Los mensajes siguen siendo solo conversación | [agent-execution.md](agent-execution.md#herramientas-y-aprobaciones) |
+
+**Discrepancias detectadas:**
+- El objetivo de este documento habla del «objetivo de la sala», pero `rooms` solo tiene `name`. La decisión está pendiente ([decisions.md](decisions.md) P21).
+- Este documento dice que las respuestas de agentes no se truncan; [agent-execution.md](agent-execution.md) dice que se limitan a 4000 caracteres (P15).
 
 **Prioridad:** Must Have
 **Métrica de éxito:** porcentaje de workspaces que crean una sala con al menos un agente y envían un mensaje.

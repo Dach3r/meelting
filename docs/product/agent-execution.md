@@ -20,10 +20,10 @@
 **Incluye (Fases 4–5)**
 - Tareas con `git worktree` aislado, herramientas del agente acotadas al worktree y aprobaciones humanas. Ver [Herramientas y aprobaciones](#herramientas-y-aprobaciones).
 
-**Excluye**
-- Colaboración y delegación entre agentes, integraciones externas.
+**Excluye (Fase 3)**
+- Delegación de tareas entre agentes, integraciones externas. La conversación coordinada entre agentes y las menciones (`@agente`) se proponen para después de esta fase, en la Pista R ([voice-meetings.md](voice-meetings.md)).
 - Créditos, facturación y cálculo de costos en dinero.
-- Reintento manual de una ejecución fallida y menciones (`@agente`).
+- Reintento manual de una ejecución fallida.
 - Cambio automático de proveedor o modelo cuando uno falla.
 - `push`, `merge` o modificación de la rama base.
 
@@ -64,7 +64,21 @@
 - **Límites diarios (opcionales):** 50 ejecuciones y 500 000 tokens en 24 horas, desactivados para `local`. Protección inicial, no presupuesto estricto.
 - **Registro:** por ejecución se guardan proveedor, modelo solicitado y reportado, tokens de entrada, salida y caché, `finish_reason` normalizado (`stop`, `length`, `content_filter`, `other`) e id de solicitud del proveedor.
 - **Eliminar un agente** con mensajes o ejecuciones no está permitido. **Eliminar una sala** elimina sus ejecuciones y mensajes y cancela las ejecuciones en curso.
-- Respuesta limitada a 4000 caracteres, como todo mensaje.
+- Respuesta limitada a 4000 caracteres, como todo mensaje. **En conflicto** con [rooms.md](rooms.md) y con el `CHECK` de `messages`, que solo limitan los mensajes del usuario; pendiente de decisión ([decisions.md](decisions.md) P15).
+
+## Implicaciones de las reuniones conversacionales
+
+> **Propuesta, pendiente.** Nada de esta sección reemplaza las reglas anteriores mientras no se apruebe. Detalle en [conversation-engine.md §10](../architecture/conversation-engine.md#10-adaptaciones-de-agentrun).
+
+- `AgentRun` sigue siendo **independiente del audio**: la voz consume el mensaje persistido y la entrada por voz llega como texto transcrito.
+- **Conflicto con la regla de idempotencia:** `client_request_id` único impide que una intervención a «Equipo» cree varias ejecuciones. Se propone que sea único por `(room_id, client_request_id, agent_id)` (P1 en [conversation-engine.md](../architecture/conversation-engine.md#12-persistencia-y-modelo-de-datos)).
+- El prompt se construye al hacer `claim`, para que cada turno vea las respuestas anteriores.
+- Los tokens llevan `run_id` y una secuencia; al reintentar se reinicia el texto provisional y la voz solo usa el texto final.
+- Posible resultado «pasar» (`succeeded` sin mensaje) en el modo equipo: afecta a los `CHECK` portados de Rails.
+- Cancelación por intervención y por sala, además de por ejecución.
+- El siguiente turno lo crea el coordinador, nunca la ejecución anterior.
+- **Proveedores:** el catálogo real (`llm.yml`) tiene `anthropic`, `openai`, `groq`, `ollama` y `lmstudio`; este documento lista DeepSeek, MiniMax y un `local` único, y no menciona Groq. Pendiente de alinear (P14).
+- `update_agent` no permite hoy cambiar el proveedor ni el modelo de un agente, así que «cambiar de modelo» no está disponible como alternativa cuando un proveedor falla.
 
 ## Claves de API
 

@@ -64,4 +64,4 @@ Solicitud del usuario: *"Añade validación al formulario de registro y ejecuta 
 4. El usuario observa el progreso en vivo y revisa el diff.
 5. El usuario conserva la rama o descarta el worktree.
 
-Los agentes deben completar trabajo real, no limitarse a representar una conversación ficticia. La colaboración y delegación entre varios agentes sigue fuera del alcance de la v1.
+Los agentes deben completar trabajo real, no limitarse a representar una conversación ficticia. La delegación de tareas entre agentes sigue fuera del alcance de la v1. La conversación coordinada entre agentes (preguntas al equipo y discusiones acotadas, siempre iniciadas por el usuario) y la voz se proponen en [voice-meetings.md](voice-meetings.md).

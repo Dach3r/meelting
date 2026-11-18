@@ -4,8 +4,8 @@
 
 Meelting is a local-first desktop app for macOS, Windows and Linux. You assemble a team of specialized AI agents, chat with them in rooms, and hand them coding tasks. Each task runs in its own isolated `git worktree`, so agents never touch your working copy, and you stay in control: risky commands wait for your approval and you review the diff before keeping anything.
 
-- **Local-first:** no server, no account, no telemetry. Your code, chats and API keys stay on your machine.
-- **Bring your own model:** cloud providers (OpenAI, Anthropic, DeepSeek, MiniMax) or local ones (Ollama, LM Studio). With only a local model the app works fully offline.
+- **Local data, no server:** no backend, no account, no telemetry. Your chats and API keys stay on your machine; prompts only leave it when you use a cloud provider.
+- **Bring your own model:** cloud providers (Anthropic, OpenAI, Groq) or local ones (Ollama, LM Studio), mixed freely. Local capabilities keep working offline; cloud ones report when they are unavailable.
 - **Isolated by design:** one worktree and branch per task, path jail, sanitized environment, optional Docker. Agents never push, merge or modify your base branch.
 - **Supervised:** you approve commands, watch the live terminal and decide what happens to each branch.
 - **Secrets in the OS keychain:** the UI only ever sees the last four characters of a key.

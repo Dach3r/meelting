@@ -40,11 +40,80 @@ Fase 0 completada (2026-11-17): scaffold Tauri 2 (React + TypeScript + Vite), sp
 ## Fase 3 — Salas y ejecución con streaming (3 semanas)
 
 - ✅ Salas, participantes y chat persistente ([rooms.md](rooms.md)).
-- Adaptadores `openai`, `anthropic`, `deepseek`, `minimax` y `local`.
-- `AgentRun` con estados, reintentos, idempotencia, expiración al arrancar y cancelación.
+- Adaptadores por proveedor. **Discrepancia pendiente:** los docs listan `openai`, `anthropic`, `deepseek`, `minimax` y `local`, pero el catálogo real (`llm.yml`) tiene `anthropic`, `openai`, `groq`, `ollama` y `lmstudio`. Se decide antes de implementar ([decisions.md](decisions.md) P14).
+- `AgentRun` con estados, reintentos, idempotencia, expiración al arrancar y cancelación, con los ajustes que necesitan las reuniones: varios runs por intervención, prompt construido en `claim` y tokens con secuencia. Ver [conversation-engine.md §10](../architecture/conversation-engine.md#10-adaptaciones-de-agentrun).
 - Claves de IA en keychain con verificación previa.
 
-**Resultado esperado:** todos los criterios de [agent-execution.md](agent-execution.md), más streaming y cancelación; funciona offline con Ollama.
+**Resultado esperado:** todos los criterios de [agent-execution.md](agent-execution.md), más streaming y cancelación; funciona sin conexión con un proveedor local en ejecución.
+
+## Pista R — Reuniones conversacionales
+
+> **Propuesta**, no aprobada para implementación. El orden (texto primero, después voz) está aprobado ([decisions.md](decisions.md) D1). Depende de la Fase 3 y avanza en paralelo a las Fases 4–6 salvo R6. Producto: [voice-meetings.md](voice-meetings.md). Arquitectura: [conversation-engine.md](../architecture/conversation-engine.md) y [voice-engine.md](../architecture/voice-engine.md). Sin estimaciones en semanas: el tamaño de R3–R5 depende de los spikes de voz.
+
+```mermaid
+flowchart LR
+    F3[Fase 3 · AgentRun] --> R1[R1 · Dirigida por texto]
+    R1 --> R2[R2 · Coordinación multiagente]
+    R2 --> R3[R3 · Voz de salida]
+    S[Spikes S1–S6] --> R3
+    R3 --> R4[R4 · Voz de entrada push-to-talk]
+    R4 --> R5[R5 · Conversación natural]
+    F5[Fases 4–5 · Tareas y herramientas] --> R6[R6 · Reunión con trabajo real]
+    R2 --> R6
+```
+
+### R1 — Conversación dirigida por texto
+- **Objetivo:** que el usuario hable con un agente concreto en una conversación que conserva el contexto.
+- **Incluye:** selector de destinatario y menciones `@`; ambigüedad; destinatario por defecto (P5); prompt de reunión con nombre y rol de cada emisor; estado visual de los agentes; disponibilidad real por agente.
+- **Módulos:** servicio de intervención (sucede a `message_send`), dominio de menciones, `BuildPrompt`, `useRoom`, `MessageComposer`, `ParticipantTile`.
+- **Base de datos:** ningún cambio más allá de `agent_runs` (Fase 3).
+- **Riesgos:** recorte de contexto con modelos locales; resolución de nombres.
+- **Pruebas:** dominio de menciones, prompt, aislamiento por workspace, eventos.
+- **Aceptación:** criterios «Conversación dirigida» de [voice-meetings.md](voice-meetings.md#9-criterios-de-aceptación-por-etapa-ver-roadmapmd).
+- **Excluye:** respuestas de varios agentes, voz.
+- **Siguiente etapa si:** las respuestas de seguimiento usan el contexto anterior sin reiniciar la conversación.
+
+### R2 — Coordinación multiagente (texto)
+- **Objetivo:** preguntas al equipo, rondas y discusiones acotadas.
+- **Incluye:** coordinador híbrido (D2), sugerencia por IA con un modelo de Ajustes, ronda fija, «pasar» (P7), presupuesto de 4 (D3), sesión en memoria, «Detener», cancelación por intervención.
+- **Módulos:** dominio de planificación, registro de sesiones, servicios de intervención y cancelación, Ajustes (modelo coordinador), `useMeeting`.
+- **Base de datos:** `settings` (planificada, alcance P9); `agent_runs` con P1/P7. Requieren aprobación.
+- **Riesgos:** coste en la nube, JSON inválido del coordinador (S7), bucles.
+- **Pruebas:** presupuesto, «ningún mensaje de agente crea runs», cancelación idempotente, eventos tardíos, sugerencia inválida.
+- **Aceptación:** criterios «Coordinación» de [voice-meetings.md](voice-meetings.md).
+- **Excluye:** voz; agentes que convocan a otros.
+- **Siguiente etapa si:** las discusiones terminan siempre dentro del presupuesto y «Detener» deja la sala en reposo.
+
+### R3 — Voz de salida
+- **Objetivo:** escuchar a cada agente con su voz.
+- **Incluye:** TTS nativo por plataforma (recomendado, S3); cola de reproducción con una sola voz a la vez; silenciar, subtítulos y «reproducir de nuevo»; voz por agente (D8); marcas «interrumpido» y «no reproducido» en memoria (D7).
+- **Módulos:** `system/` de TTS y reproducción, servicio de cola, Ajustes › Voz, `useVoice`.
+- **Base de datos:** `agent_voices` (esquema pendiente) y claves de `settings`.
+- **Riesgos:** calidad en Linux, licencias de las voces neuronales (P24), audio al salir.
+- **Pruebas:** máquina de reproducción, deduplicación, cierre de sesión, manual en los 3 SO.
+- **Aceptación:** criterios «Voz de salida».
+- **Excluye:** micrófono, TTS en streaming, voces neuronales si S4 no las aprueba.
+- **Siguiente etapa si:** S1 y S2 están aprobados.
+
+### R4 — Voz de entrada (push-to-talk) · MVP de reunión hablada
+- **Objetivo:** hablar a los agentes.
+- **Incluye:** captura en el núcleo, push-to-talk (D5), STT local o en la nube configurable (D6), permisos e indicador, envío o borrador (P4), detener la voz al pulsar.
+- **Módulos:** `system/` de captura y STT, servicio de transcripción, entitlements de macOS, `useVoice`.
+- **Base de datos:** claves de `settings`.
+- **Riesgos:** permisos y firma en macOS, compilación nativa, latencia.
+- **Pruebas:** máquina de captura, audio vacío, STT simulado, matriz manual.
+- **Aceptación:** criterios «Voz de entrada».
+- **Excluye:** escucha continua, cancelación de eco.
+- **Siguiente etapa si:** latencias medidas y aceptadas, y uso real que pida más naturalidad.
+
+### R5 — Conversación natural
+- **Incluye:** VAD y escucha continua opcional, cancelación de eco (S8), TTS por frases, prelectura del turno siguiente (P16), menor latencia.
+- **Excluye:** speech-to-speech como base (solo se evaluaría por agente tras un spike).
+
+### R6 — Reunión con trabajo real
+- **Depende de:** las Fases 4–5 (tareas, worktrees, herramientas, aprobaciones).
+- **Objetivo:** crear tareas desde la reunión y que el agente explique su progreso.
+- **Regla:** la conversación nunca autoriza herramientas.
 
 ## Fase 4 — Tareas y worktrees (2 semanas)
 
@@ -74,9 +143,9 @@ Fase 0 completada (2026-11-17): scaffold Tauri 2 (React + TypeScript + Vite), sp
 ## Qué NO construir
 
 - Cuentas, login, sincronización, colaboración multiusuario y backend remoto.
-- Integraciones externas (GitHub, Slack, ClickUp), colaboración y delegación entre agentes.
+- Integraciones externas (GitHub, Slack, ClickUp) y delegación de tareas entre agentes. La conversación coordinada entre agentes ya no está excluida: pasa a la Pista R, acotada y siempre iniciada por el usuario.
 - Facturación, créditos y marketplace.
-- Videollamadas reales, avatares hiperrealistas, animaciones 3D.
+- Videollamadas reales (video, cámaras, WebRTC entre personas), avatares hiperrealistas, animaciones 3D. La reunión con agentes es visual, con texto y voz opcional.
 - Automatizaciones sin permisos ni supervisión.
 
 Prioridad: validar que el usuario obtiene valor real trabajando con agentes de IA sobre su propio código.

@@ -1,12 +1,12 @@
 # Meelting Desktop — Producto
 
 **Categoría:** AI Workspace / Virtual AI Office / Multi-Agent Collaboration
-**Plataforma:** aplicación de escritorio local-first (Tauri 2) para macOS, Windows y Linux
-**Etapa:** Fase 0 completada (scaffold Tauri 2 con spikes de keychain, `git worktree` + PTY y streaming SSE); Fase 1 completada (SQLite, primer arranque, shell y workspaces); Fase 2 completada (equipos y agentes)
+**Plataforma:** aplicación de escritorio (Tauri 2) para macOS, Windows y Linux, sin backend propio ni cuenta, con operación híbrida online/offline
+**Etapa:** Fase 0 completada (scaffold Tauri 2 con spikes de keychain, `git worktree` + PTY y streaming SSE); Fase 1 completada (SQLite, primer arranque, shell y workspaces); Fase 2 completada (equipos y agentes); Fase 3 en curso (salas y mensajes construidos, sin ejecución de agentes)
 
 > **Tu equipo de inteligencia artificial trabajando contigo, en una oficina virtual.**
 
-Meelting Desktop es una aplicación que funciona 100 % en la máquina del usuario, sin servidor ni cuenta. El usuario crea una oficina virtual con agentes de IA que trabajan de forma autónoma y ejecutan tareas reales de código en `git worktree` aislados, con modelos en la nube o locales (Ollama, LM Studio). El usuario es el responsable del equipo: supervisa, asigna objetivos, conversa y aprueba acciones.
+Meelting Desktop es una aplicación que corre en la máquina del usuario, sin servidor propio ni cuenta: sus datos viven en local. El usuario crea una oficina virtual con agentes de IA que trabajan de forma autónoma y ejecutan tareas reales de código en `git worktree` aislados, con modelos en la nube o locales (Ollama, LM Studio), combinables entre sí. Lo local funciona sin conexión; lo que depende de servicios en la nube informa cuándo no está disponible. El usuario es el responsable del equipo: supervisa, asigna objetivos, conversa y aprueba acciones.
 
 Este producto reemplaza al SaaS Rails original (repositorio `meelting`), que queda congelado como referencia de diseño. Ver [../architecture/overview.md](../architecture/overview.md).
 
@@ -19,6 +19,8 @@ Este producto reemplaza al SaaS Rails original (repositorio `meelting`), que que
 | [agent-catalog.md](agent-catalog.md) | Catálogo de plantillas, equipos y gestión de agentes |
 | [rooms.md](rooms.md) | Salas de trabajo: objetivo, participantes y conversación persistente |
 | [agent-execution.md](agent-execution.md) | Ejecución de agentes: proveedores (nube y local), streaming, estados, límites y errores |
+| [voice-meetings.md](voice-meetings.md) | Reuniones conversacionales con agentes: modos, coordinación de turnos, voz (propuesta) |
+| [decisions.md](decisions.md) | Registro de decisiones aprobadas, pendientes y descartadas |
 | [users.md](users.md) | Usuarios objetivo y experiencia principal (journey) |
 | [roadmap.md](roadmap.md) | Fases, alcance y lo que no se construye |
 | [integrations.md](integrations.md) | Integraciones previstas (GitHub, Slack, ClickUp) |
@@ -35,8 +37,9 @@ Cada documento distingue entre:
 - **Planificado:** definido en el plan de migración y aún no construido. Los documentos de funcionalidad (catálogo, salas, ejecución) describen el comportamiento **objetivo**, portado del producto Rails, donde ya fue validado.
 - **Visión:** dirección del producto, sin compromiso de entrega.
 - **Hipótesis:** por validar.
+- **Propuesta:** diseño documentado, pendiente de aprobación para implementar (p. ej. [voice-meetings.md](voice-meetings.md)).
 
-**Hoy está implementado:** scaffold Tauri 2 (React + TypeScript + Vite) con tres spikes: keychain del SO (guardar, leer los últimos 4 caracteres y borrar una clave), `git worktree` + PTY con salida en vivo, y streaming SSE desde un endpoint compatible con Chat Completions (Ollama o nube). Todo lo demás es planificado.
+**Hoy está implementado:** scaffold Tauri 2 (React + TypeScript + Vite) con tres spikes (keychain del SO, `git worktree` + PTY con salida en vivo, y streaming SSE compatible con Chat Completions); SQLite, primer arranque, shell, workspaces, ajustes de idioma y tema; equipos, agentes, organigrama, catálogo de plantillas y selector de proveedor y modelo con detección de modelos locales; salas, participantes y mensajes del usuario. La ejecución de agentes, las reuniones conversacionales y la voz están planificadas o propuestas.
 
 ## Principio fundamental
 

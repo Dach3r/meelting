@@ -2,7 +2,7 @@
 
 ## Usuarios objetivo
 
-**Público inicial:** desarrolladores de software, freelancers técnicos y equipos pequeños que usan varias herramientas digitales y quieren que la IA trabaje sobre su código sin enviarlo a un servicio de terceros.
+**Público inicial:** desarrolladores de software, freelancers técnicos y equipos pequeños que usan varias herramientas digitales y quieren que la IA trabaje sobre su código decidiendo ellos si se envía a un servicio de terceros.
 
 **Público futuro:** startups, Product Managers, equipos de desarrollo, agencias digitales.
 

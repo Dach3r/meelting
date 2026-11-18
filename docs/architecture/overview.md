@@ -9,7 +9,7 @@
 **Necesidad:** que los agentes completen tareas reales de código. Cada tarea necesita su propio `git worktree`, ejecutar comandos, levantar contenedores Docker y usar modelos de IA locales.
 
 **Requisitos**
-- Funciona **offline** y soporta **modelos locales** (Ollama, LM Studio, llama.cpp).
+- **Operación híbrida online/offline:** soporta **modelos locales** (Ollama, LM Studio, llama.cpp) y servicios en la nube, combinables y elegidos por el usuario sin preferencia obligatoria. Lo local (datos, historial y agentes con modelos locales en ejecución) funciona sin conexión; lo que depende de la nube informa que no está disponible y nunca se sustituye en silencio por otro proveedor ([decisions.md](../product/decisions.md) D6).
 - Corre en **macOS, Windows y Linux**.
 - Arranque rápido y poca memoria.
 - **Sin API remota ni cuenta**: todo en la máquina del usuario.
@@ -21,7 +21,7 @@
 | Rails en servidor + runner local | Descartada: no funciona offline y deja el cerebro fuera de la máquina |
 | Rails empaquetado en Tauri/Electron (sidecar) | Descartada: distribuir Ruby y gemas nativas en tres SO, migrar a SQLite y gestionar procesos, sin ganar nada sin servidor |
 | Cliente Tauri + API Rails remota | Descartada: sin servidor remoto no aporta; añade sync y dos codebases |
-| **App de escritorio nueva, 100 % local** | **Elegida** |
+| **App de escritorio nueva, sin servidor propio (datos locales; modelos locales o en la nube)** | **Elegida** |
 
 ## 2. Arquitectura
 
@@ -67,7 +67,8 @@
 - **Catálogos**: colecciones de solo lectura embebidas en la app (`agent_templates/*.yml`, `llm.yml`), leídas con `serde_yaml`. Un catálogo nunca orquesta: la acción que lo usa es un servicio.
 - **Integración con el SO** (`system/`): procesos hijo (`git`), PTY y keychain; sin reglas de negocio.
 - **Dominio puro** (modelos, `BuildPrompt`, normalización de proveedores, path jail) separado del código de integración con el SO, para poder testearlo sin I/O.
-- **Eventos** (`emit`) del núcleo a la UI: `message:created` (✅, tras confirmar la transacción), y previstos `agent_run:token`, `agent_run:status`, `tool_call:output`.
+- **Eventos** (`emit`) del núcleo a la UI: `message:created` (✅, tras confirmar la transacción), y previstos `agent_run:token`, `agent_run:status`, `tool_call:output`. Los eventos propuestos para las reuniones y la voz (plan, disponibilidad, captura, transcripción, reproducción) están en [conversation-engine.md §11](conversation-engine.md#11-contratos-ipc-propuestos-nombres-no-definitivos).
+- **Reuniones conversacionales y voz** (propuesta): [conversation-engine.md](conversation-engine.md) y [voice-engine.md](voice-engine.md). La captura y la reproducción de audio irían en el núcleo; `AgentRun` permanece independiente del audio.
 
 El webview **no recibe acceso directo a `fs` ni `shell`**: las capabilities de Tauri se declaran mínimas, solo los comandos propios.
 
@@ -151,6 +152,8 @@ trait Provider {
 | `deepseek` | Chat Completions (`https://api.deepseek.com`) | Instrucciones como `system`; descartar `reasoning_content` |
 | `minimax` | Anthropic-compatible (`https://api.minimax.io/anthropic`) | Mismo contrato que `anthropic`; nunca enviar `thinking`; `Authorization: Bearer` |
 | `local` | Chat Completions compatible con OpenAI (Ollama `:11434`, LM Studio `:1234`) | Sin API key; modelos con `GET /v1/models`; sin `effort`; timeout largo |
+
+> **Discrepancia pendiente** ([decisions.md](../product/decisions.md) P14): el catálogo real `src-tauri/src/catalogs/llm.yml` define `anthropic`, `openai` y `groq` (nube) y `ollama` y `lmstudio` (local). `deepseek` y `minimax` no están en el catálogo, `groq` (compatible con Chat Completions) no tiene adaptador en esta tabla y `local` está dividido en dos claves.
 
 Reglas:
 - La clave solo se lee del keychain en el núcleo; **nunca llega a la UI, a logs ni a eventos**. No se registran prompts ni razonamiento.
@@ -274,6 +277,8 @@ CI (`.github/workflows/ci.yml`), tres trabajos en paralelo: `lint` (Ubuntu: `rus
 | 8 | Soporte mínimo de SO | macOS 12+, Windows 10+ (WebView2), Ubuntu 22.04+ |
 | 9 | Concurrencia de tareas | 2 por workspace |
 | 10 | Eliminar un workspace (Rails solo permitía cancelar la cuenta) | Permitirlo desde Ajustes con confirmación; borra equipos, agentes, salas y claves del keychain. Falta aprobación |
+
+Las decisiones nuevas (reuniones, voz, operación híbrida) se registran en [decisions.md](../product/decisions.md).
 
 ## 14. Riesgos
 
