@@ -44,7 +44,6 @@ Contexto: [voice-meetings.md](voice-meetings.md), [conversation-engine.md](../ar
 | P2 | Al salir de la reunión, ¿siguen las ejecuciones en curso? | Sí (regla aprobada de `AgentRun`), pero sin turnos nuevos ni audio | R2 |
 | P3 | Una intervención nueva con ejecuciones activas de la anterior | Cancelarlas (prioridad del usuario y coste) | R2 |
 | P4 | ¿Se envía sola la transcripción? | Sí si el destinatario está resuelto; si no, queda como borrador | R4 |
-| P5 | Destinatario por defecto = último interlocutor | Sí, visible y modificable | R1 |
 | P6 | ¿El límite de 4 también se aplica a «Equipo»? | Sí: un solo presupuesto por intervención | R2 |
 | P7 | Mecanismo «pasar» y `succeeded` sin mensaje | Decidir en R2. Si se aprueba, exige reconstruir `agent_runs` (SQLite no permite cambiar un `CHECK` sin copiar la tabla) | R2 |
 | P8 | Cómo se pide una discusión | Destinatario explícito «Discusión» + lista localizada de verbos | R2 |
@@ -62,7 +61,7 @@ Contexto: [voice-meetings.md](voice-meetings.md), [conversation-engine.md](../ar
 | P23 | ¿Los consumos del coordinador IA cuentan para los límites diarios? | Sí | R2 |
 | P24 | Licencia del TTS neuronal local en español (fonemizador GPL) | Revisión legal antes de incluir Piper o Kokoro | R3 |
 
-Las decisiones aprobadas en la revisión de `AgentRun` sustituyen a P14 (ahora D9), P15 (D10) y P21 (D11).
+Las decisiones aprobadas en la revisión de `AgentRun` sustituyen a P14 (ahora D9), P15 (D10) y P21 (D11). P5 pasa a ser D19.
 
 ### Aprobadas (2026-11-18, revisión de la propuesta de `AgentRun`)
 
@@ -78,6 +77,16 @@ Las decisiones aprobadas en la revisión de `AgentRun` sustituyen a P14 (ahora D
 |---|---|---|---|
 | D17 | **Aprobación final de `AgentRun` (revisión 3):**<br>• SQL íntegro de A1 y A13: las tres migraciones `add_id_room_id_index_to_messages`, `add_id_room_id_agent_id_index_to_messages` y `create_agent_runs`, sin tablas ni columnas adicionales; los 45 casos de integridad pasan a `cargo test`.<br>• A1b: `context_too_large` permanente, sin llamar al proveedor ni recortar instrucciones o la solicitud.<br>• A2: errores `invalid_client_request_id`, `agent_busy`, `client_request_conflict` y `agent_has_activity`.<br>• A8 y A8b: YAML de §9 con `gpt-6.1-sol` y `gpt-6.1-terra` (128 000, `openai_responses`) y `openai/gpt-oss-120b` (65 536, `chat_completions` con `max_completion_tokens`) en lugar de los modelos retirados; Anthropic sin cambios; locales con detección dinámica. Los agentes existentes no se modifican y fallan con `model_unavailable`.<br>• A8c: topes internos de salida 16 000 (nube) y 2048 (local), y L1 de 256 KiB; se pide el mínimo entre el máximo documentado y el tope interno, ajustable solo en la configuración interna del motor.<br>• Orden de los eventos de estado: posición lógica derivada de `status` y `attempts`, sin columna nueva, para que un evento tardío no sustituya a uno más reciente con el mismo intento.<br>• Reintentos, concurrencia, recuperación y cancelación según la revisión 3. | Cierra la revisión y autoriza la implementación en tres entregas (núcleo y persistencia, ejecución real, interfaz), probando primero un agente local real | Mantener los modelos retirados; topes de salida iguales al máximo del modelo |
 | D18 | **Cambio explícito de proveedor y modelo de un agente** (revisa D12; ✅ construido) como **entrega pequeña e independiente** del motor: iniciado por el usuario, validado contra el catálogo, sin migración, sin modificar las ejecuciones existentes y sin sustituciones automáticas | Los agentes con modelos retirados necesitan una salida explícita | Sustitución automática del modelo; hacerlo dentro de la implementación del motor |
+
+### Aprobadas (2026-11-18, R1 — conversación dirigida por texto)
+
+| # | Decisión | Justificación | Alternativas descartadas |
+|---|---|---|---|
+| D19 | **Destinatario propuesto = último agente que respondió con éxito** (antes P5): estado solo en memoria del núcleo, por sala; se actualiza únicamente tras persistir la respuesta de un agente (una ejecución fallida o cancelada no lo cambia); se conserva al salir y volver a la sala y se pierde al cerrar Meelting; nunca propone a un agente que ya no participa. Se muestra siempre antes de enviar, distinguido de un destinatario elegido explícitamente, y se puede cambiar o descartar para una intervención. Sin columnas ni tablas | Seguimientos naturales sin elegir al agente en cada mensaje, sin persistir estado de sesión | Estado solo en React (se pierde al cambiar de sala); derivarlo de `agent_runs` (sobreviviría al reinicio) |
+| D20 | **Varias menciones a agentes distintos = ambigüedad en R1:** no se guarda nada ni se crea ninguna ejecución hasta que el usuario elige un destinatario. Las rondas llegan con R2 | Una intervención produce como máximo una ejecución en R1 | Lanzar una ronda; elegir el primero mencionado |
+| D21 | **Tres situaciones distintas de destinatario:** sin selección explícita (se resuelven menciones, vocativo y D19); «Nadie» explícito (mensaje sin ejecución: las menciones quedan como texto y D19 no se aplica); agente explícito (tiene prioridad, salvo conflicto con una mención a otro agente, que requiere aclaración) | Elegir «Nadie» es una decisión del usuario; no se reutiliza un valor ambiguo | Conflicto también entre «Nadie» y una mención |
+| D22 | **El prompt indica a quién iba dirigida cada pregunta anterior del usuario** («Usuario → QA»), derivado de `agent_runs.request_message_id` y de los participantes validados por el núcleo, nunca de etiquetas escritas por el usuario. Sin columnas nuevas; mismo aislamiento por workspace, contexto congelado y presupuestos | Evita que un agente tome como propia una pregunta dirigida a otro | No indicar el destinatario |
+| D23 | **Intervenciones durante una ejecución:** se mantiene el comportamiento actual: el mismo agente ocupado responde `agent_busy`; otro agente puede ejecutar en paralelo dentro de los límites de concurrencia; un mensaje sin destinatario siempre se guarda; nada se cancela automáticamente (P3 queda para R2) | Sin cambios de comportamiento en el motor | Cancelar la ejecución anterior al intervenir |
 
 ### Riesgos y dependencias
 
