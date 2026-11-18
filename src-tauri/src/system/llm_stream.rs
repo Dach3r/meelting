@@ -11,6 +11,7 @@ use std::time::Duration;
 pub struct Failure {
     pub kind: ErrorKind,
     pub retry_after: Option<Duration>,
+    pub unreachable: bool,
 }
 
 impl From<ErrorKind> for Failure {
@@ -18,6 +19,7 @@ impl From<ErrorKind> for Failure {
         Failure {
             kind,
             retry_after: None,
+            unreachable: false,
         }
     }
 }
@@ -68,7 +70,10 @@ pub async fn open(
     let response = tokio::time::timeout(request.idle_timeout, builder.send())
         .await
         .map_err(|_| Failure::from(ErrorKind::Timeout))?
-        .map_err(|_| Failure::from(ErrorKind::ProviderUnavailable))?;
+        .map_err(|error| Failure {
+            unreachable: error.is_connect(),
+            ..Failure::from(ErrorKind::ProviderUnavailable)
+        })?;
     let status = response.status();
     if !status.is_success() {
         let retry_after = response
@@ -85,6 +90,7 @@ pub async fn open(
         return Err(Failure {
             kind: provider_error::from_status(status.as_u16(), code.as_deref()),
             retry_after,
+            unreachable: false,
         });
     }
     Ok(Events {
@@ -221,7 +227,8 @@ mod tests {
             rate_limited.err(),
             Some(Failure {
                 kind: ErrorKind::RateLimited,
-                retry_after: Some(Duration::from_secs(3))
+                retry_after: Some(Duration::from_secs(3)),
+                unreachable: false,
             })
         );
         assert_eq!(
@@ -235,7 +242,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn a_refused_connection_is_provider_unavailable() {
+    async fn a_refused_connection_is_an_unreachable_provider() {
         let prompt = prompt();
         let result = open(
             &request("http://127.0.0.1:1", &prompt),
@@ -246,8 +253,15 @@ mod tests {
         .await;
 
         assert_eq!(
-            result.err().map(|f| f.kind),
-            Some(ErrorKind::ProviderUnavailable)
+            result.err().map(|f| (f.kind, f.unreachable)),
+            Some((ErrorKind::ProviderUnavailable, true))
+        );
+        assert!(
+            !open_against(ResponseTemplate::new(503))
+                .await
+                .err()
+                .unwrap()
+                .unreachable
         );
     }
 

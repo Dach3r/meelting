@@ -9,6 +9,7 @@ pub mod agent_run_registry;
 pub mod agent_runs_expire;
 pub mod agent_templates_list;
 pub mod agent_update;
+pub mod availability_check;
 pub mod canvas_positions_reset;
 pub mod canvas_positions_save;
 pub mod first_launch;

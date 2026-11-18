@@ -61,6 +61,7 @@ pub fn run() {
             commands::rooms::delete_room,
             commands::agent_runs::send_intervention,
             commands::agent_runs::resolve_recipient,
+            commands::agent_runs::check_agent_availability,
             commands::agent_runs::cancel_agent_run
         ])
         .run(tauri::generate_context!())

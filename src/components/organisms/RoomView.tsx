@@ -1,14 +1,16 @@
-import { ArrowLeft, Trash2 } from "lucide-react";
+import { ArrowLeft, RefreshCw, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
-import { formatAgentCount, translateError } from "../../i18n/translate";
-import { isActive } from "../../hooks/agentRunState";
+import { type Locale, formatAgentCount, translateError, translateRunError, translateWith } from "../../i18n/translate";
+import { type AgentRun, isActive, isFinal } from "../../hooks/agentRunState";
+import { type AgentAvailability, useAgentAvailability } from "../../hooks/useAgentAvailability";
+import type { LlmProvider } from "../../hooks/useLlmProviders";
 import { useLlmProviders } from "../../hooks/useLlmProviders";
 import { useRoom } from "../../hooks/useRoom";
 import { Button } from "../atoms/Button";
 import { Alert } from "../molecules/Alert";
 import { Modal } from "../molecules/Modal";
-import { ParticipantTile } from "../molecules/ParticipantTile";
+import { type ParticipantStatus, ParticipantTile } from "../molecules/ParticipantTile";
 import { RoomChat } from "./RoomChat";
 
 type Props = {
@@ -24,6 +26,8 @@ export function RoomView({ roomId, busy, deleteErrorMessage, onBack, onDelete, o
   const { t, locale } = useI18n();
   const { detail, errorKey, sendErrorKey, sending, sendIntervention, cancelRun } = useRoom(roomId);
   const providers = useLlmProviders();
+  const finishedRuns = detail ? Object.values(detail.runs.runs).filter(isFinal).length : 0;
+  const { availability, checking, recheck } = useAgentAvailability(roomId, finishedRuns);
   const [confirming, setConfirming] = useState(false);
 
   function closeConfirm() {
@@ -49,7 +53,14 @@ export function RoomView({ roomId, busy, deleteErrorMessage, onBack, onDelete, o
 
   if (!detail) return null;
   const { room, messages, runs, proposal } = detail;
-  const thinking = new Set(Object.values(runs.runs).filter(isActive).map((run) => run.agent_id));
+  const activeRuns = Object.values(runs.runs).filter(isActive);
+
+  function status(agentId: string): ParticipantStatus | undefined {
+    const run = activeRuns.find((candidate) => candidate.agent_id === agentId);
+    if (run) return { label: t(activityKey(run)), tone: "active" };
+    const found = availability?.find((entry) => entry.agent_id === agentId);
+    return found && availabilityStatus(found, providers, locale, t);
+  }
 
   return (
     <div className="flex min-h-[44rem] w-full flex-1 flex-col gap-5 lg:min-h-[34rem]">
@@ -82,7 +93,7 @@ export function RoomView({ roomId, busy, deleteErrorMessage, onBack, onDelete, o
           <ul className="grid grid-cols-[repeat(auto-fill,minmax(10rem,1fr))] gap-4">
             <ParticipantTile name={t("rooms.you")} role={t("rooms.supervisor")} />
             {room.agents.map((agent) => (
-              <ParticipantTile key={agent.id} name={agent.name} role={agent.role} thinking={thinking.has(agent.id)} />
+              <ParticipantTile key={agent.id} name={agent.name} role={agent.role} status={status(agent.id)} />
             ))}
           </ul>
         </section>
@@ -99,7 +110,15 @@ export function RoomView({ roomId, busy, deleteErrorMessage, onBack, onDelete, o
         />
       </div>
       <footer className="flex items-center justify-between gap-4 rounded-2xl border border-line bg-surface px-5 py-3">
-        <p className="text-sm text-muted">{formatAgentCount(locale, room.agents.length)}</p>
+        <div className="flex items-center gap-3">
+          <p className="text-sm text-muted">{formatAgentCount(locale, room.agents.length)}</p>
+          {room.agents.length > 0 && (
+            <Button type="button" variant="ghost" size="compact" disabled={checking} onClick={recheck}>
+              <RefreshCw aria-hidden className={`size-4 ${checking ? "animate-spin" : ""}`} />
+              {t("rooms.availability.recheck")}
+            </Button>
+          )}
+        </div>
         <Button type="button" variant="danger" size="compact" onClick={() => setConfirming(true)}>
           <Trash2 aria-hidden className="size-4" />
           {t("rooms.delete.action")}
@@ -107,4 +126,26 @@ export function RoomView({ roomId, busy, deleteErrorMessage, onBack, onDelete, o
       </footer>
     </div>
   );
+}
+
+function activityKey(run: AgentRun) {
+  if (run.status === "running") return "agentRun.thinking";
+  return run.attempts > 0 ? "rooms.availability.retrying" : "rooms.availability.queued";
+}
+
+function availabilityStatus(
+  found: AgentAvailability,
+  providers: LlmProvider[],
+  locale: Locale,
+  t: (key: string) => string,
+): ParticipantStatus {
+  const label = t(`rooms.availability.${found.availability}`);
+  if (found.availability === "available") return { label, tone: "calm" };
+  const provider = providers.find((entry) => entry.key === found.provider);
+  const name = provider?.name ?? found.provider;
+  const detail =
+    found.availability === "needs_connection"
+      ? translateWith(locale, "rooms.availability.connectionDetail", { provider: name })
+      : translateRunError(locale, found.reason, name, provider?.location === "local");
+  return { label, tone: "problem", detail };
 }

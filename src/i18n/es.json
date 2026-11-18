@@ -231,6 +231,16 @@
       "title": "Eliminar sala",
       "body": "También se eliminarán sus mensajes. Esta acción no se puede deshacer.",
       "confirm": "Eliminar sala"
+    },
+    "availability": {
+      "available": "Disponible",
+      "queued": "En cola",
+      "retrying": "Reintentando…",
+      "needs_setup": "Requiere configuración",
+      "unavailable": "No disponible",
+      "needs_connection": "Requiere conexión",
+      "recheck": "Comprobar disponibilidad",
+      "connectionDetail": "La última solicitud a {provider} no pudo conectarse. Revisa tu conexión a internet."
     }
   },
   "agentRun": {

@@ -132,7 +132,7 @@ describe("asking an agent", () => {
     expect(screen.getByText("Review it")).toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent("Waiting for Ana…");
     expect(screen.getByText("Ollama · qwen2.5:0.5b")).toBeInTheDocument();
-    expect(within(screen.getByRole("region", { name: "Participants" })).getByText("Thinking…")).toBeInTheDocument();
+    expect(within(screen.getByRole("region", { name: "Participants" })).getByText("Queued")).toBeInTheDocument();
   });
 
   it("sends from the message by default and lets you choose nobody explicitly", async () => {
@@ -386,6 +386,65 @@ describe("following the conversation", () => {
     await renderRoom();
 
     expect(screen.queryByText(/Replying to/)).not.toBeInTheDocument();
+  });
+});
+
+describe("agent availability", () => {
+  const checked = [
+    { agent_id: "a1", provider: "ollama", availability: "unavailable", reason: "provider_unavailable" },
+    { agent_id: "a2", provider: "groq", availability: "needs_setup", reason: "provider_not_configured" },
+  ];
+
+  function tile(name: string) {
+    return within(within(screen.getByRole("region", { name: "Participants" })).getByText(name).closest("li") as HTMLElement);
+  }
+
+  it("shows each agent's real availability with its reason", async () => {
+    core({ get_room: () => detail(), check_agent_availability: () => checked });
+    await renderRoom();
+
+    expect(await tile("Ana").findByText("Unavailable")).toHaveAttribute("title", "Ollama isn't running. Open it and try again.");
+    expect(tile("Bob").getByText("Needs setup")).toHaveAttribute("title", "Groq has no API key in this workspace.");
+  });
+
+  it("explains a lost connection and lets you check again", async () => {
+    let answer = [{ agent_id: "a2", provider: "groq", availability: "needs_connection", reason: "provider_unavailable" }];
+    core({ get_room: () => detail(), check_agent_availability: () => answer });
+    const user = userEvent.setup();
+    await renderRoom();
+    expect(await tile("Bob").findByText("Needs a connection")).toHaveAttribute(
+      "title",
+      "The last request to Groq could not connect. Check your internet connection.",
+    );
+
+    answer = [{ agent_id: "a2", provider: "groq", availability: "available", reason: null }];
+    await user.click(screen.getByRole("button", { name: "Check availability" }));
+
+    expect(await tile("Bob").findByText("Available")).toBeInTheDocument();
+    expect(invokeMock.mock.calls.filter(([command]) => command === "check_agent_availability")).toHaveLength(2);
+  });
+
+  it("shows activity before availability and checks again when a run finishes", async () => {
+    core({ get_room: () => detail({ messages: [message("m1", "Hi")], runs: [run("queued", 1)] }), check_agent_availability: () => checked });
+    await renderRoom();
+
+    expect(await tile("Ana").findByText("Retrying…")).toBeInTheDocument();
+    emit("agent_run:status", run("running", 2));
+    expect(tile("Ana").getByText("Thinking…")).toBeInTheDocument();
+    emit("agent_run:status", run("failed", 2, { error_kind: "provider_unavailable" }));
+
+    expect(await tile("Ana").findByText("Unavailable")).toBeInTheDocument();
+    expect(invokeMock.mock.calls.filter(([command]) => command === "check_agent_availability")).toHaveLength(2);
+  });
+
+  it("does not check availability while you type", async () => {
+    core({ get_room: () => detail(), check_agent_availability: () => checked, resolve_recipient: () => ({ kind: "nobody" }) });
+    const user = userEvent.setup();
+    await renderRoom();
+
+    await user.type(screen.getByLabelText("Message"), "Some text");
+
+    expect(invokeMock.mock.calls.filter(([command]) => command === "check_agent_availability")).toHaveLength(1);
   });
 });
 

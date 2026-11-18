@@ -231,6 +231,16 @@
       "title": "Delete room",
       "body": "Its messages will be deleted too. This cannot be undone.",
       "confirm": "Delete room"
+    },
+    "availability": {
+      "available": "Available",
+      "queued": "Queued",
+      "retrying": "Retrying…",
+      "needs_setup": "Needs setup",
+      "unavailable": "Unavailable",
+      "needs_connection": "Needs a connection",
+      "recheck": "Check availability",
+      "connectionDetail": "The last request to {provider} could not connect. Check your internet connection."
     }
   },
   "agentRun": {

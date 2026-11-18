@@ -32,7 +32,7 @@ src-tauri/src/
 ├── commands/              Capa 1: comandos Tauri (delgados)
 │   ├── keychain.rs        ✅ save_secret, secret_last_four, delete_secret
 │   ├── worktree.rs        ✅ run_in_worktree
-│   ├── agent_runs.rs      ✅ send_intervention, resolve_recipient, cancel_agent_run y el emisor de eventos del motor (agent_run:status, agent_run:token, message:created)
+│   ├── agent_runs.rs      ✅ send_intervention, resolve_recipient, check_agent_availability, cancel_agent_run y el emisor de eventos del motor (agent_run:status, agent_run:token, message:created)
 │   ├── rooms.rs           ✅ list_rooms, create_room, get_room (con ejecuciones e instantáneas), delete_room
 │   └── session.rs         ✅ load_session, complete_first_launch, create_workspace, switch_workspace, list_teams, create_team, create_agent, get_agent, update_agent, delete_agent, save_canvas_positions, reset_canvas_positions, list_agent_templates, list_agent_roles, list_llm_providers, detect_local_models, change_locale, change_theme
 ├── services/              Capa 2: acciones de negocio (verbos)
@@ -47,6 +47,7 @@ src-tauri/src/
 │   ├── team_create.rs     ✅ crea un equipo y devuelve la lista actualizada
 │   ├── agent_create.rs    ✅ valida y crea un agente (personalizado o desde plantilla) y devuelve la lista actualizada
 │   ├── agent_get.rs       ✅ detalle completo de un agente del workspace actual
+│   ├── availability_check.rs ✅ disponibilidad de los agentes de una sala: local según el servidor y los modelos instalados (localhost), nube según el catálogo, la clave del keychain y el último fallo de conexión en memoria; sin llamadas de red a la nube
 │   ├── agent_update.rs    ✅ valida y edita nombre, rol, descripción, instrucciones, equipo, proveedor y modelo de un agente (el par se valida contra el catálogo solo si cambia)
 │   ├── agent_delete.rs    ✅ elimina un agente del workspace actual y devuelve la lista actualizada; con mensajes o ejecuciones falla con agent_has_activity
 │   ├── rooms_list.rs      ✅ salas del workspace actual por actividad reciente, con sus agentes y los últimos 3 mensajes de la primera
@@ -58,7 +59,7 @@ src-tauri/src/
 │   ├── intervention_send.rs ✅ send_intervention: valida, deduplica por client_request_id, resuelve el destinatario con domain/recipient dentro de la transacción y guarda el mensaje del usuario (con la ejecución queued si hay agente) o devuelve los candidatos para elegir sin guardar nada
 │   ├── agent_run_engine.rs ✅ motor de ejecución: pool, registro, catálogo, límites, semáforos local (1) y nube (4) y emisor de eventos; lanza cada ejecución como tarea tokio
 │   ├── agent_run_execute.rs ✅ tarea de una ejecución: espera de plaza, claim, contexto congelado, llamada al adaptador, tokens agrupados cada 50 ms, reintentos con plaza liberada, duración máxima, éxito atómico y fallos
-│   ├── agent_run_registry.rs ✅ registro en memoria de ejecuciones aceptadas (texto del intento acotado por L1, secuencia, prompt congelado y token de cancelación) y último agente que respondió en cada sala (D19)
+│   ├── agent_run_registry.rs ✅ registro en memoria de ejecuciones aceptadas (texto del intento acotado por L1, secuencia, prompt congelado y token de cancelación) último agente que respondió en cada sala (D19) y proveedores cuya última conexión falló
 │   ├── agent_run_cancel.rs ✅ cancelación idempotente filtrada por workspace
 │   ├── agent_runs_expire.rs ✅ expira las ejecuciones queued y running al arrancar
 │   ├── canvas_positions_save.rs ✅ guarda las posiciones del organigrama de equipos y agentes del workspace actual
@@ -70,7 +71,7 @@ src-tauri/src/
 ├── system/                Capa 3: integración con el SO, sin reglas de negocio
 │   ├── git.rs             ✅ git por tokio::process (worktree add)
 │   ├── terminal.rs        ✅ PTY portable y lectura de salida
-│   ├── llm_stream.rs      ✅ HTTP + SSE común a los adaptadores: conexión, inactividad, errores HTTP por estado y código, retry-after
+│   ├── llm_stream.rs      ✅ HTTP + SSE común a los adaptadores: conexión (marca unreachable si no se pudo conectar), inactividad, errores HTTP por estado y código, retry-after
 │   ├── anthropic_messages.rs ✅ adaptador de la Messages API de Anthropic
 │   ├── openai_responses.rs ✅ adaptador de la Responses API de OpenAI
 │   ├── chat_completions.rs ✅ adaptador de Chat Completions (Groq, Ollama, LM Studio)
@@ -148,6 +149,7 @@ src/
 │   ├── useTeams.ts        ✅ invoke list_teams, create_team, create_agent, get_agent, update_agent, delete_agent, save_canvas_positions (con debounce de 500 ms), reset_canvas_positions
 │   ├── useRooms.ts        ✅ invoke list_rooms, create_room, delete_room
 │   ├── useRoom.ts         ✅ invoke get_room, send_intervention (un client_request_id por envío, reutilizado en los reintentos automáticos y tras un timeout del IPC; sin reintentos si el destinatario es «Nadie») y cancel_agent_run; listen message:created, agent_run:status y agent_run:token antes de cargar la sala, con los eventos de la carga en espera
+│   ├── useAgentAvailability.ts ✅ invoke check_agent_availability al abrir la sala, al terminar una ejecución y a petición («Comprobar disponibilidad»); nunca al escribir
 │   ├── useRecipientPreview.ts ✅ invoke resolve_recipient 150 ms después del último cambio del borrador (IPC local, sin red); descarta respuestas obsoletas
 │   ├── agentRunState.ts   ✅ estado puro de las ejecuciones: orden lógico de estados (queued n = 2n, running n = 2n − 1, final al final), tokens por (attempt, seq), instantáneas y texto en vivo
 │   ├── useAgentTemplates.ts ✅ invoke list_agent_templates (recarga al cambiar el idioma)

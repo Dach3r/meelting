@@ -1,6 +1,6 @@
 use crate::domain::agent_run::{Partial, TokenChunk};
 use crate::domain::prompt::Prompt;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex, MutexGuard};
 use tokio_util::sync::CancellationToken;
 
@@ -21,6 +21,7 @@ pub struct TooLong;
 pub struct Registry {
     entries: Mutex<HashMap<String, Entry>>,
     last_responders: Mutex<HashMap<String, String>>,
+    unreachable_providers: Mutex<HashSet<String>>,
 }
 
 impl Registry {
@@ -43,6 +44,25 @@ impl Registry {
             .unwrap_or_else(|poisoned| poisoned.into_inner())
             .get(room_id)
             .cloned()
+    }
+
+    pub fn reached(&self, provider: &str, reachable: bool) {
+        let mut unreachable = self
+            .unreachable_providers
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        if reachable {
+            unreachable.remove(provider);
+        } else {
+            unreachable.insert(provider.to_string());
+        }
+    }
+
+    pub fn is_unreachable(&self, provider: &str) -> bool {
+        self.unreachable_providers
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .contains(provider)
     }
 
     pub fn insert(&self, run_id: &str, room_id: &str) -> CancellationToken {

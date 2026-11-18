@@ -53,8 +53,14 @@ pub async fn run(engine: Arc<Engine>, run: AgentRun, cancel: CancellationToken) 
             Outcome::DeadlineExceeded => {
                 return finish_failed(&engine, &run.id, ErrorKind::Timeout).await;
             }
-            Outcome::Succeeded(usage) => return complete(&engine, &claimed, usage).await,
+            Outcome::Succeeded(usage) => {
+                engine.registry.reached(&run.provider, true);
+                return complete(&engine, &claimed, usage).await;
+            }
             Outcome::Failed(failure) => {
+                if failure.unreachable {
+                    engine.registry.reached(&run.provider, false);
+                }
                 let remaining = deadline_at.saturating_duration_since(Instant::now());
                 match after_failure(
                     failure.kind,

@@ -1,6 +1,7 @@
 use crate::domain::recipient::{Resolution, Selection};
 use crate::services::agent_run_cancel;
 use crate::services::agent_run_engine::{Emit, Engine, RunEvent};
+use crate::services::availability_check::{self, AgentAvailability};
 use crate::services::intervention_send::{self, Intervention, InterventionSent};
 use crate::services::recipient_resolve;
 use crate::services::session_load::SessionError;
@@ -48,6 +49,14 @@ pub async fn resolve_recipient(
     mention_ids: Vec<String>,
 ) -> Result<Resolution, SessionError> {
     recipient_resolve::run(&engine.pool, &room_id, &body, &selection, &mention_ids).await
+}
+
+#[tauri::command]
+pub async fn check_agent_availability(
+    engine: State<'_, Arc<Engine>>,
+    room_id: String,
+) -> Result<Vec<AgentAvailability>, SessionError> {
+    availability_check::run(&engine, &room_id).await
 }
 
 #[tauri::command]
