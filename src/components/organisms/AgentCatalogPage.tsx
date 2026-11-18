@@ -123,12 +123,12 @@ export function AgentCatalogPage({ team, busy, actionErrorMessage, onCreateAgent
             </div>
             <ul className="grid grid-cols-[repeat(auto-fill,minmax(16rem,1fr))] gap-3">
               {items.map((template) => (
-                <li key={template.key} className="grid content-between gap-4 rounded-2xl border border-line bg-raised p-4">
+                <li key={template.key} className="grid content-between gap-4 rounded-2xl border border-line bg-hi p-4">
                   <div className="grid gap-3">
                     <div className="flex items-center gap-3">
                       <span
                         aria-hidden
-                        className="grid size-11 shrink-0 place-items-center rounded-full border-[1.5px] border-line bg-pill-hover text-lg font-bold text-ink"
+                        className="grid size-11 shrink-0 place-items-center rounded-full border-[1.5px] border-line bg-surface text-lg font-bold text-ink"
                       >
                         {template.name.trim().charAt(0).toUpperCase()}
                       </span>
