@@ -1,4 +1,4 @@
-import { Briefcase, Cpu, Server, User } from "lucide-react";
+import { ArrowRight, Briefcase, Check, Cpu, Server, User } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
 import type { AgentDraft, Team } from "../../hooks/useTeams";
@@ -117,7 +117,7 @@ export function AgentForm({ team, busy, errorMessage, onSubmit, onCancel }: Prop
           )}
           {errorMessage && <Alert message={errorMessage} />}
         </div>
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center justify-end gap-2">
           {step === 0 ? (
             <Button type="button" variant="ghost" size="pill" onClick={onCancel}>
               {t("teams.cancel")}
@@ -128,6 +128,7 @@ export function AgentForm({ team, busy, errorMessage, onSubmit, onCancel }: Prop
             </Button>
           )}
           <Button type="submit" size="pill" disabled={busy || !complete[current]}>
+            {last ? <Check aria-hidden className="size-4" /> : <ArrowRight aria-hidden className="size-4" />}
             {last ? t("teams.agent.submit") : t("teams.hire.next")}
           </Button>
         </div>
