@@ -73,6 +73,12 @@ export function useTeams(workspaceId: string | null) {
 
   useEffect(() => savePositions, [savePositions]);
 
+  const resetPositions = () => {
+    pendingPositions.current.clear();
+    clearTimeout(saveTimer.current);
+    return run("reset_canvas_positions", {});
+  };
+
   const moveNode = (nodeId: string, x: number, y: number) => {
     setTeams((current) =>
       current.map((team) =>
@@ -101,5 +107,5 @@ export function useTeams(workspaceId: string | null) {
   };
   const clearActionError = () => setActionErrorKey(null);
 
-  return { teams, errorKey, actionErrorKey, busy, createTeam, createAgent, updateAgent, deleteAgent, moveNode, loadAgent, clearActionError };
+  return { teams, errorKey, actionErrorKey, busy, createTeam, createAgent, updateAgent, deleteAgent, moveNode, resetPositions, loadAgent, clearActionError };
 }

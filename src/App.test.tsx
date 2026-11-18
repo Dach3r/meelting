@@ -36,6 +36,7 @@ function mockCore(value: unknown) {
 }
 
 beforeEach(() => {
+  vi.restoreAllMocks();
   invokeMock.mockReset();
   delete document.documentElement.dataset.theme;
 });
@@ -376,6 +377,53 @@ describe("workspace shell", () => {
       expect(screen.getByRole("button", { name: "General" }).closest("li")?.style.transform).toBe(
         "translate(10px, 5px)",
       );
+    });
+
+    it("keeps a dragged card inside the chart area", async () => {
+      mockTeams();
+      const rect = vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (this: HTMLElement) {
+        if (this.firstElementChild?.tagName.toLowerCase() === "svg") {
+          return { left: 0, top: 0, width: 1000, height: 800 } as DOMRect;
+        }
+        const [x, y] = (this.closest("li")?.style.transform.match(/-?\d+(\.\d+)?/g) ?? ["0", "0"]).map(Number);
+        return { left: 100 + x, top: 50 + y, width: 240, height: 64 } as DOMRect;
+      });
+      vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockReturnValue(1000);
+      vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockReturnValue(800);
+      const user = userEvent.setup();
+      render(<App />);
+
+      const card = await screen.findByRole("button", { name: "General" });
+      await user.pointer([
+        { keys: "[MouseLeft>]", target: card, coords: { clientX: 500, clientY: 500 } },
+        { coords: { clientX: 0, clientY: 0 } },
+        { keys: "[/MouseLeft]" },
+        { keys: "[MouseLeft>]", target: card, coords: { clientX: 0, clientY: 0 } },
+        { coords: { clientX: 5000, clientY: 5000 } },
+        { keys: "[/MouseLeft]" },
+      ]);
+
+      expect(card.closest("li")?.style.transform).toBe("translate(660px, 686px)");
+      rect.mockRestore();
+    });
+
+    it("returns every card to its default position with the reset button", async () => {
+      invokeMock.mockImplementation(async (command) =>
+        command === "list_teams"
+          ? [{ id: "t1", name: "General", x: 300, y: 200, agents: [] }]
+          : command === "reset_canvas_positions"
+            ? [{ id: "t1", name: "General", x: 0, y: 0, agents: [] }]
+            : session({ locale: "en" }),
+      );
+      const user = userEvent.setup();
+      render(<App />);
+
+      const card = await screen.findByRole("button", { name: "General" });
+      expect(card.closest("li")?.style.transform).toBe("translate(300px, 200px)");
+      await user.click(screen.getByRole("button", { name: "Reset layout" }));
+
+      expect(invokeMock).toHaveBeenCalledWith("reset_canvas_positions", {});
+      await waitFor(() => expect(card.closest("li")?.style.transform).toBe("translate(0px, 0px)"));
     });
 
     it("does not drag when the pointer starts on the toggle button", async () => {

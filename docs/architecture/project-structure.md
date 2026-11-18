@@ -33,7 +33,7 @@ src-tauri/src/
 │   ├── keychain.rs        ✅ save_secret, secret_last_four, delete_secret
 │   ├── worktree.rs        ✅ run_in_worktree
 │   ├── completion.rs      ✅ stream_completion
-│   └── session.rs         ✅ load_session, complete_first_launch, create_workspace, switch_workspace, list_teams, create_team, create_agent, get_agent, update_agent, delete_agent, save_canvas_positions, list_agent_templates, list_agent_roles, list_llm_providers, change_locale, change_theme
+│   └── session.rs         ✅ load_session, complete_first_launch, create_workspace, switch_workspace, list_teams, create_team, create_agent, get_agent, update_agent, delete_agent, save_canvas_positions, reset_canvas_positions, list_agent_templates, list_agent_roles, list_llm_providers, change_locale, change_theme
 ├── services/              Capa 2: acciones de negocio (verbos)
 │   ├── worktree_run.rs    ✅ crea un worktree y ejecuta un comando en él
 │   ├── completion_stream.rs ✅ lee la clave del keychain y hace streaming de una respuesta
@@ -50,6 +50,7 @@ src-tauri/src/
 │   ├── agent_update.rs    ✅ valida y edita nombre, rol, descripción, instrucciones y equipo de un agente
 │   ├── agent_delete.rs    ✅ elimina un agente del workspace actual y devuelve la lista actualizada
 │   ├── canvas_positions_save.rs ✅ guarda las posiciones del organigrama de equipos y agentes del workspace actual
+│   ├── canvas_positions_reset.rs ✅ borra las posiciones del organigrama del workspace actual y devuelve la lista actualizada
 │   ├── agent_roles_list.rs ✅ roles predefinidos del catálogo, agrupados por área
 │   ├── agent_templates_list.rs ✅ plantillas del catálogo en el idioma del perfil
 │   └── llm_providers_list.rs ✅ proveedores y modelos del catálogo
@@ -117,7 +118,7 @@ src/
 ├── i18n/                  es.json, en.json, translate.ts (texto y errores) e I18nProvider
 ├── hooks/                 Acceso al núcleo y estado asociado
 │   ├── useSession.ts      ✅ invoke load_session, complete_first_launch, create_workspace, switch_workspace, change_locale, change_theme
-│   ├── useTeams.ts        ✅ invoke list_teams, create_team, create_agent, get_agent, update_agent, delete_agent, save_canvas_positions (con debounce de 500 ms)
+│   ├── useTeams.ts        ✅ invoke list_teams, create_team, create_agent, get_agent, update_agent, delete_agent, save_canvas_positions (con debounce de 500 ms), reset_canvas_positions
 │   ├── useAgentTemplates.ts ✅ invoke list_agent_templates (recarga al cambiar el idioma)
 │   └── useAgentRoles.ts   ✅ invoke list_agent_roles
 ├── test/setup.ts          Configuración de Vitest (jest-dom)

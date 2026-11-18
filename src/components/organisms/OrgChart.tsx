@@ -88,6 +88,19 @@ export function OrgChart({ teams, zoom, onNewTeam, onNewAgent, onEditAgent, onDe
     setPaths((current) => (current.join("|") === next.join("|") ? current : next));
   });
 
+  function moveWithinBoard(id: string, current: { x: number; y: number }, x: number, y: number) {
+    const container = content.current;
+    const card = cards.current.get(id);
+    if (container && card && container.offsetWidth > 0) {
+      const box = relativeBox(container, card);
+      const left = box.left + x - current.x;
+      const top = box.top + y - current.y;
+      x += Math.min(Math.max(left, 0), Math.max(0, container.offsetWidth - box.width)) - left;
+      y += Math.min(Math.max(top, 0), Math.max(0, container.offsetHeight - box.height)) - top;
+    }
+    onMoveNode(id, x, y);
+  }
+
   function toggle(id: string) {
     const next = new Set(collapsed);
     if (!next.delete(id)) next.add(id);
@@ -129,7 +142,7 @@ export function OrgChart({ teams, zoom, onNewTeam, onNewAgent, onEditAgent, onDe
                   x={team.x}
                   y={team.y}
                   zoom={zoom}
-                  onMove={(x, y) => onMoveNode(team.id, x, y)}
+                  onMove={(x, y) => moveWithinBoard(team.id, team, x, y)}
                   registerCard={registerCard(team.id)}
                   card={
                     <OrgCard
@@ -155,7 +168,7 @@ export function OrgChart({ teams, zoom, onNewTeam, onNewAgent, onEditAgent, onDe
                           x={agent.x}
                           y={agent.y}
                           zoom={zoom}
-                          onMove={(x, y) => onMoveNode(agent.id, x, y)}
+                          onMove={(x, y) => moveWithinBoard(agent.id, agent, x, y)}
                           registerCard={registerCard(agent.id)}
                           card={
                             <OrgAgentCard

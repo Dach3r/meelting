@@ -34,6 +34,7 @@
       "team": "Equipo",
       "toggle": "Mostrar u ocultar"
     },
+    "resetLayout": "Reordenar",
     "zoom": {
       "in": "Acercar",
       "out": "Alejar",

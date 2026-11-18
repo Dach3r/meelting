@@ -1,3 +1,4 @@
+import { LayoutDashboard } from "lucide-react";
 import { useState } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
 import type { Agent, AgentDetail, AgentEdit, Team } from "../../hooks/useTeams";
@@ -20,6 +21,7 @@ type Props = {
   onUpdateAgent: (agentId: string, edit: AgentEdit) => Promise<boolean>;
   onDeleteAgent: (agentId: string) => Promise<boolean>;
   onMoveNode: (nodeId: string, x: number, y: number) => void;
+  onResetPositions: () => Promise<boolean>;
   onClearActionError: () => void;
 };
 
@@ -34,6 +36,7 @@ export function TeamsPage({
   onUpdateAgent,
   onDeleteAgent,
   onMoveNode,
+  onResetPositions,
   onClearActionError,
 }: Props) {
   const { t } = useI18n();
@@ -124,8 +127,18 @@ export function TeamsPage({
           onMoveNode={onMoveNode}
         />
         {teams.length > 0 && (
-          <div className="absolute bottom-4 left-4">
+          <div className="absolute bottom-4 left-4 flex items-center gap-2">
             <ZoomControls zoom={zoom} onChange={setZoom} />
+            <button
+              type="button"
+              aria-label={t("teams.resetLayout")}
+              title={t("teams.resetLayout")}
+              disabled={busy}
+              onClick={onResetPositions}
+              className="grid size-12 cursor-pointer place-items-center rounded-2xl border border-line bg-raised text-muted shadow-sm transition-colors enabled:hover:bg-primary enabled:hover:text-ink disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-ink"
+            >
+              <LayoutDashboard className="size-4" aria-hidden="true" />
+            </button>
           </div>
         )}
       </div>

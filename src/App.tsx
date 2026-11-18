@@ -29,6 +29,7 @@ function App() {
     updateAgent,
     deleteAgent,
     moveNode,
+    resetPositions,
     loadAgent,
     clearActionError: clearTeamsActionError,
   } = useTeams(session?.current_workspace_id ?? null);
@@ -81,6 +82,7 @@ function App() {
           onUpdateAgent={updateAgent}
           onDeleteAgent={deleteAgent}
           onMoveNode={moveNode}
+          onResetPositions={resetPositions}
           onClearTeamsActionError={clearTeamsActionError}
           locale={session.locale}
           theme={session.theme}
