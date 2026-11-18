@@ -1,6 +1,7 @@
 import { ArrowRight, Check, Cpu, FileText, Server, User, type LucideIcon } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
+import type { AgentTemplate } from "../../hooks/useAgentTemplates";
 import type { AgentDraft, Team } from "../../hooks/useTeams";
 import { Button } from "../atoms/Button";
 import { Field } from "../atoms/Field";
@@ -9,6 +10,7 @@ import { Alert } from "../molecules/Alert";
 
 type Props = {
   team: Team;
+  template?: AgentTemplate;
   roleGroups: SelectGroup[];
   busy: boolean;
   errorMessage: string | null;
@@ -20,16 +22,16 @@ const steps = ["identity", "engine", "behavior"] as const;
 
 const stepIcons: Record<(typeof steps)[number], LucideIcon> = { identity: User, engine: Cpu, behavior: FileText };
 
-export function AgentForm({ team, roleGroups, busy, errorMessage, onSubmit, onCancel }: Props) {
+export function AgentForm({ team, template, roleGroups, busy, errorMessage, onSubmit, onCancel }: Props) {
   const { t } = useI18n();
   const [step, setStep] = useState(0);
   const [draft, setDraft] = useState<AgentDraft>({
     team_id: team.id,
-    template_key: null,
-    name: "",
-    role: "",
-    description: "",
-    instructions: "",
+    template_key: template?.key ?? null,
+    name: template?.name ?? "",
+    role: template?.role ?? "",
+    description: template?.description ?? "",
+    instructions: template?.instructions ?? "",
     provider: "",
     model: "",
   });
@@ -143,7 +145,7 @@ export function AgentForm({ team, roleGroups, busy, errorMessage, onSubmit, onCa
           )}
           <Button type="submit" size="pill" disabled={busy || !complete[current]}>
             {last ? <Check aria-hidden className="size-4" /> : <ArrowRight aria-hidden className="size-4" />}
-            {last ? t("teams.agent.submit") : t("teams.hire.next")}
+            {last ? t(template ? "teams.hire.submit" : "teams.agent.submit") : t("teams.hire.next")}
           </Button>
         </div>
       </div>

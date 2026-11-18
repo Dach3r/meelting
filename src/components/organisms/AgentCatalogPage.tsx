@@ -11,7 +11,6 @@ import { AgentTemplateDetail } from "../molecules/AgentTemplateDetail";
 import { Modal } from "../molecules/Modal";
 import { SegmentedControl } from "../molecules/SegmentedControl";
 import { AgentForm } from "./AgentForm";
-import { HireWizard } from "./HireWizard";
 
 type Props = {
   team: Team;
@@ -166,8 +165,8 @@ export function AgentCatalogPage({ team, busy, actionErrorMessage, onCreateAgent
         </Modal>
       )}
       {dialog?.kind === "hire" && (
-        <Modal title={`${t("teams.catalog.hire")} · ${dialog.template.name}`} onClose={close}>
-          <HireWizard
+        <Modal title={`${t("teams.catalog.hire")} · ${dialog.template.name}`} onClose={close} bare>
+          <AgentForm
             key={dialog.template.key}
             team={team}
             template={dialog.template}
