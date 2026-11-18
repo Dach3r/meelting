@@ -18,7 +18,13 @@ const roles = [
 const providers = [
   { key: "anthropic", name: "Anthropic", location: "cloud", models: ["claude-sonnet-5-5", "claude-opus-5-5"] },
   { key: "openai", name: "OpenAI", location: "cloud", models: ["gpt-5"] },
-  { key: "ollama", name: "Ollama", location: "local", models: ["llama3.3:70b"] },
+  { key: "ollama", name: "Ollama", location: "local", models: [] },
+  { key: "lmstudio", name: "LM Studio", location: "local", models: [] },
+];
+
+const detectedModels = [
+  { key: "ollama", running: true, models: ["llama3.3:70b"] },
+  { key: "lmstudio", running: false, models: [] },
 ];
 
 function session(overrides = {}) {
@@ -809,8 +815,9 @@ describe("agent catalog", () => {
   const team = { id: "t1", name: "General", agents: [] };
   const hired = [{ ...team, agents: [{ id: "a1", team_id: "t1", name: "Ana", role: "Product Owner" }] }];
 
-  function mockCatalog(createAgent: () => unknown = () => hired) {
+  function mockCatalog(createAgent: () => unknown = () => hired, detected: unknown = detectedModels) {
     invokeMock.mockImplementation(async (command) => {
+      if (command === "detect_local_models") return detected;
       if (command === "list_teams") return [team];
       if (command === "list_agent_templates") return templates;
       if (command === "list_agent_roles") return roles;
@@ -846,7 +853,7 @@ describe("agent catalog", () => {
     expect(await screen.findByRole("heading", { name: "Hire your next agent" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Product Owner" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "QA Engineer" })).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Teams" }));
+    await user.click(within(screen.getByRole("navigation", { name: "Breadcrumb" })).getByRole("button", { name: "Teams" }));
     expect(screen.queryByRole("heading", { name: "Hire your next agent" })).not.toBeInTheDocument();
   });
 
@@ -980,10 +987,48 @@ describe("agent catalog", () => {
 
     await user.click(screen.getByRole("button", { name: "On my computer" }));
     expect(screen.getByRole("button", { name: "Continue" })).toBeDisabled();
-    expect(screen.getAllByRole("option")).toHaveLength(1);
+    expect(await screen.findAllByRole("option")).toHaveLength(1);
     expect(screen.getByRole("group", { name: "Ollama" })).toBeInTheDocument();
     await user.click(screen.getByRole("option", { name: "llama3.3:70b" }));
     expect(screen.getByRole("button", { name: "Continue" })).toBeEnabled();
+  });
+
+  it("asks for the model name when the local runtime is stopped", async () => {
+    mockCatalog(undefined, detectedModels);
+    const user = userEvent.setup();
+    render(<App />);
+    await openCatalog(user);
+
+    await user.click(await screen.findByRole("button", { name: "Hire QA Engineer" }));
+    await user.click(screen.getByRole("button", { name: "Continue" }));
+    await user.click(screen.getByRole("button", { name: "On my computer" }));
+    await user.click(screen.getByRole("button", { name: "LM Studio" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("This runtime is not running");
+    expect(screen.queryByRole("option")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Continue" })).toBeDisabled();
+    await user.type(screen.getByLabelText("Model name"), "qwen2.5:0.5b");
+    await user.click(screen.getByRole("button", { name: "Continue" }));
+    await user.click(screen.getByRole("button", { name: "Hire" }));
+
+    expect(invokeMock).toHaveBeenCalledWith(
+      "create_agent",
+      expect.objectContaining({ draft: expect.objectContaining({ provider: "lmstudio", model: "qwen2.5:0.5b" }) }),
+    );
+  });
+
+  it("says when the local runtime has no models installed", async () => {
+    mockCatalog(undefined, [{ key: "ollama", running: true, models: [] }]);
+    const user = userEvent.setup();
+    render(<App />);
+    await openCatalog(user);
+
+    await user.click(await screen.findByRole("button", { name: "Hire QA Engineer" }));
+    await user.click(screen.getByRole("button", { name: "Continue" }));
+    await user.click(screen.getByRole("button", { name: "On my computer" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("No models installed");
+    expect(screen.getByLabelText("Model name")).toBeInTheDocument();
   });
 
   it("keeps the wizard open with the error when the core rejects", async () => {
