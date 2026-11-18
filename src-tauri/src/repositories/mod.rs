@@ -1,6 +1,9 @@
 pub mod agents;
 pub mod canvas_positions;
 pub mod database;
+pub mod messages;
 pub mod profile;
+pub mod room_agents;
+pub mod rooms;
 pub mod teams;
 pub mod workspaces;

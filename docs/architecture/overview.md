@@ -1,6 +1,6 @@
 # Arquitectura
 
-> **Estado:** Fase 1 completada. Hoy existe el scaffold Tauri 2 (React 19 + TypeScript + Vite + Tailwind v4), SQLite con `profile` y `workspaces`, el primer arranque, el shell y el cambio de workspace, el módulo `keychain` con los comandos `save_secret`, `secret_last_four` y `delete_secret`, y los spikes `run_in_worktree` (git worktree + PTY con salida en vivo) y `stream_completion` (streaming SSE desde un proveedor compatible con Chat Completions, como Ollama). La organización de carpetas está en [project-structure.md](project-structure.md). El resto de este documento describe la arquitectura **objetivo**; cada sección marca lo que ya existe.
+> **Estado:** Fases 0–2 completadas; Fase 3 con salas y mensajes construidos (sin ejecución de agentes). Hoy existe el scaffold Tauri 2 (React 19 + TypeScript + Vite + Tailwind v4), SQLite con `profile` y `workspaces`, el primer arranque, el shell y el cambio de workspace, el módulo `keychain` con los comandos `save_secret`, `secret_last_four` y `delete_secret`, y los spikes `run_in_worktree` (git worktree + PTY con salida en vivo) y `stream_completion` (streaming SSE desde un proveedor compatible con Chat Completions, como Ollama). La organización de carpetas está en [project-structure.md](project-structure.md). El resto de este documento describe la arquitectura **objetivo**; cada sección marca lo que ya existe.
 >
 > Este producto reemplaza al SaaS Rails (repositorio `meelting`), congelado como referencia de diseño: modelo de dominio, estados, errores, textos, plantillas y specs como casos de prueba.
 
@@ -50,7 +50,7 @@
 | UI | React 19 + TypeScript + Vite; Tailwind v4 con los tokens Grafito | React/Vite/Tailwind ✅; i18n propio `es`/`en` ✅ |
 | Ventana | `tauri-plugin-window-state`: recuerda tamaño, posición y estado maximizado entre arranques; sin permisos para la UI | ✅ |
 | Secretos | crate `keyring` 3 (Keychain, Credential Manager, Secret Service) | ✅ spike |
-| Datos | SQLite con `sqlx`, modo WAL, migraciones `sqlx migrate` | ✅ `profile` y `workspaces`; el resto de tablas con su fase |
+| Datos | SQLite con `sqlx`, modo WAL, migraciones `sqlx migrate` | ✅ `profile`, `workspaces`, `teams`, `agents`, `canvas_positions`, `rooms`, `room_agents` y `messages`; el resto de tablas con su fase |
 | HTTP/streaming | `reqwest` + SSE (`eventsource-stream`) | ✅ spike (Chat Completions); adaptadores por proveedor pendientes |
 | Terminal | `portable-pty` (ConPTY en Windows) | ✅ spike |
 | Git | CLI `git` por `tokio::process` | ✅ spike |
@@ -67,7 +67,7 @@
 - **Catálogos**: colecciones de solo lectura embebidas en la app (`agent_templates/*.yml`, `llm.yml`), leídas con `serde_yaml`. Un catálogo nunca orquesta: la acción que lo usa es un servicio.
 - **Integración con el SO** (`system/`): procesos hijo (`git`), PTY y keychain; sin reglas de negocio.
 - **Dominio puro** (modelos, `BuildPrompt`, normalización de proveedores, path jail) separado del código de integración con el SO, para poder testearlo sin I/O.
-- **Eventos** (`emit`) del núcleo a la UI: `agent_run:token`, `agent_run:status`, `message:created`, `tool_call:output`.
+- **Eventos** (`emit`) del núcleo a la UI: `message:created` (✅, tras confirmar la transacción), y previstos `agent_run:token`, `agent_run:status`, `tool_call:output`.
 
 El webview **no recibe acceso directo a `fs` ni `shell`**: las capabilities de Tauri se declaran mínimas, solo los comandos propios.
 
@@ -120,9 +120,9 @@ Reglas generales:
 | `teams` | `id`, `workspace_id`, `name` (1–80), timestamps | Única `(id, workspace_id)` para la clave foránea compuesta de `agents` |
 | `agents` | `id`, `workspace_id`, `team_id`, `template_key`, `name` (1–80), `role` (1–80), `description`, `instructions`, `provider`, `model`, timestamps | FK compuesta `(team_id, workspace_id)` `ON DELETE RESTRICT`; `provider`/`model` no vacíos |
 | `canvas_positions` | `workspace_id`, `node_id`, `x`, `y` | PK `(workspace_id, node_id)`; `node_id` es un equipo o agente; `x`,`y` son el desplazamiento respecto a la disposición automática del organigrama; se borra con el workspace y al eliminar el agente |
-| `rooms` | `id`, `workspace_id`, `name` (1–80), timestamps | |
-| `room_agents` | `id`, `room_id`, `agent_id`, timestamps | Única `(room_id, agent_id)` |
-| `messages` | `id`, `room_id`, `agent_id` (NULL = usuario), `body`, timestamps | `body` no vacío |
+| `rooms` | `id`, `workspace_id`, `name` (1–80), `created_at`, `updated_at` | Única `(id, workspace_id)`. `updated_at` es la última actividad: igual a `created_at` al crear y se actualiza con cada mensaje en la misma transacción. Índice `(workspace_id, updated_at DESC, id DESC)` para el listado |
+| `room_agents` | `room_id`, `agent_id`, `workspace_id`, `created_at` | PK `(room_id, agent_id)`, sin `id` ni `updated_at`. FK compuestas `(room_id, workspace_id) → rooms` y `(agent_id, workspace_id) → agents`, ambas `ON DELETE CASCADE`; la segunda usa el índice único `agents (id, workspace_id)` |
+| `messages` | `id`, `room_id`, `agent_id` (NULL = usuario), `body`, `created_at` | Inmutables, sin `updated_at`. `body` no vacío; máximo 4000 caracteres solo si es del usuario (`agent_id IS NULL`). `room_id → rooms` `ON DELETE CASCADE`; `(room_id, agent_id) → room_agents` `ON DELETE NO ACTION`: un agente solo escribe en salas donde participa, y un agente con mensajes no se puede eliminar ni quitar de la sala. Al eliminar la sala, la comprobación al final de la sentencia permite borrar participaciones y mensajes juntos |
 | `agent_runs` | `id`, `room_id`, `agent_id`, `request_message_id`, `response_message_id`, `client_request_id`, `status`, `error_kind`, `attempts`, `provider`, `model`, `response_model`, `input_tokens`, `output_tokens`, `cached_input_tokens`, `finish_reason`, `provider_request_id`, `started_at`, `finished_at`, timestamps | Los 7 `CHECK` del producto Rails. Únicas: `client_request_id` y una ejecución activa por `(agent_id, room_id)` (índice parcial `WHERE status IN ('queued','running')`) |
 | `llm_providers_configured` | `provider`, `base_url`, `updated_at` | Qué proveedores tienen clave; la clave vive en el keychain |
 | `tasks` | `id`, `workspace_id`, `room_id`, `agent_id`, `title`, `repo_path`, `base_branch`, `branch`, `worktree_path`, `status`, `created_at`, `updated_at`, `finished_at` | Fase 4. `status`: `preparing`, `ready`, `running`, `waiting_approval`, `done`, `failed`, `discarded` |

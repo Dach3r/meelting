@@ -19,7 +19,9 @@ mod tests {
     use crate::domain::locale::Locale;
     use crate::domain::team::AgentDraft;
     use crate::repositories::database::open_for_test;
-    use crate::services::{agent_create, first_launch, team_create, workspace_create};
+    use crate::services::{
+        agent_create, first_launch, room_create, room_get, team_create, workspace_create,
+    };
 
     async fn setup(pool: &SqlitePool) -> String {
         first_launch::run(pool, Locale::En, "First").await.unwrap();
@@ -82,5 +84,48 @@ mod tests {
             run(&pool, &agent_id).await,
             Err(SessionError::AgentNotFound)
         ));
+    }
+
+    #[tokio::test]
+    async fn removes_the_agent_from_its_rooms_when_it_has_no_messages() {
+        let (pool, _dir) = open_for_test().await;
+        let agent_id = setup(&pool).await;
+        let room = room_create::run(&pool, "Daily", vec![agent_id.clone()])
+            .await
+            .unwrap();
+
+        run(&pool, &agent_id).await.unwrap();
+
+        assert!(
+            room_get::run(&pool, &room.id)
+                .await
+                .unwrap()
+                .room
+                .agents
+                .is_empty()
+        );
+    }
+
+    #[tokio::test]
+    async fn cannot_delete_an_agent_that_has_messages() {
+        let (pool, _dir) = open_for_test().await;
+        let agent_id = setup(&pool).await;
+        let room = room_create::run(&pool, "Daily", vec![agent_id.clone()])
+            .await
+            .unwrap();
+        sqlx::query("INSERT INTO messages VALUES ('m1', ?, ?, 'hi', 'x')")
+            .bind(&room.id)
+            .bind(&agent_id)
+            .execute(&pool)
+            .await
+            .unwrap();
+
+        assert!(matches!(
+            run(&pool, &agent_id).await,
+            Err(SessionError::Database(_))
+        ));
+        let detail = room_get::run(&pool, &room.id).await.unwrap();
+        assert_eq!(detail.room.agents.len(), 1);
+        assert_eq!(detail.messages.len(), 1);
     }
 }

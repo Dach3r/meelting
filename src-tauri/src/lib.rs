@@ -43,7 +43,12 @@ pub fn run() {
             commands::session::detect_local_models,
             commands::session::list_agent_templates,
             commands::session::change_locale,
-            commands::session::change_theme
+            commands::session::change_theme,
+            commands::rooms::list_rooms,
+            commands::rooms::create_room,
+            commands::rooms::get_room,
+            commands::rooms::delete_room,
+            commands::rooms::send_message
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

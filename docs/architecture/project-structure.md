@@ -1,6 +1,6 @@
 # Estructura del proyecto
 
-> **Estado:** Fase 1 completada. Solo existen los módulos listados aquí como «✅». Lo marcado «pendiente» es la ubicación **prevista**; no se crea la carpeta hasta que haya código que la use (sin código muerto).
+> **Estado:** Fases 0–2 completadas; salas y mensajes de la Fase 3 construidos. Solo existen los módulos listados aquí como «✅». Lo marcado «pendiente» es la ubicación **prevista**; no se crea la carpeta hasta que haya código que la use (sin código muerto).
 
 Reglas de capas y convenciones: [overview.md](overview.md) §3 y §5.
 
@@ -33,6 +33,7 @@ src-tauri/src/
 │   ├── keychain.rs        ✅ save_secret, secret_last_four, delete_secret
 │   ├── worktree.rs        ✅ run_in_worktree
 │   ├── completion.rs      ✅ stream_completion
+│   ├── rooms.rs           ✅ list_rooms, create_room, get_room, delete_room, send_message (emite message:created)
 │   └── session.rs         ✅ load_session, complete_first_launch, create_workspace, switch_workspace, list_teams, create_team, create_agent, get_agent, update_agent, delete_agent, save_canvas_positions, reset_canvas_positions, list_agent_templates, list_agent_roles, list_llm_providers, detect_local_models, change_locale, change_theme
 ├── services/              Capa 2: acciones de negocio (verbos)
 │   ├── worktree_run.rs    ✅ crea un worktree y ejecuta un comando en él
@@ -49,6 +50,11 @@ src-tauri/src/
 │   ├── agent_get.rs       ✅ detalle completo de un agente del workspace actual
 │   ├── agent_update.rs    ✅ valida y edita nombre, rol, descripción, instrucciones y equipo de un agente
 │   ├── agent_delete.rs    ✅ elimina un agente del workspace actual y devuelve la lista actualizada
+│   ├── rooms_list.rs      ✅ salas del workspace actual por actividad reciente, con sus agentes y los últimos 3 mensajes de la primera
+│   ├── room_create.rs     ✅ valida el nombre, deduplica los agentes y crea la sala con sus participantes en una transacción
+│   ├── room_get.rs        ✅ sala del workspace actual con sus agentes y sus últimos 100 mensajes
+│   ├── room_delete.rs     ✅ elimina una sala (participaciones y mensajes en cascada) y devuelve la lista actualizada
+│   ├── message_send.rs    ✅ guarda un mensaje del usuario y actualiza la actividad de la sala en una transacción
 │   ├── canvas_positions_save.rs ✅ guarda las posiciones del organigrama de equipos y agentes del workspace actual
 │   ├── canvas_positions_reset.rs ✅ borra las posiciones del organigrama del workspace actual y devuelve la lista actualizada
 │   ├── agent_roles_list.rs ✅ roles predefinidos del catálogo, agrupados por área
@@ -67,12 +73,16 @@ src-tauri/src/
 │   ├── workspaces.rs      ✅ consultas de la tabla workspaces
 │   ├── canvas_positions.rs ✅ consultas de la tabla canvas_positions
 │   ├── teams.rs           ✅ consultas de la tabla teams
-│   └── agents.rs          ✅ consultas de la tabla agents
+│   ├── agents.rs          ✅ consultas de la tabla agents
+│   ├── rooms.rs           ✅ consultas de la tabla rooms
+│   ├── room_agents.rs     ✅ consultas de la tabla room_agents
+│   └── messages.rs        ✅ consultas de la tabla messages
 ├── domain/                Modelos y lógica pura, sin I/O
 │   ├── local_provider.rs  ✅ proveedor local detectado (clave, en ejecución, modelos)
 │   ├── locale.rs          ✅ idioma es/en
 │   ├── theme.rs           ✅ tema system/light/dark
 │   ├── profile.rs         ✅ perfil local
+│   ├── room.rs            ✅ sala, participante, mensaje y sus listas; validación del cuerpo y deduplicación de agentes
 │   ├── session.rs         ✅ perfil + workspaces que recibe la UI
 │   ├── team.rs            ✅ equipo y agente (resumen) que recibe la UI; AgentDraft y su validación
 │   └── workspace.rs       ✅ workspace y validación del nombre
@@ -99,10 +109,10 @@ src-tauri/src/
 
 - **Un error por módulo** con `thiserror`. Solo se implementa `Serialize` en el error que cruza hacia la UI (el del servicio o el de `keychain`), como cadena.
 - **Comandos de secretos sin servicio:** `commands/keychain.rs` llama a `system/keychain.rs` directamente porque aún no hay regla que orquestar. Cuando exista la verificación previa a guardar (Fase 3), pasa a un servicio.
-- **Errores hacia la UI como código:** `SessionError` se serializa como un código estable (`invalid_name`, `invalid_agent`, `workspace_not_found`, `team_not_found`, `not_set_up`, `database`); la UI lo traduce. No viaja el detalle de la base de datos.
-- **Base de datos:** el pool se abre en `setup` (`app_data_dir()/meelting.db`) y se registra como estado de Tauri; los comandos lo reciben con `State<SqlitePool>`. Los repositorios aceptan cualquier `SqliteExecutor` para poder usarse dentro de transacciones.
+- **Errores hacia la UI como código:** `SessionError` se serializa como un código estable (`invalid_name`, `invalid_agent`, `invalid_message`, `workspace_not_found`, `team_not_found`, `agent_not_found`, `room_not_found`, `not_set_up`, `database`); la UI lo traduce. No viaja el detalle de la base de datos.
+- **Base de datos:** el pool se abre en `setup` (`app_data_dir()/meelting.db`) y se registra como estado de Tauri; los comandos lo reciben con `State<SqlitePool>`. Los repositorios aceptan cualquier `SqliteExecutor` para poder usarse dentro de transacciones. Las escrituras que leen y luego escriben (crear sala, enviar mensaje) abren la transacción con `pool.begin_with("BEGIN IMMEDIATE")` sobre una conexión nueva del pool (nunca anidada): toman el bloqueo de escritura al empezar y esperan hasta el `busy_timeout` de sqlx (5 s); si se agota, el error llega como `database`. Las lecturas de varias tablas usan una transacción normal para leer una instantánea coherente.
 - **Servicios sin Tauri:** reciben `impl Fn` para salida y fin, de modo que se prueban sin ventana ni `AppHandle`.
-- **Eventos hacia la UI:** los emite el comando. Nombres actuales: `terminal-output` (texto), `terminal-exit` (código de salida) y `llm-token` (fragmento de respuesta). El fin del streaming es el retorno del comando.
+- **Eventos hacia la UI:** los emite el comando. Nombres actuales: `terminal-output` (texto), `terminal-exit` (código de salida), `llm-token` (fragmento de respuesta) y `message:created` (mensaje completo con su `room_id`, emitido después del commit; el comando también devuelve el mensaje). El fin del streaming es el retorno del comando.
 - **Claves:** solo el servicio las lee del keychain (`system::keychain::read`); nunca viajan a la UI. Los errores del proveedor no incluyen su texto, solo el estado HTTP.
 - **Proveedores sin nombres en el código:** el cliente recibe `base_url`, `model` y, opcional, el nombre del secreto. Los adaptadores por proveedor llegan en la Fase 3.
 - **Pruebas junto al código** (`#[cfg(test)] mod tests`), con repositorios git temporales reales (`tempfile`) y sin APIs externas.

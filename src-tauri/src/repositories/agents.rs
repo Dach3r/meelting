@@ -113,6 +113,18 @@ pub async fn update<'e>(
     Ok(result.rows_affected() > 0)
 }
 
+pub async fn exists<'e>(
+    executor: impl SqliteExecutor<'e>,
+    workspace_id: &str,
+    id: &str,
+) -> Result<bool, sqlx::Error> {
+    sqlx::query_scalar("SELECT EXISTS (SELECT 1 FROM agents WHERE id = ? AND workspace_id = ?)")
+        .bind(id)
+        .bind(workspace_id)
+        .fetch_one(executor)
+        .await
+}
+
 pub async fn delete<'e>(
     executor: impl SqliteExecutor<'e>,
     workspace_id: &str,
@@ -286,6 +298,8 @@ mod tests {
             sqlx::query(sql).execute(&pool).await.unwrap();
         }
 
+        assert!(!exists(&pool, "w1", "a2").await.unwrap());
+        assert!(exists(&pool, "w1", "a1").await.unwrap());
         assert!(!delete(&pool, "w1", "a2").await.unwrap());
         assert!(delete(&pool, "w1", "a1").await.unwrap());
         assert!(!delete(&pool, "w1", "a1").await.unwrap());
