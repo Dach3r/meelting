@@ -13,7 +13,10 @@
     "invalid_agent": "Revisa los campos: nombre y rol de hasta 80 caracteres, descripción de hasta 500, instrucciones de hasta 10.000, y el modelo debe ser uno de la lista.",
     "room_not_found": "Esa sala ya no existe.",
     "invalid_message": "Escribe un mensaje de hasta 4000 caracteres.",
-    "agent_has_activity": "Este agente tiene mensajes o ejecuciones en una sala, así que no se puede eliminar."
+    "agent_has_activity": "Este agente tiene mensajes o ejecuciones en una sala, así que no se puede eliminar.",
+    "invalid_client_request_id": "No se pudo identificar la solicitud. Vuelve a enviarla.",
+    "agent_busy": "Ese agente todavía está trabajando en una solicitud en esta sala.",
+    "client_request_conflict": "Esta solicitud ya se envió con otro contenido. Vuelve a enviarla."
   },
   "newWorkspace": {
     "title": "Crea tu workspace",
@@ -227,6 +230,36 @@
       "title": "Eliminar sala",
       "body": "También se eliminarán sus mensajes. Esta acción no se puede deshacer.",
       "confirm": "Eliminar sala"
+    }
+  },
+  "agentRun": {
+    "askLabel": "Pedir a",
+    "nobody": "Nadie, solo un mensaje",
+    "busy": "{agent} todavía está trabajando en una solicitud.",
+    "queued": "Esperando a {agent}…",
+    "retrying": "{agent} tuvo un problema temporal. Reintentando (intento {attempt} de 3)…",
+    "running": "{agent} está trabajando…",
+    "succeeded": "{agent} respondió",
+    "cancel": "Cancelar",
+    "thinking": "Pensando…",
+    "tokens": "{input} de entrada · {output} de salida",
+    "errors": {
+      "rate_limited": "{provider} está recibiendo demasiadas solicitudes. Inténtalo de nuevo en un momento.",
+      "timeout": "{provider} tardó demasiado en responder.",
+      "provider_unavailable": "{provider} no está disponible en este momento.",
+      "provider_unavailable_local": "{provider} no está en ejecución. Ábrelo e inténtalo de nuevo.",
+      "provider_not_configured": "{provider} no tiene una clave de API en este workspace.",
+      "model_unavailable": "El modelo de este agente ya no está disponible en {provider}.",
+      "provider_auth_failed": "{provider} rechazó la clave de API.",
+      "provider_billing": "{provider} informa un problema de facturación o de cuota.",
+      "provider_rejected": "{provider} rechazó la solicitud.",
+      "content_filtered": "{provider} filtró la respuesta.",
+      "output_truncated": "La respuesta del agente era demasiado larga y no se guardó.",
+      "invalid_response": "{provider} envió una respuesta que Meelting no pudo leer.",
+      "context_too_large": "Las instrucciones del agente y esta solicitud son demasiado largas para este modelo. Acorta las instrucciones o usa otro modelo.",
+      "cancelled": "Cancelada.",
+      "expired": "Se detuvo porque Meelting se cerró.",
+      "unknown": "La solicitud a {provider} falló."
     }
   }
 }

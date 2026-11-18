@@ -29,7 +29,11 @@ function message(id: string, body: string, overrides: Partial<Message> = {}): Me
   return { id, room_id: "r1", agent_id: null, body, created_at: "2026-11-18T10:00:00.000Z", ...overrides };
 }
 
-let emit: EventCallback<Message> = () => {};
+const handlers = new Map<string, EventCallback<unknown>>();
+
+function emit(event: { event: string; id: number; payload: unknown }) {
+  handlers.get(event.event)?.({ ...event, payload: event.payload } as Parameters<EventCallback<unknown>>[0]);
+}
 
 function core(handlers: Record<string, (args: Record<string, unknown>) => unknown>) {
   invokeMock.mockImplementation(async (command, args) => {
@@ -51,7 +55,7 @@ beforeEach(() => {
   invokeMock.mockReset();
   listenMock.mockReset();
   listenMock.mockImplementation(async (_event, handler) => {
-    emit = handler as EventCallback<Message>;
+    handlers.set(_event as string, handler as EventCallback<unknown>);
     return () => {};
   });
 });
@@ -99,7 +103,7 @@ describe("creating a room", () => {
     core({
       list_rooms: () => ({ rooms: [], featured_messages: [] }),
       create_room: () => ({ ...daily, agents: [{ id: "a2", name: "Bob", role: "Software Developer" }] }),
-      get_room: () => ({ room: { ...daily, agents: [{ id: "a2", name: "Bob", role: "Software Developer" }] }, messages: [] }),
+      get_room: () => ({ room: { ...daily, agents: [{ id: "a2", name: "Bob", role: "Software Developer" }] }, messages: [], runs: [], partials: [] }),
     });
     const user = userEvent.setup();
     renderPage();
@@ -138,7 +142,7 @@ describe("creating a room", () => {
     core({
       list_rooms: () => ({ rooms: [], featured_messages: [] }),
       create_room: () => retro,
-      get_room: () => ({ room: retro, messages: [] }),
+      get_room: () => ({ room: retro, messages: [], runs: [], partials: [] }),
     });
     const user = userEvent.setup();
     renderPage([]);
@@ -175,7 +179,7 @@ describe("inside a room", () => {
   async function openDaily(handlers: Record<string, (args: Record<string, unknown>) => unknown> = {}) {
     core({
       list_rooms: () => ({ rooms: [daily], featured_messages: [] }),
-      get_room: () => ({ room: daily, messages: [message("m1", "Hello team")] }),
+      get_room: () => ({ room: daily, messages: [message("m1", "Hello team")], runs: [], partials: [] }),
       ...handlers,
     });
     const user = userEvent.setup();
@@ -192,7 +196,7 @@ describe("inside a room", () => {
     expect(participants.getByText("You")).toBeInTheDocument();
     expect(participants.getByText("Ana")).toBeInTheDocument();
     expect(participants.getByText("QA Engineer")).toBeInTheDocument();
-    expect(screen.queryByText(/Ask/)).not.toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Ask" })).toHaveDisplayValue("No one, just a message");
   });
 
   it("sends a message with Enter and shows it once even when its event also arrives", async () => {
@@ -212,7 +216,7 @@ describe("inside a room", () => {
     const sent = message("m100", "Newest");
     const scrollIntoView = vi.spyOn(Element.prototype, "scrollIntoView");
     const user = await openDaily({
-      get_room: () => ({ room: daily, messages: [message("m0", "Hello team"), ...history.slice(1)] }),
+      get_room: () => ({ room: daily, messages: [message("m0", "Hello team"), ...history.slice(1)], runs: [], partials: [] }),
       send_message: () => sent,
     });
     scrollIntoView.mockClear();
@@ -229,6 +233,8 @@ describe("inside a room", () => {
     const user = await openDaily();
 
     await user.click(screen.getByLabelText("Message"));
+    await user.tab({ shift: true });
+    expect(screen.getByRole("combobox", { name: "Ask" })).toHaveFocus();
     await user.tab({ shift: true });
 
     expect(screen.getByRole("list", { name: "Messages" })).toHaveFocus();

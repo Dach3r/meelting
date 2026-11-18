@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import en from "./en.json";
 import es from "./es.json";
-import { formatAgentCount, translate, translateError } from "./translate";
+import { formatAgentCount, translate, translateError, translateRunError, translateWith } from "./translate";
 
 function keys(node: unknown, prefix = ""): string[] {
   return Object.entries(node as Record<string, unknown>).flatMap(
@@ -33,6 +33,33 @@ describe("translate", () => {
     expect(formatAgentCount("en", 0)).toBe("No agents");
     expect(formatAgentCount("es", 1)).toBe("1 agente");
     expect(formatAgentCount("en", 3)).toBe("3 agents");
+  });
+
+  it("fills in named values", () => {
+    expect(translateWith("en", "agentRun.running", { agent: "Ana" })).toBe("Ana is working…");
+    expect(translateWith("es", "agentRun.retrying", { agent: "Ana", attempt: 2 })).toBe(
+      "Ana tuvo un problema temporal. Reintentando (intento 2 de 3)…",
+    );
+  });
+
+  it("explains every run error with the provider name and says when a local provider is not running", () => {
+    expect(translateRunError("en", "provider_not_configured", "Groq", false)).toBe("Groq has no API key in this workspace.");
+    expect(translateRunError("es", "provider_unavailable", "Ollama", true)).toBe("Ollama no está en ejecución. Ábrelo e inténtalo de nuevo.");
+    expect(translateRunError("en", "provider_unavailable", "OpenAI", false)).toBe("OpenAI isn't available right now.");
+    expect(translateRunError("es", "output_truncated", "Ollama", true)).toBe("La respuesta del agente era demasiado larga y no se guardó.");
+    expect(translateRunError("en", "something_new", "Anthropic", false)).toBe("The request to Anthropic failed.");
+  });
+
+  it("has a text for every error kind the core can report", () => {
+    const kinds = ["rate_limited", "timeout", "provider_unavailable", "provider_not_configured", "model_unavailable", "provider_auth_failed", "provider_billing", "provider_rejected", "content_filtered", "output_truncated", "invalid_response", "context_too_large", "cancelled", "expired"];
+    for (const locale of ["en", "es"] as const) {
+      for (const kind of kinds) {
+        expect(translate(locale, `agentRun.errors.${kind}`)).not.toBe(`agentRun.errors.${kind}`);
+      }
+      for (const code of ["invalid_client_request_id", "agent_busy", "client_request_conflict", "agent_has_activity"]) {
+        expect(translateError(locale, code)).not.toBe(translate(locale, "errors.unknown"));
+      }
+    }
   });
 
   it("has the same keys in both languages", () => {

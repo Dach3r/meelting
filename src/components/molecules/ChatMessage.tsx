@@ -3,7 +3,7 @@ import { formatDateTime } from "../../i18n/translate";
 import type { Message } from "../../hooks/useRooms";
 import { Avatar } from "../atoms/Avatar";
 
-export function ChatMessage({ message, author }: { message: Message; author: string }) {
+export function ChatMessage({ message, author, footer }: { message: Message; author: string; footer?: string }) {
   const { locale } = useI18n();
   return (
     <li className="flex min-w-0 gap-3">
@@ -16,6 +16,7 @@ export function ChatMessage({ message, author }: { message: Message; author: str
           </time>
         </p>
         <p className="text-sm whitespace-pre-wrap break-words text-ink select-text">{message.body}</p>
+        {footer && <p className="text-xs text-muted">{footer}</p>}
       </div>
     </li>
   );

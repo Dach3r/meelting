@@ -2,6 +2,8 @@ import { ArrowLeft, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
 import { formatAgentCount, translateError } from "../../i18n/translate";
+import { isActive } from "../../hooks/agentRunState";
+import { useLlmProviders } from "../../hooks/useLlmProviders";
 import { useRoom } from "../../hooks/useRoom";
 import { Button } from "../atoms/Button";
 import { Alert } from "../molecules/Alert";
@@ -20,7 +22,8 @@ type Props = {
 
 export function RoomView({ roomId, busy, deleteErrorMessage, onBack, onDelete, onClearDeleteError }: Props) {
   const { t, locale } = useI18n();
-  const { detail, errorKey, sendErrorKey, sending, sendMessage } = useRoom(roomId);
+  const { detail, errorKey, sendErrorKey, sending, sendMessage, sendInstruction, cancelRun } = useRoom(roomId);
+  const providers = useLlmProviders();
   const [confirming, setConfirming] = useState(false);
 
   function closeConfirm() {
@@ -45,7 +48,12 @@ export function RoomView({ roomId, busy, deleteErrorMessage, onBack, onDelete, o
   }
 
   if (!detail) return null;
-  const { room, messages } = detail;
+  const { room, messages, runs } = detail;
+  const thinking = new Set(Object.values(runs.runs).filter(isActive).map((run) => run.agent_id));
+
+  function send(body: string, agentId: string | null) {
+    return agentId ? sendInstruction(agentId, body) : sendMessage(body);
+  }
 
   return (
     <div className="flex min-h-[44rem] w-full flex-1 flex-col gap-5 lg:min-h-[34rem]">
@@ -78,11 +86,20 @@ export function RoomView({ roomId, busy, deleteErrorMessage, onBack, onDelete, o
           <ul className="grid grid-cols-[repeat(auto-fill,minmax(10rem,1fr))] gap-4">
             <ParticipantTile name={t("rooms.you")} role={t("rooms.supervisor")} />
             {room.agents.map((agent) => (
-              <ParticipantTile key={agent.id} name={agent.name} role={agent.role} />
+              <ParticipantTile key={agent.id} name={agent.name} role={agent.role} thinking={thinking.has(agent.id)} />
             ))}
           </ul>
         </section>
-        <RoomChat room={room} messages={messages} sending={sending} errorMessage={sendErrorKey ? translateError(locale, sendErrorKey) : null} onSend={sendMessage} />
+        <RoomChat
+          room={room}
+          messages={messages}
+          runs={runs}
+          providers={providers}
+          sending={sending}
+          errorMessage={sendErrorKey ? translateError(locale, sendErrorKey) : null}
+          onSend={send}
+          onCancel={cancelRun}
+        />
       </div>
       <footer className="flex items-center justify-between gap-4 rounded-2xl border border-line bg-surface px-5 py-3">
         <p className="text-sm text-muted">{formatAgentCount(locale, room.agents.length)}</p>
