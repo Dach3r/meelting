@@ -48,7 +48,7 @@ export function RoomView({ roomId, busy, deleteErrorMessage, onBack, onDelete, o
   const { room, messages } = detail;
 
   return (
-    <div className="flex min-h-0 w-full flex-1 flex-col gap-5">
+    <div className="flex min-h-[44rem] w-full flex-1 flex-col gap-5 lg:min-h-[34rem]">
       {confirming && (
         <Modal title={t("rooms.delete.title")} onClose={closeConfirm}>
           <div className="grid gap-5 p-6">
@@ -69,8 +69,12 @@ export function RoomView({ roomId, busy, deleteErrorMessage, onBack, onDelete, o
         {back}
         <h1 className="truncate text-2xl font-bold text-ink">{room.name}</h1>
       </header>
-      <div className="grid min-h-0 flex-1 gap-5 lg:grid-cols-[minmax(0,1fr)_24rem]">
-        <section aria-label={t("rooms.participants")} className="min-h-0 overflow-y-auto">
+      <div className="grid min-h-0 flex-1 grid-rows-[minmax(0,12rem)_minmax(0,1fr)] gap-5 lg:grid-cols-[minmax(0,1fr)_24rem] lg:grid-rows-1">
+        <section
+          aria-label={t("rooms.participants")}
+          tabIndex={0}
+          className="min-h-0 overflow-y-auto rounded-2xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+        >
           <ul className="grid grid-cols-[repeat(auto-fill,minmax(10rem,1fr))] gap-4">
             <ParticipantTile name={t("rooms.you")} role={t("rooms.supervisor")} />
             {room.agents.map((agent) => (

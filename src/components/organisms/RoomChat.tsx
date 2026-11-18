@@ -17,10 +17,11 @@ type Props = {
 export function RoomChat({ room, messages, sending, errorMessage, onSend }: Props) {
   const { t } = useI18n();
   const end = useRef<HTMLLIElement>(null);
+  const lastMessageId = messages[messages.length - 1]?.id;
 
   useEffect(() => {
     end.current?.scrollIntoView({ block: "end" });
-  }, [messages.length]);
+  }, [lastMessageId]);
 
   return (
     <section aria-label={t("rooms.chat.title")} className="flex min-h-0 flex-col gap-4 rounded-2xl border border-line bg-surface p-5">
@@ -28,7 +29,11 @@ export function RoomChat({ room, messages, sending, errorMessage, onSend }: Prop
       {messages.length === 0 ? (
         <p className="flex-1 text-sm text-muted">{t("rooms.noMessages")}</p>
       ) : (
-        <ol aria-label={t("rooms.chat.transcript")} className="grid flex-1 content-start gap-4 overflow-y-auto overscroll-contain">
+        <ol
+          aria-label={t("rooms.chat.transcript")}
+          tabIndex={0}
+          className="grid flex-1 content-start gap-4 overflow-y-auto overscroll-contain rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+        >
           {messages.map((message) => (
             <ChatMessage key={message.id} message={message} author={authorName(t, room, message)} />
           ))}

@@ -25,9 +25,9 @@ export function FeaturedRoom({ room, messages, onOpen }: Props) {
           {room.agents.length > 0 && (
             <ul className="flex flex-wrap gap-2">
               {room.agents.map((agent) => (
-                <li key={agent.id} className="flex items-center gap-2 rounded-full border border-line bg-raised py-1 pr-3 pl-1 text-sm font-semibold text-ink">
-                  <Avatar seed={agent.name} label={agent.name} className="size-6 rounded-full text-xs" />
-                  {agent.name}
+                <li key={agent.id} className="flex max-w-full min-w-0 items-center gap-2 rounded-full border border-line bg-raised py-1 pr-3 pl-1 text-sm font-semibold text-ink">
+                  <Avatar seed={agent.name} label={agent.name} className="size-6 shrink-0 rounded-full text-xs" />
+                  <span className="truncate">{agent.name}</span>
                 </li>
               ))}
             </ul>

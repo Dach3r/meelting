@@ -46,14 +46,14 @@ export function AgentPicker({ agents, value, onChange }: Props) {
       {selected.length > 0 && (
         <ul aria-label={t("rooms.form.selected")} className="flex flex-wrap gap-2">
           {selected.map((agent) => (
-            <li key={agent.id} className="flex items-center gap-2 rounded-full border border-line bg-raised py-1 pr-1 pl-1.5 text-sm font-semibold text-ink">
-              <Avatar seed={agent.name} label={agent.name} className="size-6 rounded-full text-xs" />
-              {agent.name}
+            <li key={agent.id} className="flex max-w-full min-w-0 items-center gap-2 rounded-full border border-line bg-raised py-1 pr-1 pl-1.5 text-sm font-semibold text-ink">
+              <Avatar seed={agent.name} label={agent.name} className="size-6 shrink-0 rounded-full text-xs" />
+              <span className="truncate">{agent.name}</span>
               <button
                 type="button"
                 aria-label={`${t("rooms.form.remove")} ${agent.name}`}
                 onClick={() => onChange(value.filter((agentId) => agentId !== agent.id))}
-                className="grid size-6 cursor-pointer place-items-center rounded-full text-muted hover:bg-hi hover:text-ink focus-visible:outline-2 focus-visible:outline-ink"
+                className="grid size-6 shrink-0 cursor-pointer place-items-center rounded-full text-muted hover:bg-hi hover:text-ink focus-visible:outline-2 focus-visible:outline-ink"
               >
                 <X aria-hidden className="size-3.5" />
               </button>
@@ -82,9 +82,9 @@ export function AgentPicker({ agents, value, onChange }: Props) {
             onClick={() => add(agent.id)}
             className="flex cursor-pointer items-center gap-3 border-b border-line/60 px-3.5 py-2.5 text-sm last:border-b-0 hover:bg-hi/50"
           >
-            <Avatar seed={agent.name} label={agent.name} className="size-7 rounded-full text-xs" />
-            <span className="flex-1 truncate font-semibold text-ink">{agent.name}</span>
-            <span className="truncate text-muted">{agent.role}</span>
+            <Avatar seed={agent.name} label={agent.name} className="size-7 shrink-0 rounded-full text-xs" />
+            <span className="min-w-0 flex-1 truncate font-semibold text-ink">{agent.name}</span>
+            <span className="max-w-[45%] truncate text-muted">{agent.role}</span>
           </div>
         ))}
         {options.length === 0 && (

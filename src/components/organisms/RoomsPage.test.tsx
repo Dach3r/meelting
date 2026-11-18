@@ -207,6 +207,33 @@ describe("inside a room", () => {
     expect(screen.getByLabelText("Message")).toHaveValue("");
   });
 
+  it("scrolls to the new message even when the room already shows the last 100", async () => {
+    const history = Array.from({ length: 100 }, (_, index) => message(`m${index}`, `Message ${index}`));
+    const sent = message("m100", "Newest");
+    const scrollIntoView = vi.spyOn(Element.prototype, "scrollIntoView");
+    const user = await openDaily({
+      get_room: () => ({ room: daily, messages: [message("m0", "Hello team"), ...history.slice(1)] }),
+      send_message: () => sent,
+    });
+    scrollIntoView.mockClear();
+
+    await user.type(screen.getByLabelText("Message"), "Newest{Enter}");
+
+    expect(await screen.findByText("Newest")).toBeInTheDocument();
+    expect(screen.queryByText("Hello team")).not.toBeInTheDocument();
+    expect(scrollIntoView).toHaveBeenCalledTimes(1);
+    scrollIntoView.mockRestore();
+  });
+
+  it("lets the keyboard reach the conversation to scroll it", async () => {
+    const user = await openDaily();
+
+    await user.click(screen.getByLabelText("Message"));
+    await user.tab({ shift: true });
+
+    expect(screen.getByRole("list", { name: "Messages" })).toHaveFocus();
+  });
+
   it("adds messages of this room that arrive as events and ignores other rooms", async () => {
     await openDaily();
 

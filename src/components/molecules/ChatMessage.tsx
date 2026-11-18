@@ -6,12 +6,12 @@ import { Avatar } from "../atoms/Avatar";
 export function ChatMessage({ message, author }: { message: Message; author: string }) {
   const { locale } = useI18n();
   return (
-    <li className="flex gap-3">
-      <Avatar seed={author} label={author} className="size-8 rounded-full text-sm" />
-      <div className="grid min-w-0 gap-1">
-        <p className="flex items-baseline gap-2 text-sm">
-          <span className="font-semibold text-ink">{author}</span>
-          <time dateTime={message.created_at} className="text-xs text-muted">
+    <li className="flex min-w-0 gap-3">
+      <Avatar seed={author} label={author} className="size-8 shrink-0 rounded-full text-sm" />
+      <div className="grid min-w-0 flex-1 gap-1">
+        <p className="flex min-w-0 items-baseline gap-2 text-sm">
+          <span className="truncate font-semibold text-ink" title={author}>{author}</span>
+          <time dateTime={message.created_at} className="shrink-0 text-xs whitespace-nowrap text-muted">
             {formatDateTime(locale, message.created_at)}
           </time>
         </p>
