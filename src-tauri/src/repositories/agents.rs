@@ -111,6 +111,19 @@ pub async fn update<'e>(
     Ok(result.rows_affected() > 0)
 }
 
+pub async fn delete<'e>(
+    executor: impl SqliteExecutor<'e>,
+    workspace_id: &str,
+    id: &str,
+) -> Result<bool, sqlx::Error> {
+    let result = sqlx::query("DELETE FROM agents WHERE id = ? AND workspace_id = ?")
+        .bind(id)
+        .bind(workspace_id)
+        .execute(executor)
+        .await?;
+    Ok(result.rows_affected() > 0)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -256,5 +269,22 @@ mod tests {
 
         assert_eq!(get(&pool, "w1", "a2").await.unwrap(), None);
         assert!(!update(&pool, "w1", "a2", &edit).await.unwrap());
+    }
+
+    #[tokio::test]
+    async fn deletes_only_the_agent_of_the_workspace() {
+        let (pool, _dir) = open_for_test().await;
+        for sql in [
+            "INSERT INTO workspaces VALUES ('w1', 'A', 'x', 'x'), ('w2', 'B', 'x', 'x')",
+            "INSERT INTO teams VALUES ('t1', 'w1', 'General', 'x', 'x'), ('t2', 'w2', 'Other', 'x', 'x')",
+            "INSERT INTO agents VALUES ('a1', 'w1', 't1', NULL, 'Ana', 'QA', '', '', 'openai', 'gpt', 'x', 'x'), ('a2', 'w2', 't2', NULL, 'Bob', 'QA', '', '', 'openai', 'gpt', 'x', 'x')",
+        ] {
+            sqlx::query(sql).execute(&pool).await.unwrap();
+        }
+
+        assert!(!delete(&pool, "w1", "a2").await.unwrap());
+        assert!(delete(&pool, "w1", "a1").await.unwrap());
+        assert!(!delete(&pool, "w1", "a1").await.unwrap());
+        assert_eq!(get(&pool, "w2", "a2").await.unwrap().unwrap().name, "Bob");
     }
 }

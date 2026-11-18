@@ -60,6 +60,7 @@ export function useTeams(workspaceId: string | null) {
   const createTeam = (name: string) => run("create_team", { name });
   const createAgent = (draft: AgentDraft) => run("create_agent", { draft });
   const updateAgent = (agentId: string, edit: AgentEdit) => run("update_agent", { agentId, edit });
+  const deleteAgent = (agentId: string) => run("delete_agent", { agentId });
   const loadAgent = async (agentId: string) => {
     setActionErrorKey(null);
     try {
@@ -71,5 +72,5 @@ export function useTeams(workspaceId: string | null) {
   };
   const clearActionError = () => setActionErrorKey(null);
 
-  return { teams, errorKey, actionErrorKey, busy, createTeam, createAgent, updateAgent, loadAgent, clearActionError };
+  return { teams, errorKey, actionErrorKey, busy, createTeam, createAgent, updateAgent, deleteAgent, loadAgent, clearActionError };
 }

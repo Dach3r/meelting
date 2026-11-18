@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
-import type { AgentDetail, AgentEdit, Team } from "../../hooks/useTeams";
+import type { Agent, AgentDetail, AgentEdit, Team } from "../../hooks/useTeams";
+import { Button } from "../atoms/Button";
 import { Alert } from "../molecules/Alert";
 import { Modal } from "../molecules/Modal";
 import { TeamForm } from "../molecules/TeamForm";
@@ -17,6 +18,7 @@ type Props = {
   onHireAgent: (teamId: string) => void;
   onLoadAgent: (agentId: string) => Promise<AgentDetail | null>;
   onUpdateAgent: (agentId: string, edit: AgentEdit) => Promise<boolean>;
+  onDeleteAgent: (agentId: string) => Promise<boolean>;
   onClearActionError: () => void;
 };
 
@@ -29,11 +31,13 @@ export function TeamsPage({
   onHireAgent,
   onLoadAgent,
   onUpdateAgent,
+  onDeleteAgent,
   onClearActionError,
 }: Props) {
   const { t } = useI18n();
   const [creatingTeam, setCreatingTeam] = useState(false);
   const [editing, setEditing] = useState<AgentDetail | null>(null);
+  const [deleting, setDeleting] = useState<Agent | null>(null);
   const [zoom, setZoom] = useState(1);
 
   function openTeamForm() {
@@ -45,11 +49,21 @@ export function TeamsPage({
     onClearActionError();
     setCreatingTeam(false);
     setEditing(null);
+    setDeleting(null);
   }
 
   async function editAgent(agentId: string) {
     const agent = await onLoadAgent(agentId);
     if (agent) setEditing(agent);
+  }
+
+  function askToDelete(agentId: string) {
+    onClearActionError();
+    setDeleting(teams.flatMap((team) => team.agents).find((agent) => agent.id === agentId) ?? null);
+  }
+
+  async function confirmDelete(agent: Agent) {
+    if (await onDeleteAgent(agent.id)) setDeleting(null);
   }
 
   if (errorMessage) {
@@ -81,8 +95,26 @@ export function TeamsPage({
           />
         </Modal>
       )}
+      {deleting && (
+        <Modal title={`${t("teams.agent.deleteTitle")} · ${deleting.name}`} onClose={close}>
+          <div className="grid gap-5 p-6">
+            <p className="text-muted">{t("teams.agent.deleteBody")}</p>
+            {actionErrorMessage && <Alert message={actionErrorMessage} />}
+            <div className="flex justify-end gap-3">
+              <Button type="button" variant="ghost" size="compact" onClick={close}>
+                {t("teams.cancel")}
+              </Button>
+              <Button type="button" size="compact" disabled={busy} onClick={() => confirmDelete(deleting)}>
+                {t("teams.agent.delete")}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
       <div className="board-dots relative min-h-112 flex-1 overflow-hidden rounded-2xl border border-line bg-surface">
-        <OrgChart teams={teams} zoom={zoom} onNewTeam={openTeamForm} onNewAgent={onHireAgent} onEditAgent={editAgent} />
+        <OrgChart teams={teams} zoom={zoom} onNewTeam={openTeamForm} onNewAgent={onHireAgent} onEditAgent={editAgent}
+          onDeleteAgent={askToDelete}
+        />
         {teams.length > 0 && (
           <div className="absolute bottom-4 left-4">
             <ZoomControls zoom={zoom} onChange={setZoom} />

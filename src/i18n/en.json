@@ -82,6 +82,9 @@
       "stepOptional": "Optional",
       "submit": "Create agent",
       "edit": "Edit agent",
+      "delete": "Delete agent",
+      "deleteTitle": "Delete agent",
+      "deleteBody": "The agent will leave your office. This cannot be undone.",
       "save": "Save changes"
     },
     "hireAgent": "Hire agent",

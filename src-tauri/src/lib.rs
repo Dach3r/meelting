@@ -35,6 +35,7 @@ pub fn run() {
             commands::session::create_agent,
             commands::session::get_agent,
             commands::session::update_agent,
+            commands::session::delete_agent,
             commands::session::list_agent_roles,
             commands::session::list_llm_providers,
             commands::session::list_agent_templates,

@@ -1,11 +1,11 @@
-import { Briefcase, Pencil, Users, X } from "lucide-react";
+import { Briefcase, Pencil, Trash2, Users, X } from "lucide-react";
 import { useI18n } from "../../i18n/I18nProvider";
 import { Avatar, hueOf } from "../atoms/Avatar";
 import { Button } from "../atoms/Button";
 
-type Props = { seed: string; name: string; role: string; teamName: string; onEdit: () => void; onClose: () => void };
+type Props = { seed: string; name: string; role: string; teamName: string; onEdit: () => void; onDelete: () => void; onClose: () => void };
 
-export function AgentDrawer({ seed, name, role, teamName, onEdit, onClose }: Props) {
+export function AgentDrawer({ seed, name, role, teamName, onEdit, onDelete, onClose }: Props) {
   const { t } = useI18n();
   const hue = hueOf(seed);
   const rows = [
@@ -52,10 +52,16 @@ export function AgentDrawer({ seed, name, role, teamName, onEdit, onClose }: Pro
             </div>
           ))}
         </dl>
-        <Button type="button" size="pill" onClick={onEdit} className="mt-auto">
-          <Pencil aria-hidden className="size-4" />
-          {t("teams.agent.edit")}
-        </Button>
+        <div className="mt-auto grid gap-2">
+          <Button type="button" size="pill" onClick={onEdit}>
+            <Pencil aria-hidden className="size-4" />
+            {t("teams.agent.edit")}
+          </Button>
+          <Button type="button" variant="ghost" size="pill" onClick={onDelete}>
+            <Trash2 aria-hidden className="size-4" />
+            {t("teams.agent.delete")}
+          </Button>
+        </div>
       </div>
     </aside>
   );

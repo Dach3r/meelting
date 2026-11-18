@@ -570,6 +570,44 @@ describe("workspace shell", () => {
       expect(await screen.findByRole("alert")).toHaveTextContent("That agent no longer exists.");
       expect(screen.getByRole("dialog", { name: "Edit agent \u00b7 Ana" })).toBeInTheDocument();
     });
+
+    it("asks for confirmation and removes the agent from the chart", async () => {
+      invokeMock.mockImplementation(async (command) => {
+        if (command === "list_teams") return teams;
+        if (command === "delete_agent") return [{ ...teams[0], agents: [] }, teams[1]];
+        return session({ locale: "en" });
+      });
+      const user = userEvent.setup();
+      render(<App />);
+
+      await user.click(await screen.findByRole("button", { name: "Ana" }));
+      await user.click(screen.getByRole("button", { name: "Delete agent" }));
+      const dialog = await screen.findByRole("dialog", { name: "Delete agent \u00b7 Ana" });
+      expect(invokeMock).not.toHaveBeenCalledWith("delete_agent", expect.anything());
+      await user.click(within(dialog).getByRole("button", { name: "Delete agent" }));
+
+      expect(invokeMock).toHaveBeenCalledWith("delete_agent", { agentId: "a1" });
+      await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+      expect(screen.queryByRole("button", { name: "Ana" })).not.toBeInTheDocument();
+    });
+
+    it("keeps the dialog open and shows the error when deleting fails", async () => {
+      invokeMock.mockImplementation(async (command) => {
+        if (command === "list_teams") return teams;
+        if (command === "delete_agent") throw "agent_not_found";
+        return session({ locale: "en" });
+      });
+      const user = userEvent.setup();
+      render(<App />);
+
+      await user.click(await screen.findByRole("button", { name: "Ana" }));
+      await user.click(screen.getByRole("button", { name: "Delete agent" }));
+      const dialog = await screen.findByRole("dialog", { name: "Delete agent \u00b7 Ana" });
+      await user.click(within(dialog).getByRole("button", { name: "Delete agent" }));
+
+      expect(await screen.findByRole("alert")).toHaveTextContent("That agent no longer exists.");
+      expect(screen.getByRole("dialog", { name: "Delete agent \u00b7 Ana" })).toBeInTheDocument();
+    });
   });
 });
 

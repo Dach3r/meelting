@@ -27,6 +27,7 @@ function App() {
     createTeam,
     createAgent,
     updateAgent,
+    deleteAgent,
     loadAgent,
     clearActionError: clearTeamsActionError,
   } = useTeams(session?.current_workspace_id ?? null);
@@ -77,6 +78,7 @@ function App() {
           onCreateAgent={createAgent}
           onLoadAgent={loadAgent}
           onUpdateAgent={updateAgent}
+          onDeleteAgent={deleteAgent}
           onClearTeamsActionError={clearTeamsActionError}
           locale={session.locale}
           theme={session.theme}
