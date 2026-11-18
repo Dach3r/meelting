@@ -114,7 +114,7 @@ export function AgentEditForm({ agent, teams, busy, errorMessage, onSubmit, onCl
               searchPlaceholder={t("teams.agent.teamSearch")}
               emptyMessage={t("teams.agent.teamEmpty")}
               value={teams.find((team) => team.id === draft.team_id)?.name ?? ""}
-              groups={[{ id: "teams", label: t("teams.agent.team"), icon: Users, options: teams.map((team) => team.name) }]}
+              groups={[{ id: "teams", options: teams.map((team) => team.name) }]}
               onChange={(name) => set("team_id")(teams.find((team) => team.name === name)?.id ?? draft.team_id)}
             />
           )}

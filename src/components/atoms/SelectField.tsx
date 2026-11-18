@@ -3,8 +3,8 @@ import { useEffect, useId, useState } from "react";
 
 export type SelectGroup = {
   id: string;
-  label: string;
-  icon: LucideIcon;
+  label?: string;
+  icon?: LucideIcon;
   options: string[];
 };
 
@@ -72,10 +72,12 @@ export function SelectField({ label, searchPlaceholder, emptyMessage, value, gro
           {flat.length === 0 && <p className="px-3 py-4 text-center text-sm text-muted">{emptyMessage}</p>}
           {visible.map(({ id: groupId, label: groupLabel, icon: GroupIcon, options }) => (
             <div key={groupId} role="group" aria-label={groupLabel}>
-              <p aria-hidden className="flex items-center gap-2 px-3 pt-3 pb-1.5 text-xs font-semibold tracking-wider text-muted uppercase">
-                <GroupIcon className="size-3.5" />
-                {groupLabel}
-              </p>
+              {groupLabel && (
+                <p aria-hidden className="flex items-center gap-2 px-3 pt-3 pb-1.5 text-xs font-semibold tracking-wider text-muted uppercase">
+                  {GroupIcon && <GroupIcon className="size-3.5" />}
+                  {groupLabel}
+                </p>
+              )}
               {options.map((option) => {
                 const position = ++index;
                 return (
