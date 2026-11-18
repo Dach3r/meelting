@@ -4,7 +4,7 @@
 
 ## Estado actual
 
-Fase 0 completada (2026-11-17): scaffold Tauri 2 (React + TypeScript + Vite), spikes de keychain, de `git worktree` + PTY con salida en vivo y de streaming SSE (Chat Completions), validados en los tres SO desde CI y con pruebas reales contra Ollama y DeepSeek. Fase 1 completada (2026-11-17): SQLite con `profile` y `workspaces`, primer arranque (idioma y workspace), shell (riel + topbar), cambio y creación de workspace, tokens Grafito e i18n `es`/`en`. Fase 2 en curso: equipos, agentes personalizados, catálogo de plantillas y contratación con asistente; ya se pueden editar (incluido el equipo) y eliminar agentes con confirmación y arrastrar los nodos del organigrama con posiciones persistidas; ya se detectan los modelos locales (Ollama y LM Studio). Salas y ejecución siguen sin construir. Ver [../architecture/overview.md](../architecture/overview.md).
+Fase 0 completada (2026-11-17): scaffold Tauri 2 (React + TypeScript + Vite), spikes de keychain, de `git worktree` + PTY con salida en vivo y de streaming SSE (Chat Completions), validados en los tres SO desde CI y con pruebas reales contra Ollama y DeepSeek. Fase 1 completada (2026-11-17): SQLite con `profile` y `workspaces`, primer arranque (idioma y workspace), shell (riel + topbar), cambio y creación de workspace, tokens Grafito e i18n `es`/`en`. Fase 2 completada (2026-11-18): equipos, agentes personalizados, catálogo de plantillas y contratación con asistente; ya se pueden editar (incluido el equipo) y eliminar agentes con confirmación y arrastrar los nodos del organigrama con posiciones persistidas; ya se detectan los modelos locales (Ollama y LM Studio). Salas y ejecución siguen sin construir. Ver [../architecture/overview.md](../architecture/overview.md).
 
 ## Fase 0 — Spike de validación (1 semana)
 
@@ -32,10 +32,10 @@ Fase 0 completada (2026-11-17): scaffold Tauri 2 (React + TypeScript + Vite), sp
 ## Fase 2 — Equipos y agentes (2 semanas)
 
 - ✅ Organigrama con nodos arrastrables y posiciones persistidas.
-- Catálogo de plantillas, contratar, crear, editar, eliminar y mover agentes.
+- ✅ Catálogo de plantillas, contratar, crear, editar, eliminar y mover agentes.
 - ✅ Selector de proveedor y modelo desde `llm.yml` (nube o equipo, con buscador).
 
-**Resultado esperado:** paridad funcional con [agent-catalog.md](agent-catalog.md).
+**Resultado:** cumplido. Los pendientes menores de [agent-catalog.md](agent-catalog.md) (contratar con los datos de la plantilla, advertencia de proveedor sin clave, minimapa, fijados, estado de agente, equipo «General») quedan fuera de la fase.
 
 ## Fase 3 — Salas y ejecución con streaming (3 semanas)
 
