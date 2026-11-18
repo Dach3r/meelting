@@ -56,7 +56,7 @@ export function AgentForm({ team, busy, errorMessage, onSubmit, onCancel }: Prop
 
   return (
     <form onSubmit={submit} className="grid min-h-[38rem] sm:grid-cols-[17rem_1fr]">
-      <div className="grid content-start bg-raised/50 p-6 sm:p-10">
+      <div className="grid content-start bg-raised/50 px-4 py-6 sm:px-5 sm:py-10">
         <ol aria-label={t("teams.newAgent")} className="grid gap-3">
           {steps.map((key, index) => (
             <li
