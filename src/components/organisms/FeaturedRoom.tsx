@@ -12,7 +12,7 @@ type Props = { room: Room; messages: Message[]; onOpen: () => void };
 export function FeaturedRoom({ room, messages, onOpen }: Props) {
   const { t, locale } = useI18n();
   return (
-    <section aria-label={room.name} className="flex flex-col gap-6 rounded-3xl border border-line bg-raised p-7">
+    <section aria-label={room.name} className="flex flex-col gap-6 rounded-3xl border border-line bg-shell p-7">
       <div className="flex items-start justify-between gap-4">
         <div className="grid min-w-0 gap-1">
           <p className="text-xs font-semibold tracking-wider text-muted uppercase">{t("rooms.featured")}</p>
