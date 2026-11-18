@@ -69,7 +69,7 @@ export function RoomsPage({ agents }: { agents: Agent[] }) {
           <RoomForm agents={agents} busy={busy} errorMessage={actionErrorMessage} onSubmit={create} onCancel={closeForm} />
         </Modal>
       )}
-      <header className="-mx-8 -mt-8 flex items-center justify-between gap-4 border-b border-line bg-hi px-8 py-5">
+      <header className="-mx-8 -mt-8 flex items-center justify-between gap-4 border-b border-line bg-shell px-8 py-5">
         <h1 className="text-2xl font-bold text-ink">{t("rooms.title")}</h1>
         <Button type="button" size="pill" onClick={openForm}>
           <Plus aria-hidden className="size-4" />
