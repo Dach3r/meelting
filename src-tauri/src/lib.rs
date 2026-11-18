@@ -40,6 +40,7 @@ pub fn run() {
             commands::session::reset_canvas_positions,
             commands::session::list_agent_roles,
             commands::session::list_llm_providers,
+            commands::session::detect_local_models,
             commands::session::list_agent_templates,
             commands::session::change_locale,
             commands::session::change_theme

@@ -9,6 +9,7 @@ pub mod canvas_positions_save;
 pub mod completion_stream;
 pub mod first_launch;
 pub mod llm_providers_list;
+pub mod local_models_detect;
 pub mod locale_change;
 pub mod session_load;
 pub mod team_create;

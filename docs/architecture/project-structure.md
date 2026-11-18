@@ -33,7 +33,7 @@ src-tauri/src/
 │   ├── keychain.rs        ✅ save_secret, secret_last_four, delete_secret
 │   ├── worktree.rs        ✅ run_in_worktree
 │   ├── completion.rs      ✅ stream_completion
-│   └── session.rs         ✅ load_session, complete_first_launch, create_workspace, switch_workspace, list_teams, create_team, create_agent, get_agent, update_agent, delete_agent, save_canvas_positions, reset_canvas_positions, list_agent_templates, list_agent_roles, list_llm_providers, change_locale, change_theme
+│   └── session.rs         ✅ load_session, complete_first_launch, create_workspace, switch_workspace, list_teams, create_team, create_agent, get_agent, update_agent, delete_agent, save_canvas_positions, reset_canvas_positions, list_agent_templates, list_agent_roles, list_llm_providers, detect_local_models, change_locale, change_theme
 ├── services/              Capa 2: acciones de negocio (verbos)
 │   ├── worktree_run.rs    ✅ crea un worktree y ejecuta un comando en él
 │   ├── completion_stream.rs ✅ lee la clave del keychain y hace streaming de una respuesta
@@ -53,11 +53,13 @@ src-tauri/src/
 │   ├── canvas_positions_reset.rs ✅ borra las posiciones del organigrama del workspace actual y devuelve la lista actualizada
 │   ├── agent_roles_list.rs ✅ roles predefinidos del catálogo, agrupados por área
 │   ├── agent_templates_list.rs ✅ plantillas del catálogo en el idioma del perfil
-│   └── llm_providers_list.rs ✅ proveedores y modelos del catálogo
+│   ├── llm_providers_list.rs ✅ proveedores y modelos del catálogo
+│   └── local_models_detect.rs ✅ consulta los proveedores locales del catálogo y devuelve si están en ejecución y sus modelos
 ├── system/                Capa 3: integración con el SO, sin reglas de negocio
 │   ├── git.rs             ✅ git por tokio::process (worktree add)
 │   ├── terminal.rs        ✅ PTY portable y lectura de salida
 │   ├── chat_completions.rs ✅ cliente HTTP con SSE (Chat Completions)
+│   ├── local_models.rs    ✅ lista los modelos de un proveedor local (GET /models)
 │   └── keychain.rs        ✅ keychain del SO (crate keyring)
 ├── repositories/          Acceso a SQLite (sqlx); las migraciones viven en src-tauri/migrations
 │   ├── database.rs        ✅ abre el pool (WAL, claves foráneas) y aplica migraciones
@@ -67,6 +69,7 @@ src-tauri/src/
 │   ├── teams.rs           ✅ consultas de la tabla teams
 │   └── agents.rs          ✅ consultas de la tabla agents
 ├── domain/                Modelos y lógica pura, sin I/O
+│   ├── local_provider.rs  ✅ proveedor local detectado (clave, en ejecución, modelos)
 │   ├── locale.rs          ✅ idioma es/en
 │   ├── theme.rs           ✅ tema system/light/dark
 │   ├── profile.rs         ✅ perfil local

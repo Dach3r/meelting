@@ -14,7 +14,9 @@ pub struct Provider {
     pub key: String,
     pub name: String,
     pub location: Location,
+    #[serde(default)]
     pub models: Vec<String>,
+    pub base_url: Option<String>,
 }
 
 pub fn providers() -> Vec<Provider> {
@@ -23,7 +25,11 @@ pub fn providers() -> Vec<Provider> {
 
 pub fn exists(provider: &str, model: &str) -> bool {
     providers().iter().any(|entry| {
-        entry.key == provider && entry.models.iter().any(|candidate| candidate == model)
+        entry.key == provider
+            && match entry.location {
+                Location::Local => !model.trim().is_empty(),
+                Location::Cloud => entry.models.iter().any(|candidate| candidate == model),
+            }
     })
 }
 
@@ -45,7 +51,12 @@ mod tests {
                 .len(),
             providers.len()
         );
-        assert!(providers.iter().all(|entry| !entry.models.is_empty()));
+        assert!(
+            providers
+                .iter()
+                .filter(|entry| entry.location == Location::Cloud)
+                .all(|entry| !entry.models.is_empty())
+        );
         assert_eq!(models.iter().collect::<HashSet<_>>().len(), models.len());
     }
 
@@ -63,6 +74,24 @@ mod tests {
                 .iter()
                 .any(|entry| entry.location == Location::Local)
         );
+    }
+
+    #[test]
+    fn local_providers_declare_a_url_and_no_models() {
+        let providers = providers();
+
+        assert!(
+            providers
+                .iter()
+                .filter(|entry| entry.location == Location::Local)
+                .all(|entry| entry.base_url.is_some() && entry.models.is_empty())
+        );
+    }
+
+    #[test]
+    fn accepts_any_model_name_for_local_providers() {
+        assert!(exists("ollama", "qwen2.5:0.5b"));
+        assert!(!exists("ollama", "  "));
     }
 
     #[test]

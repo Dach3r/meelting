@@ -19,7 +19,8 @@
 - key: ollama
   name: Ollama
   location: local
-  models:
-    - llama3.3:70b
-    - qwen2.5-coder:32b
-    - mistral-small:24b
+  base_url: http://localhost:11434/v1
+- key: lmstudio
+  name: LM Studio
+  location: local
+  base_url: http://localhost:1234/v1

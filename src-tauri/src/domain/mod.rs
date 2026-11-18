@@ -1,3 +1,4 @@
+pub mod local_provider;
 pub mod locale;
 pub mod profile;
 pub mod session;
