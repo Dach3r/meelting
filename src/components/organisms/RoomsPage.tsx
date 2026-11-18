@@ -86,11 +86,14 @@ export function RoomsPage({ agents }: { agents: Agent[] }) {
       {list && featured && (
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
           <FeaturedRoom room={featured} messages={list.featured_messages} onOpen={() => setOpenRoomId(featured.id)} />
-          <ul aria-label={t("rooms.others")} className="board-dots grid content-start gap-4 rounded-3xl border border-line bg-surface p-4 sm:grid-cols-2">
+          <ul
+            aria-label={t("rooms.others")}
+            className={`board-dots rounded-3xl border border-line bg-surface p-4 ${others.length > 0 ? "grid content-start gap-4 sm:grid-cols-2" : "flex flex-col items-center justify-center gap-4 p-8"}`}
+          >
             {others.map((room) => (
               <RoomCard key={room.id} room={room} onOpen={() => setOpenRoomId(room.id)} />
             ))}
-            <li>
+            <li className={others.length > 0 ? "" : "w-full max-w-64"}>
               <button
                 type="button"
                 onClick={openForm}
@@ -100,6 +103,7 @@ export function RoomsPage({ agents }: { agents: Agent[] }) {
                 {t("rooms.new")}
               </button>
             </li>
+            {others.length === 0 && <li className="max-w-64 text-center text-sm text-muted">{t("rooms.othersEmpty")}</li>}
           </ul>
         </div>
       )}

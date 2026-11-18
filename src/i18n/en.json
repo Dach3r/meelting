@@ -196,6 +196,7 @@
     "latestMessages": "Latest messages",
     "noMessages": "No messages yet.",
     "others": "Other rooms",
+    "othersEmpty": "Your other rooms will appear here, laid out like a floor plan.",
     "you": "You",
     "supervisor": "Supervisor",
     "participants": "Participants",

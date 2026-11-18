@@ -117,6 +117,7 @@ describe("rooms list", () => {
     renderPage();
 
     const others = within(await screen.findByRole("list", { name: "Other rooms" }));
+    expect(others.getByText("Your other rooms will appear here, laid out like a floor plan.")).toBeInTheDocument();
     await user.click(others.getByRole("button", { name: "New room" }));
 
     expect(screen.getByRole("dialog", { name: "New room" })).toBeInTheDocument();
