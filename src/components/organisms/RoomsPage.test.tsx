@@ -76,25 +76,18 @@ describe("rooms list", () => {
     expect(await screen.findByText("No rooms yet")).toBeInTheDocument();
   });
 
-  it("features the most recent room with its agents and latest messages and lists the rest", async () => {
-    core({
-      list_rooms: () => ({
-        rooms: [daily, retro],
-        featured_messages: [message("m1", "Hello team"), message("m2", "Ready", { agent_id: "a1" })],
-      }),
-    });
+  it("lays out every room as a card with its agents and an empty seat for each free slot", async () => {
+    core({ list_rooms: () => ({ rooms: [daily, retro], featured_messages: [] }) });
     renderPage();
 
-    const featured = within(await screen.findByRole("region", { name: "Daily" }));
-    expect(featured.getByText("1 agent")).toBeInTheDocument();
-    expect(featured.getByText("Hello team")).toBeInTheDocument();
-    const participants = within(featured.getByRole("list", { name: "Participants" }));
-    expect(participants.getByText("You")).toBeInTheDocument();
-    expect(participants.getByText("Ana")).toBeInTheDocument();
-    expect(featured.getAllByText("Ana")).toHaveLength(2);
-    const others = within(screen.getByRole("list", { name: "Other rooms" }));
-    expect(others.getByRole("button", { name: /Retro/ })).toHaveTextContent("No agents");
-    expect(others.getByRole("button", { name: "New room" })).toBeInTheDocument();
+    const rooms = within(await screen.findByRole("list", { name: "Rooms" }));
+    const dailyCard = within(rooms.getByRole("heading", { name: "Daily" }).closest("li")!);
+    expect(dailyCard.getByText("Ana")).toBeInTheDocument();
+    expect(dailyCard.getByText("1 agent · Last activity", { exact: false })).toBeInTheDocument();
+    expect(dailyCard.getByRole("button", { name: "Enter room" })).toBeInTheDocument();
+    const retroCard = within(rooms.getByRole("heading", { name: "Retro" }).closest("li")!);
+    expect(retroCard.getByText("No agents", { exact: false })).toBeInTheDocument();
+    expect(rooms.getByRole("button", { name: "New room" })).toBeInTheDocument();
   });
 
   it("seats up to three agents in each other room and counts the rest", async () => {
@@ -105,20 +98,19 @@ describe("rooms list", () => {
     core({ list_rooms: () => ({ rooms: [daily, crowded], featured_messages: [] }) });
     renderPage();
 
-    const card = within(await screen.findByRole("button", { name: /Retro/ }));
+    const card = within((await screen.findByRole("heading", { name: "Retro" })).closest("li")!);
     expect(card.getByText("Cleo")).toBeInTheDocument();
     expect(card.queryByText("Dan")).not.toBeInTheDocument();
-    expect(card.getByText("+2")).toBeInTheDocument();
+    expect(card.getByText("+2", { exact: false })).toBeInTheDocument();
   });
 
-  it("opens the create form from the empty seat in the floor plan", async () => {
+  it("opens the create form from the new room tile", async () => {
     core({ list_rooms: () => ({ rooms: [daily], featured_messages: [] }) });
     const user = userEvent.setup();
     renderPage();
 
-    const others = within(await screen.findByRole("list", { name: "Other rooms" }));
-    expect(others.getByText("Your other rooms will appear here, laid out like a floor plan.")).toBeInTheDocument();
-    await user.click(others.getByRole("button", { name: "New room" }));
+    const rooms = within(await screen.findByRole("list", { name: "Rooms" }));
+    await user.click(rooms.getByRole("button", { name: "New room" }));
 
     expect(screen.getByRole("dialog", { name: "New room" })).toBeInTheDocument();
   });

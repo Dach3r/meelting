@@ -160,7 +160,7 @@ src/
 └── components/            Atomic design (overview.md §8)
     ├── atoms/             Avatar, Button, CardSelect, Field, Icons, Logo
     ├── molecules/         AgentPicker, AgentRunStatus, AgentTemplateDetail, Alert, ChatMessage, EnginePicker, InviteAgentsForm, IslandMenu, LocaleSwitcher, MentionSuggestions, MessageComposer, Modal, NavItem, OrgAgentCard, OrgCard, OrgDrawer, OrgNode, ParticipantTile, RoomCard, RoomForm, SegmentedControl, SettingsRow, SwitchingOverlay, TeamForm, TeamPicker, ThemeSwitcher, WorkspaceSwitcher, ZoomControls; agentLabel.ts omite el rol cuando repite el nombre; mentionDraft.ts detecta la mención en curso, filtra agentes por nombre o rol e inserta la elegida
-    ├── organisms/         AgentCatalogPage, AgentEditForm, AgentForm, FeaturedRoom, NewWorkspacePage, OrgChart, Rail, RoomChat, RoomView, RoomsPage, SettingsPage, TeamsPage, Topbar; authorName.ts resuelve el autor de un mensaje entre los agentes presentes y los que salieron
+    ├── organisms/         AgentCatalogPage, AgentEditForm, AgentForm, NewWorkspacePage, OrgChart, Rail, RoomChat, RoomView, RoomsPage, SettingsPage, TeamsPage, Topbar; authorName.ts resuelve el autor de un mensaje entre los agentes presentes y los que salieron
     └── templates/         Workspace (riel + topbar + contenido)
 ```
 

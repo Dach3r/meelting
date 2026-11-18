@@ -9,7 +9,6 @@ import { Alert } from "../molecules/Alert";
 import { Modal } from "../molecules/Modal";
 import { RoomCard } from "../molecules/RoomCard";
 import { RoomForm } from "../molecules/RoomForm";
-import { FeaturedRoom } from "./FeaturedRoom";
 import { RoomView } from "./RoomView";
 
 export function RoomsPage({ agents }: { agents: Agent[] }) {
@@ -61,7 +60,7 @@ export function RoomsPage({ agents }: { agents: Agent[] }) {
     );
   }
 
-  const [featured, ...others] = list?.rooms ?? [];
+  const rooms = list?.rooms ?? [];
 
   return (
     <div className="flex w-full flex-col gap-6">
@@ -78,35 +77,30 @@ export function RoomsPage({ agents }: { agents: Agent[] }) {
         </Button>
       </header>
       {errorKey && <Alert message={translateError(locale, errorKey)} />}
-      {list && !featured && (
+      {list && rooms.length === 0 && (
         <div className="grid gap-1 py-16 text-center">
           <h2 className="text-xl font-bold">{t("rooms.empty.title")}</h2>
           <p className="text-muted">{t("rooms.empty.body")}</p>
         </div>
       )}
-      {list && featured && (
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
-          <FeaturedRoom room={featured} messages={list.featured_messages} onOpen={() => setOpenRoomId(featured.id)} />
-          <ul
-            aria-label={t("rooms.others")}
-            className={`board-dots rounded-3xl border border-line bg-surface p-4 ${others.length > 0 ? "grid content-start gap-4 sm:grid-cols-2" : "flex flex-col items-center justify-center gap-4 p-8"}`}
-          >
-            {others.map((room) => (
-              <RoomCard key={room.id} room={room} onOpen={() => setOpenRoomId(room.id)} />
-            ))}
-            <li className={others.length > 0 ? "" : "w-full max-w-64"}>
-              <button
-                type="button"
-                onClick={openForm}
-                className="flex min-h-32 w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-line text-sm text-muted transition-colors hover:bg-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
-              >
+      {list && rooms.length > 0 && (
+        <ul aria-label={t("rooms.title")} className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {rooms.map((room) => (
+            <RoomCard key={room.id} room={room} onOpen={() => setOpenRoomId(room.id)} />
+          ))}
+          <li className="flex">
+            <button
+              type="button"
+              onClick={openForm}
+              className="flex min-h-48 w-full cursor-pointer flex-col items-center justify-center gap-2.5 rounded-[20px] border border-dashed border-line text-sm text-muted transition-colors hover:bg-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+            >
+              <span className="grid size-11 place-items-center rounded-full bg-raised text-ink">
                 <Plus aria-hidden className="size-5" />
-                {t("rooms.new")}
-              </button>
-            </li>
-            {others.length === 0 && <li className="max-w-64 text-center text-sm text-muted">{t("rooms.othersEmpty")}</li>}
-          </ul>
-        </div>
+              </span>
+              {t("rooms.new")}
+            </button>
+          </li>
+        </ul>
       )}
     </div>
   );

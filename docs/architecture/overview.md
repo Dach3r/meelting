@@ -201,7 +201,7 @@ El webview de Linux es el menos predecible: se prueba en CI desde la Fase 0.
 **Atomic design** en `src/components/<nivel>/<Nombre>`, con los mismos nombres que en Rails:
 - **atoms:** `AgentAvatar`, `Button`, `Checkbox`, `Input`, `Label`, `Link`, `Logo`, `Select`, `StatusPill`.
 - **molecules:** `AgentPicker`, `AgentRow`, `AgentRunStatus`, `AgentTile`, `Alert`, `CheckboxField`, `ConfirmDialog`, `ErrorSummary`, `FieldGroup`, `FormField`, `IdentityPill`, `InstructionsDocument`, `IslandMenu`, `LinkList`, `LocaleSwitcher`, `Message`, `MessageComposer`, `ModelSelect`, `NavItem`, `ParticipantTile`, `RoomCard`, `SettingsRow`, `TeamNode`, `Toast`, `WorkspaceSwitcher`.
-- **organisms:** `FeaturedRoom`, `Rail`, `RoomChat`, `TeamTree`, `ToastRegion`, `Topbar`.
+- **organisms:** `Rail`, `RoomChat`, `TeamTree`, `ToastRegion`, `Topbar`.
 - **templates:** `Workspace`, `Settings`.
 - **nuevos:** `TaskCard`, `TaskPanel`, `TerminalPanel`, `ApprovalDialog`, `ToolCallRow`, `DiffViewer`.
 - No se migran: auth de Devise (`AuthInput`, `AuthField`, `AuthCard`, plantilla `Auth`); `UserMenu` se simplifica.
