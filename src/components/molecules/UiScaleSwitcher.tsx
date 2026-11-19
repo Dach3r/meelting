@@ -14,7 +14,10 @@ export function UiScaleSwitcher({
   disabled?: boolean;
 }) {
   const { t } = useI18n();
-  const options = scales.map((scale) => ({ value: String(scale), label: `${scale}%` }));
+  const options = scales.map((scale) => ({
+    value: String(scale),
+    label: `${scale}%`,
+  }));
   return (
     <SegmentedControl
       label={t("settings.uiScale.title")}

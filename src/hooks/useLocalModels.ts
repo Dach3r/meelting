@@ -1,7 +1,11 @@
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useState } from "react";
 
-export type LocalProviderModels = { key: string; running: boolean; models: string[] };
+export type LocalProviderModels = {
+  key: string;
+  running: boolean;
+  models: string[];
+};
 
 export function useLocalModels(active: boolean) {
   const [detected, setDetected] = useState<LocalProviderModels[] | null>(null);

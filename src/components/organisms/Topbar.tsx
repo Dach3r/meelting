@@ -1,6 +1,9 @@
 import { Search } from "lucide-react";
 import { useI18n } from "../../i18n/I18nProvider";
-import { WorkspaceSwitcher, type WorkspaceSwitcherProps } from "../molecules/WorkspaceSwitcher";
+import {
+  WorkspaceSwitcher,
+  type WorkspaceSwitcherProps,
+} from "../molecules/WorkspaceSwitcher";
 
 export function Topbar(props: WorkspaceSwitcherProps) {
   const { t } = useI18n();

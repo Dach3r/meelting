@@ -38,10 +38,17 @@ export function WorkspaceSwitcher({
             {current?.name.charAt(0).toUpperCase()}
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block max-w-56 truncate text-base leading-tight font-semibold">{current?.name}</span>
-            <span className="block max-w-56 truncate text-sm text-muted">{t("home.workspace.label")}</span>
+            <span className="block max-w-56 truncate text-base leading-tight font-semibold">
+              {current?.name}
+            </span>
+            <span className="block max-w-56 truncate text-sm text-muted">
+              {t("home.workspace.label")}
+            </span>
           </span>
-          <ChevronsUpDown className="size-5 shrink-0 text-muted" aria-hidden="true" />
+          <ChevronsUpDown
+            className="size-5 shrink-0 text-muted"
+            aria-hidden="true"
+          />
         </>
       }
     >
@@ -49,10 +56,19 @@ export function WorkspaceSwitcher({
         <>
           {workspaces.map((workspace) =>
             workspace.id === currentId ? (
-              <p key={workspace.id} aria-current="true" className="flex w-full items-center gap-3 rounded-xl p-2 text-left">
+              <p
+                key={workspace.id}
+                aria-current="true"
+                className="flex w-full items-center gap-3 rounded-xl p-2 text-left"
+              >
                 <Initial name={workspace.name} />
-                <span className="min-w-0 flex-1 truncate text-sm font-semibold">{workspace.name}</span>
-                <Check className="size-4 shrink-0 text-accent" aria-hidden="true" />
+                <span className="min-w-0 flex-1 truncate text-sm font-semibold">
+                  {workspace.name}
+                </span>
+                <Check
+                  className="size-4 shrink-0 text-accent"
+                  aria-hidden="true"
+                />
               </p>
             ) : (
               <button
@@ -66,7 +82,9 @@ export function WorkspaceSwitcher({
                 className="flex w-full cursor-pointer items-center gap-3 rounded-xl p-2 text-left hover:bg-primary focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ink disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <Initial name={workspace.name} />
-                <span className="min-w-0 flex-1 truncate text-sm font-semibold">{workspace.name}</span>
+                <span className="min-w-0 flex-1 truncate text-sm font-semibold">
+                  {workspace.name}
+                </span>
               </button>
             ),
           )}

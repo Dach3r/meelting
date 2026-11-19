@@ -30,19 +30,22 @@ export function useSession() {
       .finally(() => setLoaded(true));
   }, []);
 
-  const run = useCallback(async (command: string, args: Record<string, unknown>) => {
-    setBusy(true);
-    setErrorKey(null);
-    try {
-      setSession(await invoke<Session>(command, args));
-      return true;
-    } catch (error) {
-      setErrorKey(String(error));
-      return false;
-    } finally {
-      setBusy(false);
-    }
-  }, []);
+  const run = useCallback(
+    async (command: string, args: Record<string, unknown>) => {
+      setBusy(true);
+      setErrorKey(null);
+      try {
+        setSession(await invoke<Session>(command, args));
+        return true;
+      } catch (error) {
+        setErrorKey(String(error));
+        return false;
+      } finally {
+        setBusy(false);
+      }
+    },
+    [],
+  );
 
   const clearError = () => setErrorKey(null);
   const completeFirstLaunch = (locale: Locale, workspaceName: string) =>
@@ -52,7 +55,8 @@ export function useSession() {
     run("switch_workspace", { workspaceId });
   const changeLocale = (locale: Locale) => run("change_locale", { locale });
   const changeTheme = (theme: Theme) => run("change_theme", { theme });
-  const changeUiScale = (uiScale: UiScale) => run("change_ui_scale", { uiScale });
+  const changeUiScale = (uiScale: UiScale) =>
+    run("change_ui_scale", { uiScale });
   const changeLoadingEnabled = (loadingEnabled: boolean) =>
     run("change_loading_enabled", { loadingEnabled });
 

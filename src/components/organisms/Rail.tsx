@@ -1,5 +1,15 @@
 import type { LucideIcon } from "lucide-react";
-import { Activity, ChevronsLeft, ChevronsRight, KeyRound, ListChecks, Plug, Settings, Users, Video } from "lucide-react";
+import {
+  Activity,
+  ChevronsLeft,
+  ChevronsRight,
+  KeyRound,
+  ListChecks,
+  Plug,
+  Settings,
+  Users,
+  Video,
+} from "lucide-react";
 import { useI18n } from "../../i18n/I18nProvider";
 import { Logo } from "../atoms/Logo";
 import { NavItem } from "../molecules/NavItem";
@@ -30,7 +40,10 @@ export function Rail({ collapsed, onToggle, view, onSelectView }: Props) {
       <div className="flex px-4 pt-1 pb-2 group-data-collapsed/rail:justify-center group-data-collapsed/rail:px-0">
         <Logo />
       </div>
-      <nav aria-label={t("home.nav.label")} className="grid content-start gap-2">
+      <nav
+        aria-label={t("home.nav.label")}
+        className="grid content-start gap-2"
+      >
         {items.map((item) => (
           <NavItem
             key={item.key}
@@ -53,7 +66,9 @@ export function Rail({ collapsed, onToggle, view, onSelectView }: Props) {
         ) : (
           <ChevronsLeft className="size-6 shrink-0" aria-hidden="true" />
         )}
-        <span className="whitespace-nowrap group-data-collapsed/rail:hidden">{t("home.rail.collapse")}</span>
+        <span className="whitespace-nowrap group-data-collapsed/rail:hidden">
+          {t("home.rail.collapse")}
+        </span>
       </button>
     </aside>
   );

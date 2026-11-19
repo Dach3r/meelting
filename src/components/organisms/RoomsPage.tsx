@@ -9,16 +9,41 @@ import { Alert } from "../molecules/Alert";
 import { Modal } from "../molecules/Modal";
 import { RoomCard } from "../molecules/RoomCard";
 import { RoomForm } from "../molecules/RoomForm";
-import { TransitionOverlay, transitionMs } from "../molecules/TransitionOverlay";
+import {
+  TransitionOverlay,
+  transitionMs,
+} from "../molecules/TransitionOverlay";
 import { RoomView } from "./RoomView";
 
-export function RoomsPage({ agents, loadingEnabled }: { agents: Agent[]; loadingEnabled: boolean }) {
+export function RoomsPage({
+  agents,
+  loadingEnabled,
+}: {
+  agents: Agent[];
+  loadingEnabled: boolean;
+}) {
   const { t, locale } = useI18n();
-  const { list, errorKey, actionErrorKey, busy, reload, createRoom, finishRoom, clearActionError } = useRooms();
+  const {
+    list,
+    errorKey,
+    actionErrorKey,
+    busy,
+    reload,
+    createRoom,
+    finishRoom,
+    clearActionError,
+  } = useRooms();
   const [creating, setCreating] = useState(false);
-  const [openRoom, setOpenRoom] = useState<{ id: string; name: string } | null>(null);
-  const [transition, setTransition] = useState<{ label: string; name: string } | null>(null);
-  const actionErrorMessage = actionErrorKey ? translateError(locale, actionErrorKey) : null;
+  const [openRoom, setOpenRoom] = useState<{ id: string; name: string } | null>(
+    null,
+  );
+  const [transition, setTransition] = useState<{
+    label: string;
+    name: string;
+  } | null>(null);
+  const actionErrorMessage = actionErrorKey
+    ? translateError(locale, actionErrorKey)
+    : null;
 
   function openForm() {
     clearActionError();
@@ -30,7 +55,11 @@ export function RoomsPage({ agents, loadingEnabled }: { agents: Agent[]; loading
     setCreating(false);
   }
 
-  async function withTransition(label: string, name: string, apply: () => void) {
+  async function withTransition(
+    label: string,
+    name: string,
+    apply: () => void,
+  ) {
     if (!loadingEnabled) return apply();
     setTransition({ label, name });
     await new Promise((resolve) => setTimeout(resolve, transitionMs));
@@ -39,7 +68,9 @@ export function RoomsPage({ agents, loadingEnabled }: { agents: Agent[]; loading
   }
 
   function enterRoom(room: { id: string; name: string }) {
-    return withTransition(t("rooms.entering"), room.name, () => setOpenRoom(room));
+    return withTransition(t("rooms.entering"), room.name, () =>
+      setOpenRoom(room),
+    );
   }
 
   async function create(name: string, agentIds: string[]) {
@@ -50,7 +81,9 @@ export function RoomsPage({ agents, loadingEnabled }: { agents: Agent[]; loading
   }
 
   function leaveRoom(room: { id: string; name: string }) {
-    return withTransition(t("rooms.leaving"), room.name, () => setOpenRoom(null));
+    return withTransition(t("rooms.leaving"), room.name, () =>
+      setOpenRoom(null),
+    );
   }
 
   async function endRoom(room: { id: string; name: string }) {
@@ -59,7 +92,9 @@ export function RoomsPage({ agents, loadingEnabled }: { agents: Agent[]; loading
 
   const rooms = list?.rooms ?? [];
 
-  const overlay = transition && <TransitionOverlay label={transition.label} name={transition.name} />;
+  const overlay = transition && (
+    <TransitionOverlay label={transition.label} name={transition.name} />
+  );
 
   if (openRoom) {
     return (
@@ -88,7 +123,13 @@ export function RoomsPage({ agents, loadingEnabled }: { agents: Agent[]; loading
       {overlay}
       {creating && (
         <Modal title={t("rooms.form.title")} onClose={closeForm}>
-          <RoomForm agents={agents} busy={busy} errorMessage={actionErrorMessage} onSubmit={create} onCancel={closeForm} />
+          <RoomForm
+            agents={agents}
+            busy={busy}
+            errorMessage={actionErrorMessage}
+            onSubmit={create}
+            onCancel={closeForm}
+          />
         </Modal>
       )}
       <header className="-mx-8 -mt-8 flex items-center justify-between gap-4 border-b border-line bg-linear-to-b from-shell to-surface px-8 py-5">
@@ -106,9 +147,16 @@ export function RoomsPage({ agents, loadingEnabled }: { agents: Agent[]; loading
         </div>
       )}
       {list && rooms.length > 0 && (
-        <ul aria-label={t("rooms.title")} className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <ul
+          aria-label={t("rooms.title")}
+          className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"
+        >
           {rooms.map((room) => (
-            <RoomCard key={room.id} room={room} onOpen={() => enterRoom(room)} />
+            <RoomCard
+              key={room.id}
+              room={room}
+              onOpen={() => enterRoom(room)}
+            />
           ))}
         </ul>
       )}

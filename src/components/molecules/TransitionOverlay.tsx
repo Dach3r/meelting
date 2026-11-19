@@ -13,7 +13,12 @@ type Props = {
   onDismiss?: () => void;
 };
 
-export function TransitionOverlay({ label, name, errorMessage = null, onDismiss }: Props) {
+export function TransitionOverlay({
+  label,
+  name,
+  errorMessage = null,
+  onDismiss,
+}: Props) {
   const { t } = useI18n();
 
   return (

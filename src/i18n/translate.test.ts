@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 import en from "./en.json";
 import es from "./es.json";
-import { formatAgentCount, translate, translateError, translateRunError, translateWith } from "./translate";
+import {
+  formatAgentCount,
+  translate,
+  translateError,
+  translateRunError,
+  translateWith,
+} from "./translate";
 
 function keys(node: unknown, prefix = ""): string[] {
   return Object.entries(node as Record<string, unknown>).flatMap(
@@ -26,7 +32,9 @@ describe("translate", () => {
     expect(translateError("es", "invalid_name")).toBe(
       "Escribe un nombre de hasta 80 caracteres.",
     );
-    expect(translateError("en", "weird")).toBe(translate("en", "errors.unknown"));
+    expect(translateError("en", "weird")).toBe(
+      translate("en", "errors.unknown"),
+    );
   });
 
   it("counts the agents of a room in words", () => {
@@ -36,26 +44,64 @@ describe("translate", () => {
   });
 
   it("fills in named values", () => {
-    expect(translateWith("en", "agentRun.busy", { agent: "Ana" })).toBe("Ana is still working on a request.");
-    expect(translateWith("es", "agentRun.retrying", { attempt: 2 })).toBe("Problema temporal. Reintentando (intento 2 de 3)…");
+    expect(translateWith("en", "agentRun.busy", { agent: "Ana" })).toBe(
+      "Ana is still working on a request.",
+    );
+    expect(translateWith("es", "agentRun.retrying", { attempt: 2 })).toBe(
+      "Problema temporal. Reintentando (intento 2 de 3)…",
+    );
   });
 
   it("explains every run error with the provider name and says when a local provider is not running", () => {
-    expect(translateRunError("en", "provider_not_configured", "Groq", false)).toBe("Groq has no API key in this workspace.");
-    expect(translateRunError("es", "provider_unavailable", "Ollama", true)).toBe("Ollama no está en ejecución. Ábrelo e inténtalo de nuevo.");
-    expect(translateRunError("en", "provider_unavailable", "OpenAI", false)).toBe("OpenAI isn't available right now.");
-    expect(translateRunError("es", "output_truncated", "Ollama", true)).toBe("La respuesta del agente era demasiado larga y no se guardó.");
-    expect(translateRunError("en", "something_new", "Anthropic", false)).toBe("The request to Anthropic failed.");
+    expect(
+      translateRunError("en", "provider_not_configured", "Groq", false),
+    ).toBe("Groq has no API key in this workspace.");
+    expect(
+      translateRunError("es", "provider_unavailable", "Ollama", true),
+    ).toBe("Ollama no está en ejecución. Ábrelo e inténtalo de nuevo.");
+    expect(
+      translateRunError("en", "provider_unavailable", "OpenAI", false),
+    ).toBe("OpenAI isn't available right now.");
+    expect(translateRunError("es", "output_truncated", "Ollama", true)).toBe(
+      "La respuesta del agente era demasiado larga y no se guardó.",
+    );
+    expect(translateRunError("en", "something_new", "Anthropic", false)).toBe(
+      "The request to Anthropic failed.",
+    );
   });
 
   it("has a text for every error kind the core can report", () => {
-    const kinds = ["rate_limited", "timeout", "provider_unavailable", "provider_not_configured", "model_unavailable", "provider_auth_failed", "provider_billing", "provider_rejected", "content_filtered", "output_truncated", "invalid_response", "context_too_large", "cancelled", "expired"];
+    const kinds = [
+      "rate_limited",
+      "timeout",
+      "provider_unavailable",
+      "provider_not_configured",
+      "model_unavailable",
+      "provider_auth_failed",
+      "provider_billing",
+      "provider_rejected",
+      "content_filtered",
+      "output_truncated",
+      "invalid_response",
+      "context_too_large",
+      "cancelled",
+      "expired",
+    ];
     for (const locale of ["en", "es"] as const) {
       for (const kind of kinds) {
-        expect(translate(locale, `agentRun.errors.${kind}`)).not.toBe(`agentRun.errors.${kind}`);
+        expect(translate(locale, `agentRun.errors.${kind}`)).not.toBe(
+          `agentRun.errors.${kind}`,
+        );
       }
-      for (const code of ["invalid_client_request_id", "agent_busy", "client_request_conflict", "agent_has_activity"]) {
-        expect(translateError(locale, code)).not.toBe(translate(locale, "errors.unknown"));
+      for (const code of [
+        "invalid_client_request_id",
+        "agent_busy",
+        "client_request_conflict",
+        "agent_has_activity",
+      ]) {
+        expect(translateError(locale, code)).not.toBe(
+          translate(locale, "errors.unknown"),
+        );
       }
     }
   });

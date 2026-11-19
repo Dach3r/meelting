@@ -11,7 +11,11 @@ import {
   loadRunState,
 } from "./agentRunState";
 
-function run(status: AgentRun["status"], attempts: number, overrides: Partial<AgentRun> = {}): AgentRun {
+function run(
+  status: AgentRun["status"],
+  attempts: number,
+  overrides: Partial<AgentRun> = {},
+): AgentRun {
   return {
     id: "run1",
     room_id: "r1",
@@ -38,7 +42,14 @@ function token(attempt: number, seq: number, text: string): TokenChunk {
 
 describe("lifecycle position", () => {
   it("orders every transition, including a retry within the same attempt", () => {
-    const sequence = [run("queued", 0), run("running", 1), run("queued", 1), run("running", 2), run("queued", 2), run("running", 3)];
+    const sequence = [
+      run("queued", 0),
+      run("running", 1),
+      run("queued", 1),
+      run("running", 2),
+      run("queued", 2),
+      run("running", 3),
+    ];
 
     const positions = sequence.map(lifecyclePosition);
 
@@ -67,7 +78,10 @@ describe("status events out of order", () => {
   });
 
   it("a final state is never replaced, not even by another final state", () => {
-    let state = applyStatus(emptyRunState, run("succeeded", 1, { response_message_id: "m2" }));
+    let state = applyStatus(
+      emptyRunState,
+      run("succeeded", 1, { response_message_id: "m2" }),
+    );
     state = applyStatus(state, run("running", 1));
     state = applyStatus(state, run("failed", 1));
 
@@ -126,7 +140,10 @@ describe("tokens", () => {
 
 describe("snapshot on load", () => {
   it("applies the snapshot and continues with the following tokens only", () => {
-    let state = loadRunState([run("running", 1)], [{ run_id: "run1", attempt: 1, seq: 3, text: "Hello" }]);
+    let state = loadRunState(
+      [run("running", 1)],
+      [{ run_id: "run1", attempt: 1, seq: 3, text: "Hello" }],
+    );
     state = applyToken(state, token(1, 3, "Hello"));
     state = applyToken(state, token(1, 4, " world"));
 
@@ -136,13 +153,21 @@ describe("snapshot on load", () => {
   it("an older snapshot does not replace newer tokens received during the load", () => {
     let state = applyStatus(emptyRunState, run("running", 1));
     state = applyToken(state, token(1, 4, "newer"));
-    state = applySnapshot(state, { run_id: "run1", attempt: 1, seq: 2, text: "older" });
+    state = applySnapshot(state, {
+      run_id: "run1",
+      attempt: 1,
+      seq: 2,
+      text: "older",
+    });
 
     expect(state.live.run1.seq).toBe(4);
   });
 
   it("ignores the snapshot of a run that is already finished in the database", () => {
-    const state = loadRunState([run("succeeded", 1, { response_message_id: "m2" })], [{ run_id: "run1", attempt: 1, seq: 1, text: "x" }]);
+    const state = loadRunState(
+      [run("succeeded", 1, { response_message_id: "m2" })],
+      [{ run_id: "run1", attempt: 1, seq: 1, text: "x" }],
+    );
 
     expect(state.live.run1).toBeUndefined();
   });

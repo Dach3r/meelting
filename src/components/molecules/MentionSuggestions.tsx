@@ -14,7 +14,13 @@ export function mentionOptionId(listId: string, index: number) {
   return `${listId}-${index}`;
 }
 
-export function MentionSuggestions({ id, label, agents, active, onPick }: Props) {
+export function MentionSuggestions({
+  id,
+  label,
+  agents,
+  active,
+  onPick,
+}: Props) {
   return (
     <ul
       id={id}
@@ -34,9 +40,15 @@ export function MentionSuggestions({ id, label, agents, active, onPick }: Props)
           }}
           className={`flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm ${index === active ? "bg-ink/8" : "hover:bg-ink/5"}`}
         >
-          <Avatar seed={agent.name} label={agent.name} className="size-6 shrink-0 rounded-full text-xs" />
+          <Avatar
+            seed={agent.name}
+            label={agent.name}
+            className="size-6 shrink-0 rounded-full text-xs"
+          />
           <span className="truncate font-medium text-ink">{agent.name}</span>
-          {!roleRepeatsName(agent.name, agent.role) && <span className="truncate text-xs text-muted">{agent.role}</span>}
+          {!roleRepeatsName(agent.name, agent.role) && (
+            <span className="truncate text-xs text-muted">{agent.role}</span>
+          )}
         </li>
       ))}
     </ul>

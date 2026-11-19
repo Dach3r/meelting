@@ -2,9 +2,17 @@ import { useState } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
 import type { Theme, UiScale } from "../../hooks/useSession";
 import type { Locale } from "../../i18n/translate";
-import type { AgentDetail, AgentDraft, AgentEdit, Team } from "../../hooks/useTeams";
+import type {
+  AgentDetail,
+  AgentDraft,
+  AgentEdit,
+  Team,
+} from "../../hooks/useTeams";
 import type { WorkspaceSwitcherProps } from "../molecules/WorkspaceSwitcher";
-import { TransitionOverlay, transitionMs } from "../molecules/TransitionOverlay";
+import {
+  TransitionOverlay,
+  transitionMs,
+} from "../molecules/TransitionOverlay";
 import { AgentCatalogPage } from "../organisms/AgentCatalogPage";
 import { Rail, type View } from "../organisms/Rail";
 import { RoomsPage } from "../organisms/RoomsPage";
@@ -78,14 +86,20 @@ export function Workspace({
   const [view, setView] = useState<View>("teams");
   const [catalogTeamId, setCatalogTeamId] = useState<string | null>(null);
   const catalogTeam = teams.find((team) => team.id === catalogTeamId);
-  const [switching, setSwitching] = useState<{ name: string; failed: boolean } | null>(null);
+  const [switching, setSwitching] = useState<{
+    name: string;
+    failed: boolean;
+  } | null>(null);
 
   async function switchWorkspace(workspaceId: string) {
-    const name = props.workspaces.find((workspace) => workspace.id === workspaceId)?.name ?? "";
+    const name =
+      props.workspaces.find((workspace) => workspace.id === workspaceId)
+        ?.name ?? "";
     if (loadingEnabled) setSwitching({ name, failed: false });
     const [switched] = await Promise.all([
       props.onSwitch(workspaceId),
-      loadingEnabled && new Promise((resolve) => setTimeout(resolve, transitionMs)),
+      loadingEnabled &&
+        new Promise((resolve) => setTimeout(resolve, transitionMs)),
     ]);
     setSwitching(switched ? null : { name, failed: true });
     return switched;
@@ -112,7 +126,12 @@ export function Workspace({
       data-collapsed={collapsed || undefined}
       className={`group/rail relative grid h-dvh grid-cols-[19rem_minmax(0,1fr)] gap-3 overflow-hidden bg-rail p-6 data-collapsed:grid-cols-[4.5rem_minmax(0,1fr)] data-collapsed:pl-3 ${animated ? "transition-[grid-template-columns] duration-300 ease-in-out" : ""}`}
     >
-      <Rail collapsed={collapsed} onToggle={toggle} view={view} onSelectView={selectView} />
+      <Rail
+        collapsed={collapsed}
+        onToggle={toggle}
+        view={view}
+        onSelectView={selectView}
+      />
       <div className="flex min-h-0 min-w-0 flex-col overflow-hidden rounded-3xl bg-shell">
         <Topbar {...props} onSwitch={switchWorkspace} />
         <main className="flex min-h-0 flex-1 flex-col px-8 pb-8">

@@ -2,11 +2,19 @@ import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useState } from "react";
 import type { Choice, Selection } from "./useRoom";
 
-export type Resolution = { kind: "nobody" } | { kind: "agent" | "proposed"; agent_id: string } | ({ kind: "choose" } & Choice);
+export type Resolution =
+  | { kind: "nobody" }
+  | { kind: "agent" | "proposed"; agent_id: string }
+  | ({ kind: "choose" } & Choice);
 
 const previewDelayMs = 150;
 
-export function useRecipientPreview(roomId: string, body: string, selection: Selection, mentionIds: string[]) {
+export function useRecipientPreview(
+  roomId: string,
+  body: string,
+  selection: Selection,
+  mentionIds: string[],
+) {
   const [resolution, setResolution] = useState<Resolution | null>(null);
   const empty = body.trim().length === 0;
 
@@ -14,7 +22,12 @@ export function useRecipientPreview(roomId: string, body: string, selection: Sel
     if (empty) return;
     let current = true;
     const timer = setTimeout(() => {
-      invoke<Resolution>("resolve_recipient", { roomId, body, selection, mentionIds })
+      invoke<Resolution>("resolve_recipient", {
+        roomId,
+        body,
+        selection,
+        mentionIds,
+      })
         .then((resolved) => {
           if (current) setResolution(resolved);
         })

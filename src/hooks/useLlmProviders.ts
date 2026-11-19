@@ -1,7 +1,12 @@
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useState } from "react";
 
-export type LlmProvider = { key: string; name: string; location: "cloud" | "local"; models: string[] };
+export type LlmProvider = {
+  key: string;
+  name: string;
+  location: "cloud" | "local";
+  models: string[];
+};
 
 export function useLlmProviders() {
   const [providers, setProviders] = useState<LlmProvider[]>([]);

@@ -18,11 +18,19 @@ export type AgentRun = {
   finished_at: string | null;
 };
 
-export type RunSnapshot = { run_id: string; attempt: number; seq: number; text: string };
+export type RunSnapshot = {
+  run_id: string;
+  attempt: number;
+  seq: number;
+  text: string;
+};
 
 export type TokenChunk = RunSnapshot & { room_id: string };
 
-export type RunState = { runs: Record<string, AgentRun>; live: Record<string, RunSnapshot> };
+export type RunState = {
+  runs: Record<string, AgentRun>;
+  live: Record<string, RunSnapshot>;
+};
 
 export const emptyRunState: RunState = { runs: {}, live: {} };
 
@@ -41,7 +49,11 @@ export function lifecyclePosition(run: AgentRun) {
 
 export function applyStatus(state: RunState, run: AgentRun): RunState {
   const known = state.runs[run.id];
-  if (known && (isFinal(known) || lifecyclePosition(run) <= lifecyclePosition(known))) return state;
+  if (
+    known &&
+    (isFinal(known) || lifecyclePosition(run) <= lifecyclePosition(known))
+  )
+    return state;
   const live = { ...state.live };
   if (isFinal(run)) delete live[run.id];
   return { runs: { ...state.runs, [run.id]: run }, live };
@@ -49,32 +61,62 @@ export function applyStatus(state: RunState, run: AgentRun): RunState {
 
 function isNewer(chunk: RunSnapshot, known: RunSnapshot | undefined) {
   if (!known) return true;
-  return chunk.attempt > known.attempt || (chunk.attempt === known.attempt && chunk.seq > known.seq);
+  return (
+    chunk.attempt > known.attempt ||
+    (chunk.attempt === known.attempt && chunk.seq > known.seq)
+  );
 }
 
-export function applySnapshot(state: RunState, snapshot: RunSnapshot): RunState {
+export function applySnapshot(
+  state: RunState,
+  snapshot: RunSnapshot,
+): RunState {
   const run = state.runs[snapshot.run_id];
-  if ((run && isFinal(run)) || !isNewer(snapshot, state.live[snapshot.run_id])) return state;
+  if ((run && isFinal(run)) || !isNewer(snapshot, state.live[snapshot.run_id]))
+    return state;
   return { ...state, live: { ...state.live, [snapshot.run_id]: snapshot } };
 }
 
 export function applyToken(state: RunState, chunk: TokenChunk): RunState {
   const run = state.runs[chunk.run_id];
   const known = state.live[chunk.run_id];
-  if ((run && (isFinal(run) || chunk.attempt < run.attempts)) || !isNewer(chunk, known)) return state;
-  const text = known && known.attempt === chunk.attempt ? known.text + chunk.text : chunk.text;
+  if (
+    (run && (isFinal(run) || chunk.attempt < run.attempts)) ||
+    !isNewer(chunk, known)
+  )
+    return state;
+  const text =
+    known && known.attempt === chunk.attempt
+      ? known.text + chunk.text
+      : chunk.text;
   return {
     ...state,
-    live: { ...state.live, [chunk.run_id]: { run_id: chunk.run_id, attempt: chunk.attempt, seq: chunk.seq, text } },
+    live: {
+      ...state.live,
+      [chunk.run_id]: {
+        run_id: chunk.run_id,
+        attempt: chunk.attempt,
+        seq: chunk.seq,
+        text,
+      },
+    },
   };
 }
 
 export function liveText(state: RunState, run: AgentRun) {
   const live = state.live[run.id];
-  return run.status === "running" && live && live.attempt === run.attempts && live.text ? live.text : null;
+  return run.status === "running" &&
+    live &&
+    live.attempt === run.attempts &&
+    live.text
+    ? live.text
+    : null;
 }
 
-export function loadRunState(runs: AgentRun[], snapshots: RunSnapshot[]): RunState {
+export function loadRunState(
+  runs: AgentRun[],
+  snapshots: RunSnapshot[],
+): RunState {
   const withRuns = runs.reduce(applyStatus, emptyRunState);
   return snapshots.reduce(applySnapshot, withRuns);
 }

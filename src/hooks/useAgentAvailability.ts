@@ -1,12 +1,23 @@
 import { invoke } from "@tauri-apps/api/core";
 import { useCallback, useEffect, useState } from "react";
 
-export type Availability = "available" | "needs_setup" | "unavailable" | "needs_connection";
+export type Availability =
+  | "available"
+  | "needs_setup"
+  | "unavailable"
+  | "needs_connection";
 
-export type AgentAvailability = { agent_id: string; provider: string; availability: Availability; reason: string | null };
+export type AgentAvailability = {
+  agent_id: string;
+  provider: string;
+  availability: Availability;
+  reason: string | null;
+};
 
 export function useAgentAvailability(roomId: string, finishedRuns: number) {
-  const [availability, setAvailability] = useState<AgentAvailability[] | null>(null);
+  const [availability, setAvailability] = useState<AgentAvailability[] | null>(
+    null,
+  );
   const [checking, setChecking] = useState(false);
   const [requested, setRequested] = useState(0);
 

@@ -1,4 +1,9 @@
-import { useRef, type MouseEvent, type PointerEvent, type ReactNode } from "react";
+import {
+  useRef,
+  type MouseEvent,
+  type PointerEvent,
+  type ReactNode,
+} from "react";
 
 const dragThresholdPx = 3;
 
@@ -13,17 +18,42 @@ type Props = {
   children?: ReactNode;
 };
 
-type Drag = { pointerX: number; pointerY: number; x: number; y: number; moving: boolean };
+type Drag = {
+  pointerX: number;
+  pointerY: number;
+  x: number;
+  y: number;
+  moving: boolean;
+};
 
-export function OrgNode({ x, y, zoom, onMove, registerCard, card, className, children }: Props) {
+export function OrgNode({
+  x,
+  y,
+  zoom,
+  onMove,
+  registerCard,
+  card,
+  className,
+  children,
+}: Props) {
   const drag = useRef<Drag | null>(null);
   const dragged = useRef(false);
 
   function start(event: PointerEvent<HTMLDivElement>) {
-    if (event.button !== 0 || (event.target as Element).closest("button:not([aria-pressed])")) return;
+    if (
+      event.button !== 0 ||
+      (event.target as Element).closest("button:not([aria-pressed])")
+    )
+      return;
     event.stopPropagation();
     dragged.current = false;
-    drag.current = { pointerX: event.clientX, pointerY: event.clientY, x, y, moving: false };
+    drag.current = {
+      pointerX: event.clientX,
+      pointerY: event.clientY,
+      x,
+      y,
+      moving: false,
+    };
   }
 
   function move(event: PointerEvent<HTMLDivElement>) {
@@ -51,7 +81,10 @@ export function OrgNode({ x, y, zoom, onMove, registerCard, card, className, chi
   }
 
   return (
-    <li className={className} style={{ transform: `translate(${x}px, ${y}px)` }}>
+    <li
+      className={className}
+      style={{ transform: `translate(${x}px, ${y}px)` }}
+    >
       <div
         ref={registerCard}
         onPointerDown={start}

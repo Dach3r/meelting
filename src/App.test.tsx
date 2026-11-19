@@ -16,7 +16,12 @@ const roles = [
 ];
 
 const providers = [
-  { key: "anthropic", name: "Anthropic", location: "cloud", models: ["claude-sonnet-5-5", "claude-opus-5-5"] },
+  {
+    key: "anthropic",
+    name: "Anthropic",
+    location: "cloud",
+    models: ["claude-sonnet-5-5", "claude-opus-5-5"],
+  },
   { key: "openai", name: "OpenAI", location: "cloud", models: ["gpt-5"] },
   { key: "ollama", name: "Ollama", location: "local", models: [] },
   { key: "lmstudio", name: "LM Studio", location: "local", models: [] },
@@ -40,7 +45,9 @@ function session(overrides = {}) {
 }
 
 function mockCore(value: unknown) {
-  invokeMock.mockImplementation(async (command) => (command === "list_teams" ? [] : value));
+  invokeMock.mockImplementation(async (command) =>
+    command === "list_teams" ? [] : value,
+  );
 }
 
 beforeEach(() => {
@@ -67,7 +74,9 @@ describe("first launch", () => {
       locale: "es",
       workspaceName: "Acme",
     });
-    expect(await screen.findByText("Tu oficina está lista")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Tu oficina está lista"),
+    ).toBeInTheDocument();
   });
 
   it("keeps the submit button disabled while the name is blank", async () => {
@@ -75,7 +84,9 @@ describe("first launch", () => {
     const user = userEvent.setup();
     render(<App />);
 
-    const submit = await screen.findByRole("button", { name: "Create workspace" });
+    const submit = await screen.findByRole("button", {
+      name: "Create workspace",
+    });
     expect(submit).toBeDisabled();
     await user.type(screen.getByLabelText("Workspace name"), "   ");
     expect(submit).toBeDisabled();
@@ -93,7 +104,9 @@ describe("first launch", () => {
     await user.type(await screen.findByLabelText("Workspace name"), "Acme");
     await user.click(screen.getByRole("button", { name: "Create workspace" }));
 
-    expect(await screen.findAllByText("Enter a name of up to 80 characters.")).not.toHaveLength(0);
+    expect(
+      await screen.findAllByText("Enter a name of up to 80 characters."),
+    ).not.toHaveLength(0);
   });
 });
 
@@ -102,81 +115,127 @@ describe("workspace shell", () => {
     mockCore(session());
     render(<App />);
 
-    expect(await screen.findByText("Tu oficina está lista")).toBeInTheDocument();
-    expect(screen.getByRole("navigation", { name: "Navegación principal" })).toBeInTheDocument();
+    expect(
+      await screen.findByText("Tu oficina está lista"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("navigation", { name: "Navegación principal" }),
+    ).toBeInTheDocument();
     expect(screen.getAllByText("Acme")).not.toHaveLength(0);
   });
 
   it("switches to another workspace", async () => {
     invokeMock.mockImplementation(async (command) => {
       if (command === "list_teams") return [];
-      if (command === "load_session") return session({ locale: "en", workspaces: [acme, globex] });
-      return session({ locale: "en", current_workspace_id: "2", workspaces: [acme, globex] });
+      if (command === "load_session")
+        return session({ locale: "en", workspaces: [acme, globex] });
+      return session({
+        locale: "en",
+        current_workspace_id: "2",
+        workspaces: [acme, globex],
+      });
     });
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(await screen.findByRole("button", { name: "Switch workspace" }));
+    await user.click(
+      await screen.findByRole("button", { name: "Switch workspace" }),
+    );
     await user.click(screen.getByRole("button", { name: /Globex/ }));
 
-    expect(await screen.findByRole("status")).toHaveTextContent("Switching to Globex");
-    expect(invokeMock).toHaveBeenCalledWith("switch_workspace", { workspaceId: "2" });
-    expect(await screen.findByRole("button", { name: "Switch workspace" })).toHaveTextContent("Globex");
-    await waitFor(() => expect(screen.queryByRole("status")).not.toBeInTheDocument());
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      "Switching to Globex",
+    );
+    expect(invokeMock).toHaveBeenCalledWith("switch_workspace", {
+      workspaceId: "2",
+    });
+    expect(
+      await screen.findByRole("button", { name: "Switch workspace" }),
+    ).toHaveTextContent("Globex");
+    await waitFor(() =>
+      expect(screen.queryByRole("status")).not.toBeInTheDocument(),
+    );
   });
 
   it("switches workspace without the transition when it is turned off", async () => {
     invokeMock.mockImplementation(async (command) => {
       if (command === "list_teams") return [];
-      const base = { locale: "en", loading_enabled: false, workspaces: [acme, globex] };
+      const base = {
+        locale: "en",
+        loading_enabled: false,
+        workspaces: [acme, globex],
+      };
       if (command === "load_session") return session(base);
       return session({ ...base, current_workspace_id: "2" });
     });
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(await screen.findByRole("button", { name: "Switch workspace" }));
+    await user.click(
+      await screen.findByRole("button", { name: "Switch workspace" }),
+    );
     await user.click(screen.getByRole("button", { name: /Globex/ }));
 
-    expect(await screen.findByRole("button", { name: "Switch workspace" })).toHaveTextContent("Globex");
+    expect(
+      await screen.findByRole("button", { name: "Switch workspace" }),
+    ).toHaveTextContent("Globex");
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
   });
 
   it("shows the error in the overlay when switching fails and lets the user dismiss it", async () => {
     invokeMock.mockImplementation(async (command) => {
       if (command === "list_teams") return [];
-      if (command === "load_session") return session({ locale: "en", workspaces: [acme, globex] });
+      if (command === "load_session")
+        return session({ locale: "en", workspaces: [acme, globex] });
       throw "workspace_not_found";
     });
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(await screen.findByRole("button", { name: "Switch workspace" }));
+    await user.click(
+      await screen.findByRole("button", { name: "Switch workspace" }),
+    );
     await user.click(screen.getByRole("button", { name: /Globex/ }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("That workspace no longer exists.");
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "That workspace no longer exists.",
+    );
     await user.click(screen.getByRole("button", { name: "Close" }));
 
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Switch workspace" })).toHaveTextContent("Acme");
+    expect(
+      screen.getByRole("button", { name: "Switch workspace" }),
+    ).toHaveTextContent("Acme");
   });
 
   it("creates another workspace from its own page", async () => {
     invokeMock.mockImplementation(async (command) => {
       if (command === "list_teams") return [];
       if (command === "load_session") return session({ locale: "en" });
-      return session({ locale: "en", current_workspace_id: "2", workspaces: [acme, globex] });
+      return session({
+        locale: "en",
+        current_workspace_id: "2",
+        workspaces: [acme, globex],
+      });
     });
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(await screen.findByRole("button", { name: "Switch workspace" }));
-    await user.click(screen.getByRole("button", { name: "Create another workspace" }));
+    await user.click(
+      await screen.findByRole("button", { name: "Switch workspace" }),
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Create another workspace" }),
+    );
     await user.type(screen.getByLabelText("Workspace name"), "Globex");
     await user.click(screen.getByRole("button", { name: "Create workspace" }));
 
-    expect(invokeMock).toHaveBeenCalledWith("create_workspace", { name: "Globex" });
-    expect(await screen.findByRole("button", { name: "Switch workspace" })).toHaveTextContent("Globex");
+    expect(invokeMock).toHaveBeenCalledWith("create_workspace", {
+      name: "Globex",
+    });
+    expect(
+      await screen.findByRole("button", { name: "Switch workspace" }),
+    ).toHaveTextContent("Globex");
   });
 
   it("goes back from the new workspace page without creating", async () => {
@@ -184,12 +243,21 @@ describe("workspace shell", () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(await screen.findByRole("button", { name: "Switch workspace" }));
-    await user.click(screen.getByRole("button", { name: "Create another workspace" }));
+    await user.click(
+      await screen.findByRole("button", { name: "Switch workspace" }),
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Create another workspace" }),
+    );
     await user.click(screen.getByRole("button", { name: "Cancel" }));
 
-    expect(await screen.findByRole("button", { name: "Switch workspace" })).toHaveTextContent("Acme");
-    expect(invokeMock).not.toHaveBeenCalledWith("create_workspace", expect.anything());
+    expect(
+      await screen.findByRole("button", { name: "Switch workspace" }),
+    ).toHaveTextContent("Acme");
+    expect(invokeMock).not.toHaveBeenCalledWith(
+      "create_workspace",
+      expect.anything(),
+    );
   });
 
   it("closes the switcher when clicking outside or pressing Escape", async () => {
@@ -197,7 +265,9 @@ describe("workspace shell", () => {
     const user = userEvent.setup();
     render(<App />);
 
-    const trigger = await screen.findByRole("button", { name: "Switch workspace" });
+    const trigger = await screen.findByRole("button", {
+      name: "Switch workspace",
+    });
     await user.click(trigger);
     expect(trigger).toHaveAttribute("aria-expanded", "true");
 
@@ -222,7 +292,9 @@ describe("workspace shell", () => {
 
     unmount();
     render(<App />);
-    expect(await screen.findByRole("button", { name: "Collapse" })).toHaveAttribute("aria-expanded", "false");
+    expect(
+      await screen.findByRole("button", { name: "Collapse" }),
+    ).toHaveAttribute("aria-expanded", "false");
     localStorage.clear();
   });
 
@@ -230,10 +302,20 @@ describe("workspace shell", () => {
     mockCore(session({ locale: "en" }));
     render(<App />);
 
-    const nav = within(await screen.findByRole("navigation", { name: "Main navigation" }));
-    expect(nav.getByText("Teams").closest("[aria-current]")).toHaveAttribute("aria-current", "page");
-    expect(nav.getByRole("button", { name: "Rooms" })).not.toHaveAttribute("aria-current");
-    expect(nav.getByText("Tasks").closest("[aria-disabled]")).toHaveAttribute("aria-disabled", "true");
+    const nav = within(
+      await screen.findByRole("navigation", { name: "Main navigation" }),
+    );
+    expect(nav.getByText("Teams").closest("[aria-current]")).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    expect(nav.getByRole("button", { name: "Rooms" })).not.toHaveAttribute(
+      "aria-current",
+    );
+    expect(nav.getByText("Tasks").closest("[aria-disabled]")).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
   });
 
   it("opens the rooms of the workspace from the rail", async () => {
@@ -248,21 +330,32 @@ describe("workspace shell", () => {
     await user.click(await screen.findByRole("button", { name: "Rooms" }));
 
     expect(await screen.findByText("No rooms yet")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Rooms" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("button", { name: "Rooms" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
   });
 
   it("lists the teams of the workspace with their agents", async () => {
     invokeMock.mockImplementation(async (command) =>
       command === "list_teams"
         ? [
-            { id: "t1", name: "General", agents: [{ id: "a1", team_id: "t1", name: "Ana", role: "Developer" }] },
+            {
+              id: "t1",
+              name: "General",
+              agents: [
+                { id: "a1", team_id: "t1", name: "Ana", role: "Developer" },
+              ],
+            },
             { id: "t2", name: "Design", agents: [] },
           ]
         : session({ locale: "en" }),
     );
     render(<App />);
 
-    expect(await screen.findByRole("heading", { name: "General" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: "General" }),
+    ).toBeInTheDocument();
     expect(screen.getByText("Ana")).toBeInTheDocument();
     expect(screen.getByText("Developer")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Design" })).toBeInTheDocument();
@@ -271,27 +364,49 @@ describe("workspace shell", () => {
   it("draws the org chart with you at the root and the teams under it", async () => {
     invokeMock.mockImplementation(async (command) =>
       command === "list_teams"
-        ? [{ id: "t1", name: "General", agents: [{ id: "a1", team_id: "t1", name: "Ana", role: "Developer" }] }]
+        ? [
+            {
+              id: "t1",
+              name: "General",
+              agents: [
+                { id: "a1", team_id: "t1", name: "Ana", role: "Developer" },
+              ],
+            },
+          ]
         : session({ locale: "en" }),
     );
     render(<App />);
 
-    expect(await screen.findByRole("button", { name: "Show or hide You" })).toHaveTextContent("1");
+    expect(
+      await screen.findByRole("button", { name: "Show or hide You" }),
+    ).toHaveTextContent("1");
     expect(screen.getByText("You")).toBeInTheDocument();
     expect(screen.getByText("Supervisor")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Show or hide General" })).toHaveTextContent("1");
+    expect(
+      screen.getByRole("button", { name: "Show or hide General" }),
+    ).toHaveTextContent("1");
   });
 
   it("hides and shows the agents of a team", async () => {
     invokeMock.mockImplementation(async (command) =>
       command === "list_teams"
-        ? [{ id: "t1", name: "General", agents: [{ id: "a1", team_id: "t1", name: "Ana", role: "Developer" }] }]
+        ? [
+            {
+              id: "t1",
+              name: "General",
+              agents: [
+                { id: "a1", team_id: "t1", name: "Ana", role: "Developer" },
+              ],
+            },
+          ]
         : session({ locale: "en" }),
     );
     const user = userEvent.setup();
     render(<App />);
 
-    const toggle = await screen.findByRole("button", { name: "Show or hide General" });
+    const toggle = await screen.findByRole("button", {
+      name: "Show or hide General",
+    });
     expect(toggle).toHaveAttribute("aria-expanded", "true");
     await user.click(toggle);
     expect(screen.queryByText("Ana")).not.toBeInTheDocument();
@@ -302,21 +417,31 @@ describe("workspace shell", () => {
 
   it("hides and shows the teams from the root card", async () => {
     invokeMock.mockImplementation(async (command) =>
-      command === "list_teams" ? [{ id: "t1", name: "General", agents: [] }] : session({ locale: "en" }),
+      command === "list_teams"
+        ? [{ id: "t1", name: "General", agents: [] }]
+        : session({ locale: "en" }),
     );
     const user = userEvent.setup();
     render(<App />);
 
-    const toggle = await screen.findByRole("button", { name: "Show or hide You" });
+    const toggle = await screen.findByRole("button", {
+      name: "Show or hide You",
+    });
     await user.click(toggle);
-    expect(screen.queryByRole("heading", { name: "General" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "General" }),
+    ).not.toBeInTheDocument();
     await user.click(toggle);
-    expect(screen.getByRole("heading", { name: "General" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "General" }),
+    ).toBeInTheDocument();
   });
 
   it("zooms the chart within its limits and resets it", async () => {
     invokeMock.mockImplementation(async (command) =>
-      command === "list_teams" ? [{ id: "t1", name: "General", agents: [] }] : session({ locale: "en" }),
+      command === "list_teams"
+        ? [{ id: "t1", name: "General", agents: [] }]
+        : session({ locale: "en" }),
     );
     const user = userEvent.setup();
     render(<App />);
@@ -339,7 +464,9 @@ describe("workspace shell", () => {
 
   it("selects the root card and clears the selection from the background", async () => {
     invokeMock.mockImplementation(async (command) =>
-      command === "list_teams" ? [{ id: "t1", name: "General", agents: [] }] : session({ locale: "en" }),
+      command === "list_teams"
+        ? [{ id: "t1", name: "General", agents: [] }]
+        : session({ locale: "en" }),
     );
     const user = userEvent.setup();
     render(<App />);
@@ -358,7 +485,15 @@ describe("workspace shell", () => {
   it("shows the selected team in a drawer with its agent count and hire action", async () => {
     invokeMock.mockImplementation(async (command) =>
       command === "list_teams"
-        ? [{ id: "t1", name: "General", agents: [{ id: "a1", team_id: "t1", name: "Ada", role: "Backend dev" }] }]
+        ? [
+            {
+              id: "t1",
+              name: "General",
+              agents: [
+                { id: "a1", team_id: "t1", name: "Ada", role: "Backend dev" },
+              ],
+            },
+          ]
         : session({ locale: "en" }),
     );
     const user = userEvent.setup();
@@ -370,7 +505,9 @@ describe("workspace shell", () => {
     const drawer = screen.getByRole("complementary", { name: "General" });
     expect(within(drawer).getByText("Team")).toBeInTheDocument();
     expect(within(drawer).getByText("1")).toBeInTheDocument();
-    expect(within(drawer).getByRole("button", { name: "Hire agent" })).toBeInTheDocument();
+    expect(
+      within(drawer).getByRole("button", { name: "Hire agent" }),
+    ).toBeInTheDocument();
     await user.click(within(drawer).getByRole("button", { name: "Close" }));
     expect(screen.queryByRole("complementary", { name: "General" })).toBeNull();
     expect(card).toHaveAttribute("aria-pressed", "false");
@@ -395,12 +532,16 @@ describe("workspace shell", () => {
     render(<App />);
 
     await user.click(await screen.findByRole("button", { name: "General" }));
-    const list = within(screen.getByRole("complementary", { name: "General" })).getByRole("list", { name: "Agents" });
+    const list = within(
+      screen.getByRole("complementary", { name: "General" }),
+    ).getByRole("list", { name: "Agents" });
     expect(within(list).getAllByRole("listitem")).toHaveLength(2);
     await user.click(within(list).getByRole("button", { name: /Bea/ }));
 
     const drawer = screen.getByRole("complementary", { name: "Bea" });
-    expect(within(drawer).getByRole("button", { name: "Edit agent" })).toBeInTheDocument();
+    expect(
+      within(drawer).getByRole("button", { name: "Edit agent" }),
+    ).toBeInTheDocument();
   });
 
   describe("dragging cards", () => {
@@ -413,7 +554,16 @@ describe("workspace shell", () => {
                 name: "General",
                 x: 10,
                 y: 5,
-                agents: [{ id: "a1", team_id: "t1", name: "Ada", role: "Backend dev", x: 0, y: 0 }],
+                agents: [
+                  {
+                    id: "a1",
+                    team_id: "t1",
+                    name: "Ada",
+                    role: "Backend dev",
+                    x: 0,
+                    y: 0,
+                  },
+                ],
               },
             ]
           : command === "save_canvas_positions"
@@ -431,7 +581,11 @@ describe("workspace shell", () => {
       const node = card.closest("li") as HTMLElement;
       expect(node.style.transform).toBe("translate(10px, 5px)");
       await user.pointer([
-        { keys: "[MouseLeft>]", target: card, coords: { clientX: 0, clientY: 0 } },
+        {
+          keys: "[MouseLeft>]",
+          target: card,
+          coords: { clientX: 0, clientY: 0 },
+        },
         { coords: { clientX: 20, clientY: 30 } },
         { coords: { clientX: 40, clientY: 25 } },
         { keys: "[/MouseLeft]" },
@@ -439,7 +593,10 @@ describe("workspace shell", () => {
 
       expect(node.style.transform).toBe("translate(50px, 30px)");
       expect(card).toHaveAttribute("aria-pressed", "false");
-      expect(invokeMock).not.toHaveBeenCalledWith("save_canvas_positions", expect.anything());
+      expect(invokeMock).not.toHaveBeenCalledWith(
+        "save_canvas_positions",
+        expect.anything(),
+      );
       await waitFor(
         () =>
           expect(invokeMock).toHaveBeenCalledWith("save_canvas_positions", {
@@ -458,42 +615,73 @@ describe("workspace shell", () => {
       await user.click(card);
       expect(card).toHaveAttribute("aria-pressed", "true");
       await user.pointer([
-        { keys: "[MouseLeft>]", target: card, coords: { clientX: 0, clientY: 0 } },
+        {
+          keys: "[MouseLeft>]",
+          target: card,
+          coords: { clientX: 0, clientY: 0 },
+        },
         { coords: { clientX: 15, clientY: 12 } },
         { keys: "[/MouseLeft]" },
       ]);
 
       expect(card.closest("li")?.style.transform).toBe("translate(15px, 12px)");
-      expect(screen.getByRole("button", { name: "General" }).closest("li")?.style.transform).toBe(
-        "translate(10px, 5px)",
-      );
+      expect(
+        screen.getByRole("button", { name: "General" }).closest("li")?.style
+          .transform,
+      ).toBe("translate(10px, 5px)");
     });
 
     it("keeps a dragged card inside the chart area", async () => {
       mockTeams();
-      const rect = vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (this: HTMLElement) {
-        if (this.firstElementChild?.tagName.toLowerCase() === "svg") {
-          return { left: 0, top: 0, width: 1000, height: 800 } as DOMRect;
-        }
-        const [x, y] = (this.closest("li")?.style.transform.match(/-?\d+(\.\d+)?/g) ?? ["0", "0"]).map(Number);
-        return { left: 100 + x, top: 50 + y, width: 240, height: 64 } as DOMRect;
-      });
-      vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockReturnValue(1000);
-      vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockReturnValue(800);
+      const rect = vi
+        .spyOn(HTMLElement.prototype, "getBoundingClientRect")
+        .mockImplementation(function (this: HTMLElement) {
+          if (this.firstElementChild?.tagName.toLowerCase() === "svg") {
+            return { left: 0, top: 0, width: 1000, height: 800 } as DOMRect;
+          }
+          const [x, y] = (
+            this.closest("li")?.style.transform.match(/-?\d+(\.\d+)?/g) ?? [
+              "0",
+              "0",
+            ]
+          ).map(Number);
+          return {
+            left: 100 + x,
+            top: 50 + y,
+            width: 240,
+            height: 64,
+          } as DOMRect;
+        });
+      vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockReturnValue(
+        1000,
+      );
+      vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockReturnValue(
+        800,
+      );
       const user = userEvent.setup();
       render(<App />);
 
       const card = await screen.findByRole("button", { name: "General" });
       await user.pointer([
-        { keys: "[MouseLeft>]", target: card, coords: { clientX: 500, clientY: 500 } },
+        {
+          keys: "[MouseLeft>]",
+          target: card,
+          coords: { clientX: 500, clientY: 500 },
+        },
         { coords: { clientX: 0, clientY: 0 } },
         { keys: "[/MouseLeft]" },
-        { keys: "[MouseLeft>]", target: card, coords: { clientX: 0, clientY: 0 } },
+        {
+          keys: "[MouseLeft>]",
+          target: card,
+          coords: { clientX: 0, clientY: 0 },
+        },
         { coords: { clientX: 5000, clientY: 5000 } },
         { keys: "[/MouseLeft]" },
       ]);
 
-      expect(card.closest("li")?.style.transform).toBe("translate(660px, 686px)");
+      expect(card.closest("li")?.style.transform).toBe(
+        "translate(660px, 686px)",
+      );
       rect.mockRestore();
     });
 
@@ -509,11 +697,15 @@ describe("workspace shell", () => {
       render(<App />);
 
       const card = await screen.findByRole("button", { name: "General" });
-      expect(card.closest("li")?.style.transform).toBe("translate(300px, 200px)");
+      expect(card.closest("li")?.style.transform).toBe(
+        "translate(300px, 200px)",
+      );
       await user.click(screen.getByRole("button", { name: "Reset layout" }));
 
       expect(invokeMock).toHaveBeenCalledWith("reset_canvas_positions", {});
-      await waitFor(() => expect(card.closest("li")?.style.transform).toBe("translate(0px)"));
+      await waitFor(() =>
+        expect(card.closest("li")?.style.transform).toBe("translate(0px)"),
+      );
     });
 
     it("does not drag when the pointer starts on the toggle button", async () => {
@@ -521,21 +713,37 @@ describe("workspace shell", () => {
       const user = userEvent.setup();
       render(<App />);
 
-      const toggle = await screen.findByRole("button", { name: "Show or hide General" });
+      const toggle = await screen.findByRole("button", {
+        name: "Show or hide General",
+      });
       await user.pointer([
-        { keys: "[MouseLeft>]", target: toggle, coords: { clientX: 0, clientY: 0 } },
+        {
+          keys: "[MouseLeft>]",
+          target: toggle,
+          coords: { clientX: 0, clientY: 0 },
+        },
         { coords: { clientX: 40, clientY: 40 } },
         { keys: "[/MouseLeft]" },
       ]);
 
-      expect(toggle.closest("li")?.style.transform).toBe("translate(10px, 5px)");
+      expect(toggle.closest("li")?.style.transform).toBe(
+        "translate(10px, 5px)",
+      );
     });
   });
 
   it("shows the selected agent in a drawer and closes it", async () => {
     invokeMock.mockImplementation(async (command) =>
       command === "list_teams"
-        ? [{ id: "t1", name: "General", agents: [{ id: "a1", team_id: "t1", name: "Ada", role: "Backend dev" }] }]
+        ? [
+            {
+              id: "t1",
+              name: "General",
+              agents: [
+                { id: "a1", team_id: "t1", name: "Ada", role: "Backend dev" },
+              ],
+            },
+          ]
         : session({ locale: "en" }),
     );
     const user = userEvent.setup();
@@ -546,9 +754,13 @@ describe("workspace shell", () => {
     await user.click(card);
     const drawer = screen.getByRole("complementary", { name: "Ada" });
     expect(within(drawer).getByText("General")).toBeInTheDocument();
-    expect(within(drawer).getAllByText("Backend dev").length).toBeGreaterThan(0);
+    expect(within(drawer).getAllByText("Backend dev").length).toBeGreaterThan(
+      0,
+    );
     await user.click(screen.getByTestId("board"));
-    expect(screen.getByRole("complementary", { name: "Ada" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("complementary", { name: "Ada" }),
+    ).toBeInTheDocument();
     expect(card).toHaveAttribute("aria-pressed", "true");
     await user.click(within(drawer).getByRole("button", { name: "Close" }));
     expect(screen.queryByRole("complementary", { name: "Ada" })).toBeNull();
@@ -559,15 +771,21 @@ describe("workspace shell", () => {
     mockCore(session({ locale: "en" }));
     render(<App />);
 
-    expect(await screen.findByRole("button", { name: "New team" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Zoom in" })).not.toBeInTheDocument();
+    expect(
+      await screen.findByRole("button", { name: "New team" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Zoom in" }),
+    ).not.toBeInTheDocument();
   });
 
   it("shows the empty state when the workspace has no teams", async () => {
     mockCore(session({ locale: "en" }));
     render(<App />);
 
-    expect(await screen.findByText("Create your first team to start adding agents.")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Create your first team to start adding agents."),
+    ).toBeInTheDocument();
   });
 
   it("shows the translated error when the teams fail to load", async () => {
@@ -577,7 +795,9 @@ describe("workspace shell", () => {
     });
     render(<App />);
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("The local database failed. Try again.");
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "The local database failed. Try again.",
+    );
   });
 
   it("creates a team from the form and shows it", async () => {
@@ -595,7 +815,9 @@ describe("workspace shell", () => {
     await user.click(screen.getByRole("button", { name: "Create team" }));
 
     expect(invokeMock).toHaveBeenCalledWith("create_team", { name: "Design" });
-    expect(await screen.findByRole("heading", { name: "Design" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: "Design" }),
+    ).toBeInTheDocument();
     expect(screen.queryByLabelText("Team name")).not.toBeInTheDocument();
   });
 
@@ -606,10 +828,14 @@ describe("workspace shell", () => {
 
     await user.click(await screen.findByRole("button", { name: "New team" }));
     const dialog = screen.getByRole("dialog");
-    expect(within(dialog).getByText("This is how it will look in your office")).toBeInTheDocument();
+    expect(
+      within(dialog).getByText("This is how it will look in your office"),
+    ).toBeInTheDocument();
     await user.type(screen.getByLabelText("Team name"), "Design");
 
-    expect(within(dialog).getAllByText("Design", { selector: "span" }).length).toBeGreaterThan(0);
+    expect(
+      within(dialog).getAllByText("Design", { selector: "span" }).length,
+    ).toBeGreaterThan(0);
   });
 
   it("closes the team form from the close button of the modal", async () => {
@@ -618,7 +844,9 @@ describe("workspace shell", () => {
     render(<App />);
 
     await user.click(await screen.findByRole("button", { name: "New team" }));
-    expect(screen.getByRole("dialog", { name: "New team" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("dialog", { name: "New team" }),
+    ).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Close" }));
 
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -637,7 +865,9 @@ describe("workspace shell", () => {
     await user.type(screen.getByLabelText("Team name"), "Design");
     await user.click(screen.getByRole("button", { name: "Create team" }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("Enter a name of up to 80 characters.");
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Enter a name of up to 80 characters.",
+    );
     expect(screen.getByLabelText("Team name")).toBeInTheDocument();
   });
 
@@ -645,8 +875,12 @@ describe("workspace shell", () => {
     mockCore(session({ locale: "en" }));
     render(<App />);
 
-    expect(await screen.findByRole("button", { name: "New team" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Hire agent" })).not.toBeInTheDocument();
+    expect(
+      await screen.findByRole("button", { name: "New team" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Hire agent" }),
+    ).not.toBeInTheDocument();
   });
 
   it("creates an agent from the selected team", async () => {
@@ -655,7 +889,11 @@ describe("workspace shell", () => {
       { id: "t2", name: "Design", agents: [] },
     ];
     const withAgent = [
-      { id: "t1", name: "General", agents: [{ id: "a1", team_id: "t1", name: "Ana", role: "Developer" }] },
+      {
+        id: "t1",
+        name: "General",
+        agents: [{ id: "a1", team_id: "t1", name: "Ana", role: "Developer" }],
+      },
     ];
     invokeMock.mockImplementation(async (command) => {
       if (command === "list_teams") return teams;
@@ -668,24 +906,38 @@ describe("workspace shell", () => {
     const user = userEvent.setup();
     render(<App />);
 
-    const hireButtons = await screen.findAllByRole("button", { name: "Hire agent" });
+    const hireButtons = await screen.findAllByRole("button", {
+      name: "Hire agent",
+    });
     expect(hireButtons).toHaveLength(2);
     await user.click(hireButtons[0]);
-    await user.click(await screen.findByRole("button", { name: "Create custom agent" }));
+    await user.click(
+      await screen.findByRole("button", { name: "Create custom agent" }),
+    );
     expect(screen.queryByLabelText("Team")).not.toBeInTheDocument();
     const next = screen.getByRole("button", { name: "Continue" });
     expect(next).toBeDisabled();
     await user.type(screen.getByLabelText("Name"), "Ana");
-    expect(within(screen.getByRole("group", { name: "Engineering" })).getAllByRole("option")).toHaveLength(2);
+    expect(
+      within(screen.getByRole("group", { name: "Engineering" })).getAllByRole(
+        "option",
+      ),
+    ).toHaveLength(2);
     await user.type(screen.getByLabelText("Search role"), "qa");
     expect(screen.getAllByRole("option")).toHaveLength(1);
     await user.clear(screen.getByLabelText("Search role"));
     await user.type(screen.getByLabelText("Search role"), "zzz");
     expect(screen.getByText("No role matches")).toBeInTheDocument();
     await user.clear(screen.getByLabelText("Search role"));
-    await user.click(screen.getByRole("option", { name: "Software Developer" }));
-    expect(screen.getByRole("option", { name: "Software Developer" })).toHaveAttribute("aria-selected", "true");
-    await user.click(screen.getByRole("option", { name: "Software Developer" }));
+    await user.click(
+      screen.getByRole("option", { name: "Software Developer" }),
+    );
+    expect(
+      screen.getByRole("option", { name: "Software Developer" }),
+    ).toHaveAttribute("aria-selected", "true");
+    await user.click(
+      screen.getByRole("option", { name: "Software Developer" }),
+    );
     await user.click(next);
     expect(screen.getByRole("button", { name: "Continue" })).toBeDisabled();
     await user.click(screen.getByRole("option", { name: "gpt-5" }));
@@ -705,17 +957,31 @@ describe("workspace shell", () => {
       },
     });
     expect(await screen.findByText("Ana")).toBeInTheDocument();
-    expect(screen.queryByRole("listbox", { name: "Role" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("listbox", { name: "Role" }),
+    ).not.toBeInTheDocument();
   });
 
   describe("editing an agent", () => {
     const teams = [
-      { id: "t1", name: "General", agents: [{ id: "a1", team_id: "t1", name: "Ana", role: "Software Developer" }] },
+      {
+        id: "t1",
+        name: "General",
+        agents: [
+          { id: "a1", team_id: "t1", name: "Ana", role: "Software Developer" },
+        ],
+      },
       { id: "t2", name: "Design", agents: [] },
     ];
     const moved = [
       { id: "t1", name: "General", agents: [] },
-      { id: "t2", name: "Design", agents: [{ id: "a1", team_id: "t2", name: "Bea", role: "Software Developer" }] },
+      {
+        id: "t2",
+        name: "Design",
+        agents: [
+          { id: "a1", team_id: "t2", name: "Bea", role: "Software Developer" },
+        ],
+      },
     ];
     const detail = {
       id: "a1",
@@ -766,7 +1032,9 @@ describe("workspace shell", () => {
       await openEditor(user);
       expect(invokeMock).toHaveBeenCalledWith("get_agent", { agentId: "a1" });
       expect(screen.getByRole("tab", { name: "Model" })).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: "Save changes" })).toBeDisabled();
+      expect(
+        screen.getByRole("button", { name: "Save changes" }),
+      ).toBeDisabled();
       await user.clear(screen.getByLabelText("Name"));
       await user.type(screen.getByLabelText("Name"), "Bea");
       await user.click(screen.getByRole("tab", { name: "Team" }));
@@ -785,17 +1053,24 @@ describe("workspace shell", () => {
           model: "gpt-5",
         },
       });
-      expect(await screen.findByRole("button", { name: "Bea" })).toBeInTheDocument();
-      expect(screen.getByRole("dialog", { name: "Edit agent \u00b7 Ana" })).toBeInTheDocument();
+      expect(
+        await screen.findByRole("button", { name: "Bea" }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("dialog", { name: "Edit agent \u00b7 Ana" }),
+      ).toBeInTheDocument();
       await user.click(screen.getByRole("tab", { name: "Instructions" }));
-      expect(screen.getByRole("textbox", { name: "Instructions" })).toHaveValue("Be careful");
+      expect(screen.getByRole("textbox", { name: "Instructions" })).toHaveValue(
+        "Be careful",
+      );
     });
 
     it("warns when the agent's local model is not installed and offers only installed ones", async () => {
       mockEditing();
       const base = invokeMock.getMockImplementation()!;
       invokeMock.mockImplementation(async (command, args) => {
-        if (command === "get_agent") return { ...detail, provider: "ollama", model: "qwen2.5-coder:32b" };
+        if (command === "get_agent")
+          return { ...detail, provider: "ollama", model: "qwen2.5-coder:32b" };
         if (command === "detect_local_models") return detectedModels;
         return base(command, args);
       });
@@ -805,8 +1080,14 @@ describe("workspace shell", () => {
       const dialog = await openEditor(user);
       await user.click(within(dialog).getByRole("tab", { name: "Model" }));
 
-      expect(await within(dialog).findByRole("alert")).toHaveTextContent("This model is not installed");
-      expect(within(dialog).getAllByRole("option").map((option) => option.textContent)).toEqual(["llama3.3:70b"]);
+      expect(await within(dialog).findByRole("alert")).toHaveTextContent(
+        "This model is not installed",
+      );
+      expect(
+        within(dialog)
+          .getAllByRole("option")
+          .map((option) => option.textContent),
+      ).toEqual(["llama3.3:70b"]);
     });
 
     it("changes the provider and model only when the user picks another one", async () => {
@@ -816,9 +1097,15 @@ describe("workspace shell", () => {
 
       const dialog = await openEditor(user);
       await user.click(within(dialog).getByRole("tab", { name: "Model" }));
-      expect(within(dialog).getByRole("button", { name: "Save changes" })).toBeDisabled();
-      await user.click(within(dialog).getByRole("option", { name: "claude-opus-5-5" }));
-      await user.click(within(dialog).getByRole("button", { name: "Save changes" }));
+      expect(
+        within(dialog).getByRole("button", { name: "Save changes" }),
+      ).toBeDisabled();
+      await user.click(
+        within(dialog).getByRole("option", { name: "claude-opus-5-5" }),
+      );
+      await user.click(
+        within(dialog).getByRole("button", { name: "Save changes" }),
+      );
 
       expect(invokeMock).toHaveBeenCalledWith("update_agent", {
         agentId: "a1",
@@ -839,7 +1126,8 @@ describe("workspace shell", () => {
         if (command === "list_teams") return teams;
         if (command === "list_agent_roles") return roles;
         if (command === "list_llm_providers") return providers;
-        if (command === "get_agent") return { ...detail, model: "gpt-4-retired" };
+        if (command === "get_agent")
+          return { ...detail, model: "gpt-4-retired" };
         return session({ locale: "en" });
       });
       const user = userEvent.setup();
@@ -848,7 +1136,9 @@ describe("workspace shell", () => {
       const dialog = await openEditor(user);
       await user.click(within(dialog).getByRole("tab", { name: "Model" }));
 
-      expect(within(dialog).getByRole("alert")).toHaveTextContent("This model is no longer in the catalog.");
+      expect(within(dialog).getByRole("alert")).toHaveTextContent(
+        "This model is no longer in the catalog.",
+      );
     });
 
     it("shows the current team and each team with its agent count", async () => {
@@ -859,14 +1149,20 @@ describe("workspace shell", () => {
       const dialog = await openEditor(user);
       await user.click(within(dialog).getByRole("tab", { name: "Team" }));
 
-      expect(within(dialog).getByText("You have one agent available")).toBeInTheDocument();
+      expect(
+        within(dialog).getByText("You have one agent available"),
+      ).toBeInTheDocument();
       expect(within(dialog).getByText("Ana")).toBeInTheDocument();
-      expect(within(dialog).getByText("Software Developer")).toBeInTheDocument();
+      expect(
+        within(dialog).getByText("Software Developer"),
+      ).toBeInTheDocument();
       const general = within(dialog).getByRole("option", { name: /General/ });
       expect(general).toHaveAttribute("aria-selected", "true");
       expect(general).toHaveTextContent("Current");
       expect(general).toHaveTextContent("1");
-      expect(within(dialog).getByRole("option", { name: /Design/ })).toHaveAttribute("aria-selected", "false");
+      expect(
+        within(dialog).getByRole("option", { name: /Design/ }),
+      ).toHaveAttribute("aria-selected", "false");
       expect(within(dialog).getByText("2 teams")).toBeInTheDocument();
     });
 
@@ -880,7 +1176,9 @@ describe("workspace shell", () => {
       await user.click(within(dialog).getByRole("listbox", { name: "Team" }));
       await user.keyboard("{ArrowDown}{Enter}");
 
-      expect(within(dialog).getByRole("option", { name: /Design/ })).toHaveAttribute("aria-selected", "true");
+      expect(
+        within(dialog).getByRole("option", { name: /Design/ }),
+      ).toHaveAttribute("aria-selected", "true");
     });
 
     it("keeps the editor open and shows the error when saving fails", async () => {
@@ -892,17 +1190,25 @@ describe("workspace shell", () => {
 
       await openEditor(user);
       await user.click(screen.getByRole("tab", { name: "Instructions" }));
-      await user.type(screen.getByRole("textbox", { name: "Instructions" }), "!");
+      await user.type(
+        screen.getByRole("textbox", { name: "Instructions" }),
+        "!",
+      );
       await user.click(screen.getByRole("button", { name: "Save changes" }));
 
-      expect(await screen.findByRole("alert")).toHaveTextContent("That agent no longer exists.");
-      expect(screen.getByRole("dialog", { name: "Edit agent \u00b7 Ana" })).toBeInTheDocument();
+      expect(await screen.findByRole("alert")).toHaveTextContent(
+        "That agent no longer exists.",
+      );
+      expect(
+        screen.getByRole("dialog", { name: "Edit agent \u00b7 Ana" }),
+      ).toBeInTheDocument();
     });
 
     it("asks for confirmation and removes the agent from the chart", async () => {
       invokeMock.mockImplementation(async (command) => {
         if (command === "list_teams") return teams;
-        if (command === "delete_agent") return [{ ...teams[0], agents: [] }, teams[1]];
+        if (command === "delete_agent")
+          return [{ ...teams[0], agents: [] }, teams[1]];
         return session({ locale: "en" });
       });
       const user = userEvent.setup();
@@ -911,12 +1217,23 @@ describe("workspace shell", () => {
       await user.click(await screen.findByRole("button", { name: "Ana" }));
       await user.click(screen.getByRole("button", { name: "Delete agent" }));
       const dialog = await screen.findByRole("dialog", { name: "Delete Ana?" });
-      expect(invokeMock).not.toHaveBeenCalledWith("delete_agent", expect.anything());
-      await user.click(within(dialog).getByRole("button", { name: "Delete agent" }));
+      expect(invokeMock).not.toHaveBeenCalledWith(
+        "delete_agent",
+        expect.anything(),
+      );
+      await user.click(
+        within(dialog).getByRole("button", { name: "Delete agent" }),
+      );
 
-      expect(invokeMock).toHaveBeenCalledWith("delete_agent", { agentId: "a1" });
-      await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
-      expect(screen.queryByRole("button", { name: "Ana" })).not.toBeInTheDocument();
+      expect(invokeMock).toHaveBeenCalledWith("delete_agent", {
+        agentId: "a1",
+      });
+      await waitFor(() =>
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+      );
+      expect(
+        screen.queryByRole("button", { name: "Ana" }),
+      ).not.toBeInTheDocument();
     });
 
     it("keeps the dialog open and shows the error when deleting fails", async () => {
@@ -931,10 +1248,16 @@ describe("workspace shell", () => {
       await user.click(await screen.findByRole("button", { name: "Ana" }));
       await user.click(screen.getByRole("button", { name: "Delete agent" }));
       const dialog = await screen.findByRole("dialog", { name: "Delete Ana?" });
-      await user.click(within(dialog).getByRole("button", { name: "Delete agent" }));
+      await user.click(
+        within(dialog).getByRole("button", { name: "Delete agent" }),
+      );
 
-      expect(await screen.findByRole("alert")).toHaveTextContent("That agent no longer exists.");
-      expect(screen.getByRole("dialog", { name: "Delete Ana?" })).toBeInTheDocument();
+      expect(await screen.findByRole("alert")).toHaveTextContent(
+        "That agent no longer exists.",
+      );
+      expect(
+        screen.getByRole("dialog", { name: "Delete Ana?" }),
+      ).toBeInTheDocument();
     });
   });
 });
@@ -946,7 +1269,8 @@ describe("agent catalog", () => {
       name: "Product Owner",
       role: "Product Owner",
       description: "Orders priorities.",
-      instructions: "You are a Product Owner.\n\nHow you work:\n- Start with the problem.\n- Ask questions.",
+      instructions:
+        "You are a Product Owner.\n\nHow you work:\n- Start with the problem.\n- Ask questions.",
     },
     {
       key: "qa_engineer",
@@ -957,9 +1281,17 @@ describe("agent catalog", () => {
     },
   ];
   const team = { id: "t1", name: "General", agents: [] };
-  const hired = [{ ...team, agents: [{ id: "a1", team_id: "t1", name: "Ana", role: "Product Owner" }] }];
+  const hired = [
+    {
+      ...team,
+      agents: [{ id: "a1", team_id: "t1", name: "Ana", role: "Product Owner" }],
+    },
+  ];
 
-  function mockCatalog(createAgent: () => unknown = () => hired, detected: unknown = detectedModels) {
+  function mockCatalog(
+    createAgent: () => unknown = () => hired,
+    detected: unknown = detectedModels,
+  ) {
     invokeMock.mockImplementation(async (command) => {
       if (command === "detect_local_models") return detected;
       if (command === "list_teams") return [team];
@@ -981,10 +1313,16 @@ describe("agent catalog", () => {
     render(<App />);
 
     await openCatalog(user);
-    expect(await screen.findByRole("heading", { name: "Hire your next agent" })).toBeInTheDocument();
-    const nav = within(screen.getByRole("navigation", { name: "Main navigation" }));
+    expect(
+      await screen.findByRole("heading", { name: "Hire your next agent" }),
+    ).toBeInTheDocument();
+    const nav = within(
+      screen.getByRole("navigation", { name: "Main navigation" }),
+    );
     await user.click(nav.getByRole("button", { name: "Teams" }));
-    expect(screen.queryByRole("heading", { name: "Hire your next agent" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Hire your next agent" }),
+    ).not.toBeInTheDocument();
   });
 
   it("lists the templates of the team catalog and goes back to the teams", async () => {
@@ -994,11 +1332,24 @@ describe("agent catalog", () => {
 
     await openCatalog(user);
 
-    expect(await screen.findByRole("heading", { name: "Hire your next agent" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Product Owner" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "QA Engineer" })).toBeInTheDocument();
-    await user.click(within(screen.getByRole("navigation", { name: "Breadcrumb" })).getByRole("button", { name: "Teams" }));
-    expect(screen.queryByRole("heading", { name: "Hire your next agent" })).not.toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: "Hire your next agent" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Product Owner" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "QA Engineer" }),
+    ).toBeInTheDocument();
+    await user.click(
+      within(screen.getByRole("navigation", { name: "Breadcrumb" })).getByRole(
+        "button",
+        { name: "Teams" },
+      ),
+    );
+    expect(
+      screen.queryByRole("heading", { name: "Hire your next agent" }),
+    ).not.toBeInTheDocument();
   });
 
   it("groups the templates in one row per area and hides empty areas", async () => {
@@ -1007,15 +1358,32 @@ describe("agent catalog", () => {
     render(<App />);
     await openCatalog(user);
 
-    const product = within(await screen.findByRole("region", { name: "Product" }));
-    const engineering = within(screen.getByRole("region", { name: "Engineering" }));
-    expect(product.getByRole("heading", { name: "Product Owner" })).toBeInTheDocument();
-    expect(product.queryByRole("heading", { name: "QA Engineer" })).not.toBeInTheDocument();
-    expect(engineering.getByRole("heading", { name: "QA Engineer" })).toBeInTheDocument();
+    const product = within(
+      await screen.findByRole("region", { name: "Product" }),
+    );
+    const engineering = within(
+      screen.getByRole("region", { name: "Engineering" }),
+    );
+    expect(
+      product.getByRole("heading", { name: "Product Owner" }),
+    ).toBeInTheDocument();
+    expect(
+      product.queryByRole("heading", { name: "QA Engineer" }),
+    ).not.toBeInTheDocument();
+    expect(
+      engineering.getByRole("heading", { name: "QA Engineer" }),
+    ).toBeInTheDocument();
 
-    await user.type(screen.getByRole("searchbox", { name: "Search templates" }), "defects");
-    expect(screen.queryByRole("region", { name: "Product" })).not.toBeInTheDocument();
-    expect(screen.getByRole("region", { name: "Engineering" })).toBeInTheDocument();
+    await user.type(
+      screen.getByRole("searchbox", { name: "Search templates" }),
+      "defects",
+    );
+    expect(
+      screen.queryByRole("region", { name: "Product" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("region", { name: "Engineering" }),
+    ).toBeInTheDocument();
   });
 
   it("filters the templates by search text and by category", async () => {
@@ -1025,19 +1393,37 @@ describe("agent catalog", () => {
     await openCatalog(user);
     await screen.findByRole("heading", { name: "Product Owner" });
 
-    await user.type(screen.getByRole("searchbox", { name: "Search templates" }), "defects");
-    expect(screen.queryByRole("heading", { name: "Product Owner" })).not.toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "QA Engineer" })).toBeInTheDocument();
+    await user.type(
+      screen.getByRole("searchbox", { name: "Search templates" }),
+      "defects",
+    );
+    expect(
+      screen.queryByRole("heading", { name: "Product Owner" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "QA Engineer" }),
+    ).toBeInTheDocument();
 
-    await user.type(screen.getByRole("searchbox", { name: "Search templates" }), " nothing");
+    await user.type(
+      screen.getByRole("searchbox", { name: "Search templates" }),
+      " nothing",
+    );
     expect(screen.getByText("No template matches")).toBeInTheDocument();
 
-    await user.clear(screen.getByRole("searchbox", { name: "Search templates" }));
+    await user.clear(
+      screen.getByRole("searchbox", { name: "Search templates" }),
+    );
     await user.click(screen.getByRole("button", { name: "Product" }));
-    expect(screen.getByRole("heading", { name: "Product Owner" })).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "QA Engineer" })).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Product Owner" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "QA Engineer" }),
+    ).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "All" }));
-    expect(screen.getByRole("heading", { name: "QA Engineer" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "QA Engineer" }),
+    ).toBeInTheDocument();
   });
 
   it("shows the template instructions by section", async () => {
@@ -1046,10 +1432,16 @@ describe("agent catalog", () => {
     render(<App />);
     await openCatalog(user);
 
-    await user.click(await screen.findByRole("button", { name: "View details Product Owner" }));
+    await user.click(
+      await screen.findByRole("button", { name: "View details Product Owner" }),
+    );
 
-    const dialog = within(screen.getByRole("dialog", { name: "Product Owner" }));
-    expect(dialog.getByRole("heading", { name: "How you work" })).toBeInTheDocument();
+    const dialog = within(
+      screen.getByRole("dialog", { name: "Product Owner" }),
+    );
+    expect(
+      dialog.getByRole("heading", { name: "How you work" }),
+    ).toBeInTheDocument();
     expect(dialog.getByText("Start with the problem.")).toBeInTheDocument();
   });
 
@@ -1059,16 +1451,24 @@ describe("agent catalog", () => {
     render(<App />);
     await openCatalog(user);
 
-    await user.click(await screen.findByRole("button", { name: "Hire Product Owner" }));
+    await user.click(
+      await screen.findByRole("button", { name: "Hire Product Owner" }),
+    );
     await user.click(screen.getByRole("button", { name: "Continue" }));
     await user.click(screen.getByRole("option", { name: "gpt-5" }));
     await user.click(screen.getByRole("button", { name: "Continue" }));
 
-    expect(screen.queryByRole("button", { name: "Restore template" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Restore template" }),
+    ).not.toBeInTheDocument();
     await user.type(screen.getByLabelText("Instructions"), " Extra.");
     await user.click(screen.getByRole("button", { name: "Restore template" }));
-    expect(screen.getByLabelText("Instructions")).toHaveValue(templates[0].instructions);
-    expect(screen.queryByRole("button", { name: "Restore template" })).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Instructions")).toHaveValue(
+      templates[0].instructions,
+    );
+    expect(
+      screen.queryByRole("button", { name: "Restore template" }),
+    ).not.toBeInTheDocument();
   });
 
   it("hires from a template through the wizard", async () => {
@@ -1077,21 +1477,31 @@ describe("agent catalog", () => {
     render(<App />);
     await openCatalog(user);
 
-    await user.click(await screen.findByRole("button", { name: "Hire Product Owner" }));
+    await user.click(
+      await screen.findByRole("button", { name: "Hire Product Owner" }),
+    );
     expect(screen.getByLabelText("Name")).toHaveValue("Product Owner");
     await user.clear(screen.getByLabelText("Name"));
     await user.type(screen.getByLabelText("Name"), "Ana");
-    expect(screen.getByRole("option", { name: "Product Owner" })).toHaveAttribute("aria-selected", "true");
+    expect(
+      screen.getByRole("option", { name: "Product Owner" }),
+    ).toHaveAttribute("aria-selected", "true");
     await user.click(screen.getByLabelText("Search role"));
     await user.keyboard("{ArrowDown}{Enter}");
-    expect(screen.getByRole("option", { name: "Software Developer" })).toHaveAttribute("aria-selected", "true");
+    expect(
+      screen.getByRole("option", { name: "Software Developer" }),
+    ).toHaveAttribute("aria-selected", "true");
     await user.click(screen.getByRole("option", { name: "Product Owner" }));
     await user.click(screen.getByRole("button", { name: "Continue" }));
     expect(screen.getByRole("button", { name: "Continue" })).toBeDisabled();
     await user.click(screen.getByRole("option", { name: "gpt-5" }));
     await user.click(screen.getByRole("button", { name: "Continue" }));
-    expect(screen.getByLabelText("Description")).toHaveValue("Orders priorities.");
-    expect(screen.getByLabelText("Instructions")).toHaveValue(templates[0].instructions);
+    expect(screen.getByLabelText("Description")).toHaveValue(
+      "Orders priorities.",
+    );
+    expect(screen.getByLabelText("Instructions")).toHaveValue(
+      templates[0].instructions,
+    );
     await user.click(screen.getByRole("button", { name: "Hire" }));
 
     expect(invokeMock).toHaveBeenCalledWith("create_agent", {
@@ -1107,7 +1517,9 @@ describe("agent catalog", () => {
       },
     });
     expect(await screen.findByText("Ana")).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Hire your next agent" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Hire your next agent" }),
+    ).not.toBeInTheDocument();
   });
 
   it("picks a model by where it runs and filters it with the search", async () => {
@@ -1116,10 +1528,14 @@ describe("agent catalog", () => {
     render(<App />);
     await openCatalog(user);
 
-    await user.click(await screen.findByRole("button", { name: "Hire QA Engineer" }));
+    await user.click(
+      await screen.findByRole("button", { name: "Hire QA Engineer" }),
+    );
     await user.click(screen.getByRole("button", { name: "Continue" }));
     expect(screen.getAllByRole("option")).toHaveLength(3);
-    expect(screen.getByRole("group", { name: "Anthropic" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("group", { name: "Anthropic" }),
+    ).toBeInTheDocument();
     await user.type(screen.getByLabelText("Search model"), "opus");
     expect(screen.getAllByRole("option")).toHaveLength(1);
     await user.clear(screen.getByLabelText("Search model"));
@@ -1141,7 +1557,9 @@ describe("agent catalog", () => {
     let running = false;
     invokeMock.mockImplementation(async (command) => {
       if (command === "detect_local_models")
-        return [{ key: "ollama", running, models: running ? ["qwen2.5:0.5b"] : [] }];
+        return [
+          { key: "ollama", running, models: running ? ["qwen2.5:0.5b"] : [] },
+        ];
       if (command === "list_teams") return [team];
       if (command === "list_agent_templates") return templates;
       if (command === "list_agent_roles") return roles;
@@ -1153,23 +1571,36 @@ describe("agent catalog", () => {
     render(<App />);
     await openCatalog(user);
 
-    await user.click(await screen.findByRole("button", { name: "Hire QA Engineer" }));
+    await user.click(
+      await screen.findByRole("button", { name: "Hire QA Engineer" }),
+    );
     await user.click(screen.getByRole("button", { name: "Continue" }));
     await user.click(screen.getByRole("button", { name: "On my computer" }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("This runtime is not running");
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "This runtime is not running",
+    );
     expect(screen.queryByRole("option")).not.toBeInTheDocument();
-    expect(screen.queryByRole("textbox", { name: "Model name" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("textbox", { name: "Model name" }),
+    ).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Continue" })).toBeDisabled();
     running = true;
     await user.click(screen.getByRole("button", { name: "Detect again" }));
-    await user.click(await screen.findByRole("option", { name: "qwen2.5:0.5b" }));
+    await user.click(
+      await screen.findByRole("option", { name: "qwen2.5:0.5b" }),
+    );
     await user.click(screen.getByRole("button", { name: "Continue" }));
     await user.click(screen.getByRole("button", { name: "Hire" }));
 
     expect(invokeMock).toHaveBeenCalledWith(
       "create_agent",
-      expect.objectContaining({ draft: expect.objectContaining({ provider: "ollama", model: "qwen2.5:0.5b" }) }),
+      expect.objectContaining({
+        draft: expect.objectContaining({
+          provider: "ollama",
+          model: "qwen2.5:0.5b",
+        }),
+      }),
     );
   });
 
@@ -1179,12 +1610,18 @@ describe("agent catalog", () => {
     render(<App />);
     await openCatalog(user);
 
-    await user.click(await screen.findByRole("button", { name: "Hire QA Engineer" }));
+    await user.click(
+      await screen.findByRole("button", { name: "Hire QA Engineer" }),
+    );
     await user.click(screen.getByRole("button", { name: "Continue" }));
     await user.click(screen.getByRole("button", { name: "On my computer" }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("No models installed");
-    expect(screen.getByRole("button", { name: "Detect again" })).toBeInTheDocument();
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "No models installed",
+    );
+    expect(
+      screen.getByRole("button", { name: "Detect again" }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Continue" })).toBeDisabled();
   });
 
@@ -1196,15 +1633,21 @@ describe("agent catalog", () => {
     render(<App />);
     await openCatalog(user);
 
-    await user.click(await screen.findByRole("button", { name: "Hire QA Engineer" }));
+    await user.click(
+      await screen.findByRole("button", { name: "Hire QA Engineer" }),
+    );
     await user.click(screen.getByRole("button", { name: "Continue" }));
     await user.click(screen.getByRole("option", { name: "gpt-5" }));
     await user.click(screen.getByRole("button", { name: "Continue" }));
     await user.click(screen.getByRole("button", { name: "Hire" }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("Check the fields");
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Check the fields",
+    );
     expect(screen.getByRole("button", { name: "Hire" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Hire your next agent" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Hire your next agent" }),
+    ).toBeInTheDocument();
   });
 });
 
@@ -1216,12 +1659,23 @@ describe("settings", () => {
 
     await user.click(await screen.findByRole("button", { name: "Settings" }));
 
-    expect(screen.getByRole("heading", { name: "Language" })).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Theme" })).not.toBeInTheDocument();
-    const nav = within(screen.getByRole("navigation", { name: "Main navigation" }));
-    expect(nav.getByText("Settings").closest("[aria-current]")).toHaveAttribute("aria-current", "page");
+    expect(
+      screen.getByRole("heading", { name: "Language" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Theme" }),
+    ).not.toBeInTheDocument();
+    const nav = within(
+      screen.getByRole("navigation", { name: "Main navigation" }),
+    );
+    expect(nav.getByText("Settings").closest("[aria-current]")).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
     await user.click(nav.getByRole("button", { name: "Teams" }));
-    expect(screen.queryByRole("heading", { name: "Language" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Language" }),
+    ).not.toBeInTheDocument();
   });
 
   it("switches between setting categories", async () => {
@@ -1230,14 +1684,23 @@ describe("settings", () => {
     render(<App />);
 
     await user.click(await screen.findByRole("button", { name: "Settings" }));
-    const categories = within(screen.getByRole("navigation", { name: "Settings categories" }));
-    expect(categories.getByRole("button", { name: "General" })).toHaveAttribute("aria-current", "true");
+    const categories = within(
+      screen.getByRole("navigation", { name: "Settings categories" }),
+    );
+    expect(categories.getByRole("button", { name: "General" })).toHaveAttribute(
+      "aria-current",
+      "true",
+    );
 
     await user.click(categories.getByRole("button", { name: "Appearance" }));
 
     expect(screen.getByRole("heading", { name: "Theme" })).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Language" })).not.toBeInTheDocument();
-    expect(categories.getByRole("button", { name: "Appearance" })).toHaveAttribute("aria-current", "true");
+    expect(
+      screen.queryByRole("heading", { name: "Language" }),
+    ).not.toBeInTheDocument();
+    expect(
+      categories.getByRole("button", { name: "Appearance" }),
+    ).toHaveAttribute("aria-current", "true");
   });
 
   it("changes the language and shows the app in it", async () => {
@@ -1253,51 +1716,72 @@ describe("settings", () => {
     await user.click(screen.getByRole("button", { name: "ES" }));
 
     expect(invokeMock).toHaveBeenCalledWith("change_locale", { locale: "es" });
-    expect(await screen.findByRole("heading", { name: "Idioma" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: "Idioma" }),
+    ).toBeInTheDocument();
   });
 
   it("changes the theme and applies it to the document", async () => {
     invokeMock.mockImplementation(async (command) => {
       if (command === "list_teams") return [];
-      if (command === "change_theme") return session({ locale: "en", theme: "dark" });
+      if (command === "change_theme")
+        return session({ locale: "en", theme: "dark" });
       return session({ locale: "en" });
     });
     const user = userEvent.setup();
     render(<App />);
 
-    await waitFor(() => expect(document.documentElement.dataset.theme).toBe("system"));
+    await waitFor(() =>
+      expect(document.documentElement.dataset.theme).toBe("system"),
+    );
     await user.click(await screen.findByRole("button", { name: "Settings" }));
     await user.click(screen.getByRole("button", { name: "Appearance" }));
     await user.click(screen.getByRole("button", { name: "Dark" }));
 
     expect(invokeMock).toHaveBeenCalledWith("change_theme", { theme: "dark" });
-    await waitFor(() => expect(document.documentElement.dataset.theme).toBe("dark"));
-    expect(screen.getByRole("button", { name: "Dark" })).toHaveAttribute("aria-current", "true");
+    await waitFor(() =>
+      expect(document.documentElement.dataset.theme).toBe("dark"),
+    );
+    expect(screen.getByRole("button", { name: "Dark" })).toHaveAttribute(
+      "aria-current",
+      "true",
+    );
   });
 
   it("changes the interface size and applies it to the document", async () => {
     invokeMock.mockImplementation(async (command) => {
       if (command === "list_teams") return [];
-      if (command === "change_ui_scale") return session({ locale: "en", ui_scale: 125 });
+      if (command === "change_ui_scale")
+        return session({ locale: "en", ui_scale: 125 });
       return session({ locale: "en" });
     });
     const user = userEvent.setup();
     render(<App />);
 
-    await waitFor(() => expect(document.documentElement.style.fontSize).toBe("100%"));
+    await waitFor(() =>
+      expect(document.documentElement.style.fontSize).toBe("100%"),
+    );
     await user.click(await screen.findByRole("button", { name: "Settings" }));
     await user.click(screen.getByRole("button", { name: "Appearance" }));
     await user.click(screen.getByRole("button", { name: "125%" }));
 
-    expect(invokeMock).toHaveBeenCalledWith("change_ui_scale", { uiScale: 125 });
-    await waitFor(() => expect(document.documentElement.style.fontSize).toBe("125%"));
-    expect(screen.getByRole("button", { name: "125%" })).toHaveAttribute("aria-current", "true");
+    expect(invokeMock).toHaveBeenCalledWith("change_ui_scale", {
+      uiScale: 125,
+    });
+    await waitFor(() =>
+      expect(document.documentElement.style.fontSize).toBe("125%"),
+    );
+    expect(screen.getByRole("button", { name: "125%" })).toHaveAttribute(
+      "aria-current",
+      "true",
+    );
   });
 
   it("turns the transition effect off", async () => {
     invokeMock.mockImplementation(async (command) => {
       if (command === "list_teams") return [];
-      if (command === "change_loading_enabled") return session({ locale: "en", loading_enabled: false });
+      if (command === "change_loading_enabled")
+        return session({ locale: "en", loading_enabled: false });
       return session({ locale: "en" });
     });
     const user = userEvent.setup();
@@ -1305,11 +1789,21 @@ describe("settings", () => {
 
     await user.click(await screen.findByRole("button", { name: "Settings" }));
     await user.click(screen.getByRole("button", { name: "Appearance" }));
-    expect(screen.getByRole("button", { name: "On" })).toHaveAttribute("aria-current", "true");
+    expect(screen.getByRole("button", { name: "On" })).toHaveAttribute(
+      "aria-current",
+      "true",
+    );
     await user.click(screen.getByRole("button", { name: "Off" }));
 
-    expect(invokeMock).toHaveBeenCalledWith("change_loading_enabled", { loadingEnabled: false });
-    await waitFor(() => expect(screen.getByRole("button", { name: "Off" })).toHaveAttribute("aria-current", "true"));
+    expect(invokeMock).toHaveBeenCalledWith("change_loading_enabled", {
+      loadingEnabled: false,
+    });
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Off" })).toHaveAttribute(
+        "aria-current",
+        "true",
+      ),
+    );
   });
 
   it("shows the translated error when saving fails", async () => {
@@ -1325,6 +1819,8 @@ describe("settings", () => {
     await user.click(screen.getByRole("button", { name: "Appearance" }));
     await user.click(screen.getByRole("button", { name: "Light" }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("The local database failed. Try again.");
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "The local database failed. Try again.",
+    );
   });
 });

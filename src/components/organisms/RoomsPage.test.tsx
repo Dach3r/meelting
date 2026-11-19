@@ -14,8 +14,22 @@ vi.mock("@tauri-apps/api/event", () => ({ listen: vi.fn() }));
 const invokeMock = vi.mocked(invoke);
 const listenMock = vi.mocked(listen);
 
-const ana: Agent = { id: "a1", team_id: "t1", name: "Ana", role: "QA Engineer", x: 0, y: 0 };
-const bob: Agent = { id: "a2", team_id: "t2", name: "Bob", role: "Software Developer", x: 0, y: 0 };
+const ana: Agent = {
+  id: "a1",
+  team_id: "t1",
+  name: "Ana",
+  role: "QA Engineer",
+  x: 0,
+  y: 0,
+};
+const bob: Agent = {
+  id: "a2",
+  team_id: "t2",
+  name: "Bob",
+  role: "Software Developer",
+  x: 0,
+  y: 0,
+};
 
 const daily: Room = {
   id: "r1",
@@ -24,11 +38,27 @@ const daily: Room = {
   finished_at: null,
   agents: [{ id: "a1", name: "Ana", role: "QA Engineer" }],
 };
-const retro: Room = { id: "r2", name: "Retro", updated_at: "2026-11-17T10:00:00.000Z",
-  finished_at: null, agents: [] };
+const retro: Room = {
+  id: "r2",
+  name: "Retro",
+  updated_at: "2026-11-17T10:00:00.000Z",
+  finished_at: null,
+  agents: [],
+};
 
-function message(id: string, body: string, overrides: Partial<Message> = {}): Message {
-  return { id, room_id: "r1", agent_id: null, body, created_at: "2026-11-18T10:00:00.000Z", ...overrides };
+function message(
+  id: string,
+  body: string,
+  overrides: Partial<Message> = {},
+): Message {
+  return {
+    id,
+    room_id: "r1",
+    agent_id: null,
+    body,
+    created_at: "2026-11-18T10:00:00.000Z",
+    ...overrides,
+  };
 }
 
 function plain(sent: Message) {
@@ -36,16 +66,27 @@ function plain(sent: Message) {
 }
 
 function automatic(body: string) {
-  return { roomId: "r1", body, selection: { kind: "auto", agent_id: null }, mentionIds: [], clientRequestId: expect.any(String) };
+  return {
+    roomId: "r1",
+    body,
+    selection: { kind: "auto", agent_id: null },
+    mentionIds: [],
+    clientRequestId: expect.any(String),
+  };
 }
 
 const handlers = new Map<string, EventCallback<unknown>>();
 
 function emit(event: { event: string; id: number; payload: unknown }) {
-  handlers.get(event.event)?.({ ...event, payload: event.payload } as Parameters<EventCallback<unknown>>[0]);
+  handlers.get(event.event)?.({
+    ...event,
+    payload: event.payload,
+  } as Parameters<EventCallback<unknown>>[0]);
 }
 
-function core(handlers: Record<string, (args: Record<string, unknown>) => unknown>) {
+function core(
+  handlers: Record<string, (args: Record<string, unknown>) => unknown>,
+) {
   invokeMock.mockImplementation(async (command, args) => {
     const handler = handlers[command];
     if (!handler) throw new Error(`unexpected ${command}`);
@@ -79,27 +120,45 @@ describe("rooms list", () => {
   });
 
   it("lays out every room as a card with its agents and its latest activity", async () => {
-    core({ list_rooms: () => ({ rooms: [daily, retro], featured_messages: [] }) });
+    core({
+      list_rooms: () => ({ rooms: [daily, retro], featured_messages: [] }),
+    });
     renderPage();
 
     const rooms = within(await screen.findByRole("list", { name: "Rooms" }));
-    const dailyCard = within(rooms.getByRole("heading", { name: "Daily" }).closest("li")!);
+    const dailyCard = within(
+      rooms.getByRole("heading", { name: "Daily" }).closest("li")!,
+    );
     expect(dailyCard.getByText(/Ana/)).toBeInTheDocument();
     expect(dailyCard.getByText(/1 agent/)).toBeInTheDocument();
-    expect(dailyCard.getByRole("button", { name: "Enter room" })).toBeInTheDocument();
-    const retroCard = within(rooms.getByRole("heading", { name: "Retro" }).closest("li")!);
-    expect(retroCard.getByText("No agents", { exact: false })).toBeInTheDocument();
+    expect(
+      dailyCard.getByRole("button", { name: "Enter room" }),
+    ).toBeInTheDocument();
+    const retroCard = within(
+      rooms.getByRole("heading", { name: "Retro" }).closest("li")!,
+    );
+    expect(
+      retroCard.getByText("No agents", { exact: false }),
+    ).toBeInTheDocument();
   });
 
   it("seats up to three agents in each other room and counts the rest", async () => {
     const crowded: Room = {
       ...retro,
-      agents: ["Ana", "Bob", "Cleo", "Dan", "Eve"].map((name, i) => ({ id: `x${i}`, name, role: "QA Engineer" })),
+      agents: ["Ana", "Bob", "Cleo", "Dan", "Eve"].map((name, i) => ({
+        id: `x${i}`,
+        name,
+        role: "QA Engineer",
+      })),
     };
-    core({ list_rooms: () => ({ rooms: [daily, crowded], featured_messages: [] }) });
+    core({
+      list_rooms: () => ({ rooms: [daily, crowded], featured_messages: [] }),
+    });
     renderPage();
 
-    const card = within((await screen.findByRole("heading", { name: "Retro" })).closest("li")!);
+    const card = within(
+      (await screen.findByRole("heading", { name: "Retro" })).closest("li")!,
+    );
     expect(card.getByText(/Cleo/)).toBeInTheDocument();
     expect(card.queryByText(/Dan/)).not.toBeInTheDocument();
     expect(card.getByText("+2")).toBeInTheDocument();
@@ -113,7 +172,9 @@ describe("rooms list", () => {
     });
     renderPage();
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("The local database failed. Try again.");
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "The local database failed. Try again.",
+    );
   });
 });
 
@@ -121,8 +182,20 @@ describe("creating a room", () => {
   it("creates a room with the picked agents and opens it", async () => {
     core({
       list_rooms: () => ({ rooms: [], featured_messages: [] }),
-      create_room: () => ({ ...daily, agents: [{ id: "a2", name: "Bob", role: "Software Developer" }] }),
-      get_room: () => ({ room: { ...daily, agents: [{ id: "a2", name: "Bob", role: "Software Developer" }] }, former_agents: [], messages: [], runs: [], partials: [] }),
+      create_room: () => ({
+        ...daily,
+        agents: [{ id: "a2", name: "Bob", role: "Software Developer" }],
+      }),
+      get_room: () => ({
+        room: {
+          ...daily,
+          agents: [{ id: "a2", name: "Bob", role: "Software Developer" }],
+        },
+        former_agents: [],
+        messages: [],
+        runs: [],
+        partials: [],
+      }),
     });
     const user = userEvent.setup();
     renderPage();
@@ -137,8 +210,13 @@ describe("creating a room", () => {
     await user.click(dialog.getByRole("button", { name: "Remove Ana" }));
     await user.click(dialog.getByRole("button", { name: "Create room" }));
 
-    expect(invokeMock).toHaveBeenCalledWith("create_room", { name: "Daily", agentIds: ["a2"] });
-    expect(await screen.findByRole("heading", { name: "Daily" })).toBeInTheDocument();
+    expect(invokeMock).toHaveBeenCalledWith("create_room", {
+      name: "Daily",
+      agentIds: ["a2"],
+    });
+    expect(
+      await screen.findByRole("heading", { name: "Daily" }),
+    ).toBeInTheDocument();
     expect(invokeMock).toHaveBeenCalledWith("get_room", { roomId: "r1" });
   });
 
@@ -150,10 +228,14 @@ describe("creating a room", () => {
     await user.click(await screen.findByRole("button", { name: "New room" }));
     const dialog = within(screen.getByRole("dialog", { name: "New room" }));
     await user.type(dialog.getByLabelText("Agents"), "bo{Enter}");
-    expect(dialog.getByRole("list", { name: "Selected agents" })).toHaveTextContent("Bob");
+    expect(
+      dialog.getByRole("list", { name: "Selected agents" }),
+    ).toHaveTextContent("Bob");
     await user.type(dialog.getByLabelText("Agents"), "{Backspace}");
 
-    expect(dialog.queryByRole("list", { name: "Selected agents" })).not.toBeInTheDocument();
+    expect(
+      dialog.queryByRole("list", { name: "Selected agents" }),
+    ).not.toBeInTheDocument();
     expect(dialog.getByRole("option", { name: /Bob/ })).toBeInTheDocument();
   });
 
@@ -161,17 +243,28 @@ describe("creating a room", () => {
     core({
       list_rooms: () => ({ rooms: [], featured_messages: [] }),
       create_room: () => retro,
-      get_room: () => ({ room: retro, former_agents: [], messages: [], runs: [], partials: [] }),
+      get_room: () => ({
+        room: retro,
+        former_agents: [],
+        messages: [],
+        runs: [],
+        partials: [],
+      }),
     });
     const user = userEvent.setup();
     renderPage([]);
 
     await user.click(await screen.findByRole("button", { name: "New room" }));
-    expect(screen.getByText("There are no agents in this workspace yet.")).toBeInTheDocument();
+    expect(
+      screen.getByText("There are no agents in this workspace yet."),
+    ).toBeInTheDocument();
     await user.type(screen.getByLabelText("Room name"), "Retro");
     await user.click(screen.getByRole("button", { name: "Create room" }));
 
-    expect(invokeMock).toHaveBeenCalledWith("create_room", { name: "Retro", agentIds: [] });
+    expect(invokeMock).toHaveBeenCalledWith("create_room", {
+      name: "Retro",
+      agentIds: [],
+    });
     expect(await screen.findByText("No agents")).toBeInTheDocument();
   });
 
@@ -189,16 +282,28 @@ describe("creating a room", () => {
     await user.type(screen.getByLabelText("Room name"), "Daily");
     await user.click(screen.getByRole("button", { name: "Create room" }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("That agent no longer exists.");
-    expect(screen.getByRole("dialog", { name: "New room" })).toBeInTheDocument();
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "That agent no longer exists.",
+    );
+    expect(
+      screen.getByRole("dialog", { name: "New room" }),
+    ).toBeInTheDocument();
   });
 });
 
 describe("inside a room", () => {
-  async function openDaily(handlers: Record<string, (args: Record<string, unknown>) => unknown> = {}) {
+  async function openDaily(
+    handlers: Record<string, (args: Record<string, unknown>) => unknown> = {},
+  ) {
     core({
       list_rooms: () => ({ rooms: [daily], featured_messages: [] }),
-      get_room: () => ({ room: daily, former_agents: [], messages: [message("m1", "Hello team")], runs: [], partials: [] }),
+      get_room: () => ({
+        room: daily,
+        former_agents: [],
+        messages: [message("m1", "Hello team")],
+        runs: [],
+        partials: [],
+      }),
       ...handlers,
     });
     const user = userEvent.setup();
@@ -211,7 +316,13 @@ describe("inside a room", () => {
   it("shows a transition when entering and when leaving the room", async () => {
     core({
       list_rooms: () => ({ rooms: [daily], featured_messages: [] }),
-      get_room: () => ({ room: daily, former_agents: [], messages: [], runs: [], partials: [] }),
+      get_room: () => ({
+        room: daily,
+        former_agents: [],
+        messages: [],
+        runs: [],
+        partials: [],
+      }),
     });
     const user = userEvent.setup();
     renderPage();
@@ -219,13 +330,21 @@ describe("inside a room", () => {
     expect(screen.getByRole("status")).toHaveTextContent("Entering Daily");
     await user.click(await screen.findByRole("button", { name: "Rooms" }));
     expect(screen.getByRole("status")).toHaveTextContent("Leaving Daily");
-    expect(await screen.findByRole("list", { name: "Rooms" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("list", { name: "Rooms" }),
+    ).toBeInTheDocument();
   });
 
   it("enters and leaves the room without a transition when it is turned off", async () => {
     core({
       list_rooms: () => ({ rooms: [daily], featured_messages: [] }),
-      get_room: () => ({ room: daily, former_agents: [], messages: [], runs: [], partials: [] }),
+      get_room: () => ({
+        room: daily,
+        former_agents: [],
+        messages: [],
+        runs: [],
+        partials: [],
+      }),
     });
     const user = userEvent.setup();
     renderPage([ana, bob], false);
@@ -233,17 +352,23 @@ describe("inside a room", () => {
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
     await user.click(await screen.findByRole("button", { name: "Rooms" }));
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
-    expect(await screen.findByRole("list", { name: "Rooms" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("list", { name: "Rooms" }),
+    ).toBeInTheDocument();
   });
 
   it("shows you and the agents as participants and the conversation", async () => {
     await openDaily();
 
-    const participants = within(screen.getByRole("region", { name: "Participants" }));
+    const participants = within(
+      screen.getByRole("region", { name: "Participants" }),
+    );
     expect(participants.getByText("You")).toBeInTheDocument();
     expect(participants.getByText("Ana")).toBeInTheDocument();
     expect(participants.getByText("QA Engineer")).toBeInTheDocument();
-    expect(screen.getByRole("combobox", { name: "Ask" })).toHaveDisplayValue("From the message");
+    expect(screen.getByRole("combobox", { name: "Ask" })).toHaveDisplayValue(
+      "From the message",
+    );
   });
 
   it("sends a message with Enter and shows it once even when its event also arrives", async () => {
@@ -253,17 +378,29 @@ describe("inside a room", () => {
     await user.type(screen.getByLabelText("Message"), "Let's start{Enter}");
     act(() => emit({ event: "message:created", id: 1, payload: sent }));
 
-    expect(invokeMock).toHaveBeenCalledWith("send_intervention", automatic("Let's start"));
+    expect(invokeMock).toHaveBeenCalledWith(
+      "send_intervention",
+      automatic("Let's start"),
+    );
     expect(screen.getAllByText("Let's start")).toHaveLength(1);
     expect(screen.getByLabelText("Message")).toHaveValue("");
   });
 
   it("scrolls to the new message even when the room already shows the last 100", async () => {
-    const history = Array.from({ length: 100 }, (_, index) => message(`m${index}`, `Message ${index}`));
+    const history = Array.from({ length: 100 }, (_, index) =>
+      message(`m${index}`, `Message ${index}`),
+    );
     const sent = message("m100", "Newest");
     const scrollIntoView = vi.spyOn(Element.prototype, "scrollIntoView");
     const user = await openDaily({
-      get_room: () => ({ room: daily, former_agents: [], messages: [message("m0", "Hello team"), ...history.slice(1)], runs: [], partials: [], proposed_agent_id: null }),
+      get_room: () => ({
+        room: daily,
+        former_agents: [],
+        messages: [message("m0", "Hello team"), ...history.slice(1)],
+        runs: [],
+        partials: [],
+        proposed_agent_id: null,
+      }),
       send_intervention: () => plain(sent),
     });
     scrollIntoView.mockClear();
@@ -291,8 +428,16 @@ describe("inside a room", () => {
     await openDaily();
 
     act(() => {
-      emit({ event: "message:created", id: 1, payload: message("m3", "From the event") });
-      emit({ event: "message:created", id: 2, payload: message("m4", "Elsewhere", { room_id: "r2" }) });
+      emit({
+        event: "message:created",
+        id: 1,
+        payload: message("m3", "From the event"),
+      });
+      emit({
+        event: "message:created",
+        id: 2,
+        payload: message("m4", "Elsewhere", { room_id: "r2" }),
+      });
     });
 
     expect(screen.getByText("From the event")).toBeInTheDocument();
@@ -309,7 +454,9 @@ describe("inside a room", () => {
     await user.type(screen.getByLabelText("Message"), "Anyone?");
     await user.click(screen.getByRole("button", { name: "Send" }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("That room no longer exists.");
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "That room no longer exists.",
+    );
     expect(screen.getByLabelText("Message")).toHaveValue("Anyone?");
   });
 
@@ -319,38 +466,59 @@ describe("inside a room", () => {
     await user.type(screen.getByLabelText("Message"), "   {Enter}");
 
     expect(screen.getByRole("button", { name: "Send" })).toBeDisabled();
-    expect(invokeMock).not.toHaveBeenCalledWith("send_intervention", expect.anything());
+    expect(invokeMock).not.toHaveBeenCalledWith(
+      "send_intervention",
+      expect.anything(),
+    );
   });
 
   it("counts emojis as one character like the core does", async () => {
-    const user = await openDaily({ send_intervention: ({ body }) => plain(message("m2", String(body))) });
+    const user = await openDaily({
+      send_intervention: ({ body }) => plain(message("m2", String(body))),
+    });
     const send = screen.getByRole("button", { name: "Send" });
 
     await user.click(screen.getByLabelText("Message"));
     await user.paste("👩‍💻".repeat(1334));
     expect(send).toBeDisabled();
-    expect(screen.getByText("Write a message of up to 4,000 characters.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Write a message of up to 4,000 characters."),
+    ).toBeInTheDocument();
     await user.clear(screen.getByLabelText("Message"));
     await user.paste(`  ${"😀".repeat(4000)}\n`);
     expect(send).toBeEnabled();
-    expect(screen.getByLabelText("Message")).not.toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByLabelText("Message")).not.toHaveAttribute(
+      "aria-invalid",
+      "true",
+    );
     await user.click(send);
 
-    expect(invokeMock).toHaveBeenCalledWith("send_intervention", automatic(`  ${"😀".repeat(4000)}\n`));
+    expect(invokeMock).toHaveBeenCalledWith(
+      "send_intervention",
+      automatic(`  ${"😀".repeat(4000)}\n`),
+    );
   });
 
   it("hangs up after confirming and goes back to the list", async () => {
     const user = await openDaily({
-      finish_room: () => ({ rooms: [{ ...daily, finished_at: "2026-11-18T12:00:00.000Z" }], featured_messages: [] }),
+      finish_room: () => ({
+        rooms: [{ ...daily, finished_at: "2026-11-18T12:00:00.000Z" }],
+        featured_messages: [],
+      }),
     });
 
     await user.click(screen.getByRole("button", { name: "Hang up" }));
     const dialog = within(screen.getByRole("dialog", { name: "End the call" }));
-    expect(invokeMock).not.toHaveBeenCalledWith("finish_room", expect.anything());
+    expect(invokeMock).not.toHaveBeenCalledWith(
+      "finish_room",
+      expect.anything(),
+    );
     await user.click(dialog.getByRole("button", { name: "Hang up" }));
 
     expect(invokeMock).toHaveBeenCalledWith("finish_room", { roomId: "r1" });
-    expect(await screen.findByRole("button", { name: "Enter room" })).toBeDisabled();
+    expect(
+      await screen.findByRole("button", { name: "Enter room" }),
+    ).toBeDisabled();
     expect(screen.getByText(/Finished/)).toBeInTheDocument();
   });
 
@@ -365,7 +533,9 @@ describe("inside a room", () => {
     const dialog = within(screen.getByRole("dialog", { name: "End the call" }));
     await user.click(dialog.getByRole("button", { name: "Hang up" }));
 
-    expect(await dialog.findByRole("alert")).toHaveTextContent("That room no longer exists.");
+    expect(await dialog.findByRole("alert")).toHaveTextContent(
+      "That room no longer exists.",
+    );
   });
 
   it("shows the error when the room no longer exists and goes back to a refreshed list", async () => {
@@ -380,10 +550,14 @@ describe("inside a room", () => {
     renderPage();
 
     await user.click(await screen.findByRole("button", { name: "Enter room" }));
-    expect(await screen.findByRole("alert")).toHaveTextContent("That room no longer exists.");
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "That room no longer exists.",
+    );
     rooms = [];
     await user.click(screen.getByRole("button", { name: "Rooms" }));
 
-    await waitFor(() => expect(screen.getByText("No rooms yet")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText("No rooms yet")).toBeInTheDocument(),
+    );
   });
 });

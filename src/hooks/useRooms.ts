@@ -3,9 +3,21 @@ import { useCallback, useEffect, useState } from "react";
 
 export type Participant = { id: string; name: string; role: string };
 
-export type Room = { id: string; name: string; updated_at: string; finished_at: string | null; agents: Participant[] };
+export type Room = {
+  id: string;
+  name: string;
+  updated_at: string;
+  finished_at: string | null;
+  agents: Participant[];
+};
 
-export type Message = { id: string; room_id: string; agent_id: string | null; body: string; created_at: string };
+export type Message = {
+  id: string;
+  room_id: string;
+  agent_id: string | null;
+  body: string;
+  created_at: string;
+};
 
 export type RoomList = { rooms: Room[]; featured_messages: Message[] };
 
@@ -57,5 +69,14 @@ export function useRooms() {
 
   const clearActionError = () => setActionErrorKey(null);
 
-  return { list, errorKey, actionErrorKey, busy, reload, createRoom, finishRoom, clearActionError };
+  return {
+    list,
+    errorKey,
+    actionErrorKey,
+    busy,
+    reload,
+    createRoom,
+    finishRoom,
+    clearActionError,
+  };
 }

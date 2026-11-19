@@ -44,8 +44,13 @@ export function SettingsPage({
   const [category, setCategory] = useState<Category>("general");
   return (
     <div className="grid min-h-0 flex-1 grid-cols-[14rem_minmax(0,1fr)] gap-10">
-      <nav aria-label={t("settings.categories.label")} className="flex flex-col gap-1">
-        <h1 className="px-3 pb-3 text-2xl font-bold text-ink">{t("settings.title")}</h1>
+      <nav
+        aria-label={t("settings.categories.label")}
+        className="flex flex-col gap-1"
+      >
+        <h1 className="px-3 pb-3 text-2xl font-bold text-ink">
+          {t("settings.title")}
+        </h1>
         {categories.map((item) => {
           const Icon = categoryIcons[item];
           return (
@@ -65,24 +70,52 @@ export function SettingsPage({
       <div className="grid w-full content-start gap-6">
         {errorMessage && <Alert message={errorMessage} />}
         <div>
-          <h2 className="text-xl font-bold text-ink">{t(`settings.categories.${category}.title`)}</h2>
-          <p className="text-sm text-muted">{t(`settings.categories.${category}.description`)}</p>
+          <h2 className="text-xl font-bold text-ink">
+            {t(`settings.categories.${category}.title`)}
+          </h2>
+          <p className="text-sm text-muted">
+            {t(`settings.categories.${category}.description`)}
+          </p>
         </div>
         <div className="rounded-2xl bg-pill-hover">
           {category === "general" && (
-            <SettingsRow title={t("settings.language.title")} description={t("settings.language.description")}>
-              <LocaleSwitcher value={locale} onChange={onChangeLocale} disabled={busy} />
+            <SettingsRow
+              title={t("settings.language.title")}
+              description={t("settings.language.description")}
+            >
+              <LocaleSwitcher
+                value={locale}
+                onChange={onChangeLocale}
+                disabled={busy}
+              />
             </SettingsRow>
           )}
           {category === "appearance" && (
             <>
-              <SettingsRow title={t("settings.theme.title")} description={t("settings.theme.description")}>
-                <ThemeSwitcher value={theme} onChange={onChangeTheme} disabled={busy} />
+              <SettingsRow
+                title={t("settings.theme.title")}
+                description={t("settings.theme.description")}
+              >
+                <ThemeSwitcher
+                  value={theme}
+                  onChange={onChangeTheme}
+                  disabled={busy}
+                />
               </SettingsRow>
-              <SettingsRow title={t("settings.uiScale.title")} description={t("settings.uiScale.description")}>
-                <UiScaleSwitcher value={uiScale} onChange={onChangeUiScale} disabled={busy} />
+              <SettingsRow
+                title={t("settings.uiScale.title")}
+                description={t("settings.uiScale.description")}
+              >
+                <UiScaleSwitcher
+                  value={uiScale}
+                  onChange={onChangeUiScale}
+                  disabled={busy}
+                />
               </SettingsRow>
-              <SettingsRow title={t("settings.loading.title")} description={t("settings.loading.description")}>
+              <SettingsRow
+                title={t("settings.loading.title")}
+                description={t("settings.loading.description")}
+              >
                 <SegmentedControl
                   label={t("settings.loading.title")}
                   options={[
@@ -90,7 +123,9 @@ export function SettingsPage({
                     { value: "off", label: t("settings.loading.off") },
                   ]}
                   value={loadingEnabled ? "on" : "off"}
-                  onChange={(selected) => onChangeLoadingEnabled(selected === "on")}
+                  onChange={(selected) =>
+                    onChangeLoadingEnabled(selected === "on")
+                  }
                   disabled={busy}
                 />
               </SettingsRow>

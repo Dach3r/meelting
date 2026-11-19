@@ -14,7 +14,10 @@ export function ThemeSwitcher({
   disabled?: boolean;
 }) {
   const { t } = useI18n();
-  const options = themes.map((theme) => ({ value: theme, label: t(`settings.theme.${theme}`) }));
+  const options = themes.map((theme) => ({
+    value: theme,
+    label: t(`settings.theme.${theme}`),
+  }));
   return (
     <SegmentedControl
       label={t("settings.theme.title")}

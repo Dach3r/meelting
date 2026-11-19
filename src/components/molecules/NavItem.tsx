@@ -13,11 +13,14 @@ export function NavItem({
   onSelect?: () => void;
 }) {
   const { t } = useI18n();
-  const classes = "flex h-14 items-center gap-4 rounded-2xl px-4 text-base font-semibold group-data-collapsed/rail:justify-center group-data-collapsed/rail:px-0";
+  const classes =
+    "flex h-14 items-center gap-4 rounded-2xl px-4 text-base font-semibold group-data-collapsed/rail:justify-center group-data-collapsed/rail:px-0";
   const content = (
     <>
       <Icon className="size-6 shrink-0" aria-hidden="true" />
-      <span className="whitespace-nowrap group-data-collapsed/rail:hidden">{label}</span>
+      <span className="whitespace-nowrap group-data-collapsed/rail:hidden">
+        {label}
+      </span>
     </>
   );
   if (current) {
@@ -52,7 +55,11 @@ export function NavItem({
     );
   }
   return (
-    <span aria-disabled="true" title={t("home.soon")} className={`${classes} cursor-not-allowed opacity-50`}>
+    <span
+      aria-disabled="true"
+      title={t("home.soon")}
+      className={`${classes} cursor-not-allowed opacity-50`}
+    >
       {content}
     </span>
   );

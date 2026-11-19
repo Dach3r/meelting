@@ -1,4 +1,11 @@
-import { Check, Cpu, FileText, User, Users, type LucideIcon } from "lucide-react";
+import {
+  Check,
+  Cpu,
+  FileText,
+  User,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
 import { useId, useState, type FormEvent } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
 import { useAgentRoles } from "../../hooks/useAgentRoles";
@@ -26,9 +33,21 @@ const tabs = [
   { key: "team", icon: Users, fields: ["team_id"] },
   { key: "engine", icon: Cpu, fields: ["provider", "model"] },
   { key: "behavior", icon: FileText, fields: ["description", "instructions"] },
-] as const satisfies readonly { key: string; icon: LucideIcon; fields: readonly (keyof AgentEdit)[] }[];
+] as const satisfies readonly {
+  key: string;
+  icon: LucideIcon;
+  fields: readonly (keyof AgentEdit)[];
+}[];
 
-const pickEdit = ({ team_id, name, role, description, instructions, provider, model }: AgentEdit): AgentEdit => ({
+const pickEdit = ({
+  team_id,
+  name,
+  role,
+  description,
+  instructions,
+  provider,
+  model,
+}: AgentEdit): AgentEdit => ({
   team_id,
   name,
   role,
@@ -38,7 +57,14 @@ const pickEdit = ({ team_id, name, role, description, instructions, provider, mo
   model,
 });
 
-export function AgentEditForm({ agent, teams, busy, errorMessage, onSubmit, onClose }: Props) {
+export function AgentEditForm({
+  agent,
+  teams,
+  busy,
+  errorMessage,
+  onSubmit,
+  onClose,
+}: Props) {
   const { t } = useI18n();
   const panelId = useId();
   const roleGroups = useAgentRoles().map(({ group, roles }) => ({
@@ -50,10 +76,16 @@ export function AgentEditForm({ agent, teams, busy, errorMessage, onSubmit, onCl
   const [tab, setTab] = useState(0);
   const [saved, setSaved] = useState<AgentEdit>(() => pickEdit(agent));
   const [draft, setDraft] = useState<AgentEdit>(saved);
-  const set = (field: keyof AgentEdit) => (value: string) => setDraft({ ...draft, [field]: value });
+  const set = (field: keyof AgentEdit) => (value: string) =>
+    setDraft({ ...draft, [field]: value });
   const current = tabs[tab];
   const changed = current.fields.some((field) => draft[field] !== saved[field]);
-  const valid = current.fields.every((field) => field === "description" || field === "instructions" || draft[field].trim() !== "");
+  const valid = current.fields.every(
+    (field) =>
+      field === "description" ||
+      field === "instructions" ||
+      draft[field].trim() !== "",
+  );
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -66,13 +98,24 @@ export function AgentEditForm({ agent, teams, busy, errorMessage, onSubmit, onCl
     <div className="grid min-h-[44rem] sm:grid-cols-[17rem_1fr]">
       <div className="grid content-start gap-4 bg-raised/50 sm:border-r sm:border-line px-4 py-6 sm:px-5 sm:py-10">
         <div className="flex items-center gap-3 rounded-2xl border border-line bg-surface p-3">
-          <Avatar seed={saved.name} label={saved.name} className="size-10 rounded-full text-base" />
+          <Avatar
+            seed={saved.name}
+            label={saved.name}
+            className="size-10 rounded-full text-base"
+          />
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-ink">{saved.name}</p>
+            <p className="truncate text-sm font-semibold text-ink">
+              {saved.name}
+            </p>
             <p className="truncate text-xs text-muted">{saved.role}</p>
           </div>
         </div>
-        <div role="tablist" aria-orientation="vertical" aria-label={t("teams.agent.edit")} className="overflow-hidden rounded-2xl border border-line bg-surface">
+        <div
+          role="tablist"
+          aria-orientation="vertical"
+          aria-label={t("teams.agent.edit")}
+          className="overflow-hidden rounded-2xl border border-line bg-surface"
+        >
           {tabs.map(({ key, icon: TabIcon }, index) => (
             <button
               key={key}
@@ -89,7 +132,9 @@ export function AgentEditForm({ agent, teams, busy, errorMessage, onSubmit, onCl
               >
                 <TabIcon aria-hidden className="size-4" />
               </span>
-              <span className={`text-sm ${index === tab ? "font-semibold text-ink" : "font-medium text-muted"}`}>
+              <span
+                className={`text-sm ${index === tab ? "font-semibold text-ink" : "font-medium text-muted"}`}
+              >
                 {t(`teams.agent.${key}`)}
               </span>
             </button>
@@ -104,13 +149,24 @@ export function AgentEditForm({ agent, teams, busy, errorMessage, onSubmit, onCl
         className="flex flex-col gap-10 p-6 sm:px-10 sm:pt-10 sm:pb-6"
       >
         <div className="grid gap-2">
-          <h3 className="text-2xl font-bold text-ink">{t(`teams.agent.${current.key}Title`)}</h3>
-          <p className="text-sm text-muted">{t(`teams.agent.${current.key}Subtitle`)}</p>
+          <h3 className="text-2xl font-bold text-ink">
+            {t(`teams.agent.${current.key}Title`)}
+          </h3>
+          <p className="text-sm text-muted">
+            {t(`teams.agent.${current.key}Subtitle`)}
+          </p>
         </div>
         <div className="flex flex-1 flex-col gap-7">
           {current.key === "identity" && (
             <>
-              <Field label={t("teams.agent.name")} value={draft.name} onChange={set("name")} maxLength={80} icon={User} autoFocus />
+              <Field
+                label={t("teams.agent.name")}
+                value={draft.name}
+                onChange={set("name")}
+                maxLength={80}
+                icon={User}
+                autoFocus
+              />
               <SelectField
                 label={t("teams.agent.role")}
                 searchPlaceholder={t("teams.agent.roleSearch")}
@@ -122,10 +178,21 @@ export function AgentEditForm({ agent, teams, busy, errorMessage, onSubmit, onCl
             </>
           )}
           {current.key === "team" && (
-            <TeamPicker teams={teams} currentId={saved.team_id} value={draft.team_id} onChange={set("team_id")} />
+            <TeamPicker
+              teams={teams}
+              currentId={saved.team_id}
+              value={draft.team_id}
+              onChange={set("team_id")}
+            />
           )}
           {current.key === "engine" && (
-            <EnginePicker provider={draft.provider} model={draft.model} onChange={(provider, model) => setDraft({ ...draft, provider, model })} />
+            <EnginePicker
+              provider={draft.provider}
+              model={draft.model}
+              onChange={(provider, model) =>
+                setDraft({ ...draft, provider, model })
+              }
+            />
           )}
           {current.key === "behavior" && (
             <>
@@ -157,7 +224,11 @@ export function AgentEditForm({ agent, teams, busy, errorMessage, onSubmit, onCl
           <Button type="button" variant="ghost" size="pill" onClick={onClose}>
             {t("teams.close")}
           </Button>
-          <Button type="submit" size="pill" disabled={busy || !changed || !valid}>
+          <Button
+            type="submit"
+            size="pill"
+            disabled={busy || !changed || !valid}
+          >
             <Check aria-hidden className="size-4" />
             {t("teams.agent.save")}
           </Button>

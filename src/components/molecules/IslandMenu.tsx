@@ -1,4 +1,11 @@
-import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 
 type Props = {
   label: string;
@@ -28,14 +35,30 @@ export function IslandMenu({ label, trigger, children }: Props) {
   }, [open]);
 
   return (
-    <div ref={root} data-open={open || undefined} className="group/island relative z-20 w-fit">
+    <div
+      ref={root}
+      data-open={open || undefined}
+      className="group/island relative z-20 w-fit"
+    >
       <svg className="absolute size-0" aria-hidden="true" focusable="false">
         <filter id={filterId} colorInterpolationFilters="sRGB">
           <feGaussianBlur in="SourceGraphic" stdDeviation="9" result="blur" />
-          <feColorMatrix in="blur" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 20 -9" result="shape" />
-          <feFlood className="[flood-color:var(--color-pill)] group-hover/island:[flood-color:var(--color-pill-hover)] group-data-open/island:[flood-color:var(--color-pill-open)]" result="paint" />
+          <feColorMatrix
+            in="blur"
+            values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 20 -9"
+            result="shape"
+          />
+          <feFlood
+            className="[flood-color:var(--color-pill)] group-hover/island:[flood-color:var(--color-pill-hover)] group-data-open/island:[flood-color:var(--color-pill-open)]"
+            result="paint"
+          />
           <feComposite in="paint" in2="shape" operator="in" result="fill" />
-          <feMorphology in="shape" operator="dilate" radius="1" result="grown" />
+          <feMorphology
+            in="shape"
+            operator="dilate"
+            radius="1"
+            result="grown"
+          />
           <feFlood className="[flood-color:var(--color-line)]" result="line" />
           <feComposite in="line" in2="grown" operator="in" result="ring" />
           <feMerge>

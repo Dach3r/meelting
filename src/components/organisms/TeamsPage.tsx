@@ -64,7 +64,11 @@ export function TeamsPage({
 
   function askToDelete(agentId: string) {
     onClearActionError();
-    setDeleting(teams.flatMap((team) => team.agents).find((agent) => agent.id === agentId) ?? null);
+    setDeleting(
+      teams
+        .flatMap((team) => team.agents)
+        .find((agent) => agent.id === agentId) ?? null,
+    );
   }
 
   async function confirmDelete(agent: Agent) {
@@ -83,11 +87,20 @@ export function TeamsPage({
     <div className="flex min-h-0 w-full flex-1 flex-col gap-6">
       {creatingTeam && (
         <Modal title={t("teams.newTeam")} onClose={close}>
-          <TeamForm busy={busy} errorMessage={actionErrorMessage} onSubmit={onCreateTeam} onCancel={close} />
+          <TeamForm
+            busy={busy}
+            errorMessage={actionErrorMessage}
+            onSubmit={onCreateTeam}
+            onCancel={close}
+          />
         </Modal>
       )}
       {editing && (
-        <Modal title={`${t("teams.agent.edit")} · ${editing.name}`} onClose={close} bare>
+        <Modal
+          title={`${t("teams.agent.edit")} · ${editing.name}`}
+          onClose={close}
+          bare
+        >
           <AgentEditForm
             agent={editing}
             teams={teams}
@@ -99,23 +112,46 @@ export function TeamsPage({
         </Modal>
       )}
       {deleting && (
-        <Modal title={t("teams.agent.deleteTitle").replace("{name}", deleting.name)} onClose={close} bare narrow>
+        <Modal
+          title={t("teams.agent.deleteTitle").replace("{name}", deleting.name)}
+          onClose={close}
+          bare
+          narrow
+        >
           <div className="grid gap-5 p-6">
             <div className="flex items-start gap-4">
               <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-error/10 text-error">
                 <Trash2 aria-hidden className="size-5" />
               </span>
               <div className="grid gap-1.5">
-                <h2 className="text-lg font-bold text-ink">{t("teams.agent.deleteTitle").replace("{name}", deleting.name)}</h2>
-                <p className="text-sm text-muted">{t("teams.agent.deleteBody")}</p>
+                <h2 className="text-lg font-bold text-ink">
+                  {t("teams.agent.deleteTitle").replace(
+                    "{name}",
+                    deleting.name,
+                  )}
+                </h2>
+                <p className="text-sm text-muted">
+                  {t("teams.agent.deleteBody")}
+                </p>
               </div>
             </div>
             {actionErrorMessage && <Alert message={actionErrorMessage} />}
             <div className="flex justify-end gap-3">
-              <Button type="button" variant="ghost" size="compact" onClick={close}>
+              <Button
+                type="button"
+                variant="ghost"
+                size="compact"
+                onClick={close}
+              >
                 {t("teams.cancel")}
               </Button>
-              <Button type="button" variant="destructive" size="compact" disabled={busy} onClick={() => confirmDelete(deleting)}>
+              <Button
+                type="button"
+                variant="destructive"
+                size="compact"
+                disabled={busy}
+                onClick={() => confirmDelete(deleting)}
+              >
                 {t("teams.agent.delete")}
               </Button>
             </div>

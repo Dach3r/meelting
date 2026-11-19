@@ -17,18 +17,27 @@ export function TeamPicker({ teams, currentId, value, onChange }: Props) {
   const { t } = useI18n();
   const id = useId();
   const sorted = [...teams].sort((a, b) => a.name.localeCompare(b.name));
-  const [active, setActive] = useState(() => Math.max(sorted.findIndex((team) => team.id === value), 0));
+  const [active, setActive] = useState(() =>
+    Math.max(
+      sorted.findIndex((team) => team.id === value),
+      0,
+    ),
+  );
   const current = teams.find((team) => team.id === currentId);
 
   useEffect(() => {
-    document.getElementById(`${id}-${active}`)?.scrollIntoView({ block: "nearest" });
+    document
+      .getElementById(`${id}-${active}`)
+      ?.scrollIntoView({ block: "nearest" });
   }, [active, id]);
 
   function onKeyDown(event: KeyboardEvent) {
     if (event.key === "ArrowDown" || event.key === "ArrowUp") {
       event.preventDefault();
       const step = event.key === "ArrowDown" ? 1 : -1;
-      setActive((position) => (position + step + sorted.length) % sorted.length);
+      setActive(
+        (position) => (position + step + sorted.length) % sorted.length,
+      );
     } else if (event.key === "Enter") {
       event.preventDefault();
       onChange(sorted[active].id);
@@ -45,16 +54,29 @@ export function TeamPicker({ teams, currentId, value, onChange }: Props) {
     <div className="flex flex-1 flex-col gap-3">
       {current && (
         <div className="flex items-center gap-4 rounded-2xl border border-line bg-shell p-4">
-          <Avatar seed={current.name} label={current.name} className="size-10 rounded-xl text-base" />
+          <Avatar
+            seed={current.name}
+            label={current.name}
+            className="size-10 rounded-xl text-base"
+          />
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-ink">{current.name}</p>
-            <p className="text-xs text-muted">{agentsAvailable(current.agents.length)}</p>
+            <p className="truncate text-sm font-semibold text-ink">
+              {current.name}
+            </p>
+            <p className="text-xs text-muted">
+              {agentsAvailable(current.agents.length)}
+            </p>
           </div>
         </div>
       )}
-      <ArrowDown aria-hidden className="size-5 shrink-0 self-center text-muted" />
+      <ArrowDown
+        aria-hidden
+        className="size-5 shrink-0 self-center text-muted"
+      />
       <div className="flex min-h-56 min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-line">
-        <div className={`flex items-center gap-3 border-b border-line bg-shell px-3.5 py-2 ${eyebrow}`}>
+        <div
+          className={`flex items-center gap-3 border-b border-line bg-shell px-3.5 py-2 ${eyebrow}`}
+        >
           <span className="flex-1 pl-7">{t("teams.agent.name")}</span>
           <span className="w-16 text-right">{t("teams.chart.agents")}</span>
         </div>
@@ -87,9 +109,13 @@ export function TeamPicker({ teams, currentId, value, onChange }: Props) {
                 </span>
                 <span className="flex-1 truncate">{team.name}</span>
                 {team.id === currentId && (
-                  <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-accent">{t("teams.agent.teamCurrentTag")}</span>
+                  <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-accent">
+                    {t("teams.agent.teamCurrentTag")}
+                  </span>
                 )}
-                <span className="w-16 text-right font-normal tabular-nums text-muted">{team.agents.length}</span>
+                <span className="w-16 text-right font-normal tabular-nums text-muted">
+                  {team.agents.length}
+                </span>
               </div>
             );
           })}

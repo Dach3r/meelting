@@ -1,5 +1,12 @@
 import { SendHorizontal, X } from "lucide-react";
-import { useId, useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
+import {
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent,
+  type KeyboardEvent,
+} from "react";
 import { useI18n } from "../../i18n/I18nProvider";
 import { translateWith } from "../../i18n/translate";
 import { useRecipientPreview } from "../../hooks/useRecipientPreview";
@@ -9,7 +16,13 @@ import { Button } from "../atoms/Button";
 import { fieldClasses } from "../atoms/Field";
 import { MentionSuggestions, mentionOptionId } from "./MentionSuggestions";
 import { agentLabel } from "./agentLabel";
-import { type ChosenMention, activeMention, insertMention, keptMentionIds, matchingAgents } from "./mentionDraft";
+import {
+  type ChosenMention,
+  activeMention,
+  insertMention,
+  keptMentionIds,
+  matchingAgents,
+} from "./mentionDraft";
 
 const bodyMaxChars = 4000;
 
@@ -28,7 +41,14 @@ function selectionOf(value: string, proposal: string | null): Selection {
   return { kind: "agent", agent_id: value };
 }
 
-export function MessageComposer({ roomId, agents, proposedAgentId, busyAgentIds, sending, onSend }: Props) {
+export function MessageComposer({
+  roomId,
+  agents,
+  proposedAgentId,
+  busyAgentIds,
+  sending,
+  onSend,
+}: Props) {
   const { t, locale } = useI18n();
   const limitId = useId();
   const statusId = useId();
@@ -41,36 +61,63 @@ export function MessageComposer({ roomId, agents, proposedAgentId, busyAgentIds,
   const [chosen, setChosen] = useState<ChosenMention[]>([]);
   const [highlighted, setHighlighted] = useState(0);
   const [dismissedAt, setDismissedAt] = useState<number | null>(null);
-  const [pending, setPending] = useState<{ draft: Draft; choice: Choice } | null>(null);
+  const [pending, setPending] = useState<{
+    draft: Draft;
+    choice: Choice;
+  } | null>(null);
   const [dismissed, setDismissed] = useState<string | null>(null);
 
   const proposal = proposedAgentId !== dismissed ? proposedAgentId : null;
-  const proposedAgent = recipient === "auto" ? agents.find((agent) => agent.id === proposal) : undefined;
-  const selection = useMemo(() => selectionOf(recipient, proposal), [recipient, proposal]);
+  const proposedAgent =
+    recipient === "auto"
+      ? agents.find((agent) => agent.id === proposal)
+      : undefined;
+  const selection = useMemo(
+    () => selectionOf(recipient, proposal),
+    [recipient, proposal],
+  );
   const mentionIdsKey = keptMentionIds(body, chosen).join(",");
-  const mentionIds = useMemo(() => (mentionIdsKey ? mentionIdsKey.split(",") : []), [mentionIdsKey]);
+  const mentionIds = useMemo(
+    () => (mentionIdsKey ? mentionIdsKey.split(",") : []),
+    [mentionIdsKey],
+  );
   const preview = useRecipientPreview(roomId, body, selection, mentionIds);
 
   const mention = activeMention(body, caret);
-  const suggestions = mention && mention.start !== dismissedAt ? matchingAgents(agents, mention.query) : [];
+  const suggestions =
+    mention && mention.start !== dismissedAt
+      ? matchingAgents(agents, mention.query)
+      : [];
   const open = suggestions.length > 0;
   const active = Math.min(highlighted, suggestions.length - 1);
 
   const length = Array.from(body.trim()).length;
   const tooLong = length > bodyMaxChars;
-  const following = proposedAgent !== undefined && (!preview || preview.kind === "proposed");
+  const following =
+    proposedAgent !== undefined && (!preview || preview.kind === "proposed");
   const targetId =
-    selection.kind === "agent" ? selection.agent_id : preview && preview.kind !== "nobody" && preview.kind !== "choose" ? preview.agent_id : following ? proposal : null;
+    selection.kind === "agent"
+      ? selection.agent_id
+      : preview && preview.kind !== "nobody" && preview.kind !== "choose"
+        ? preview.agent_id
+        : following
+          ? proposal
+          : null;
   const target = agents.find((agent) => agent.id === targetId);
   const busy = target !== undefined && busyAgentIds.includes(target.id);
   const disabled = length === 0 || tooLong || sending || busy;
 
   function status() {
-    if (busy && target) return translateWith(locale, "agentRun.busy", { agent: target.name });
+    if (busy && target)
+      return translateWith(locale, "agentRun.busy", { agent: target.name });
     if (!preview || selection.kind === "nobody") return null;
-    if (preview.kind === "choose") return t(`agentRun.preview.${preview.reason}`);
+    if (preview.kind === "choose")
+      return t(`agentRun.preview.${preview.reason}`);
     if (selection.kind === "agent" || preview.kind === "proposed") return null;
-    if (preview.kind === "agent" && target) return translateWith(locale, "agentRun.preview.agent", { agent: target.name });
+    if (preview.kind === "agent" && target)
+      return translateWith(locale, "agentRun.preview.agent", {
+        agent: target.name,
+      });
     return t("agentRun.preview.nobody");
   }
 
@@ -86,7 +133,9 @@ export function MessageComposer({ roomId, agents, proposedAgentId, busyAgentIds,
     const next = insertMention(body, mention, caret, agent.name);
     edit(next.body, next.caret);
     setChosen((previous) => [...previous, { id: agent.id, name: agent.name }]);
-    requestAnimationFrame(() => field.current?.setSelectionRange(next.caret, next.caret));
+    requestAnimationFrame(() =>
+      field.current?.setSelectionRange(next.caret, next.caret),
+    );
   }
 
   async function deliver(draft: Draft) {
@@ -108,7 +157,10 @@ export function MessageComposer({ roomId, agents, proposedAgentId, busyAgentIds,
 
   function confirm(candidate: string) {
     if (!pending || sending) return;
-    deliver({ ...pending.draft, selection: { kind: "confirmed", agent_id: candidate } });
+    deliver({
+      ...pending.draft,
+      selection: { kind: "confirmed", agent_id: candidate },
+    });
   }
 
   function submit(event: FormEvent) {
@@ -124,7 +176,11 @@ export function MessageComposer({ roomId, agents, proposedAgentId, busyAgentIds,
       setHighlighted((active + step + suggestions.length) % suggestions.length);
       return;
     }
-    if (open && (event.key === "Enter" || event.key === "Tab") && !event.shiftKey) {
+    if (
+      open &&
+      (event.key === "Enter" || event.key === "Tab") &&
+      !event.shiftKey
+    ) {
       event.preventDefault();
       pick(suggestions[active]);
       return;
@@ -152,7 +208,11 @@ export function MessageComposer({ roomId, agents, proposedAgentId, busyAgentIds,
       {agents.length > 0 && (
         <label className="flex items-center gap-3 text-sm font-medium text-muted">
           {t("agentRun.askLabel")}
-          <select value={recipient} onChange={(event) => setRecipient(event.target.value)} className={`${fieldClasses} min-h-11 flex-1 py-2`}>
+          <select
+            value={recipient}
+            onChange={(event) => setRecipient(event.target.value)}
+            className={`${fieldClasses} min-h-11 flex-1 py-2`}
+          >
             <option value="auto">{t("agentRun.auto")}</option>
             <option value="nobody">{t("agentRun.nobody")}</option>
             {agents.map((agent) => (
@@ -164,7 +224,11 @@ export function MessageComposer({ roomId, agents, proposedAgentId, busyAgentIds,
         </label>
       )}
       {pending && (
-        <div role="group" aria-labelledby={choiceId} className="grid gap-2 rounded-xl border border-line p-3">
+        <div
+          role="group"
+          aria-labelledby={choiceId}
+          className="grid gap-2 rounded-xl border border-line p-3"
+        >
           <p id={choiceId} className="text-sm font-medium text-ink">
             {t(`agentRun.choose.${pending.choice.reason}`)}
           </p>
@@ -173,13 +237,25 @@ export function MessageComposer({ roomId, agents, proposedAgentId, busyAgentIds,
               const agent = agents.find((entry) => entry.id === candidate);
               return (
                 agent && (
-                  <Button key={agent.id} type="button" variant="ghost" size="compact" disabled={sending} onClick={() => confirm(agent.id)}>
+                  <Button
+                    key={agent.id}
+                    type="button"
+                    variant="ghost"
+                    size="compact"
+                    disabled={sending}
+                    onClick={() => confirm(agent.id)}
+                  >
                     {agentLabel(agent)}
                   </Button>
                 )
               );
             })}
-            <Button type="button" variant="ghost" size="compact" onClick={() => setPending(null)}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="compact"
+              onClick={() => setPending(null)}
+            >
               {t("rooms.cancel")}
             </Button>
           </div>
@@ -188,12 +264,18 @@ export function MessageComposer({ roomId, agents, proposedAgentId, busyAgentIds,
       {following && (
         <p className="flex items-center gap-2 text-sm text-muted">
           <span>
-            {translateWith(locale, "agentRun.proposal", { agent: proposedAgent.name })}{" "}
-            <span className="rounded-full border border-line px-2 py-0.5 text-xs">{t("agentRun.proposed")}</span>
+            {translateWith(locale, "agentRun.proposal", {
+              agent: proposedAgent.name,
+            })}{" "}
+            <span className="rounded-full border border-line px-2 py-0.5 text-xs">
+              {t("agentRun.proposed")}
+            </span>
           </span>
           <button
             type="button"
-            aria-label={translateWith(locale, "agentRun.dismissProposal", { agent: proposedAgent.name })}
+            aria-label={translateWith(locale, "agentRun.dismissProposal", {
+              agent: proposedAgent.name,
+            })}
             onClick={() => setDismissed(proposedAgentId)}
             className="grid size-6 cursor-pointer place-items-center rounded-full hover:bg-ink/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
           >
@@ -202,19 +284,35 @@ export function MessageComposer({ roomId, agents, proposedAgentId, busyAgentIds,
         </p>
       )}
       <div className="relative flex items-end gap-2">
-        {open && <MentionSuggestions id={listId} label={t("agentRun.mentions")} agents={suggestions} active={active} onPick={pick} />}
+        {open && (
+          <MentionSuggestions
+            id={listId}
+            label={t("agentRun.mentions")}
+            agents={suggestions}
+            active={active}
+            onPick={pick}
+          />
+        )}
         <textarea
           ref={field}
           role="combobox"
           aria-label={t("rooms.chat.message")}
           aria-invalid={tooLong}
-          aria-describedby={[tooLong ? limitId : null, statusText ? statusId : null].filter(Boolean).join(" ") || undefined}
+          aria-describedby={
+            [tooLong ? limitId : null, statusText ? statusId : null]
+              .filter(Boolean)
+              .join(" ") || undefined
+          }
           aria-autocomplete="list"
           aria-expanded={open}
           aria-controls={open ? listId : undefined}
-          aria-activedescendant={open ? mentionOptionId(listId, active) : undefined}
+          aria-activedescendant={
+            open ? mentionOptionId(listId, active) : undefined
+          }
           value={body}
-          onChange={(event) => edit(event.target.value, event.target.selectionStart)}
+          onChange={(event) =>
+            edit(event.target.value, event.target.selectionStart)
+          }
           onSelect={(event) => setCaret(event.currentTarget.selectionStart)}
           onKeyDown={onKeyDown}
           rows={1}

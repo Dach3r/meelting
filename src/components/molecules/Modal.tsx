@@ -10,7 +10,13 @@ type Props = {
   children: ReactNode;
 };
 
-export function Modal({ title, onClose, bare = false, narrow = false, children }: Props) {
+export function Modal({
+  title,
+  onClose,
+  bare = false,
+  narrow = false,
+  children,
+}: Props) {
   const { t } = useI18n();
 
   useEffect(() => {

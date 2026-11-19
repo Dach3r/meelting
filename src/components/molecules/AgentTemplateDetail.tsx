@@ -1,12 +1,22 @@
 import type { AgentTemplate } from "../../hooks/useAgentTemplates";
 import { Avatar } from "../atoms/Avatar";
 
-export function AgentTemplateDetail({ template, group }: { template: AgentTemplate; group: string }) {
+export function AgentTemplateDetail({
+  template,
+  group,
+}: {
+  template: AgentTemplate;
+  group: string;
+}) {
   const [lead, ...sections] = template.instructions.split("\n\n");
   return (
     <div className="grid gap-5 px-6 pt-4 pb-6">
       <div className="flex items-center gap-4">
-        <Avatar seed={group} label={template.name} className="size-16 rounded-xl text-2xl" />
+        <Avatar
+          seed={group}
+          label={template.name}
+          className="size-16 rounded-xl text-2xl"
+        />
         <div>
           <p className="font-bold text-ink">{template.name}</p>
           <p className="text-sm text-muted">{template.role}</p>

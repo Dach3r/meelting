@@ -15,7 +15,13 @@ type Props = {
   onCancel?: () => void;
 };
 
-export function NewWorkspacePage({ busy, errorMessage, onSubmit, language, onCancel }: Props) {
+export function NewWorkspacePage({
+  busy,
+  errorMessage,
+  onSubmit,
+  language,
+  onCancel,
+}: Props) {
   const { t } = useI18n();
   const inputId = useId();
   const [name, setName] = useState("");
@@ -29,15 +35,30 @@ export function NewWorkspacePage({ busy, errorMessage, onSubmit, language, onCan
     <main className="grid min-h-dvh grid-rows-[auto_1fr] bg-shell px-6 py-6 sm:px-10">
       <header className="flex items-center justify-between">
         <Logo />
-        {language && <LocaleSwitcher value={language.locale} onChange={language.onChange} />}
+        {language && (
+          <LocaleSwitcher
+            value={language.locale}
+            onChange={language.onChange}
+          />
+        )}
         {onCancel && (
-          <Button type="button" variant="ghost" size="compact" onClick={onCancel}>
+          <Button
+            type="button"
+            variant="ghost"
+            size="compact"
+            onClick={onCancel}
+          >
             {t("newWorkspace.cancel")}
           </Button>
         )}
       </header>
-      <form onSubmit={submit} className="mx-auto grid w-full max-w-3xl content-center gap-4 pb-16">
-        <h1 className="text-lg font-medium text-muted">{t("newWorkspace.title")}</h1>
+      <form
+        onSubmit={submit}
+        className="mx-auto grid w-full max-w-3xl content-center gap-4 pb-16"
+      >
+        <h1 className="text-lg font-medium text-muted">
+          {t("newWorkspace.title")}
+        </h1>
         <label htmlFor={inputId} className="sr-only">
           {t("newWorkspace.nameLabel")}
         </label>

@@ -27,7 +27,11 @@ export function InviteAgentsForm({ agents, busy, onSubmit, onCancel }: Props) {
         <Button type="button" variant="ghost" size="pill" onClick={onCancel}>
           {t("rooms.cancel")}
         </Button>
-        <Button type="submit" size="pill" disabled={busy || agentIds.length === 0}>
+        <Button
+          type="submit"
+          size="pill"
+          disabled={busy || agentIds.length === 0}
+        >
           {t("rooms.invite.submit")}
         </Button>
       </div>

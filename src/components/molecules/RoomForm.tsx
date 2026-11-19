@@ -15,7 +15,13 @@ type Props = {
   onCancel: () => void;
 };
 
-export function RoomForm({ agents, busy, errorMessage, onSubmit, onCancel }: Props) {
+export function RoomForm({
+  agents,
+  busy,
+  errorMessage,
+  onSubmit,
+  onCancel,
+}: Props) {
   const { t } = useI18n();
   const [name, setName] = useState("");
   const [agentIds, setAgentIds] = useState<string[]>([]);
@@ -27,7 +33,14 @@ export function RoomForm({ agents, busy, errorMessage, onSubmit, onCancel }: Pro
 
   return (
     <form onSubmit={submit} className="grid gap-5 p-6 sm:px-10 sm:pb-8">
-      <Field label={t("rooms.form.name")} value={name} onChange={setName} maxLength={80} icon={Video} autoFocus />
+      <Field
+        label={t("rooms.form.name")}
+        value={name}
+        onChange={setName}
+        maxLength={80}
+        icon={Video}
+        autoFocus
+      />
       <AgentPicker agents={agents} value={agentIds} onChange={setAgentIds} />
       {errorMessage && <Alert message={errorMessage} />}
       <div className="flex justify-end gap-3">

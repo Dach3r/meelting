@@ -16,14 +16,29 @@ type Props = {
   onSelect?: () => void;
 };
 
-export function OrgCard({ name, role, asHeading = false, count = 0, expanded = true, onToggle, addLabel, onAdd, selected = false, onSelect }: Props) {
+export function OrgCard({
+  name,
+  role,
+  asHeading = false,
+  count = 0,
+  expanded = true,
+  onToggle,
+  addLabel,
+  onAdd,
+  selected = false,
+  onSelect,
+}: Props) {
   const { t } = useI18n();
   const Name = asHeading ? "h2" : "p";
   return (
-    <div className={`group relative flex h-16 w-60 items-center gap-3 rounded-2xl border bg-raised p-2 pr-3 transition-colors hover:bg-hi ${selected ? "border-accent/55" : "border-line"}`}>
+    <div
+      className={`group relative flex h-16 w-60 items-center gap-3 rounded-2xl border bg-raised p-2 pr-3 transition-colors hover:bg-hi ${selected ? "border-accent/55" : "border-line"}`}
+    >
       <Avatar seed={name} label={name} className="size-11 rounded-full" />
       <div className="min-w-0 flex-1 leading-tight">
-        <Name className="truncate text-base font-bold tracking-tight text-ink">{name}</Name>
+        <Name className="truncate text-base font-bold tracking-tight text-ink">
+          {name}
+        </Name>
         <p className="truncate text-sm font-medium text-muted">{role}</p>
       </div>
       {count > 0 && (
@@ -42,7 +57,9 @@ export function OrgCard({ name, role, asHeading = false, count = 0, expanded = t
           )}
         </button>
       )}
-      {onSelect && <CardSelect label={name} selected={selected} onSelect={onSelect} />}
+      {onSelect && (
+        <CardSelect label={name} selected={selected} onSelect={onSelect} />
+      )}
       {onAdd && (
         <button
           type="button"

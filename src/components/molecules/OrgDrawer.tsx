@@ -5,9 +5,23 @@ import { Avatar, hueOf } from "../atoms/Avatar";
 
 type Row = { Icon: LucideIcon; label: string; value: string };
 
-type Props = { name: string; subtitle: string; rows: Row[]; children?: ReactNode; actions: ReactNode; onClose: () => void };
+type Props = {
+  name: string;
+  subtitle: string;
+  rows: Row[];
+  children?: ReactNode;
+  actions: ReactNode;
+  onClose: () => void;
+};
 
-export function OrgDrawer({ name, subtitle, rows, children, actions, onClose }: Props) {
+export function OrgDrawer({
+  name,
+  subtitle,
+  rows,
+  children,
+  actions,
+  onClose,
+}: Props) {
   const { t } = useI18n();
   const hue = hueOf(name);
   return (
@@ -17,7 +31,9 @@ export function OrgDrawer({ name, subtitle, rows, children, actions, onClose }: 
       className="absolute top-4 right-4 bottom-4 flex w-80 flex-col overflow-hidden rounded-3xl border border-line bg-surface shadow-2xl shadow-black/30"
     >
       <div
-        style={{ backgroundImage: `linear-gradient(135deg, hsl(${hue} 45% 30%), hsl(${(hue + 50) % 360} 55% 18%))` }}
+        style={{
+          backgroundImage: `linear-gradient(135deg, hsl(${hue} 45% 30%), hsl(${(hue + 50) % 360} 55% 18%))`,
+        }}
         className="relative h-24 shrink-0"
       >
         <button
@@ -31,21 +47,34 @@ export function OrgDrawer({ name, subtitle, rows, children, actions, onClose }: 
       </div>
       <div className="flex flex-1 flex-col gap-4 px-5 pb-5">
         <div className="-mt-10 grid gap-2">
-          <Avatar seed={name} label={name} className="relative size-20 rounded-full text-3xl ring-4 ring-surface" />
+          <Avatar
+            seed={name}
+            label={name}
+            className="relative size-20 rounded-full text-3xl ring-4 ring-surface"
+          />
           <div className="min-w-0 leading-tight">
-            <h3 className="truncate text-xl font-bold tracking-tight text-ink">{name}</h3>
-            <p className="mt-1 truncate text-sm font-medium text-muted">{subtitle}</p>
+            <h3 className="truncate text-xl font-bold tracking-tight text-ink">
+              {name}
+            </h3>
+            <p className="mt-1 truncate text-sm font-medium text-muted">
+              {subtitle}
+            </p>
           </div>
         </div>
         <dl className="grid gap-2">
           {rows.map(({ Icon, label, value }) => (
-            <div key={label} className="flex items-center gap-3 rounded-2xl bg-raised p-3">
+            <div
+              key={label}
+              className="flex items-center gap-3 rounded-2xl bg-raised p-3"
+            >
               <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-surface text-muted">
                 <Icon className="size-4" aria-hidden="true" />
               </span>
               <div className="min-w-0 leading-tight">
                 <dt className="text-xs font-medium text-muted">{label}</dt>
-                <dd className="mt-0.5 truncate text-sm font-semibold text-ink">{value}</dd>
+                <dd className="mt-0.5 truncate text-sm font-semibold text-ink">
+                  {value}
+                </dd>
               </div>
             </div>
           ))}

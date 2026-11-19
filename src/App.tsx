@@ -52,8 +52,12 @@ function App() {
 
   const locale = session?.locale ?? draftLocale;
   const errorMessage = errorKey ? translateError(locale, errorKey) : null;
-  const teamsErrorMessage = teamsErrorKey ? translateError(locale, teamsErrorKey) : null;
-  const teamsActionErrorMessage = teamsActionErrorKey ? translateError(locale, teamsActionErrorKey) : null;
+  const teamsErrorMessage = teamsErrorKey
+    ? translateError(locale, teamsErrorKey)
+    : null;
+  const teamsActionErrorMessage = teamsActionErrorKey
+    ? translateError(locale, teamsActionErrorKey)
+    : null;
 
   return (
     <I18nProvider locale={locale}>

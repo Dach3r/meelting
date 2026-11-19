@@ -1,4 +1,11 @@
-import { Briefcase, ChartColumn, Code, Package, PenLine, type LucideIcon } from "lucide-react";
+import {
+  Briefcase,
+  ChartColumn,
+  Code,
+  Package,
+  PenLine,
+  type LucideIcon,
+} from "lucide-react";
 
 export const roleGroupIcons: Record<string, LucideIcon> = {
   product: Package,

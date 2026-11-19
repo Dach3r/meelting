@@ -22,7 +22,10 @@ export function SegmentedControl<T extends string>({
   disabled?: boolean;
 }) {
   return (
-    <nav aria-label={label} className="flex w-fit items-center gap-1 rounded-full bg-pill p-1 text-sm">
+    <nav
+      aria-label={label}
+      className="flex w-fit items-center gap-1 rounded-full bg-pill p-1 text-sm"
+    >
       {options.map(({ icon: Icon, ...option }) => (
         <button
           key={option.value}
@@ -35,7 +38,9 @@ export function SegmentedControl<T extends string>({
         >
           {Icon && <Icon aria-hidden className="size-4" />}
           {option.label}
-          {option.pending && <span className="ml-2 inline-block size-1.5 rounded-full bg-accent align-middle" />}
+          {option.pending && (
+            <span className="ml-2 inline-block size-1.5 rounded-full bg-accent align-middle" />
+          )}
         </button>
       ))}
     </nav>

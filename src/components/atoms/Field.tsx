@@ -16,7 +16,18 @@ type Props = Omit<InputHTMLAttributes<HTMLInputElement>, "onChange"> & {
 export const fieldClasses =
   "w-full min-w-0 rounded-xl border border-line bg-raised px-4 py-4 text-base text-ink outline-none transition-colors placeholder:text-muted focus:bg-[color-mix(in_srgb,var(--color-raised)_75%,var(--color-surface))]";
 
-export function Field({ label, value, onChange, multiline = false, rows = 3, grow = false, hint, action, icon: Icon, ...rest }: Props) {
+export function Field({
+  label,
+  value,
+  onChange,
+  multiline = false,
+  rows = 3,
+  grow = false,
+  hint,
+  action,
+  icon: Icon,
+  ...rest
+}: Props) {
   const id = useId();
   return (
     <div className={`flex flex-col gap-2 ${grow ? "flex-1" : ""}`}>
@@ -39,7 +50,12 @@ export function Field({ label, value, onChange, multiline = false, rows = 3, gro
         />
       ) : (
         <div className="relative">
-          {Icon && <Icon aria-hidden className="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-muted" />}
+          {Icon && (
+            <Icon
+              aria-hidden
+              className="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-muted"
+            />
+          )}
           <input
             id={id}
             value={value}

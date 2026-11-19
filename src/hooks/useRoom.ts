@@ -18,28 +18,56 @@ const recentMessages = 100;
 const interventionTimeoutMs = 15000;
 const interventionTries = 3;
 
-type RoomDetail = { room: Room; former_agents: Participant[]; messages: Message[]; runs: AgentRun[]; partials: RunSnapshot[]; proposed_agent_id: string | null };
+type RoomDetail = {
+  room: Room;
+  former_agents: Participant[];
+  messages: Message[];
+  runs: AgentRun[];
+  partials: RunSnapshot[];
+  proposed_agent_id: string | null;
+};
 
-export type Selection = { kind: "auto"; agent_id: string | null } | { kind: "nobody" } | { kind: "agent" | "confirmed"; agent_id: string };
+export type Selection =
+  | { kind: "auto"; agent_id: string | null }
+  | { kind: "nobody" }
+  | { kind: "agent" | "confirmed"; agent_id: string };
 
-export type Draft = { body: string; selection: Selection; mentionIds: string[] };
+export type Draft = {
+  body: string;
+  selection: Selection;
+  mentionIds: string[];
+};
 
-export type Choice = { reason: "ambiguous" | "several" | "conflict"; candidates: string[] };
+export type Choice = {
+  reason: "ambiguous" | "several" | "conflict";
+  candidates: string[];
+};
 
 export type SendResult = "sent" | "failed" | Choice;
 
 type InterventionSent =
-  | { outcome: "sent"; message: Message; run: AgentRun | null; partial: RunSnapshot | null }
+  | {
+      outcome: "sent";
+      message: Message;
+      run: AgentRun | null;
+      partial: RunSnapshot | null;
+    }
   | ({ outcome: "choose" } & Choice);
 
 type Roster = { agents: Participant[]; former_agents: Participant[] };
 
-type RoomState = { messages: Message[]; runs: RunState; proposal: string | null };
+type RoomState = {
+  messages: Message[];
+  runs: RunState;
+  proposal: string | null;
+};
 
 type Update = (state: RoomState) => RoomState;
 
 function withMessage(messages: Message[], message: Message) {
-  return messages.some((known) => known.id === message.id) ? messages : [...messages, message].slice(-recentMessages);
+  return messages.some((known) => known.id === message.id)
+    ? messages
+    : [...messages, message].slice(-recentMessages);
 }
 
 function withStatus(state: RoomState, run: AgentRun): RoomState {
@@ -50,7 +78,10 @@ function withStatus(state: RoomState, run: AgentRun): RoomState {
 
 function invokeWithTimeout<T>(command: string, args: Record<string, unknown>) {
   return new Promise<T>((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error("timeout")), interventionTimeoutMs);
+    const timer = setTimeout(
+      () => reject(new Error("timeout")),
+      interventionTimeoutMs,
+    );
     invoke<T>(command, args).then(
       (value) => {
         clearTimeout(timer);
@@ -66,7 +97,11 @@ function invokeWithTimeout<T>(command: string, args: Record<string, unknown>) {
 
 export function useRoom(roomId: string) {
   const [room, setRoom] = useState<Room | null>(null);
-  const [state, setState] = useState<RoomState>({ messages: [], runs: emptyRunState, proposal: null });
+  const [state, setState] = useState<RoomState>({
+    messages: [],
+    runs: emptyRunState,
+    proposal: null,
+  });
   const [errorKey, setErrorKey] = useState<string | null>(null);
   const [sendErrorKey, setSendErrorKey] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
@@ -88,7 +123,11 @@ export function useRoom(roomId: string) {
     const subscriptions = Promise.all([
       listen<Message>("message:created", (event) => {
         const message = event.payload;
-        if (message.room_id === roomId) receive((s) => ({ ...s, messages: withMessage(s.messages, message) }));
+        if (message.room_id === roomId)
+          receive((s) => ({
+            ...s,
+            messages: withMessage(s.messages, message),
+          }));
       }),
       listen<AgentRun>("agent_run:status", (event) => {
         const run = event.payload;
@@ -96,7 +135,8 @@ export function useRoom(roomId: string) {
       }),
       listen<TokenChunk>("agent_run:token", (event) => {
         const chunk = event.payload;
-        if (chunk.room_id === roomId) receive((s) => ({ ...s, runs: applyToken(s.runs, chunk) }));
+        if (chunk.room_id === roomId)
+          receive((s) => ({ ...s, runs: applyToken(s.runs, chunk) }));
       }),
     ]);
     subscriptions
@@ -123,7 +163,11 @@ export function useRoom(roomId: string) {
     };
   }, [roomId]);
 
-  async function sendIntervention({ body, selection, mentionIds }: Draft): Promise<SendResult> {
+  async function sendIntervention({
+    body,
+    selection,
+    mentionIds,
+  }: Draft): Promise<SendResult> {
     setSending(true);
     setSendErrorKey(null);
     const clientRequestId = crypto.randomUUID();
@@ -131,19 +175,27 @@ export function useRoom(roomId: string) {
     try {
       for (let attempt = 1; attempt <= tries; attempt += 1) {
         try {
-          const sent = await invokeWithTimeout<InterventionSent>("send_intervention", {
-            roomId,
-            body,
-            selection,
-            mentionIds,
-            clientRequestId,
-          });
-          if (sent.outcome === "choose") return { reason: sent.reason, candidates: sent.candidates };
+          const sent = await invokeWithTimeout<InterventionSent>(
+            "send_intervention",
+            {
+              roomId,
+              body,
+              selection,
+              mentionIds,
+              clientRequestId,
+            },
+          );
+          if (sent.outcome === "choose")
+            return { reason: sent.reason, candidates: sent.candidates };
           setState((s) => {
             const messages = withMessage(s.messages, sent.message);
             if (!sent.run) return { ...s, messages };
             const runs = applyStatus(s.runs, sent.run);
-            return { ...s, messages, runs: sent.partial ? applySnapshot(runs, sent.partial) : runs };
+            return {
+              ...s,
+              messages,
+              runs: sent.partial ? applySnapshot(runs, sent.partial) : runs,
+            };
           });
           return "sent";
         } catch (error) {
@@ -185,12 +237,24 @@ export function useRoom(roomId: string) {
     }
   }
 
-  const addAgents = (agentIds: string[]) => changeRoster("add_room_agents", { agentIds });
-  const removeAgent = (agentId: string) => changeRoster("remove_room_agent", { agentId });
+  const addAgents = (agentIds: string[]) =>
+    changeRoster("add_room_agents", { agentIds });
+  const removeAgent = (agentId: string) =>
+    changeRoster("remove_room_agent", { agentId });
   const clearRosterError = () => setRosterErrorKey(null);
 
-  const proposal = room?.agents.some((agent) => agent.id === state.proposal) ? state.proposal : null;
-  const detail = room ? { room, formerAgents, messages: state.messages, runs: state.runs, proposal } : null;
+  const proposal = room?.agents.some((agent) => agent.id === state.proposal)
+    ? state.proposal
+    : null;
+  const detail = room
+    ? {
+        room,
+        formerAgents,
+        messages: state.messages,
+        runs: state.runs,
+        proposal,
+      }
+    : null;
 
   return {
     detail,

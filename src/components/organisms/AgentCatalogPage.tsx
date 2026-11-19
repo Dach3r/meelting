@@ -2,7 +2,10 @@ import { ChevronRight, LayoutGrid, Search } from "lucide-react";
 import { useState } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
 import { useAgentRoles } from "../../hooks/useAgentRoles";
-import { useAgentTemplates, type AgentTemplate } from "../../hooks/useAgentTemplates";
+import {
+  useAgentTemplates,
+  type AgentTemplate,
+} from "../../hooks/useAgentTemplates";
 import type { AgentDraft, Team } from "../../hooks/useTeams";
 import { translateError } from "../../i18n/translate";
 import { Button } from "../atoms/Button";
@@ -22,25 +25,42 @@ type Props = {
   onBack: () => void;
 };
 
-type Dialog = { kind: "detail" | "hire"; template: AgentTemplate } | { kind: "custom" } | null;
+type Dialog =
+  | { kind: "detail" | "hire"; template: AgentTemplate }
+  | { kind: "custom" }
+  | null;
 
-export function AgentCatalogPage({ team, busy, actionErrorMessage, onCreateAgent, onClearActionError, onBack }: Props) {
+export function AgentCatalogPage({
+  team,
+  busy,
+  actionErrorMessage,
+  onCreateAgent,
+  onClearActionError,
+  onBack,
+}: Props) {
   const { t, locale } = useI18n();
   const { templates, errorKey } = useAgentTemplates(locale);
   const rolesByGroup = useAgentRoles();
   const [dialog, setDialog] = useState<Dialog>(null);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("all");
-  const groupOf = (template: AgentTemplate) => rolesByGroup.find(({ roles }) => roles.includes(template.role))?.group ?? "";
+  const groupOf = (template: AgentTemplate) =>
+    rolesByGroup.find(({ roles }) => roles.includes(template.role))?.group ??
+    "";
   const needle = query.trim().toLowerCase();
   const visibleTemplates = templates.filter(
     (template) =>
       (category === "all" || groupOf(template) === category) &&
-      [template.name, template.role, template.description].some((text) => text.toLowerCase().includes(needle)),
+      [template.name, template.role, template.description].some((text) =>
+        text.toLowerCase().includes(needle),
+      ),
   );
 
   const sections = rolesByGroup
-    .map(({ group }) => ({ group, items: visibleTemplates.filter((template) => groupOf(template) === group) }))
+    .map(({ group }) => ({
+      group,
+      items: visibleTemplates.filter((template) => groupOf(template) === group),
+    }))
     .filter(({ items }) => items.length > 0);
 
   function open(next: NonNullable<Dialog>) {
@@ -65,7 +85,11 @@ export function AgentCatalogPage({ team, busy, actionErrorMessage, onCreateAgent
         <nav aria-label={t("teams.catalog.breadcrumb")}>
           <ol className="flex items-center gap-2 text-sm text-muted">
             <li>
-              <button type="button" onClick={onBack} className="cursor-pointer hover:text-ink">
+              <button
+                type="button"
+                onClick={onBack}
+                className="cursor-pointer hover:text-ink"
+              >
                 {t("home.nav.teams")}
               </button>
             </li>
@@ -88,7 +112,10 @@ export function AgentCatalogPage({ team, busy, actionErrorMessage, onCreateAgent
       </div>
       {errorKey && <Alert message={translateError(locale, errorKey)} />}
       <div className="relative">
-        <Search aria-hidden className="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-muted" />
+        <Search
+          aria-hidden
+          className="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-muted"
+        />
         <input
           type="search"
           value={query}
@@ -104,22 +131,39 @@ export function AgentCatalogPage({ team, busy, actionErrorMessage, onCreateAgent
         onChange={setCategory}
         options={[
           { value: "all", label: t("teams.catalog.all"), icon: LayoutGrid },
-          ...rolesByGroup.map(({ group }) => ({ value: group, label: t(`teams.agent.roleGroups.${group}`), icon: roleGroupIcons[group] })),
+          ...rolesByGroup.map(({ group }) => ({
+            value: group,
+            label: t(`teams.agent.roleGroups.${group}`),
+            icon: roleGroupIcons[group],
+          })),
         ]}
       />
-      {visibleTemplates.length === 0 && templates.length > 0 && <p className="py-6 text-center text-muted">{t("teams.catalog.empty")}</p>}
+      {visibleTemplates.length === 0 && templates.length > 0 && (
+        <p className="py-6 text-center text-muted">
+          {t("teams.catalog.empty")}
+        </p>
+      )}
       {sections.map(({ group, items }) => {
         const GroupIcon = roleGroupIcons[group];
         return (
-          <section key={group} aria-label={t(`teams.agent.roleGroups.${group}`)} className="grid gap-3">
+          <section
+            key={group}
+            aria-label={t(`teams.agent.roleGroups.${group}`)}
+            className="grid gap-3"
+          >
             <div className="flex items-center gap-2.5 text-muted">
               <GroupIcon aria-hidden className="size-4" />
-              <h3 className="text-xs font-semibold tracking-wider uppercase">{t(`teams.agent.roleGroups.${group}`)}</h3>
+              <h3 className="text-xs font-semibold tracking-wider uppercase">
+                {t(`teams.agent.roleGroups.${group}`)}
+              </h3>
               <span className="text-sm">{items.length}</span>
             </div>
             <ul className="grid grid-cols-[repeat(auto-fill,minmax(22rem,1fr))] gap-3">
               {items.map((template) => (
-                <li key={template.key} className="grid content-between gap-4 rounded-2xl border border-line bg-hi/70 p-4">
+                <li
+                  key={template.key}
+                  className="grid content-between gap-4 rounded-2xl border border-line bg-hi/70 p-4"
+                >
                   <div className="grid gap-3">
                     <div className="flex items-center gap-3">
                       <span
@@ -128,9 +172,13 @@ export function AgentCatalogPage({ team, busy, actionErrorMessage, onCreateAgent
                       >
                         {template.name.trim().charAt(0).toUpperCase()}
                       </span>
-                      <h4 className="min-w-0 truncate font-bold text-ink">{template.name}</h4>
+                      <h4 className="min-w-0 truncate font-bold text-ink">
+                        {template.name}
+                      </h4>
                     </div>
-                    <p className="line-clamp-3 text-sm text-muted">{template.description}</p>
+                    <p className="line-clamp-3 text-sm text-muted">
+                      {template.description}
+                    </p>
                   </div>
                   <div className="flex justify-between gap-2">
                     <Button
@@ -158,11 +206,18 @@ export function AgentCatalogPage({ team, busy, actionErrorMessage, onCreateAgent
       })}
       {dialog?.kind === "detail" && (
         <Modal title={dialog.template.name} onClose={close}>
-          <AgentTemplateDetail template={dialog.template} group={groupOf(dialog.template)} />
+          <AgentTemplateDetail
+            template={dialog.template}
+            group={groupOf(dialog.template)}
+          />
         </Modal>
       )}
       {dialog?.kind === "hire" && (
-        <Modal title={`${t("teams.catalog.hire")} · ${dialog.template.name}`} onClose={close} bare>
+        <Modal
+          title={`${t("teams.catalog.hire")} · ${dialog.template.name}`}
+          onClose={close}
+          bare
+        >
           <AgentForm
             key={dialog.template.key}
             team={team}
@@ -175,8 +230,18 @@ export function AgentCatalogPage({ team, busy, actionErrorMessage, onCreateAgent
         </Modal>
       )}
       {dialog?.kind === "custom" && (
-        <Modal title={`${t("teams.newAgent")} · ${team.name}`} onClose={close} bare>
-          <AgentForm team={team} busy={busy} errorMessage={actionErrorMessage} onSubmit={create} onCancel={close} />
+        <Modal
+          title={`${t("teams.newAgent")} · ${team.name}`}
+          onClose={close}
+          bare
+        >
+          <AgentForm
+            team={team}
+            busy={busy}
+            errorMessage={actionErrorMessage}
+            onSubmit={create}
+            onCancel={close}
+          />
         </Modal>
       )}
     </div>

@@ -2,8 +2,10 @@ import type { ButtonHTMLAttributes } from "react";
 
 const variants = {
   primary: "border-ink bg-ink text-surface enabled:hover:bg-ink/85",
-  ghost: "border-transparent bg-transparent text-muted enabled:hover:bg-pill-hover enabled:hover:text-ink",
-  danger: "border-transparent bg-transparent text-error enabled:hover:bg-error/10",
+  ghost:
+    "border-transparent bg-transparent text-muted enabled:hover:bg-pill-hover enabled:hover:text-ink",
+  danger:
+    "border-transparent bg-transparent text-error enabled:hover:bg-error/10",
   destructive: "border-error bg-error text-surface enabled:hover:bg-error/85",
 };
 
@@ -18,7 +20,12 @@ type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
   size?: keyof typeof sizes;
 };
 
-export function Button({ variant = "primary", size = "default", className = "", ...rest }: Props) {
+export function Button({
+  variant = "primary",
+  size = "default",
+  className = "",
+  ...rest
+}: Props) {
   return (
     <button
       className={`inline-flex cursor-pointer items-center justify-center gap-3 border font-semibold transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:cursor-not-allowed disabled:opacity-60 ${sizes[size]} ${variants[variant]} ${className}`}
