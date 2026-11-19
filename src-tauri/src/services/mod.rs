@@ -16,6 +16,7 @@ pub mod engine_check;
 pub mod first_launch;
 pub mod intervention_send;
 pub mod llm_providers_list;
+pub mod loading_change;
 pub mod local_models_detect;
 pub mod locale_change;
 pub mod message_send;

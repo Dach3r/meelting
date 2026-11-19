@@ -38,9 +38,11 @@ type WorkspaceProps = WorkspaceSwitcherProps & {
   locale: Locale;
   theme: Theme;
   uiScale: UiScale;
+  loadingEnabled: boolean;
   onChangeLocale: (locale: Locale) => void;
   onChangeTheme: (theme: Theme) => void;
   onChangeUiScale: (uiScale: UiScale) => void;
+  onChangeLoadingEnabled: (loadingEnabled: boolean) => void;
   errorMessage: string | null;
   onDismissError: () => void;
 };
@@ -61,9 +63,11 @@ export function Workspace({
   locale,
   theme,
   uiScale,
+  loadingEnabled,
   onChangeLocale,
   onChangeTheme,
   onChangeUiScale,
+  onChangeLoadingEnabled,
   errorMessage,
   onDismissError,
   ...props
@@ -77,13 +81,13 @@ export function Workspace({
   const [switching, setSwitching] = useState<{ name: string; failed: boolean } | null>(null);
 
   async function switchWorkspace(workspaceId: string) {
-    const target = props.workspaces.find((workspace) => workspace.id === workspaceId);
-    setSwitching({ name: target?.name ?? "", failed: false });
+    const name = props.workspaces.find((workspace) => workspace.id === workspaceId)?.name ?? "";
+    if (loadingEnabled) setSwitching({ name, failed: false });
     const [switched] = await Promise.all([
       props.onSwitch(workspaceId),
-      new Promise((resolve) => setTimeout(resolve, transitionMs)),
+      loadingEnabled && new Promise((resolve) => setTimeout(resolve, transitionMs)),
     ]);
-    setSwitching(switched ? null : { name: target?.name ?? "", failed: true });
+    setSwitching(switched ? null : { name, failed: true });
     return switched;
   }
 
@@ -119,14 +123,20 @@ export function Workspace({
                   locale={locale}
                   theme={theme}
                   uiScale={uiScale}
+                  loadingEnabled={loadingEnabled}
                   busy={props.busy}
                   errorMessage={errorMessage}
                   onChangeLocale={onChangeLocale}
                   onChangeTheme={onChangeTheme}
                   onChangeUiScale={onChangeUiScale}
+                  onChangeLoadingEnabled={onChangeLoadingEnabled}
                 />
               ) : view === "rooms" ? (
-                <RoomsPage key={props.currentId} agents={teams.flatMap((team) => team.agents)} />
+                <RoomsPage
+                  key={props.currentId}
+                  agents={teams.flatMap((team) => team.agents)}
+                  loadingEnabled={loadingEnabled}
+                />
               ) : catalogTeam ? (
                 <AgentCatalogPage
                   team={catalogTeam}

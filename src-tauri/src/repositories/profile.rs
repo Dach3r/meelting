@@ -5,20 +5,22 @@ use crate::domain::ui_scale::UiScale;
 use sqlx::SqliteExecutor;
 
 pub async fn get<'e>(executor: impl SqliteExecutor<'e>) -> Result<Option<Profile>, sqlx::Error> {
-    let row: Option<(String, String, u16, Option<String>)> =
-        sqlx::query_as("SELECT locale, theme, ui_scale, current_workspace_id FROM profile")
-            .fetch_optional(executor)
-            .await?;
-    Ok(
-        row.and_then(|(locale, theme, ui_scale, current_workspace_id)| {
+    let row: Option<(String, String, u16, bool, Option<String>)> = sqlx::query_as(
+        "SELECT locale, theme, ui_scale, loading_enabled, current_workspace_id FROM profile",
+    )
+    .fetch_optional(executor)
+    .await?;
+    Ok(row.and_then(
+        |(locale, theme, ui_scale, loading_enabled, current_workspace_id)| {
             Some(Profile {
                 locale: Locale::parse(&locale)?,
                 theme: Theme::parse(&theme)?,
                 ui_scale: UiScale::from_percent(ui_scale)?,
+                loading_enabled,
                 current_workspace_id,
             })
-        }),
-    )
+        },
+    ))
 }
 
 pub async fn create<'e>(
@@ -87,6 +89,19 @@ pub async fn set_ui_scale<'e>(
     Ok(())
 }
 
+pub async fn set_loading_enabled<'e>(
+    executor: impl SqliteExecutor<'e>,
+    loading_enabled: bool,
+) -> Result<(), sqlx::Error> {
+    sqlx::query(
+        "UPDATE profile SET loading_enabled = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')",
+    )
+    .bind(loading_enabled)
+    .execute(executor)
+    .await?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -112,6 +127,7 @@ mod tests {
                 locale: Locale::Es,
                 theme: Theme::System,
                 ui_scale: UiScale::default(),
+                loading_enabled: true,
                 current_workspace_id: Some("01".into())
             })
         );
@@ -156,6 +172,18 @@ mod tests {
 
         let profile = get(&pool).await.unwrap().unwrap();
         assert_eq!(profile.ui_scale.percent(), 150);
+    }
+
+    #[tokio::test]
+    async fn changes_loading_enabled() {
+        let (pool, _dir) = open_for_test().await;
+        workspaces::insert(&pool, "01", "Acme").await.unwrap();
+        create(&pool, Locale::En, "01").await.unwrap();
+
+        set_loading_enabled(&pool, false).await.unwrap();
+
+        let profile = get(&pool).await.unwrap().unwrap();
+        assert!(!profile.loading_enabled);
     }
 
     #[tokio::test]

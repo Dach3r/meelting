@@ -19,6 +19,7 @@ function App() {
     changeLocale,
     changeTheme,
     changeUiScale,
+    changeLoadingEnabled,
   } = useSession();
   const {
     teams,
@@ -93,9 +94,11 @@ function App() {
           locale={session.locale}
           theme={session.theme}
           uiScale={session.ui_scale}
+          loadingEnabled={session.loading_enabled}
           onChangeLocale={changeLocale}
           onChangeTheme={changeTheme}
           onChangeUiScale={changeUiScale}
+          onChangeLoadingEnabled={changeLoadingEnabled}
           currentId={session.current_workspace_id}
           busy={busy}
           errorMessage={errorMessage}

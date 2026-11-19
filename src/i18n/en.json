@@ -188,6 +188,12 @@
     "uiScale": {
       "title": "Interface size",
       "description": "Make everything in the app smaller or larger."
+    },
+    "loading": {
+      "title": "Transition effect",
+      "description": "Show a brief animation when entering or leaving a room and when switching workspaces.",
+      "on": "On",
+      "off": "Off"
     }
   },
   "rooms": {

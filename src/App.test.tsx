@@ -32,6 +32,7 @@ function session(overrides = {}) {
     locale: "es",
     theme: "system",
     ui_scale: 100,
+    loading_enabled: true,
     current_workspace_id: "1",
     workspaces: [acme],
     ...overrides,
@@ -122,6 +123,23 @@ describe("workspace shell", () => {
     expect(invokeMock).toHaveBeenCalledWith("switch_workspace", { workspaceId: "2" });
     expect(await screen.findByRole("button", { name: "Switch workspace" })).toHaveTextContent("Globex");
     await waitFor(() => expect(screen.queryByRole("status")).not.toBeInTheDocument());
+  });
+
+  it("switches workspace without the transition when it is turned off", async () => {
+    invokeMock.mockImplementation(async (command) => {
+      if (command === "list_teams") return [];
+      const base = { locale: "en", loading_enabled: false, workspaces: [acme, globex] };
+      if (command === "load_session") return session(base);
+      return session({ ...base, current_workspace_id: "2" });
+    });
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "Switch workspace" }));
+    await user.click(screen.getByRole("button", { name: /Globex/ }));
+
+    expect(await screen.findByRole("button", { name: "Switch workspace" })).toHaveTextContent("Globex");
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
   });
 
   it("shows the error in the overlay when switching fails and lets the user dismiss it", async () => {
@@ -1274,6 +1292,24 @@ describe("settings", () => {
     expect(invokeMock).toHaveBeenCalledWith("change_ui_scale", { uiScale: 125 });
     await waitFor(() => expect(document.documentElement.style.fontSize).toBe("125%"));
     expect(screen.getByRole("button", { name: "125%" })).toHaveAttribute("aria-current", "true");
+  });
+
+  it("turns the transition effect off", async () => {
+    invokeMock.mockImplementation(async (command) => {
+      if (command === "list_teams") return [];
+      if (command === "change_loading_enabled") return session({ locale: "en", loading_enabled: false });
+      return session({ locale: "en" });
+    });
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "Settings" }));
+    await user.click(screen.getByRole("button", { name: "Appearance" }));
+    expect(screen.getByRole("button", { name: "On" })).toHaveAttribute("aria-current", "true");
+    await user.click(screen.getByRole("button", { name: "Off" }));
+
+    expect(invokeMock).toHaveBeenCalledWith("change_loading_enabled", { loadingEnabled: false });
+    await waitFor(() => expect(screen.getByRole("button", { name: "Off" })).toHaveAttribute("aria-current", "true"));
   });
 
   it("shows the translated error when saving fails", async () => {

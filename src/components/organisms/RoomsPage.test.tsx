@@ -53,10 +53,10 @@ function core(handlers: Record<string, (args: Record<string, unknown>) => unknow
   });
 }
 
-function renderPage(agents: Agent[] = [ana, bob]) {
+function renderPage(agents: Agent[] = [ana, bob], loadingEnabled = true) {
   return render(
     <I18nProvider locale="en">
-      <RoomsPage agents={agents} />
+      <RoomsPage agents={agents} loadingEnabled={loadingEnabled} />
     </I18nProvider>,
   );
 }
@@ -219,6 +219,20 @@ describe("inside a room", () => {
     expect(screen.getByRole("status")).toHaveTextContent("Entering Daily");
     await user.click(await screen.findByRole("button", { name: "Rooms" }));
     expect(screen.getByRole("status")).toHaveTextContent("Leaving Daily");
+    expect(await screen.findByRole("list", { name: "Rooms" })).toBeInTheDocument();
+  });
+
+  it("enters and leaves the room without a transition when it is turned off", async () => {
+    core({
+      list_rooms: () => ({ rooms: [daily], featured_messages: [] }),
+      get_room: () => ({ room: daily, former_agents: [], messages: [], runs: [], partials: [] }),
+    });
+    const user = userEvent.setup();
+    renderPage([ana, bob], false);
+    await user.click(await screen.findByRole("button", { name: "Enter room" }));
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    await user.click(await screen.findByRole("button", { name: "Rooms" }));
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
     expect(await screen.findByRole("list", { name: "Rooms" })).toBeInTheDocument();
   });
 

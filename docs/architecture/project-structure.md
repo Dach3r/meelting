@@ -34,7 +34,7 @@ src-tauri/src/
 │   ├── worktree.rs        ✅ run_in_worktree
 │   ├── agent_runs.rs      ✅ send_intervention, resolve_recipient, check_agent_availability, cancel_agent_run and the engine's event emitter (agent_run:status, agent_run:token, message:created)
 │   ├── rooms.rs           ✅ list_rooms, create_room, get_room (with runs, snapshots and agents who left), finish_room, add_room_agents, remove_room_agent
-│   └── session.rs         ✅ load_session, complete_first_launch, create_workspace, switch_workspace, list_teams, create_team, create_agent, get_agent, update_agent, delete_agent, save_canvas_positions, reset_canvas_positions, list_agent_templates, list_agent_roles, list_llm_providers, detect_local_models, change_locale, change_theme, change_ui_scale
+│   └── session.rs         ✅ load_session, complete_first_launch, create_workspace, switch_workspace, list_teams, create_team, create_agent, get_agent, update_agent, delete_agent, save_canvas_positions, reset_canvas_positions, list_agent_templates, list_agent_roles, list_llm_providers, detect_local_models, change_locale, change_theme, change_ui_scale, change_loading_enabled
 ├── services/              Layer 2: business actions (verbs)
 │   ├── worktree_run.rs    ✅ creates a worktree and runs a command in it
 │   ├── session_load.rs    ✅ loads the profile and the workspaces; defines SessionError
@@ -46,6 +46,7 @@ src-tauri/src/
 │   ├── locale_change.rs   ✅ saves the profile language
 │   ├── theme_change.rs    ✅ saves the profile theme
 │   ├── ui_scale_change.rs ✅ saves the profile interface size
+│   ├── loading_change.rs  ✅ saves whether the transition effect is on
 │   ├── team_create.rs     ✅ creates a team and returns the updated list
 │   ├── agent_create.rs    ✅ validates and creates an agent (custom or from a template) and returns the updated list
 │   ├── agent_get.rs       ✅ full detail of an agent in the current workspace
@@ -150,7 +151,7 @@ src/
 ├── assets/fonts/          Inter and Rubik (woff2)
 ├── i18n/                  es.json, en.json, translate.ts (text, named values, command and run errors, date and agent count) and I18nProvider
 ├── hooks/                 Core access and associated state
-│   ├── useSession.ts      ✅ invoke load_session, complete_first_launch, create_workspace, switch_workspace, change_locale, change_theme, change_ui_scale
+│   ├── useSession.ts      ✅ invoke load_session, complete_first_launch, create_workspace, switch_workspace, change_locale, change_theme, change_ui_scale, change_loading_enabled
 │   ├── useTeams.ts        ✅ invoke list_teams, create_team, create_agent, get_agent, update_agent, delete_agent, save_canvas_positions (with a 500 ms debounce), reset_canvas_positions
 │   ├── useRooms.ts        ✅ invoke list_rooms, create_room, finish_room
 │   ├── useRoom.ts         ✅ invoke get_room, send_intervention (one client_request_id per send, reused in automatic retries and after an IPC timeout; no retries if the recipient is "Nobody") cancel_agent_run, add_room_agents and remove_room_agent; listen message:created, agent_run:status and agent_run:token before loading the room, with events during the load held back

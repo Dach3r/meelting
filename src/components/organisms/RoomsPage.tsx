@@ -12,7 +12,7 @@ import { RoomForm } from "../molecules/RoomForm";
 import { TransitionOverlay, transitionMs } from "../molecules/TransitionOverlay";
 import { RoomView } from "./RoomView";
 
-export function RoomsPage({ agents }: { agents: Agent[] }) {
+export function RoomsPage({ agents, loadingEnabled }: { agents: Agent[]; loadingEnabled: boolean }) {
   const { t, locale } = useI18n();
   const { list, errorKey, actionErrorKey, busy, reload, createRoom, finishRoom, clearActionError } = useRooms();
   const [creating, setCreating] = useState(false);
@@ -31,6 +31,7 @@ export function RoomsPage({ agents }: { agents: Agent[] }) {
   }
 
   async function withTransition(label: string, name: string, apply: () => void) {
+    if (!loadingEnabled) return apply();
     setTransition({ label, name });
     await new Promise((resolve) => setTimeout(resolve, transitionMs));
     apply();

@@ -5,6 +5,7 @@ import type { Locale } from "../../i18n/translate";
 import type { Theme, UiScale } from "../../hooks/useSession";
 import { Alert } from "../molecules/Alert";
 import { LocaleSwitcher } from "../molecules/LocaleSwitcher";
+import { SegmentedControl } from "../molecules/SegmentedControl";
 import { SettingsRow } from "../molecules/SettingsRow";
 import { ThemeSwitcher } from "../molecules/ThemeSwitcher";
 import { UiScaleSwitcher } from "../molecules/UiScaleSwitcher";
@@ -13,11 +14,13 @@ type Props = {
   locale: Locale;
   theme: Theme;
   uiScale: UiScale;
+  loadingEnabled: boolean;
   busy: boolean;
   errorMessage: string | null;
   onChangeLocale: (locale: Locale) => void;
   onChangeTheme: (theme: Theme) => void;
   onChangeUiScale: (uiScale: UiScale) => void;
+  onChangeLoadingEnabled: (loadingEnabled: boolean) => void;
 };
 
 const categories = ["general", "appearance"] as const;
@@ -29,11 +32,13 @@ export function SettingsPage({
   locale,
   theme,
   uiScale,
+  loadingEnabled,
   busy,
   errorMessage,
   onChangeLocale,
   onChangeTheme,
   onChangeUiScale,
+  onChangeLoadingEnabled,
 }: Props) {
   const { t } = useI18n();
   const [category, setCategory] = useState<Category>("general");
@@ -76,6 +81,18 @@ export function SettingsPage({
               </SettingsRow>
               <SettingsRow title={t("settings.uiScale.title")} description={t("settings.uiScale.description")}>
                 <UiScaleSwitcher value={uiScale} onChange={onChangeUiScale} disabled={busy} />
+              </SettingsRow>
+              <SettingsRow title={t("settings.loading.title")} description={t("settings.loading.description")}>
+                <SegmentedControl
+                  label={t("settings.loading.title")}
+                  options={[
+                    { value: "on", label: t("settings.loading.on") },
+                    { value: "off", label: t("settings.loading.off") },
+                  ]}
+                  value={loadingEnabled ? "on" : "off"}
+                  onChange={(selected) => onChangeLoadingEnabled(selected === "on")}
+                  disabled={busy}
+                />
               </SettingsRow>
             </>
           )}

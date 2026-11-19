@@ -117,7 +117,7 @@ General rules:
 
 | Table | Columns | Notes |
 |---|---|---|
-| `profile` (one row) | `id` (`'singleton'`), `locale` (`es`/`en`), `theme` (`system`/`light`/`dark`, default `system`), `ui_scale` (`90`/`100`/`110`/`125`/`150`, default `100`), `current_workspace_id`, timestamps | Replaces `users`. First and last name are added when there is UI that asks for them |
+| `profile` (one row) | `id` (`'singleton'`), `locale` (`es`/`en`), `theme` (`system`/`light`/`dark`, default `system`), `ui_scale` (`90`/`100`/`110`/`125`/`150`, default `100`), `loading_enabled` (boolean, default on), `current_workspace_id`, timestamps | Replaces `users`. First and last name are added when there is UI that asks for them |
 | `workspaces` | `id`, `name` (1–80), timestamps | |
 | `teams` | `id`, `workspace_id`, `name` (1–80), timestamps | Unique `(id, workspace_id)` for the composite foreign key of `agents` |
 | `agents` | `id`, `workspace_id`, `team_id`, `template_key`, `name` (1–80), `role` (1–80), `description`, `instructions`, `provider`, `model`, timestamps | Composite FK `(team_id, workspace_id)` `ON DELETE RESTRICT`; `provider`/`model` not empty |
@@ -217,7 +217,7 @@ Screens: teams (org chart), hire and edit agents, catalog, rooms (list, detail, 
 
 ## 9. Internationalization
 
-- Languages `es` and `en`; the code default is `en`; the chosen language is stored in `profile.locale` and changed from Settings. The theme (`system`, `light`, `dark`) is stored in `profile.theme`. The interface size (90–150 %) is stored in `profile.ui_scale` and applied as the `font-size` of `<html>`, so everything measured in `rem` scales.
+- Languages `es` and `en`; the code default is `en`; the chosen language is stored in `profile.locale` and changed from Settings. The theme (`system`, `light`, `dark`) is stored in `profile.theme`. The interface size (90–150 %) is stored in `profile.ui_scale` and applied as the `font-size` of `<html>`, so everything measured in `rem` scales. The transition effect (the overlay shown when entering or leaving a room and when switching workspaces) is stored in `profile.loading_enabled`, on by default; when off, the change is immediate and only a failed workspace switch still shows its error overlay.
 - Starts from `config/locales/{es,en}.yml` in the Rails repository, filtering out Devise keys and those of removed features, converted to nested JSON.
 - Provider error texts are resolved in the UI from `error_kind`; the core does not send them.
 - Agent templates keep their YAML with `es` and `en` content.

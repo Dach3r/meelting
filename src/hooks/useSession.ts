@@ -12,6 +12,7 @@ export type Session = {
   locale: Locale;
   theme: Theme;
   ui_scale: UiScale;
+  loading_enabled: boolean;
   current_workspace_id: string;
   workspaces: Workspace[];
 };
@@ -52,6 +53,8 @@ export function useSession() {
   const changeLocale = (locale: Locale) => run("change_locale", { locale });
   const changeTheme = (theme: Theme) => run("change_theme", { theme });
   const changeUiScale = (uiScale: UiScale) => run("change_ui_scale", { uiScale });
+  const changeLoadingEnabled = (loadingEnabled: boolean) =>
+    run("change_loading_enabled", { loadingEnabled });
 
   return {
     session,
@@ -65,5 +68,6 @@ export function useSession() {
     changeLocale,
     changeTheme,
     changeUiScale,
+    changeLoadingEnabled,
   };
 }

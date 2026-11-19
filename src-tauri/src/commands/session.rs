@@ -12,8 +12,8 @@ use crate::services::session_load::SessionError;
 use crate::services::{
     agent_create, agent_delete, agent_get, agent_roles_list, agent_templates_list, agent_update,
     canvas_positions_reset, canvas_positions_save, first_launch, llm_providers_list,
-    local_models_detect, locale_change, session_load, team_create, teams_list, theme_change,
-    ui_scale_change, workspace_create, workspace_switch,
+    loading_change, local_models_detect, locale_change, session_load, team_create, teams_list,
+    theme_change, ui_scale_change, workspace_create, workspace_switch,
 };
 use sqlx::SqlitePool;
 use std::sync::Arc;
@@ -156,4 +156,12 @@ pub async fn change_ui_scale(
     ui_scale: UiScale,
 ) -> Result<Session, SessionError> {
     ui_scale_change::run(&pool, ui_scale).await
+}
+
+#[tauri::command]
+pub async fn change_loading_enabled(
+    pool: State<'_, SqlitePool>,
+    loading_enabled: bool,
+) -> Result<Session, SessionError> {
+    loading_change::run(&pool, loading_enabled).await
 }

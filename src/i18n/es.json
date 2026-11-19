@@ -188,6 +188,12 @@
     "uiScale": {
       "title": "Tamaño de la interfaz",
       "description": "Haz todo en la app más pequeño o más grande."
+    },
+    "loading": {
+      "title": "Efecto de transición",
+      "description": "Muestra una breve animación al entrar o salir de una sala y al cambiar de espacio de trabajo.",
+      "on": "Activado",
+      "off": "Desactivado"
     }
   },
   "rooms": {

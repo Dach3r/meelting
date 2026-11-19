@@ -7,5 +7,6 @@ pub struct Profile {
     pub locale: Locale,
     pub theme: Theme,
     pub ui_scale: UiScale,
+    pub loading_enabled: bool,
     pub current_workspace_id: Option<String>,
 }

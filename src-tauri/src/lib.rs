@@ -56,6 +56,7 @@ pub fn run() {
             commands::session::change_locale,
             commands::session::change_theme,
             commands::session::change_ui_scale,
+            commands::session::change_loading_enabled,
             commands::rooms::list_rooms,
             commands::rooms::create_room,
             commands::rooms::get_room,
