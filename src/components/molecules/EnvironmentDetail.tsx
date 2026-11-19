@@ -6,14 +6,12 @@ import type { Environment } from "../../hooks/useEnvironments";
 type Props = {
   environment: Environment;
   status: ReactNode;
-  hint: string;
   actions: ReactNode;
 };
 
 export function EnvironmentDetail({
   environment,
   status,
-  hint,
   actions,
 }: Props) {
   const { t, locale } = useI18n();
@@ -80,9 +78,6 @@ export function EnvironmentDetail({
           </p>
         </section>
       )}
-      <p className="rounded-2xl bg-shell px-5 py-4 text-sm leading-relaxed text-muted">
-        {hint}
-      </p>
     </aside>
   );
 }

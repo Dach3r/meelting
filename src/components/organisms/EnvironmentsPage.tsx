@@ -232,7 +232,6 @@ export function EnvironmentsPage({ mode }: { mode: "files" | "trash" }) {
         <EnvironmentDetail
           environment={focused}
           status={pill(focused)}
-          hint={t(`${dialogKeys[inTrash ? "purge" : "trash"]}.body`)}
           actions={
             inTrash ? (
               <>
