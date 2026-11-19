@@ -40,7 +40,7 @@ Phase 0 complete (2026-11-17): Tauri 2 scaffold (React + TypeScript + Vite), spi
 ## Phase 3 — Rooms and streaming execution (3 weeks) ✅
 
 - ✅ Rooms, participants and persistent chat ([rooms.md](rooms.md)).
-- ✅ Adapters for the five providers of the real catalog: `anthropic`, `openai`, `groq`, `ollama` and `lmstudio` (approved decision D9). Verified with `wiremock`; with a real provider, only Ollama so far.
+- ✅ Adapters for the six providers of the real catalog: `anthropic`, `openai`, `groq`, `deepseek`, `ollama` and `lmstudio` (approved decision D9; DeepSeek reuses the Chat Completions adapter). Verified with `wiremock`; with a real provider, only Ollama so far.
 - ✅ `AgentRun` with states, retries, idempotency, expiry at startup and cancellation, with the adjustments meetings need: prompt built on `claim` and tokens with a sequence ([agent-run.md](../architecture/agent-run.md), approved and built).
 - ✅ Explicit change of an agent's provider and model (D18), a delivery independent of the engine.
 - ✅ AI keys in the keychain with prior verification ("AI providers" screen in Settings, a delivery separate from `AgentRun`, D26).

@@ -1,6 +1,6 @@
 # Architecture
 
-> **Status:** Phases 0–2 complete; Phase 3 with rooms, messages and agent runs (`AgentRun`) built. Today there is the Tauri 2 scaffold (React 19 + TypeScript + Vite + Tailwind v4), SQLite with `profile`, `workspaces`, `teams`, `agents`, `canvas_positions`, `rooms`, `room_agents` and `messages`, the first launch, the shell and workspace switching, teams, agents and the org chart, rooms with participants and messages, `agent_runs` and the execution engine with adapters for Anthropic, OpenAI and Chat Completions (Groq, Ollama, LM Studio), the "AI providers" screen in Settings (keys in the keychain per workspace and provider, verified before saving), and the `run_in_worktree` spike (git worktree + PTY with live output). The folder layout is in [project-structure.md](project-structure.md). The rest of this document describes the **target** architecture; each section marks what already exists.
+> **Status:** Phases 0–2 complete; Phase 3 with rooms, messages and agent runs (`AgentRun`) built. Today there is the Tauri 2 scaffold (React 19 + TypeScript + Vite + Tailwind v4), SQLite with `profile`, `workspaces`, `teams`, `agents`, `canvas_positions`, `rooms`, `room_agents` and `messages`, the first launch, the shell and workspace switching, teams, agents and the org chart, rooms with participants and messages, `agent_runs` and the execution engine with adapters for Anthropic, OpenAI and Chat Completions (Groq, DeepSeek, Ollama, LM Studio), the "AI providers" screen in Settings (keys in the keychain per workspace and provider, verified before saving), and the `run_in_worktree` spike (git worktree + PTY with live output). The folder layout is in [project-structure.md](project-structure.md). The rest of this document describes the **target** architecture; each section marks what already exists.
 >
 > This product replaces the Rails SaaS (repository `meelting`), frozen as a design reference: domain model, states, errors, copy, templates and specs as test cases.
 
@@ -142,7 +142,7 @@ Phase 3 providers (approved decision D9): the five in the real catalog `src-taur
 |---|---|---|
 | Messages API, SSE | `anthropic` | `system`, `messages`, `max_tokens`; text = `text` blocks |
 | Responses API, SSE | `openai` | `instructions` + `input`; `store: false`; reasoning tokens count toward `max_output_tokens` |
-| Chat Completions, SSE | `groq` (cloud, with key), `ollama` and `lmstudio` (local, no key; models via `GET /v1/models`) | Instructions as `system`; longer timeout locally; output tokens parameter per the catalog. Replaces the `stream_completion` spike |
+| Chat Completions, SSE | `groq` and `deepseek` (cloud, with key), `ollama` and `lmstudio` (local, no key; models via `GET /v1/models`) | Instructions as `system`; longer timeout locally; output tokens parameter per the catalog. Replaces the `stream_completion` spike |
 
 Rules:
 - The key is only read from the keychain in the core; **it never reaches the UI, logs or events**. Prompts and reasoning are not logged.

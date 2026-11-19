@@ -149,7 +149,7 @@ mod tests {
         let server = server(chat(&["OK"]), 0).await;
         let h = harness(&server.uri(), fast_limits(), &[]).await;
 
-        for provider in ["ollama", "lmstudio", "deepseek", "", "../groq"] {
+        for provider in ["ollama", "lmstudio", "minimax", "", "../groq"] {
             assert!(matches!(
                 run(&h.engine, provider).await,
                 Err(SessionError::InvalidProvider)

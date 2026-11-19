@@ -67,7 +67,7 @@ mod tests {
                 .iter()
                 .map(|status| status.provider.as_str())
                 .collect::<Vec<_>>(),
-            ["anthropic", "openai", "groq"]
+            ["anthropic", "openai", "groq", "deepseek"]
         );
         assert_eq!(listed[0].last_four, None);
         assert_eq!(listed[1].last_four.as_deref(), Some("2468"));

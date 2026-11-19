@@ -381,6 +381,17 @@ All data in this section was checked on 2026-11-18 against the official document
   models:
     - key: openai/gpt-oss-120b
       max_output_tokens: 65536
+- key: deepseek
+  name: DeepSeek
+  location: cloud
+  protocol: chat_completions
+  base_url: https://api.deepseek.com
+  output_tokens_param: max_tokens
+  models:
+    - key: deepseek-flash
+      max_output_tokens: 393216
+    - key: deepseek-v4-pro
+      max_output_tokens: 393216
 - key: ollama
   name: Ollama
   location: local
@@ -400,6 +411,7 @@ All data in this section was checked on 2026-11-18 against the official document
 | `claude-sonnet-5-5`, `claude-opus-5-5`, `claude-haiku-5-5` | 128 000 (synchronous Messages API, no beta headers) | [Models overview](https://platform.claude.com/docs/en/about-claude/models/overview) | Active; retirement not before September or October 2027 ([deprecations](https://platform.claude.com/docs/en/about-claude/model-deprecations)) |
 | `gpt-6.1-sol`, `gpt-6.1-terra` | 128 000, including reasoning | [deprecations](https://developers.openai.com/api/docs/deprecations) (replacements for `gpt-5` and `gpt-5-mini`) | Active |
 | `openai/gpt-oss-120b` | 65 536 | [deprecations](https://console.groq.com/docs/deprecations) (replacement for `llama-3.3-70b-versatile`) | Active |
+| `deepseek-flash` (V4.1 Flash), `deepseek-v4-pro` | 393 216 (384K), including reasoning in thinking mode | [Models and pricing](https://api-docs.deepseek.com/quick_start/pricing), [Create chat completion](https://api-docs.deepseek.com/api/create-chat-completion) (checked 2026-11-18) | Active; `deepseek-v4-flash` is a retired alias of `deepseek-flash` |
 
 **Retired models (A8b, approved).** `gpt-5` and `gpt-5-mini` (shut down on 2026-12-11) and `llama-3.3-70b-versatile` (shut down on non-enterprise plans) leave the catalog for new selections, replaced by `gpt-6.1-sol`, `gpt-6.1-terra` and `openai/gpt-oss-120b`. Existing agents **are not modified**: they keep their provider and model, and since the model is no longer in the catalog their run fails with `model_unavailable` without calling the provider. There is never automatic model substitution. The user can explicitly change an agent's provider and model when editing it (D18, delivered separately from the engine).
 
@@ -409,7 +421,7 @@ All data in this section was checked on 2026-11-18 against the official document
 |---|---|---|---|---|
 | `anthropic_messages` (`anthropic`) | `POST /messages`; `Authorization: Bearer <key>` (the documentation marks `x-api-key` as a legacy alternative); `anthropic-version: 2026-10-21`, pinned in the adapter; `system`, `messages`, `max_tokens` (required), `stream: true` | `content_block_delta` with `text_delta` | `message_delta.stop_reason`: `end_turn`/`stop_sequence` → success; `max_tokens` and `model_context_window_exceeded` → `output_truncated`; `refusal` → `content_filtered`; `tool_use` and `pause_turn` (without tools, should not arrive) → `invalid_response` | Input in `message_start.message.usage`; **cumulative** output in `message_delta.usage` (the last value is taken) |
 | `openai_responses` (`openai`) | `POST /responses`; `Authorization: Bearer`; `instructions`, `input`, `max_output_tokens` (minimum 16, includes reasoning), `store: false`, `stream: true` | `response.output_text.delta` (`delta`) | `response.completed` → success; `response.incomplete` with `incomplete_details.reason`: `max_output_tokens` → `output_truncated`, `content_filter` → `content_filtered`, other → `invalid_response`; `response.failed` and `error` → error by `code` | `response.usage` inside the final event (deduced from the official schema (I)) |
-| `chat_completions` (`groq`, `ollama`, `lmstudio`) | `POST /chat/completions`; `Bearer` only in the cloud; `messages` with `system`; the catalog's `output_tokens_param` parameter; `stream: true`; `stream_options: { include_usage: true }` | `choices[].delta.content` | `finish_reason`: `stop` → success; `length` → `output_truncated`; `tool_calls` → `invalid_response`. None of the three documents a content-filter finish. `[DONE]` closes | Ollama and LM Studio (since 0.3.18): last chunk with `usage` and empty `choices`. Groq: not in its documentation; its official SDK has it in `usage` or in `x_groq.usage` of the last chunk, so both are read (I). If it does not arrive, tokens stay null |
+| `chat_completions` (`groq`, `deepseek`, `ollama`, `lmstudio`) | `POST /chat/completions`; `Bearer` only in the cloud; `messages` with `system`; the catalog's `output_tokens_param` parameter; `stream: true`; `stream_options: { include_usage: true }` | `choices[].delta.content` | `finish_reason`: `stop` → success; `length` → `output_truncated`; `tool_calls` → `invalid_response`. None of them documents a content-filter finish. DeepSeek thinks by default and streams its reasoning in `delta.reasoning_content`, which is ignored: only `content` reaches the room. `[DONE]` closes | Ollama and LM Studio (since 0.3.18): last chunk with `usage` and empty `choices`. Groq: not in its documentation; its official SDK has it in `usage` or in `x_groq.usage` of the last chunk, so both are read (I). DeepSeek documents `usage` on the last content chunk (the one with `finish_reason`). If it does not arrive, tokens stay null |
 
 - **Stream events:** Anthropic's `ping`s reset inactivity and carry no text, and unknown events are ignored, as its documentation requires.
 - **Errors in the stream:** an `error` event of type `overloaded_error` (equivalent to HTTP 529) → `provider_unavailable`.

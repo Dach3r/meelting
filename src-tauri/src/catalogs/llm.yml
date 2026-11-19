@@ -29,6 +29,17 @@
   models:
     - key: openai/gpt-oss-120b
       max_output_tokens: 65536
+- key: deepseek
+  name: DeepSeek
+  location: cloud
+  protocol: chat_completions
+  base_url: https://api.deepseek.com
+  output_tokens_param: max_tokens
+  models:
+    - key: deepseek-flash
+      max_output_tokens: 393216
+    - key: deepseek-v4-pro
+      max_output_tokens: 393216
 - key: ollama
   name: Ollama
   location: local

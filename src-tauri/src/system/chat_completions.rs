@@ -192,6 +192,29 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn streams_only_the_answer_of_a_deepseek_thinking_reply() {
+        let (texts, result) = run_against(
+            sse(&[
+                r#"{"choices":[{"delta":{"role":"assistant","content":null,"reasoning_content":"Let me think"},"finish_reason":null}],"usage":null}"#,
+                r#"{"choices":[{"delta":{"content":"Hi","reasoning_content":null},"finish_reason":null}],"usage":null}"#,
+                r#"{"choices":[{"delta":{"content":""},"finish_reason":"stop"}],"usage":{"prompt_tokens":9,"completion_tokens":4}}"#,
+                "[DONE]",
+            ]),
+            "max_tokens",
+        )
+        .await;
+
+        assert_eq!(texts, ["Hi"]);
+        assert_eq!(
+            result,
+            Ok(Usage {
+                input_tokens: Some(9),
+                output_tokens: Some(4)
+            })
+        );
+    }
+
+    #[tokio::test]
     async fn maps_each_finish_reason() {
         for (reason, kind) in [
             ("length", ErrorKind::OutputTruncated),

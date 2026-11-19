@@ -156,6 +156,17 @@ mod tests {
             Some(OutputTokensParam::MaxTokens)
         );
         assert_eq!(find("groq").models[0].max_output_tokens, 65536);
+        assert_eq!(find("deepseek").protocol, Protocol::ChatCompletions);
+        assert_eq!(
+            find("deepseek").output_tokens_param,
+            Some(OutputTokensParam::MaxTokens)
+        );
+        assert!(
+            find("deepseek")
+                .models
+                .iter()
+                .all(|model| model.max_output_tokens == 393216)
+        );
         assert!(
             find("openai")
                 .models
@@ -188,6 +199,8 @@ mod tests {
         assert!(exists("openai", "gpt-6.1-sol"));
         assert!(exists("openai", "gpt-6.1-terra"));
         assert!(exists("groq", "openai/gpt-oss-120b"));
+        assert!(exists("deepseek", "deepseek-flash"));
+        assert!(exists("deepseek", "deepseek-v4-pro"));
         assert!(!exists("openai", "gpt-5"));
         assert!(!exists("openai", "gpt-5-mini"));
         assert!(!exists("groq", "llama-3.3-70b-versatile"));

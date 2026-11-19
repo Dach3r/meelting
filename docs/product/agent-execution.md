@@ -12,7 +12,7 @@
 - Agent picker in the composer ("Ask"): empty is a normal message; with an agent it is a directed instruction.
 - Asynchronous execution as a `tokio` task, with visible states (`queued`, `running`, `succeeded`, `failed`) and the agent's response as a persistent message.
 - **Token streaming** to the UI through Tauri events.
-- **Five providers, those of the real catalog** (approved decision D9): Anthropic (Messages API), OpenAI (Responses API), Groq (OpenAI-compatible Chat Completions) in the cloud, and Ollama (`localhost:11434`) and LM Studio (`localhost:1234`) locally, both with OpenAI-compatible Chat Completions. Each agent uses the provider and model configured for it. No DeepSeek, MiniMax or a generic `local` in this phase.
+- **Six providers, those of the real catalog** (approved decision D9, extended with DeepSeek): Anthropic (Messages API), OpenAI (Responses API), Groq and DeepSeek (OpenAI-compatible Chat Completions) in the cloud, and Ollama (`localhost:11434`) and LM Studio (`localhost:1234`) locally, both with OpenAI-compatible Chat Completions. Each agent uses the provider and model configured for it. No MiniMax or generic `local` in this phase.
 - Provider and model catalog in `llm.yml`; keys are stored in the OS keychain.
 - Errors, bounded retries, timeouts, idempotency, **cancellation** and token logging.
 - Optional daily limits per workspace (proposed for after the first cut of `AgentRun`, A10).
@@ -83,7 +83,7 @@
 
 - Stored in the OS keychain under the service `meelting` and the name `<workspace_id>/<provider>`, so each workspace has its own keys. There is no table: whether a provider is configured is read from the keychain (D26).
 - Managed in the **AI providers** screen («Proveedores de IA»), its own item in the sidebar rail. The two groups sit side by side in their own panels (stacked on narrow windows), each provider in its own card with a status dot (success colour when connected or running, error colour on a problem):
-  - **In the cloud** (Anthropic, OpenAI, Groq): summary "N of 3 configured" and one row per provider with "Add key", or, once configured, "Check connection", "Replace" and "Delete". Adding or replacing expands a password field (no autocomplete or spell check) with "Verify and save"; the field is emptied after every attempt.
+  - **In the cloud** (Anthropic, OpenAI, Groq, DeepSeek): summary "N of 4 configured" and one row per provider with "Add key", or, once configured, "Check connection", "Replace" and "Delete". Adding or replacing expands a password field (no autocomplete or spell check) with "Verify and save"; the field is emptied after every attempt.
   - **On this computer** (Ollama, LM Studio): read only. They need no key; the row shows whether the runtime is running at the catalog address and how many models it has, lists the installed model names, with "Detect again". Their URL is not editable.
 - **Verification before saving:** a minimal request (fixed instruction, first model of the provider in the catalog, `max_output_tokens: 16`) to the catalog's `base_url`, through the same adapter the engine uses. The UI cannot choose the URL. Result:
   - `verified` (a reply, including one cut by the 16-token cap or filtered): the key is saved.
@@ -118,7 +118,7 @@ Planned (Phases 4–5); documented with [feature-template.md](feature-template.m
 - Reasoning that exhausts `max_output_tokens` fails as `output_truncated`.
 - Responses are shown as plain text, without markdown.
 - A failed run cannot be retried: the instruction must be sent again.
-- Each provider's parameters are pinned with `wiremock` tests. With a real provider only Ollama has been verified (including token usage in streaming). Anthropic, OpenAI, Groq and LM Studio await their optional real tests (`#[ignore]`, with the key in an environment variable): in particular, `Bearer` authentication and the `2026-10-21` version of Anthropic, whether Groq accepts `stream_options`, and the shape of LM Studio's usage chunk.
+- Each provider's parameters are pinned with `wiremock` tests. With a real provider only Ollama has been verified (including token usage in streaming). Anthropic, OpenAI, Groq, DeepSeek and LM Studio await their optional real tests (`#[ignore]`, with the key in an environment variable): in particular, `Bearer` authentication and the `2026-10-21` version of Anthropic, whether Groq accepts `stream_options`, and the shape of LM Studio's usage chunk.
 - The "without an internet connection" check with only a local provider has not yet been done with the network disabled (the app does not call the cloud with local agents).
 
 **Priority:** Must Have

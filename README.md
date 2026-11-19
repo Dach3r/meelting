@@ -5,7 +5,7 @@
 Meelting is a local-first desktop app for macOS, Windows and Linux. You assemble a team of specialized AI agents, chat with them in rooms, and hand them coding tasks. Each task runs in its own isolated `git worktree`, so agents never touch your working copy, and you stay in control: risky commands wait for your approval and you review the diff before keeping anything.
 
 - **Local data, no server:** no backend, no account, no telemetry. Your chats and API keys stay on your machine; prompts only leave it when you use a cloud provider.
-- **Bring your own model:** cloud providers (Anthropic, OpenAI, Groq) or local ones (Ollama, LM Studio), mixed freely. Local capabilities keep working offline; cloud ones report when they are unavailable.
+- **Bring your own model:** cloud providers (Anthropic, OpenAI, Groq, DeepSeek) or local ones (Ollama, LM Studio), mixed freely. Local capabilities keep working offline; cloud ones report when they are unavailable.
 - **Isolated by design:** one worktree and branch per task, path jail, sanitized environment, optional Docker. Agents never push, merge or modify your base branch.
 - **Supervised:** you approve commands, watch the live terminal and decide what happens to each branch.
 - **Secrets in the OS keychain:** the UI only ever sees the last four characters of a key.
@@ -18,7 +18,7 @@ Early development, **Phase 3** in progress. Working today:
 - Local SQLite storage, first launch, workspaces and settings (language, theme, interface size and the room transition effect).
 - Teams and agents: template catalog, hiring, custom agents with a cloud or local model picked from a list, editing, deleting and a draggable org chart.
 - Rooms with participants and a persistent chat. Agents join and leave a room like in a real meeting, and hanging up finishes it while keeping the history.
-- Agent runs: «Ask» in the room composer streams an agent's answer live, with retries, cancellation and per-provider concurrency slots. Adapters for Anthropic Messages, OpenAI Responses and Chat Completions (Groq, Ollama, LM Studio).
+- Agent runs: «Ask» in the room composer streams an agent's answer live, with retries, cancellation and per-provider concurrency slots. Adapters for Anthropic Messages, OpenAI Responses and Chat Completions (Groq, DeepSeek, Ollama, LM Studio).
 - Text-directed conversation: the recipient is resolved from the selection, `@` mentions or a leading vocative, and ambiguity asks you before anything is saved.
 - AI providers screen in the sidebar: API keys for Anthropic, OpenAI and Groq are verified before they are saved in the OS keychain, separately per workspace; Ollama and LM Studio are detected on this computer.
 - Spike: a command in a fresh `git worktree` with live PTY output.
