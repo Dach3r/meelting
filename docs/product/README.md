@@ -1,46 +1,46 @@
-# Meelting Desktop — Producto
+# Meelting Desktop — Product
 
-**Categoría:** AI Workspace / Virtual AI Office / Multi-Agent Collaboration
-**Plataforma:** aplicación de escritorio (Tauri 2) para macOS, Windows y Linux, sin backend propio ni cuenta, con operación híbrida online/offline
-**Etapa:** Fase 0 completada (scaffold Tauri 2 con spikes de keychain, `git worktree` + PTY y streaming SSE); Fase 1 completada (SQLite, primer arranque, shell y workspaces); Fase 2 completada (equipos y agentes); Fase 3 en curso (salas y mensajes construidos, sin ejecución de agentes)
+**Category:** AI Workspace / Virtual AI Office / Multi-Agent Collaboration
+**Platform:** desktop application (Tauri 2) for macOS, Windows and Linux, with no backend of its own and no account, with hybrid online/offline operation
+**Stage:** Phase 0 complete (Tauri 2 scaffold with keychain, `git worktree` + PTY and SSE streaming spikes); Phase 1 complete (SQLite, first launch, shell and workspaces); Phase 2 complete (teams and agents); Phase 3 in progress (rooms and messages built, without agent runs)
 
-> **Tu equipo de inteligencia artificial trabajando contigo, en una oficina virtual.**
+> **Your artificial intelligence team working with you, in a virtual office.**
 
-Meelting Desktop es una aplicación que corre en la máquina del usuario, sin servidor propio ni cuenta: sus datos viven en local. El usuario crea una oficina virtual con agentes de IA que trabajan de forma autónoma y ejecutan tareas reales de código en `git worktree` aislados, con modelos en la nube o locales (Ollama, LM Studio), combinables entre sí. Lo local funciona sin conexión; lo que depende de servicios en la nube informa cuándo no está disponible. El usuario es el responsable del equipo: supervisa, asigna objetivos, conversa y aprueba acciones.
+Meelting Desktop is an application that runs on the user's machine, with no server of its own and no account: its data lives locally. The user creates a virtual office with AI agents that work autonomously and run real code tasks in isolated `git worktree`s, with cloud or local models (Ollama, LM Studio) that can be combined. Local works offline; whatever depends on cloud services reports when it is unavailable. The user is the team lead: supervises, assigns goals, converses and approves actions.
 
-Este producto reemplaza al SaaS Rails original (repositorio `meelting`), que queda congelado como referencia de diseño. Ver [../architecture/overview.md](../architecture/overview.md).
+This product replaces the original Rails SaaS (repository `meelting`), which stays frozen as a design reference. See [../architecture/overview.md](../architecture/overview.md).
 
-## Índice
+## Index
 
-| Documento | Contenido |
+| Document | Content |
 |---|---|
-| [vision.md](vision.md) | Visión, problema, propuesta de valor, principios |
-| [virtual-office.md](virtual-office.md) | Concepto de oficina virtual: agentes, salas, pantalla compartida, chat, aprobaciones |
-| [agent-catalog.md](agent-catalog.md) | Catálogo de plantillas, equipos y gestión de agentes |
-| [rooms.md](rooms.md) | Salas de trabajo: objetivo, participantes y conversación persistente |
-| [agent-execution.md](agent-execution.md) | Ejecución de agentes: proveedores (nube y local), streaming, estados, límites y errores |
-| [voice-meetings.md](voice-meetings.md) | Reuniones conversacionales con agentes: modos, coordinación de turnos, voz (propuesta) |
-| [decisions.md](decisions.md) | Registro de decisiones aprobadas, pendientes y descartadas |
-| [users.md](users.md) | Usuarios objetivo y experiencia principal (journey) |
-| [roadmap.md](roadmap.md) | Fases, alcance y lo que no se construye |
-| [integrations.md](integrations.md) | Integraciones previstas (GitHub, Slack, ClickUp) |
-| [metrics-and-business.md](metrics-and-business.md) | Indicadores de éxito y modelo de negocio |
-| [feature-template.md](feature-template.md) | Formato estándar para documentar funcionalidades y reglas de decisión |
+| [vision.md](vision.md) | Vision, problem, value proposition, principles |
+| [virtual-office.md](virtual-office.md) | Virtual office concept: agents, rooms, screen sharing, chat, approvals |
+| [agent-catalog.md](agent-catalog.md) | Template catalog, teams and agent management |
+| [rooms.md](rooms.md) | Work rooms: goal, participants and persistent conversation |
+| [agent-execution.md](agent-execution.md) | Agent runs: providers (cloud and local), streaming, states, limits and errors |
+| [voice-meetings.md](voice-meetings.md) | Conversational meetings with agents: modes, turn coordination, voice (proposal) |
+| [decisions.md](decisions.md) | Log of approved, pending and discarded decisions |
+| [users.md](users.md) | Target users and main experience (journey) |
+| [roadmap.md](roadmap.md) | Phases, scope and what is not built |
+| [integrations.md](integrations.md) | Planned integrations (GitHub, Slack, ClickUp) |
+| [metrics-and-business.md](metrics-and-business.md) | Success indicators and business model |
+| [feature-template.md](feature-template.md) | Standard format for documenting features and decision rules |
 
-Arquitectura técnica: [../architecture/overview.md](../architecture/overview.md).
+Technical architecture: [../architecture/overview.md](../architecture/overview.md).
 
-## Estado de la información
+## Information status
 
-Cada documento distingue entre:
+Each document distinguishes between:
 
-- **Implementado:** existe hoy en el código de este repositorio.
-- **Planificado:** definido en el plan de migración y aún no construido. Los documentos de funcionalidad (catálogo, salas, ejecución) describen el comportamiento **objetivo**, portado del producto Rails, donde ya fue validado.
-- **Visión:** dirección del producto, sin compromiso de entrega.
-- **Hipótesis:** por validar.
-- **Propuesta:** diseño documentado, pendiente de aprobación para implementar (p. ej. [voice-meetings.md](voice-meetings.md)).
+- **Implemented:** exists today in this repository's code.
+- **Planned:** defined in the migration plan and not built yet. Feature documents (catalog, rooms, runs) describe the **target** behavior, ported from the Rails product, where it was already validated.
+- **Vision:** product direction, with no delivery commitment.
+- **Hypothesis:** to be validated.
+- **Proposal:** documented design, pending approval for implementation (e.g. [voice-meetings.md](voice-meetings.md)).
 
-**Hoy está implementado:** scaffold Tauri 2 (React + TypeScript + Vite) con tres spikes (keychain del SO, `git worktree` + PTY con salida en vivo, y streaming SSE compatible con Chat Completions); SQLite, primer arranque, shell, workspaces, ajustes de idioma y tema; equipos, agentes, organigrama, catálogo de plantillas y selector de proveedor y modelo con detección de modelos locales; salas, participantes y mensajes del usuario. La ejecución de agentes, las reuniones conversacionales y la voz están planificadas o propuestas.
+**Implemented today:** Tauri 2 scaffold (React + TypeScript + Vite) with three spikes (OS keychain, `git worktree` + PTY with live output, and Chat Completions-compatible SSE streaming); SQLite, first launch, shell, workspaces, language and theme settings; teams, agents, org chart, template catalog and provider and model picker with local model detection; rooms, participants and user messages. Agent runs, conversational meetings and voice are planned or proposed.
 
-## Principio fundamental
+## Core principle
 
-Meelting no busca simular que una IA está trabajando. Busca permitir que IAs trabajen realmente, mientras el usuario observa, colabora y mantiene el control. La oficina virtual, los avatares y las salas son la interfaz que hace comprensible ese trabajo. El producto real es la capacidad de **delegar, coordinar, supervisar y completar tareas reales** mediante agentes de IA.
+Meelting does not aim to simulate an AI working. It aims to let AIs actually work, while the user observes, collaborates and stays in control. The virtual office, the avatars and the rooms are the interface that makes that work understandable. The real product is the ability to **delegate, coordinate, supervise and complete real tasks** through AI agents.
