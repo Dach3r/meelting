@@ -47,6 +47,7 @@ pub mod task_save;
 pub mod task_status_change;
 pub mod tasks_list;
 pub mod team_create;
+pub mod team_delete;
 pub mod teams_list;
 pub mod theme_change;
 pub mod time_format_change;

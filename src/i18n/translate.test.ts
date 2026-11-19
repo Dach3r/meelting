@@ -100,6 +100,7 @@ describe("translate", () => {
         "agent_busy",
         "client_request_conflict",
         "agent_has_activity",
+        "team_has_agents",
       ]) {
         expect(translateError(locale, code)).not.toBe(
           translate(locale, "errors.unknown"),

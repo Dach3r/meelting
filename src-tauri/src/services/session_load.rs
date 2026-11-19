@@ -13,6 +13,8 @@ pub enum SessionError {
     WorkspaceNotFound,
     #[error("team_not_found")]
     TeamNotFound,
+    #[error("team_has_agents")]
+    TeamHasAgents,
     #[error("agent_not_found")]
     AgentNotFound,
     #[error("invalid_agent")]

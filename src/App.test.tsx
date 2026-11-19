@@ -1269,6 +1269,40 @@ describe("workspace shell", () => {
       ).not.toBeInTheDocument();
     });
 
+    it("deletes an empty team after confirmation and hides the option for teams with agents", async () => {
+      invokeMock.mockImplementation(async (command) => {
+        if (command === "list_teams") return teams;
+        if (command === "delete_team") return [teams[0]];
+        return session({ locale: "en" });
+      });
+      const user = userEvent.setup();
+      render(<App />);
+
+      await user.click(await screen.findByRole("button", { name: "General" }));
+      expect(
+        screen.queryByRole("button", { name: "Delete team" }),
+      ).not.toBeInTheDocument();
+      await user.click(screen.getByRole("button", { name: "Design" }));
+      await user.click(screen.getByRole("button", { name: "Delete team" }));
+      const dialog = await screen.findByRole("dialog", {
+        name: "Delete Design?",
+      });
+      expect(invokeMock).not.toHaveBeenCalledWith(
+        "delete_team",
+        expect.anything(),
+      );
+      await user.click(
+        within(dialog).getByRole("button", { name: "Delete team" }),
+      );
+
+      expect(invokeMock).toHaveBeenCalledWith("delete_team", {
+        teamId: "t2",
+      });
+      await waitFor(() =>
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+      );
+    });
+
     it("keeps the dialog open and shows the error when deleting fails", async () => {
       invokeMock.mockImplementation(async (command) => {
         if (command === "list_teams") return teams;

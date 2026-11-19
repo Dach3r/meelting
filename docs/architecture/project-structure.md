@@ -55,6 +55,7 @@ src-tauri/src/
 │   ├── notification_change.rs ✅ saves one notification preference (run succeeded, run failed or sound)
 │   ├── run_notice.rs      ✅ builds the system notification of a finished run (agent name, localized text, sound) or nothing when the matching preference is off or the run was cancelled or expired
 │   ├── team_create.rs     ✅ creates a team and returns the updated list
+│   ├── team_delete.rs     ✅ deletes an empty team of the current workspace and returns the updated list; with agents it fails with team_has_agents
 │   ├── agent_create.rs    ✅ validates and creates an agent (custom or from a template) and returns the updated list
 │   ├── agent_get.rs       ✅ full detail of an agent in the current workspace
 │   ├── availability_check.rs ✅ availability of a room's agents: local based on the server and installed models (localhost), cloud based on the catalog, the keychain key and the last in-memory connection failure; no network calls to the cloud

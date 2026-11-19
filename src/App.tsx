@@ -32,6 +32,7 @@ function App() {
     createTeam,
     createAgent,
     updateAgent,
+    deleteTeam,
     deleteAgent,
     moveNode,
     resetPositions,
@@ -101,6 +102,7 @@ function App() {
           onCreateAgent={createAgent}
           onLoadAgent={loadAgent}
           onUpdateAgent={updateAgent}
+          onDeleteTeam={deleteTeam}
           onDeleteAgent={deleteAgent}
           onMoveNode={moveNode}
           onResetPositions={resetPositions}

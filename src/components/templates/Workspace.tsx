@@ -47,6 +47,7 @@ type WorkspaceProps = WorkspaceSwitcherProps & {
   onCreateAgent: (draft: AgentDraft) => Promise<boolean>;
   onLoadAgent: (agentId: string) => Promise<AgentDetail | null>;
   onUpdateAgent: (agentId: string, edit: AgentEdit) => Promise<boolean>;
+  onDeleteTeam: (teamId: string) => Promise<boolean>;
   onDeleteAgent: (agentId: string) => Promise<boolean>;
   onMoveNode: (nodeId: string, x: number, y: number) => void;
   onResetPositions: () => Promise<boolean>;
@@ -83,6 +84,7 @@ export function Workspace({
   onCreateAgent,
   onLoadAgent,
   onUpdateAgent,
+  onDeleteTeam,
   onDeleteAgent,
   onMoveNode,
   onResetPositions,
@@ -228,6 +230,7 @@ export function Workspace({
                   onHireAgent={setCatalogTeamId}
                   onLoadAgent={onLoadAgent}
                   onUpdateAgent={onUpdateAgent}
+                  onDeleteTeam={onDeleteTeam}
                   onDeleteAgent={onDeleteAgent}
                   onMoveNode={onMoveNode}
                   onResetPositions={onResetPositions}

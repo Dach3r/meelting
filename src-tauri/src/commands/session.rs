@@ -16,8 +16,8 @@ use crate::services::{
     agent_create, agent_delete, agent_get, agent_roles_list, agent_templates_list, agent_update,
     canvas_positions_reset, canvas_positions_save, first_launch, llm_providers_list,
     loading_change, local_models_detect, locale_change, notification_change, reduce_motion_change,
-    session_load, team_create, teams_list, theme_change, time_format_change, ui_scale_change,
-    workspace_create, workspace_switch,
+    session_load, team_create, team_delete, teams_list, theme_change, time_format_change,
+    ui_scale_change, workspace_create, workspace_switch,
 };
 use sqlx::SqlitePool;
 use std::sync::Arc;
@@ -64,6 +64,14 @@ pub async fn create_team(
     name: String,
 ) -> Result<Vec<Team>, SessionError> {
     team_create::run(&pool, &name).await
+}
+
+#[tauri::command]
+pub async fn delete_team(
+    pool: State<'_, SqlitePool>,
+    team_id: String,
+) -> Result<Vec<Team>, SessionError> {
+    team_delete::run(&pool, &team_id).await
 }
 
 #[tauri::command]
