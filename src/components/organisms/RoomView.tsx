@@ -1,4 +1,4 @@
-import { ArrowLeft, RefreshCw, Trash2, UserPlus } from "lucide-react";
+import { ArrowLeft, PhoneOff, RefreshCw, UserPlus } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
 import { type Locale, formatAgentCount, translateError, translateRunError, translateWith } from "../../i18n/translate";
@@ -20,13 +20,13 @@ type Props = {
   roomId: string;
   agents: Agent[];
   busy: boolean;
-  deleteErrorMessage: string | null;
+  finishErrorMessage: string | null;
   onBack: () => void;
-  onDelete: () => Promise<void>;
-  onClearDeleteError: () => void;
+  onFinish: () => Promise<void>;
+  onClearFinishError: () => void;
 };
 
-export function RoomView({ roomId, agents, busy, deleteErrorMessage, onBack, onDelete, onClearDeleteError }: Props) {
+export function RoomView({ roomId, agents, busy, finishErrorMessage, onBack, onFinish, onClearFinishError }: Props) {
   const { t, locale } = useI18n();
   const { detail, errorKey, sendErrorKey, sending, sendIntervention, cancelRun, rosterErrorKey, rosterBusy, addAgents, removeAgent, clearRosterError } =
     useRoom(roomId);
@@ -39,7 +39,7 @@ export function RoomView({ roomId, agents, busy, deleteErrorMessage, onBack, onD
   const [leaving, setLeaving] = useState<Participant | null>(null);
 
   function closeConfirm() {
-    onClearDeleteError();
+    onClearFinishError();
     setConfirming(false);
   }
 
@@ -100,16 +100,16 @@ export function RoomView({ roomId, agents, busy, deleteErrorMessage, onBack, onD
   return (
     <div className="fixed inset-0 z-40 flex flex-col gap-3 bg-shell p-3 lg:flex-row">
       {confirming && (
-        <Modal title={t("rooms.delete.title")} onClose={closeConfirm}>
+        <Modal title={t("rooms.finish.title")} onClose={closeConfirm}>
           <div className="grid gap-5 p-6">
-            <p className="text-muted">{t("rooms.delete.body")}</p>
-            {deleteErrorMessage && <Alert message={deleteErrorMessage} />}
+            <p className="text-muted">{t("rooms.finish.body")}</p>
+            {finishErrorMessage && <Alert message={finishErrorMessage} />}
             <div className="flex justify-end gap-3">
               <Button type="button" variant="ghost" size="compact" onClick={closeConfirm}>
                 {t("rooms.cancel")}
               </Button>
-              <Button type="button" size="compact" disabled={busy} onClick={onDelete}>
-                {t("rooms.delete.confirm")}
+              <Button type="button" size="compact" disabled={busy} onClick={onFinish}>
+                {t("rooms.finish.confirm")}
               </Button>
             </div>
           </div>
@@ -203,8 +203,8 @@ export function RoomView({ roomId, agents, busy, deleteErrorMessage, onBack, onD
                 <RefreshCw aria-hidden className={`size-5 ${checking ? "animate-spin" : ""}`} />
               </ControlButton>
             )}
-            <ControlButton label={t("rooms.delete.action")} danger onClick={() => setConfirming(true)}>
-              <Trash2 aria-hidden className="size-5" />
+            <ControlButton label={t("rooms.finish.action")} danger onClick={() => setConfirming(true)}>
+              <PhoneOff aria-hidden className="size-5" />
             </ControlButton>
           </div>
         </section>

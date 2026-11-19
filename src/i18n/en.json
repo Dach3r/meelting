@@ -192,6 +192,7 @@
     "back": "Rooms",
     "enter": "Enter room",
     "lastActivity": "Last activity",
+    "finishedAt": "Finished",
     "noMessages": "No messages yet.",
     "you": "You",
     "supervisor": "Supervisor",
@@ -223,11 +224,11 @@
       "placeholder": "Write a message",
       "send": "Send"
     },
-    "delete": {
-      "action": "Delete room",
-      "title": "Delete room",
-      "body": "Its messages will be deleted too. This cannot be undone.",
-      "confirm": "Delete room"
+    "finish": {
+      "action": "Hang up",
+      "title": "End the call",
+      "body": "The call ends for everyone and replies in progress are cancelled. The room stays in the list, disabled, and its history is kept.",
+      "confirm": "Hang up"
     },
     "availability": {
       "available": "Available",

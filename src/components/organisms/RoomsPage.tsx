@@ -13,7 +13,7 @@ import { RoomView } from "./RoomView";
 
 export function RoomsPage({ agents }: { agents: Agent[] }) {
   const { t, locale } = useI18n();
-  const { list, errorKey, actionErrorKey, busy, reload, createRoom, deleteRoom, clearActionError } = useRooms();
+  const { list, errorKey, actionErrorKey, busy, reload, createRoom, finishRoom, clearActionError } = useRooms();
   const [creating, setCreating] = useState(false);
   const [openRoomId, setOpenRoomId] = useState<string | null>(null);
   const actionErrorMessage = actionErrorKey ? translateError(locale, actionErrorKey) : null;
@@ -41,8 +41,8 @@ export function RoomsPage({ agents }: { agents: Agent[] }) {
     reload();
   }
 
-  async function removeRoom(roomId: string) {
-    if (await deleteRoom(roomId)) setOpenRoomId(null);
+  async function endRoom(roomId: string) {
+    if (await finishRoom(roomId)) setOpenRoomId(null);
   }
 
   if (openRoomId) {
@@ -52,10 +52,10 @@ export function RoomsPage({ agents }: { agents: Agent[] }) {
         roomId={openRoomId}
         agents={agents}
         busy={busy}
-        deleteErrorMessage={actionErrorMessage}
+        finishErrorMessage={actionErrorMessage}
         onBack={leaveRoom}
-        onDelete={() => removeRoom(openRoomId)}
-        onClearDeleteError={clearActionError}
+        onFinish={() => endRoom(openRoomId)}
+        onClearFinishError={clearActionError}
       />
     );
   }

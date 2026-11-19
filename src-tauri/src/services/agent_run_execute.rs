@@ -226,7 +226,7 @@ async fn load_context(
     let Some(workspace_id) = rooms::workspace_id(&mut *transaction, &run.room_id).await? else {
         return Ok(None);
     };
-    let Some((_, room_name, _)) =
+    let Some((_, room_name, ..)) =
         rooms::get(&mut *transaction, &workspace_id, &run.room_id).await?
     else {
         return Ok(None);
@@ -379,7 +379,7 @@ mod tests {
     };
     use crate::services::agent_run_engine::{Engine, RunEvent};
     use crate::services::session_load::SessionError;
-    use crate::services::{agent_run_cancel, message_send, room_delete, room_get, session_load};
+    use crate::services::{agent_run_cancel, message_send, room_finish, room_get, session_load};
     use crate::system::keychain;
     use std::sync::Arc;
     use std::time::Duration;
@@ -1114,17 +1114,18 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn deleting_the_room_cancels_its_runs_and_clears_their_buffers() {
+    async fn finishing_the_room_cancels_its_runs_and_clears_their_buffers() {
         let (h, run) = streaming_harness().await;
 
-        room_delete::run(&h.engine.pool, &h.engine.registry, &h.room_id)
-            .await
-            .unwrap();
+        room_finish::run(&h.engine, &h.room_id).await.unwrap();
         tokio::time::sleep(Duration::from_millis(100)).await;
 
         assert!(h.engine.registry.partial(&run.id).is_none());
-        assert_eq!(h.count("SELECT COUNT(*) FROM agent_runs").await, 0);
-        assert_eq!(h.count("SELECT COUNT(*) FROM messages").await, 0);
+        assert_eq!(
+            h.count("SELECT COUNT(*) FROM agent_runs WHERE status = 'failed' AND error_kind = 'cancelled'")
+                .await,
+            1
+        );
     }
 
     #[tokio::test]

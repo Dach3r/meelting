@@ -12,14 +12,21 @@ export function RoomCard({ room, onOpen }: { room: Room; onOpen: () => void }) {
   const nameId = useId();
   const seated = [{ id: "you", name: t("rooms.you") }, ...room.agents.slice(0, SEATS)];
   const extra = room.agents.length - (seated.length - 1);
+  const finished = room.finished_at !== null;
+  const activity = room.finished_at
+    ? `${t("rooms.finishedAt")} ${formatDateTime(locale, room.finished_at)}`
+    : `${t("rooms.lastActivity")} ${formatDateTime(locale, room.updated_at)}`;
   return (
-    <li className="flex flex-col gap-5 rounded-[20px] border border-line bg-shell p-5">
+    <li
+      aria-disabled={finished || undefined}
+      className={`flex flex-col gap-5 rounded-[20px] border border-line p-5 ${finished ? "bg-surface opacity-60 grayscale" : "bg-shell"}`}
+    >
       <div className="grid gap-0.5">
         <h3 id={nameId} className="truncate text-lg font-semibold text-ink">
           {room.name}
         </h3>
         <p className="text-xs text-muted">
-          {t("rooms.lastActivity")} {formatDateTime(locale, room.updated_at)}
+          {activity}
         </p>
       </div>
       <div className="grid min-h-14 content-center gap-2">
@@ -33,7 +40,7 @@ export function RoomCard({ room, onOpen }: { room: Room; onOpen: () => void }) {
           {formatAgentCount(locale, room.agents.length)} · {seated.map((participant) => participant.name).join(", ")}
         </p>
       </div>
-      <Button type="button" size="pill" aria-describedby={nameId} onClick={onOpen} className="mt-auto w-full">
+      <Button type="button" size="pill" aria-describedby={nameId} disabled={finished} onClick={onOpen} className="mt-auto w-full">
         {t("rooms.enter")}
       </Button>
     </li>

@@ -192,6 +192,7 @@
     "back": "Salas",
     "enter": "Entrar a la sala",
     "lastActivity": "Última actividad",
+    "finishedAt": "Finalizada",
     "noMessages": "Todavía no hay mensajes.",
     "you": "Tú",
     "supervisor": "Supervisor",
@@ -223,11 +224,11 @@
       "placeholder": "Escribe un mensaje",
       "send": "Enviar"
     },
-    "delete": {
-      "action": "Eliminar sala",
-      "title": "Eliminar sala",
-      "body": "También se eliminarán sus mensajes. Esta acción no se puede deshacer.",
-      "confirm": "Eliminar sala"
+    "finish": {
+      "action": "Colgar",
+      "title": "Terminar la llamada",
+      "body": "La llamada terminará para todos y se cancelarán las respuestas en curso. La sala quedará desactivada en la lista y su historial se conserva.",
+      "confirm": "Colgar"
     },
     "availability": {
       "available": "Disponible",

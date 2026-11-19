@@ -31,8 +31,9 @@ mod tests {
     use super::*;
     use crate::domain::locale::Locale;
     use crate::repositories::database::open_for_test;
+    use crate::services::agent_run_engine::testing::{fast_limits, harness};
     use crate::services::agent_run_registry::Registry;
-    use crate::services::{first_launch, room_create, room_delete, room_get, workspace_create};
+    use crate::services::{first_launch, room_create, room_finish, room_get, workspace_create};
     use futures_util::future::join_all;
 
     async fn count(pool: &SqlitePool, sql: &'static str) -> i64 {
@@ -138,25 +139,28 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn sending_while_the_room_is_deleted_never_leaves_orphan_messages() {
-        let (pool, _dir) = open_for_test().await;
-        first_launch::run(&pool, Locale::En, "Acme").await.unwrap();
-        let room = room_create::run(&pool, "Daily", vec![]).await.unwrap();
+    async fn sending_while_the_room_is_finished_never_stores_a_message_after_it() {
+        let h = harness("http://127.0.0.1:1", fast_limits(), &[]).await;
+        let pool = &h.engine.pool;
+        let room_id = &h.room_id;
 
         let bodies: Vec<String> = (0..10).map(|index| format!("m{index}")).collect();
 
-        let registry = Registry::default();
-        let (sent, deleted) = tokio::join!(
-            join_all(bodies.iter().map(|body| run(&pool, &room.id, body))),
-            room_delete::run(&pool, &registry, &room.id)
+        let (sent, finished) = tokio::join!(
+            join_all(bodies.iter().map(|body| run(pool, room_id, body))),
+            room_finish::run(&h.engine, room_id)
         );
 
-        assert!(deleted.is_ok());
+        assert!(finished.is_ok());
         assert!(
             sent.iter()
                 .all(|result| matches!(result, Ok(_) | Err(SessionError::RoomNotFound)))
         );
-        assert_eq!(count(&pool, "SELECT COUNT(*) FROM messages").await, 0);
-        assert_eq!(count(&pool, "SELECT COUNT(*) FROM rooms").await, 0);
+        let stored = sent.iter().filter(|result| result.is_ok()).count() as i64;
+        assert_eq!(count(pool, "SELECT COUNT(*) FROM messages").await, stored);
+        assert!(matches!(
+            run(pool, room_id, "late").await,
+            Err(SessionError::RoomNotFound)
+        ));
     }
 }

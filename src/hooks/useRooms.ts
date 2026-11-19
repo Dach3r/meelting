@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 
 export type Participant = { id: string; name: string; role: string };
 
-export type Room = { id: string; name: string; updated_at: string; agents: Participant[] };
+export type Room = { id: string; name: string; updated_at: string; finished_at: string | null; agents: Participant[] };
 
 export type Message = { id: string; room_id: string; agent_id: string | null; body: string; created_at: string };
 
@@ -41,11 +41,11 @@ export function useRooms() {
     }
   }
 
-  async function deleteRoom(roomId: string) {
+  async function finishRoom(roomId: string) {
     setBusy(true);
     setActionErrorKey(null);
     try {
-      setList(await invoke<RoomList>("delete_room", { roomId }));
+      setList(await invoke<RoomList>("finish_room", { roomId }));
       return true;
     } catch (error) {
       setActionErrorKey(String(error));
@@ -57,5 +57,5 @@ export function useRooms() {
 
   const clearActionError = () => setActionErrorKey(null);
 
-  return { list, errorKey, actionErrorKey, busy, reload, createRoom, deleteRoom, clearActionError };
+  return { list, errorKey, actionErrorKey, busy, reload, createRoom, finishRoom, clearActionError };
 }

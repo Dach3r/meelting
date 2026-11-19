@@ -88,7 +88,7 @@ mod tests {
             "INSERT INTO workspaces VALUES ('w1', 'A', 'x', 'x'), ('w2', 'B', 'x', 'x')",
             "INSERT INTO teams VALUES ('t1', 'w1', 'General', 'x', 'x'), ('t2', 'w2', 'Other', 'x', 'x')",
             "INSERT INTO agents VALUES ('a1', 'w1', 't1', NULL, 'Bea', 'QA', '', '', 'openai', 'gpt', 'x', 'x'), ('a2', 'w1', 't1', NULL, 'Ana', 'Dev', '', '', 'openai', 'gpt', 'x', 'x'), ('a3', 'w2', 't2', NULL, 'Eva', 'QA', '', '', 'openai', 'gpt', 'x', 'x')",
-            "INSERT INTO rooms VALUES ('r1', 'w1', 'Sala', 'x', 'x'), ('r2', 'w2', 'Otra', 'x', 'x')",
+            "INSERT INTO rooms VALUES ('r1', 'w1', 'Sala', 'x', 'x', NULL), ('r2', 'w2', 'Otra', 'x', 'x', NULL)",
         ] {
             sqlx::query(sql).execute(pool).await.unwrap();
         }

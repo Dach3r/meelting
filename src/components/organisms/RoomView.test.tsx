@@ -21,6 +21,7 @@ const room: Room = {
   id: "r1",
   name: "Daily",
   updated_at: "2026-11-18T10:00:00.000Z",
+  finished_at: null,
   agents: [
     { id: "a1", name: "Ana", role: "QA Engineer" },
     { id: "a2", name: "Bob", role: "Developer" },
@@ -93,7 +94,7 @@ function detail(overrides: Partial<Detail> = {}): Detail {
 async function renderRoom() {
   render(
     <I18nProvider locale="en">
-      <RoomView roomId="r1" agents={workspaceAgents} busy={false} deleteErrorMessage={null} onBack={() => {}} onDelete={async () => {}} onClearDeleteError={() => {}} />
+      <RoomView roomId="r1" agents={workspaceAgents} busy={false} finishErrorMessage={null} onBack={() => {}} onFinish={async () => {}} onClearFinishError={() => {}} />
     </I18nProvider>,
   );
   await screen.findByRole("heading", { name: "Daily" });
@@ -526,7 +527,7 @@ describe("following a run", () => {
     core({ get_room: () => new Promise<Detail>((resolve) => (resolveRoom = resolve)) });
     render(
       <I18nProvider locale="en">
-        <RoomView roomId="r1" agents={workspaceAgents} busy={false} deleteErrorMessage={null} onBack={() => {}} onDelete={async () => {}} onClearDeleteError={() => {}} />
+        <RoomView roomId="r1" agents={workspaceAgents} busy={false} finishErrorMessage={null} onBack={() => {}} onFinish={async () => {}} onClearFinishError={() => {}} />
       </I18nProvider>,
     );
     await vi.waitFor(() => expect(invokeMock).toHaveBeenCalledWith("get_room", { roomId: "r1" }));

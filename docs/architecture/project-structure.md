@@ -33,7 +33,7 @@ src-tauri/src/
 │   ├── keychain.rs        ✅ save_secret, secret_last_four, delete_secret
 │   ├── worktree.rs        ✅ run_in_worktree
 │   ├── agent_runs.rs      ✅ send_intervention, resolve_recipient, check_agent_availability, cancel_agent_run y el emisor de eventos del motor (agent_run:status, agent_run:token, message:created)
-│   ├── rooms.rs           ✅ list_rooms, create_room, get_room (con ejecuciones, instantáneas y agentes que salieron), delete_room, add_room_agents, remove_room_agent
+│   ├── rooms.rs           ✅ list_rooms, create_room, get_room (con ejecuciones, instantáneas y agentes que salieron), finish_room, add_room_agents, remove_room_agent
 │   └── session.rs         ✅ load_session, complete_first_launch, create_workspace, switch_workspace, list_teams, create_team, create_agent, get_agent, update_agent, delete_agent, save_canvas_positions, reset_canvas_positions, list_agent_templates, list_agent_roles, list_llm_providers, detect_local_models, change_locale, change_theme
 ├── services/              Capa 2: acciones de negocio (verbos)
 │   ├── worktree_run.rs    ✅ crea un worktree y ejecuta un comando en él
@@ -56,7 +56,7 @@ src-tauri/src/
 │   ├── room_get.rs        ✅ sala del workspace actual con sus agentes presentes y los que salieron, sus últimos 100 mensajes, sus ejecuciones, las instantáneas del buffer (tomadas antes de leer la base) y el destinatario propuesto si sigue participando
 │   ├── room_agents_add.rs ✅ invita agentes a una sala existente (deduplica, valida el workspace, reincorpora a quien había salido) y devuelve presentes y salidos
 │   ├── room_agent_remove.rs ✅ saca a un agente de la sala (marca left_at) y cancela su ejecución activa en la misma transacción
-│   ├── room_delete.rs     ✅ elimina una sala (participaciones, mensajes y ejecuciones en cascada), cancela sus ejecuciones activas y devuelve la lista actualizada
+│   ├── room_finish.rs     ✅ finaliza una sala (`finished_at`), cancela sus ejecuciones activas y devuelve la lista actualizada
 │   ├── message_send.rs    ✅ guarda un mensaje del usuario sin ejecución y actualiza la actividad de la sala en una transacción (lo usa intervention_send)
 │   ├── intervention_send.rs ✅ send_intervention: valida, deduplica por client_request_id, resuelve el destinatario con domain/recipient dentro de la transacción y guarda el mensaje del usuario (con la ejecución queued si hay agente) o devuelve los candidatos para elegir sin guardar nada
 │   ├── agent_run_engine.rs ✅ motor de ejecución: pool, registro, catálogo, límites, semáforos local (1) y nube (4) y emisor de eventos; lanza cada ejecución como tarea tokio
@@ -149,7 +149,7 @@ src/
 ├── hooks/                 Acceso al núcleo y estado asociado
 │   ├── useSession.ts      ✅ invoke load_session, complete_first_launch, create_workspace, switch_workspace, change_locale, change_theme
 │   ├── useTeams.ts        ✅ invoke list_teams, create_team, create_agent, get_agent, update_agent, delete_agent, save_canvas_positions (con debounce de 500 ms), reset_canvas_positions
-│   ├── useRooms.ts        ✅ invoke list_rooms, create_room, delete_room
+│   ├── useRooms.ts        ✅ invoke list_rooms, create_room, finish_room
 │   ├── useRoom.ts         ✅ invoke get_room, send_intervention (un client_request_id por envío, reutilizado en los reintentos automáticos y tras un timeout del IPC; sin reintentos si el destinatario es «Nadie») cancel_agent_run, add_room_agents y remove_room_agent; listen message:created, agent_run:status y agent_run:token antes de cargar la sala, con los eventos de la carga en espera
 │   ├── useAgentAvailability.ts ✅ invoke check_agent_availability al abrir la sala, al terminar una ejecución y a petición («Comprobar disponibilidad»); nunca al escribir
 │   ├── useRecipientPreview.ts ✅ invoke resolve_recipient 150 ms después del último cambio del borrador (IPC local, sin red); descarta respuestas obsoletas

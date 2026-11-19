@@ -1,4 +1,5 @@
 use crate::domain::room::{PREVIEW_MESSAGES, Participant, Room, RoomList};
+use crate::repositories::rooms::RoomRow;
 use crate::repositories::{messages, room_agents, rooms};
 use crate::services::session_load::{self, SessionError};
 use sqlx::SqlitePool;
@@ -20,12 +21,9 @@ pub async fn run(pool: &SqlitePool) -> Result<RoomList, SessionError> {
     })
 }
 
-pub fn with_agents(
-    rows: Vec<(String, String, String)>,
-    participants: Vec<(String, Participant)>,
-) -> Vec<Room> {
+pub fn with_agents(rows: Vec<RoomRow>, participants: Vec<(String, Participant)>) -> Vec<Room> {
     rows.into_iter()
-        .map(|(id, name, updated_at)| Room {
+        .map(|(id, name, updated_at, finished_at)| Room {
             agents: participants
                 .iter()
                 .filter(|(room_id, _)| *room_id == id)
@@ -34,6 +32,7 @@ pub fn with_agents(
             id,
             name,
             updated_at,
+            finished_at,
         })
         .collect()
 }

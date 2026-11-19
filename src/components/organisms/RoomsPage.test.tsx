@@ -21,9 +21,11 @@ const daily: Room = {
   id: "r1",
   name: "Daily",
   updated_at: "2026-11-18T10:00:00.000Z",
+  finished_at: null,
   agents: [{ id: "a1", name: "Ana", role: "QA Engineer" }],
 };
-const retro: Room = { id: "r2", name: "Retro", updated_at: "2026-11-17T10:00:00.000Z", agents: [] };
+const retro: Room = { id: "r2", name: "Retro", updated_at: "2026-11-17T10:00:00.000Z",
+  finished_at: null, agents: [] };
 
 function message(id: string, body: string, overrides: Partial<Message> = {}): Message {
   return { id, room_id: "r1", agent_id: null, body, created_at: "2026-11-18T10:00:00.000Z", ...overrides };
@@ -309,28 +311,31 @@ describe("inside a room", () => {
     expect(invokeMock).toHaveBeenCalledWith("send_intervention", automatic(`  ${"😀".repeat(4000)}\n`));
   });
 
-  it("deletes the room after confirming and goes back to the list", async () => {
-    const user = await openDaily({ delete_room: () => ({ rooms: [], featured_messages: [] }) });
+  it("hangs up after confirming and goes back to the list", async () => {
+    const user = await openDaily({
+      finish_room: () => ({ rooms: [{ ...daily, finished_at: "2026-11-18T12:00:00.000Z" }], featured_messages: [] }),
+    });
 
-    await user.click(screen.getByRole("button", { name: "Delete room" }));
-    const dialog = within(screen.getByRole("dialog", { name: "Delete room" }));
-    expect(invokeMock).not.toHaveBeenCalledWith("delete_room", expect.anything());
-    await user.click(dialog.getByRole("button", { name: "Delete room" }));
+    await user.click(screen.getByRole("button", { name: "Hang up" }));
+    const dialog = within(screen.getByRole("dialog", { name: "End the call" }));
+    expect(invokeMock).not.toHaveBeenCalledWith("finish_room", expect.anything());
+    await user.click(dialog.getByRole("button", { name: "Hang up" }));
 
-    expect(invokeMock).toHaveBeenCalledWith("delete_room", { roomId: "r1" });
-    expect(await screen.findByText("No rooms yet")).toBeInTheDocument();
+    expect(invokeMock).toHaveBeenCalledWith("finish_room", { roomId: "r1" });
+    expect(await screen.findByRole("button", { name: "Enter room" })).toBeDisabled();
+    expect(screen.getByText(/Finished/)).toBeInTheDocument();
   });
 
-  it("keeps the confirmation open with the error when deleting fails", async () => {
+  it("keeps the confirmation open with the error when hanging up fails", async () => {
     const user = await openDaily({
-      delete_room: () => {
+      finish_room: () => {
         throw "room_not_found";
       },
     });
 
-    await user.click(screen.getByRole("button", { name: "Delete room" }));
-    const dialog = within(screen.getByRole("dialog", { name: "Delete room" }));
-    await user.click(dialog.getByRole("button", { name: "Delete room" }));
+    await user.click(screen.getByRole("button", { name: "Hang up" }));
+    const dialog = within(screen.getByRole("dialog", { name: "End the call" }));
+    await user.click(dialog.getByRole("button", { name: "Hang up" }));
 
     expect(await dialog.findByRole("alert")).toHaveTextContent("That room no longer exists.");
   });

@@ -22,7 +22,7 @@ pub mod recipient_resolve;
 pub mod room_agent_remove;
 pub mod room_agents_add;
 pub mod room_create;
-pub mod room_delete;
+pub mod room_finish;
 pub mod room_get;
 pub mod rooms_list;
 pub mod session_load;

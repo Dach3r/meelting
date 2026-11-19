@@ -102,7 +102,7 @@ CREATE INDEX agent_runs_room_id_agent_id ON agent_runs (room_id, agent_id);
 **Verificación** (2026-11-18, SQLite 3.51 temporal, fuera del repositorio): las tres migraciones se aplican sobre una base con todas las migraciones actuales y datos existentes (dos workspaces, salas, participantes y mensajes de usuario y de agentes) sin errores, y `PRAGMA foreign_key_check` e `integrity_check` quedan limpios. Una matriz de 45 casos cubre todas las filas de esta tabla, los borrados y la guarda de transición; todos dan el resultado esperado. Los índices de `messages` no pueden fallar sobre datos existentes porque `id` ya es único. Las mismas pruebas se portan a `cargo test` al implementar.
 
 **Borrados** (verificados):
-- **Eliminar una sala** borra en la misma sentencia sus participaciones, mensajes y ejecuciones (cascada desde `rooms`). Las FK `NO ACTION` hacia `messages` se comprueban al final de la sentencia y pasan porque todo desaparece junto. Resultado: 0 ejecuciones y 0 mensajes de esa sala.
+- **Finalizar una sala** marca `rooms.finished_at` y marca como `failed/cancelled` sus ejecuciones activas en la misma transacción; no borra nada. (Borrar filas de `rooms`, p. ej. al eliminar un workspace, sigue en cascada y deja 0 ejecuciones y 0 mensajes.)
 - **Eliminar un agente** con ejecuciones falla (FK hacia `room_agents`), aunque no tenga mensajes, como pide [agent-execution.md](../product/agent-execution.md). El servicio lo traduce a un error propio (`agent_has_activity`) en lugar del `database` actual.
 - Quitar de la sala a un agente con ejecuciones también falla (hoy no hay operación que lo haga).
 - Un agente sin mensajes ni ejecuciones se sigue eliminando como hoy.
@@ -191,7 +191,7 @@ stateDiagram-v2
   3. Si no cambió ninguna fila (ya terminada, inexistente o de otro workspace), devuelve éxito sin efecto. La respuesta es idéntica en los tres casos, así que no revela si existe una ejecución en otro workspace, y no toca nada fuera del workspace actual.
   
   Un evento, token o resultado tardío no reactiva nada: todas las transiciones llevan guarda, y el emisor de tokens comprueba el token de cancelación antes de emitir.
-- **Eliminar la sala:** se disparan los tokens de sus ejecuciones activas y la cascada las borra.
+- **Finalizar la sala:** se persiste `failed/cancelled` en sus ejecuciones activas, se disparan sus tokens y se emite `agent_run:status` por cada una.
 - **Salir de la sala o cambiar de workspace:** la ejecución continúa.
 - **Arranque de la app** (A7): toda ejecución `queued` o `running` pasa a `failed` / `expired`, antes de abrir la ventana. La cola y los buffers vivían en memoria y no se recuperan.
 

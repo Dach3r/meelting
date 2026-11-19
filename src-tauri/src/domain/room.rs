@@ -17,6 +17,7 @@ pub struct Room {
     pub id: String,
     pub name: String,
     pub updated_at: String,
+    pub finished_at: Option<String>,
     pub agents: Vec<Participant>,
 }
 
