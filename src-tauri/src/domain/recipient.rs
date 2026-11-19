@@ -214,6 +214,8 @@ mod tests {
             id: id.into(),
             name: name.into(),
             role: role.into(),
+            provider: "ollama".into(),
+            model: "llama3".into(),
         }
     }
 

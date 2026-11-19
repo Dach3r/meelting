@@ -20,11 +20,13 @@ const toneClasses = {
 export function ParticipantTile({
   name,
   role,
+  engine,
   status,
   removal,
 }: {
   name: string;
   role: string;
+  engine?: string;
   status?: ParticipantStatus;
   removal?: Removal;
 }) {
@@ -66,6 +68,11 @@ export function ParticipantTile({
           <p className="truncate text-xs text-muted">{role}</p>
         )}
       </div>
+      {engine && (
+        <p className="absolute right-3 bottom-3 max-w-[40%] truncate rounded-lg bg-shell/80 px-2.5 py-1 text-xs text-muted backdrop-blur">
+          {engine}
+        </p>
+      )}
     </li>
   );
 }

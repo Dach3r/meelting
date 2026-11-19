@@ -304,6 +304,7 @@ export function RoomView({
                 key={agent.id}
                 name={agent.name}
                 role={agent.role}
+                engine={`${providers.find((entry) => entry.key === agent.provider)?.name ?? agent.provider} · ${agent.model}`}
                 status={status(agent.id)}
                 removal={{
                   label: translateWith(locale, "rooms.leave", {
@@ -318,7 +319,7 @@ export function RoomView({
               />
             ))}
           </ul>
-          <div className="absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 items-center gap-2 rounded-2xl border border-line bg-shell/70 p-2 shadow-2xl shadow-black/40 backdrop-blur-md">
+          <div className="flex w-full shrink-0 items-center justify-center gap-2 rounded-2xl border border-line bg-shell p-2">
             <ControlButton
               label={t("rooms.invite.action")}
               onClick={openInvite}

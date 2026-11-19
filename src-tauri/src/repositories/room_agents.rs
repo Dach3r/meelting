@@ -42,8 +42,9 @@ pub async fn list<'e>(
     executor: impl SqliteExecutor<'e>,
     workspace_id: &str,
 ) -> Result<Vec<(String, Participant)>, sqlx::Error> {
-    let rows: Vec<(String, String, String, String)> = sqlx::query_as(
-        "SELECT room_agents.room_id, agents.id, agents.name, agents.role FROM room_agents \
+    let rows: Vec<(String, String, String, String, String, String)> = sqlx::query_as(
+        "SELECT room_agents.room_id, agents.id, agents.name, agents.role, \
+         agents.provider, agents.model FROM room_agents \
          JOIN agents ON agents.id = room_agents.agent_id \
          WHERE room_agents.workspace_id = ? AND room_agents.left_at IS NULL \
          ORDER BY agents.name, agents.id",
@@ -53,7 +54,18 @@ pub async fn list<'e>(
     .await?;
     Ok(rows
         .into_iter()
-        .map(|(room_id, id, name, role)| (room_id, Participant { id, name, role }))
+        .map(|(room_id, id, name, role, provider, model)| {
+            (
+                room_id,
+                Participant {
+                    id,
+                    name,
+                    role,
+                    provider,
+                    model,
+                },
+            )
+        })
         .collect())
 }
 
@@ -62,8 +74,8 @@ pub async fn former<'e>(
     workspace_id: &str,
     room_id: &str,
 ) -> Result<Vec<Participant>, sqlx::Error> {
-    let rows: Vec<(String, String, String)> = sqlx::query_as(
-        "SELECT agents.id, agents.name, agents.role FROM room_agents \
+    let rows: Vec<(String, String, String, String, String)> = sqlx::query_as(
+        "SELECT agents.id, agents.name, agents.role, agents.provider, agents.model FROM room_agents \
          JOIN agents ON agents.id = room_agents.agent_id \
          WHERE room_agents.workspace_id = ? AND room_agents.room_id = ? \
          AND room_agents.left_at IS NOT NULL ORDER BY agents.name, agents.id",
@@ -74,7 +86,13 @@ pub async fn former<'e>(
     .await?;
     Ok(rows
         .into_iter()
-        .map(|(id, name, role)| Participant { id, name, role })
+        .map(|(id, name, role, provider, model)| Participant {
+            id,
+            name,
+            role,
+            provider,
+            model,
+        })
         .collect())
 }
 

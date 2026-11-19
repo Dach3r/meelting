@@ -10,6 +10,8 @@ pub struct Participant {
     pub id: String,
     pub name: String,
     pub role: String,
+    pub provider: String,
+    pub model: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
