@@ -28,6 +28,12 @@ pub fn run() {
         }))
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_autostart::init(
+            tauri_plugin_autostart::MacosLauncher::LaunchAgent,
+            None,
+        ))
         .setup(|app| {
             let data_dir = app.path().app_data_dir()?;
             std::fs::create_dir_all(&data_dir)?;
@@ -79,6 +85,12 @@ pub fn run() {
             commands::session::change_theme,
             commands::session::change_ui_scale,
             commands::session::change_loading_enabled,
+            commands::session::change_time_format,
+            commands::session::change_reduce_motion,
+            commands::session::change_notification,
+            commands::app_settings::get_open_at_login,
+            commands::app_settings::change_open_at_login,
+            commands::app_settings::open_data_folder,
             commands::rooms::list_rooms,
             commands::rooms::create_room,
             commands::rooms::get_room,

@@ -3,17 +3,21 @@ use crate::catalogs::agent_templates::AgentTemplate;
 use crate::catalogs::llm::Provider;
 use crate::domain::local_provider::LocalProviderModels;
 use crate::domain::locale::Locale;
+use crate::domain::notification::NotificationSetting;
+use crate::domain::reduce_motion::ReduceMotion;
 use crate::domain::session::Session;
 use crate::domain::team::{AgentDetail, AgentDraft, AgentEdit, Position, Team};
 use crate::domain::theme::Theme;
+use crate::domain::time_format::TimeFormat;
 use crate::domain::ui_scale::UiScale;
 use crate::services::agent_run_engine::Engine;
 use crate::services::session_load::SessionError;
 use crate::services::{
     agent_create, agent_delete, agent_get, agent_roles_list, agent_templates_list, agent_update,
     canvas_positions_reset, canvas_positions_save, first_launch, llm_providers_list,
-    loading_change, local_models_detect, locale_change, session_load, team_create, teams_list,
-    theme_change, ui_scale_change, workspace_create, workspace_switch,
+    loading_change, local_models_detect, locale_change, notification_change, reduce_motion_change,
+    session_load, team_create, teams_list, theme_change, time_format_change, ui_scale_change,
+    workspace_create, workspace_switch,
 };
 use sqlx::SqlitePool;
 use std::sync::Arc;
@@ -164,4 +168,29 @@ pub async fn change_loading_enabled(
     loading_enabled: bool,
 ) -> Result<Session, SessionError> {
     loading_change::run(&pool, loading_enabled).await
+}
+
+#[tauri::command]
+pub async fn change_time_format(
+    pool: State<'_, SqlitePool>,
+    time_format: TimeFormat,
+) -> Result<Session, SessionError> {
+    time_format_change::run(&pool, time_format).await
+}
+
+#[tauri::command]
+pub async fn change_reduce_motion(
+    pool: State<'_, SqlitePool>,
+    reduce_motion: ReduceMotion,
+) -> Result<Session, SessionError> {
+    reduce_motion_change::run(&pool, reduce_motion).await
+}
+
+#[tauri::command]
+pub async fn change_notification(
+    pool: State<'_, SqlitePool>,
+    setting: NotificationSetting,
+    enabled: bool,
+) -> Result<Session, SessionError> {
+    notification_change::run(&pool, setting, enabled).await
 }

@@ -91,6 +91,16 @@ pub async fn get<'e>(
     ))
 }
 
+pub async fn name<'e>(
+    executor: impl SqliteExecutor<'e>,
+    id: &str,
+) -> Result<Option<String>, sqlx::Error> {
+    sqlx::query_scalar("SELECT name FROM agents WHERE id = ?")
+        .bind(id)
+        .fetch_optional(executor)
+        .await
+}
+
 pub async fn update<'e>(
     executor: impl SqliteExecutor<'e>,
     workspace_id: &str,
@@ -144,6 +154,21 @@ pub async fn delete<'e>(
 mod tests {
     use super::*;
     use crate::repositories::database::open_for_test;
+
+    #[tokio::test]
+    async fn finds_the_name_of_an_agent_by_id() {
+        let (pool, _dir) = open_for_test().await;
+        for sql in [
+            "INSERT INTO workspaces VALUES ('w1', 'A', 'x', 'x')",
+            "INSERT INTO teams VALUES ('t1', 'w1', 'General', 'x', 'x')",
+            "INSERT INTO agents VALUES ('a1', 'w1', 't1', NULL, 'Ana', 'Developer', '', '', 'openai', 'gpt', 'x', 'x')",
+        ] {
+            sqlx::query(sql).execute(&pool).await.unwrap();
+        }
+
+        assert_eq!(name(&pool, "a1").await.unwrap(), Some("Ana".into()));
+        assert_eq!(name(&pool, "missing").await.unwrap(), None);
+    }
 
     #[tokio::test]
     async fn lists_only_the_agents_of_the_workspace() {

@@ -123,6 +123,10 @@ pub enum SessionError {
     SecretsNotConfirmed,
     #[error("keychain_unavailable")]
     Keychain(#[from] crate::system::keychain::KeychainError),
+    #[error("data_folder_unavailable")]
+    DataFolderUnavailable,
+    #[error("autostart_unavailable")]
+    AutostartUnavailable,
 }
 
 impl From<crate::domain::storage::StorageIssue> for SessionError {
@@ -155,6 +159,11 @@ pub async fn run(pool: &SqlitePool) -> Result<Option<Session>, SessionError> {
         theme: profile.theme,
         ui_scale: profile.ui_scale,
         loading_enabled: profile.loading_enabled,
+        time_format: profile.time_format,
+        reduce_motion: profile.reduce_motion,
+        notify_run_succeeded: profile.notify_run_succeeded,
+        notify_run_failed: profile.notify_run_failed,
+        notify_sound: profile.notify_sound,
         current_workspace_id,
         workspaces: workspaces::list(pool).await?,
     }))

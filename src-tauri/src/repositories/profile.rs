@@ -1,22 +1,55 @@
 use crate::domain::locale::Locale;
+use crate::domain::notification::NotificationSetting;
 use crate::domain::profile::Profile;
+use crate::domain::reduce_motion::ReduceMotion;
 use crate::domain::theme::Theme;
+use crate::domain::time_format::TimeFormat;
 use crate::domain::ui_scale::UiScale;
 use sqlx::SqliteExecutor;
 
+type ProfileRow = (
+    String,
+    String,
+    u16,
+    bool,
+    String,
+    String,
+    bool,
+    bool,
+    bool,
+    Option<String>,
+);
+
 pub async fn get<'e>(executor: impl SqliteExecutor<'e>) -> Result<Option<Profile>, sqlx::Error> {
-    let row: Option<(String, String, u16, bool, Option<String>)> = sqlx::query_as(
-        "SELECT locale, theme, ui_scale, loading_enabled, current_workspace_id FROM profile",
+    let row: Option<ProfileRow> = sqlx::query_as(
+        "SELECT locale, theme, ui_scale, loading_enabled, time_format, reduce_motion, \
+         notify_run_succeeded, notify_run_failed, notify_sound, current_workspace_id FROM profile",
     )
     .fetch_optional(executor)
     .await?;
     Ok(row.and_then(
-        |(locale, theme, ui_scale, loading_enabled, current_workspace_id)| {
+        |(
+            locale,
+            theme,
+            ui_scale,
+            loading_enabled,
+            time_format,
+            reduce_motion,
+            notify_run_succeeded,
+            notify_run_failed,
+            notify_sound,
+            current_workspace_id,
+        )| {
             Some(Profile {
                 locale: Locale::parse(&locale)?,
                 theme: Theme::parse(&theme)?,
                 ui_scale: UiScale::from_percent(ui_scale)?,
                 loading_enabled,
+                time_format: TimeFormat::parse(&time_format)?,
+                reduce_motion: ReduceMotion::parse(&reduce_motion)?,
+                notify_run_succeeded,
+                notify_run_failed,
+                notify_sound,
                 current_workspace_id,
             })
         },
@@ -102,6 +135,52 @@ pub async fn set_loading_enabled<'e>(
     Ok(())
 }
 
+pub async fn set_time_format<'e>(
+    executor: impl SqliteExecutor<'e>,
+    time_format: TimeFormat,
+) -> Result<(), sqlx::Error> {
+    sqlx::query(
+        "UPDATE profile SET time_format = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')",
+    )
+    .bind(time_format.as_str())
+    .execute(executor)
+    .await?;
+    Ok(())
+}
+
+pub async fn set_reduce_motion<'e>(
+    executor: impl SqliteExecutor<'e>,
+    reduce_motion: ReduceMotion,
+) -> Result<(), sqlx::Error> {
+    sqlx::query(
+        "UPDATE profile SET reduce_motion = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')",
+    )
+    .bind(reduce_motion.as_str())
+    .execute(executor)
+    .await?;
+    Ok(())
+}
+
+pub async fn set_notification<'e>(
+    executor: impl SqliteExecutor<'e>,
+    setting: NotificationSetting,
+    enabled: bool,
+) -> Result<(), sqlx::Error> {
+    let sql = match setting {
+        NotificationSetting::RunSucceeded => {
+            "UPDATE profile SET notify_run_succeeded = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')"
+        }
+        NotificationSetting::RunFailed => {
+            "UPDATE profile SET notify_run_failed = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')"
+        }
+        NotificationSetting::Sound => {
+            "UPDATE profile SET notify_sound = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')"
+        }
+    };
+    sqlx::query(sql).bind(enabled).execute(executor).await?;
+    Ok(())
+}
+
 pub async fn worktrees_root<'e>(
     executor: impl SqliteExecutor<'e>,
 ) -> Result<Option<String>, sqlx::Error> {
@@ -152,6 +231,11 @@ mod tests {
                 theme: Theme::System,
                 ui_scale: UiScale::default(),
                 loading_enabled: true,
+                time_format: TimeFormat::Auto,
+                reduce_motion: ReduceMotion::System,
+                notify_run_succeeded: true,
+                notify_run_failed: true,
+                notify_sound: true,
                 current_workspace_id: Some("01".into())
             })
         );
@@ -208,6 +292,67 @@ mod tests {
 
         let profile = get(&pool).await.unwrap().unwrap();
         assert!(!profile.loading_enabled);
+    }
+
+    #[tokio::test]
+    async fn changes_time_format_and_reduce_motion() {
+        let (pool, _dir) = open_for_test().await;
+        workspaces::insert(&pool, "01", "Acme").await.unwrap();
+        create(&pool, Locale::En, "01").await.unwrap();
+
+        set_time_format(&pool, TimeFormat::H12).await.unwrap();
+        set_reduce_motion(&pool, ReduceMotion::On).await.unwrap();
+
+        let profile = get(&pool).await.unwrap().unwrap();
+        assert_eq!(profile.time_format, TimeFormat::H12);
+        assert_eq!(profile.reduce_motion, ReduceMotion::On);
+    }
+
+    #[tokio::test]
+    async fn changes_each_notification_setting_independently() {
+        let (pool, _dir) = open_for_test().await;
+        workspaces::insert(&pool, "01", "Acme").await.unwrap();
+        create(&pool, Locale::En, "01").await.unwrap();
+
+        set_notification(&pool, NotificationSetting::RunFailed, false)
+            .await
+            .unwrap();
+
+        let profile = get(&pool).await.unwrap().unwrap();
+        assert!(profile.notify_run_succeeded);
+        assert!(!profile.notify_run_failed);
+        assert!(profile.notify_sound);
+
+        set_notification(&pool, NotificationSetting::Sound, false)
+            .await
+            .unwrap();
+        set_notification(&pool, NotificationSetting::RunFailed, true)
+            .await
+            .unwrap();
+
+        let profile = get(&pool).await.unwrap().unwrap();
+        assert!(profile.notify_run_failed);
+        assert!(!profile.notify_sound);
+    }
+
+    #[tokio::test]
+    async fn rejects_invalid_values_at_the_database() {
+        let (pool, _dir) = open_for_test().await;
+        workspaces::insert(&pool, "01", "Acme").await.unwrap();
+        create(&pool, Locale::En, "01").await.unwrap();
+
+        assert!(
+            sqlx::query("UPDATE profile SET time_format = 'military'")
+                .execute(&pool)
+                .await
+                .is_err()
+        );
+        assert!(
+            sqlx::query("UPDATE profile SET notify_sound = 2")
+                .execute(&pool)
+                .await
+                .is_err()
+        );
     }
 
     #[tokio::test]
