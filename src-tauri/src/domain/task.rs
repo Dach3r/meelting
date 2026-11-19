@@ -97,7 +97,6 @@ pub struct Task {
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 pub struct TaskDraft {
-    pub title: String,
     pub description: String,
     pub priority: TaskPriority,
     pub repository_id: Option<String>,
@@ -118,20 +117,42 @@ pub struct TaskOrigin {
     pub message_id: Option<String>,
 }
 
+pub fn provisional_title(description: &str) -> String {
+    let line = description
+        .lines()
+        .map(|line| line.split_whitespace().collect::<Vec<_>>().join(" "))
+        .find(|line| !line.is_empty())
+        .unwrap_or_default();
+    if line.chars().count() <= TITLE_MAX_CHARS {
+        return line;
+    }
+    let mut title: String = line.chars().take(TITLE_MAX_CHARS - 1).collect();
+    title.truncate(title.trim_end().len());
+    title.push('…');
+    title
+}
+
+pub fn clean_generated_title(text: &str) -> Option<String> {
+    let line = text.lines().map(str::trim).find(|line| !line.is_empty())?;
+    let title = line
+        .trim_matches(|c: char| matches!(c, '"' | '\'' | '«' | '»' | '“' | '”' | '*' | '#' | '`'))
+        .trim()
+        .trim_end_matches('.')
+        .trim();
+    (!title.is_empty()).then(|| provisional_title(title))
+}
+
 impl TaskDraft {
     pub fn normalize(self) -> Option<Self> {
-        let title = self.title.trim().to_string();
         let description = self.description.trim().to_string();
         let repository_id = self.repository_id.filter(|id| !id.is_empty());
         let base_ref = self
             .base_ref
             .map(|name| name.trim().to_string())
             .filter(|name| !name.is_empty());
-        let valid = (1..=TITLE_MAX_CHARS).contains(&title.chars().count())
-            && description.chars().count() <= DESCRIPTION_MAX_CHARS
+        let valid = (1..=DESCRIPTION_MAX_CHARS).contains(&description.chars().count())
             && (base_ref.is_none() || repository_id.is_some());
         valid.then(|| Self {
-            title,
             description,
             priority: self.priority,
             repository_id,
@@ -147,7 +168,6 @@ mod tests {
 
     fn draft() -> TaskDraft {
         TaskDraft {
-            title: "  Fix login  ".into(),
             description: "  Steps \n".into(),
             priority: TaskPriority::High,
             repository_id: Some("r1".into()),
@@ -215,7 +235,6 @@ mod tests {
     fn normalizes_the_draft() {
         let draft = draft().normalize().unwrap();
 
-        assert_eq!(draft.title, "Fix login");
         assert_eq!(draft.description, "Steps");
         assert_eq!(draft.base_ref.as_deref(), Some("main"));
         assert_eq!(draft.agent_ids, ["a", "b"]);
@@ -235,14 +254,10 @@ mod tests {
     }
 
     #[test]
-    fn rejects_invalid_titles_descriptions_and_a_base_without_repository() {
+    fn rejects_invalid_descriptions_and_a_base_without_repository() {
         for invalid in [
             TaskDraft {
-                title: "   ".into(),
-                ..draft()
-            },
-            TaskDraft {
-                title: "ñ".repeat(TITLE_MAX_CHARS + 1),
+                description: "   ".into(),
                 ..draft()
             },
             TaskDraft {
@@ -261,11 +276,47 @@ mod tests {
     #[test]
     fn accepts_text_at_the_limits() {
         let draft = TaskDraft {
-            title: "ñ".repeat(TITLE_MAX_CHARS),
             description: "ñ".repeat(DESCRIPTION_MAX_CHARS),
             ..draft()
         };
 
         assert!(draft.normalize().is_some());
+    }
+
+    #[test]
+    fn the_provisional_title_is_the_first_line_of_the_description() {
+        assert_eq!(
+            provisional_title("\n  Fix   the login \ntimeout"),
+            "Fix the login"
+        );
+        let long = provisional_title(&"ñ".repeat(TITLE_MAX_CHARS + 30));
+        assert_eq!(long.chars().count(), TITLE_MAX_CHARS);
+        assert!(long.ends_with('…'));
+        assert_eq!(
+            provisional_title(&"ñ".repeat(TITLE_MAX_CHARS))
+                .chars()
+                .count(),
+            TITLE_MAX_CHARS
+        );
+    }
+
+    #[test]
+    fn cleans_the_title_written_by_a_model() {
+        assert_eq!(
+            clean_generated_title("\n\"Fix the login timeout.\"\nBecause…").as_deref(),
+            Some("Fix the login timeout")
+        );
+        assert_eq!(
+            clean_generated_title("**Arreglar el acceso**").as_deref(),
+            Some("Arreglar el acceso")
+        );
+        assert_eq!(clean_generated_title("  \n \"\" "), None);
+        assert_eq!(
+            clean_generated_title(&"a".repeat(500))
+                .unwrap()
+                .chars()
+                .count(),
+            TITLE_MAX_CHARS
+        );
     }
 }

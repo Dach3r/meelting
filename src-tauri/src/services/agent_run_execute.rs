@@ -16,9 +16,9 @@ use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
 
 #[derive(Clone, Copy)]
-struct Target<'a> {
-    provider: &'a Provider,
-    model_max: Option<u32>,
+pub(crate) struct Target<'a> {
+    pub(crate) provider: &'a Provider,
+    pub(crate) model_max: Option<u32>,
 }
 
 enum Outcome {
@@ -91,7 +91,11 @@ pub async fn run(engine: Arc<Engine>, run: AgentRun, cancel: CancellationToken) 
     }
 }
 
-fn resolve<'a>(providers: &'a [Provider], provider: &str, model: &str) -> Option<Target<'a>> {
+pub(crate) fn resolve<'a>(
+    providers: &'a [Provider],
+    provider: &str,
+    model: &str,
+) -> Option<Target<'a>> {
     let provider = providers.iter().find(|entry| entry.key == provider)?;
     match provider.location {
         Location::Local => Some(Target {

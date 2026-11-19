@@ -267,8 +267,7 @@ pub mod tests {
 
     pub async fn task(fixture: &Fixture, title: &str, base_ref: &str) -> Task {
         let draft = TaskDraft {
-            title: title.into(),
-            description: String::new(),
+            description: title.into(),
             priority: TaskPriority::Medium,
             repository_id: Some(fixture.repository_id.clone()),
             base_ref: Some(base_ref.into()),
@@ -452,8 +451,7 @@ pub mod tests {
         let general = task_save::create(
             &fixture.pool,
             TaskDraft {
-                title: "General".into(),
-                description: String::new(),
+                description: "General".into(),
                 priority: TaskPriority::Low,
                 repository_id: None,
                 base_ref: None,
@@ -496,8 +494,7 @@ pub mod tests {
             Err(SessionError::TaskHasEnvironment)
         ));
         let draft = TaskDraft {
-            title: "Keep".into(),
-            description: String::new(),
+            description: "Keep".into(),
             priority: TaskPriority::Medium,
             repository_id: None,
             base_ref: None,

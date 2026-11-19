@@ -1223,11 +1223,17 @@ describe("creating tasks from the room", () => {
 
     await user.click(screen.getByRole("button", { name: "Create task" }));
     const dialog = within(screen.getByRole("dialog", { name: "New task" }));
-    await user.type(await dialog.findByLabelText("Title"), "Fix login");
+    await user.type(
+      await dialog.findByLabelText("Description"),
+      "Fix login",
+    );
     await user.click(dialog.getByRole("button", { name: "Create task" }));
 
     expect(create).toHaveBeenCalledWith({
-      draft: expect.objectContaining({ title: "Fix login", agent_ids: [] }),
+      draft: expect.objectContaining({
+        description: "Fix login",
+        agent_ids: [],
+      }),
       origin: { room_id: "r1", message_id: null },
     });
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -1259,12 +1265,10 @@ describe("creating tasks from the room", () => {
     expect(await dialog.findByLabelText("Description")).toHaveValue(
       "We should fix the login timeout",
     );
-    await user.type(dialog.getByLabelText("Title"), "Fix login");
     await user.click(dialog.getByRole("button", { name: "Create task" }));
 
     expect(create).toHaveBeenCalledWith({
       draft: expect.objectContaining({
-        title: "Fix login",
         description: "We should fix the login timeout",
       }),
       origin: { room_id: "r1", message_id: "m1" },

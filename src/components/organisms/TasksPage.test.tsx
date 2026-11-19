@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { listen, type EventCallback } from "@tauri-apps/api/event";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Repository } from "../../hooks/useRepositories";
@@ -9,8 +10,11 @@ import { I18nProvider } from "../../i18n/I18nProvider";
 import { TasksPage } from "./TasksPage";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
+vi.mock("@tauri-apps/api/event", () => ({ listen: vi.fn() }));
 
 const invokeMock = vi.mocked(invoke);
+const listenMock = vi.mocked(listen);
+const handlers = new Map<string, EventCallback<unknown>>();
 
 const ana: Agent = {
   id: "a1",
@@ -72,6 +76,12 @@ function renderPage() {
 
 beforeEach(() => {
   invokeMock.mockReset();
+  listenMock.mockReset();
+  handlers.clear();
+  listenMock.mockImplementation(async (event, handler) => {
+    handlers.set(event as string, handler as EventCallback<unknown>);
+    return () => {};
+  });
 });
 
 describe("tasks list", () => {
@@ -117,6 +127,43 @@ describe("tasks list", () => {
 });
 
 describe("creating tasks", () => {
+  it("needs only a description and shows the title the agent writes later", async () => {
+    const user = userEvent.setup();
+    const created = task("t1", "Fix the login timeout");
+    core({
+      list_tasks: () => [],
+      list_repositories: () => [],
+      create_task: () => created,
+    });
+    renderPage();
+
+    await user.click(await screen.findByRole("button", { name: "New task" }));
+    const dialog = await screen.findByRole("dialog", { name: "New task" });
+    expect(within(dialog).queryByLabelText("Title")).not.toBeInTheDocument();
+    const submit = within(dialog).getByRole("button", { name: "Create task" });
+    expect(submit).toBeDisabled();
+    await user.type(
+      within(dialog).getByLabelText("Description"),
+      "Fix the login timeout",
+    );
+    await user.click(submit);
+    expect(
+      await screen.findByRole("heading", { name: "Fix the login timeout" }),
+    ).toBeInTheDocument();
+
+    act(() =>
+      handlers.get("task:updated")?.({
+        event: "task:updated",
+        id: 0,
+        payload: { ...created, title: "Login timeout" },
+      } as Parameters<EventCallback<unknown>>[0]),
+    );
+
+    expect(
+      await screen.findByRole("heading", { name: "Login timeout" }),
+    ).toBeInTheDocument();
+  });
+
   it("creates a task without repository with several agents", async () => {
     const user = userEvent.setup();
     const created = task("t1", "Write the plan", { agent_ids: ["a1", "a2"] });
@@ -130,7 +177,10 @@ describe("creating tasks", () => {
 
     await user.click(await screen.findByRole("button", { name: "New task" }));
     const dialog = await screen.findByRole("dialog", { name: "New task" });
-    await user.type(within(dialog).getByLabelText("Title"), "Write the plan");
+    await user.type(
+      within(dialog).getByLabelText("Description"),
+      "Write the plan",
+    );
     await user.click(within(dialog).getByRole("button", { name: "High" }));
     const options = within(dialog).getByRole("listbox");
     await user.click(within(options).getByText("Ana"));
@@ -141,8 +191,7 @@ describe("creating tasks", () => {
 
     expect(create).toHaveBeenCalledWith({
       draft: {
-        title: "Write the plan",
-        description: "",
+        description: "Write the plan",
         priority: "high",
         repository_id: null,
         base_ref: null,
@@ -174,7 +223,7 @@ describe("creating tasks", () => {
 
     await user.click(await screen.findByRole("button", { name: "New task" }));
     const dialog = await screen.findByRole("dialog", { name: "New task" });
-    await user.type(within(dialog).getByLabelText("Title"), "Login");
+    await user.type(within(dialog).getByLabelText("Description"), "Login");
     await user.selectOptions(within(dialog).getByLabelText("Repository"), "p1");
     const base = within(dialog).getByLabelText("Base branch");
     await waitFor(() => expect(base).toHaveValue("main"));
@@ -206,7 +255,7 @@ describe("creating tasks", () => {
 
     await user.click(await screen.findByRole("button", { name: "New task" }));
     const dialog = await screen.findByRole("dialog", { name: "New task" });
-    await user.type(within(dialog).getByLabelText("Title"), "Plan");
+    await user.type(within(dialog).getByLabelText("Description"), "Plan");
     await user.click(
       within(dialog).getByRole("button", { name: "Create task" }),
     );

@@ -1,4 +1,4 @@
-use crate::domain::task::{Task, TaskDraft, TaskOrigin};
+use crate::domain::task::{Task, TaskDraft, TaskOrigin, provisional_title};
 use crate::repositories::{
     agents, git_repositories, messages, rooms, task_agents, task_worktrees, tasks,
 };
@@ -39,6 +39,7 @@ pub async fn create(
         &mut *transaction,
         &id,
         &workspace_id,
+        &provisional_title(&draft.description),
         &draft,
         origin.as_ref().map(|origin| origin.room_id.as_str()),
         origin
@@ -69,7 +70,12 @@ pub async fn update(
     {
         return Err(SessionError::TaskRepositoryLocked);
     }
-    if !tasks::update(&mut *transaction, &workspace_id, task_id, &draft).await? {
+    let title = if current.description == draft.description {
+        current.title
+    } else {
+        provisional_title(&draft.description)
+    };
+    if !tasks::update(&mut *transaction, &workspace_id, task_id, &title, &draft).await? {
         return Err(SessionError::TaskNotFound);
     }
     task_agents::delete_others(&mut *transaction, task_id, &draft.agent_ids).await?;
@@ -150,8 +156,7 @@ mod tests {
 
     fn draft(title: &str) -> TaskDraft {
         TaskDraft {
-            title: title.into(),
-            description: String::new(),
+            description: title.into(),
             priority: TaskPriority::Medium,
             repository_id: None,
             base_ref: None,
@@ -403,16 +408,15 @@ mod tests {
             &pool,
             &task.id,
             TaskDraft {
-                description: "Details".into(),
                 priority: TaskPriority::High,
                 agent_ids: vec![bob.clone()],
-                ..draft("New")
+                ..draft("Details")
             },
         )
         .await
         .unwrap();
 
-        assert_eq!(updated.title, "New");
+        assert_eq!(updated.title, "Details");
         assert_eq!(updated.description, "Details");
         assert_eq!(updated.priority, TaskPriority::High);
         assert_eq!(updated.status, TaskStatus::Pending);
@@ -420,6 +424,62 @@ mod tests {
         assert!(matches!(
             update(&pool, "missing", draft("New")).await,
             Err(SessionError::TaskNotFound)
+        ));
+    }
+
+    #[tokio::test]
+    async fn the_title_follows_the_description_and_survives_other_edits() {
+        let (pool, _dir, workspace_id) = setup().await;
+        let task = create(&pool, draft("Fix the login timeout\nSteps follow"), None)
+            .await
+            .unwrap();
+        assert_eq!(task.title, "Fix the login timeout");
+        tasks::set_generated_title(
+            &pool,
+            &workspace_id,
+            &task.id,
+            "Fix the login timeout\nSteps follow",
+            "Login timeout",
+        )
+        .await
+        .unwrap();
+
+        let reprioritized = update(
+            &pool,
+            &task.id,
+            TaskDraft {
+                priority: TaskPriority::High,
+                ..draft("Fix the login timeout\nSteps follow")
+            },
+        )
+        .await
+        .unwrap();
+        let rewritten = update(&pool, &task.id, draft("Add dark mode"))
+            .await
+            .unwrap();
+
+        assert_eq!(reprioritized.title, "Login timeout");
+        assert_eq!(rewritten.title, "Add dark mode");
+        assert!(
+            !tasks::set_generated_title(
+                &pool,
+                &workspace_id,
+                &task.id,
+                "Fix the login timeout\nSteps follow",
+                "Stale"
+            )
+            .await
+            .unwrap()
+        );
+    }
+
+    #[tokio::test]
+    async fn rejects_an_empty_description() {
+        let (pool, _dir, _) = setup().await;
+
+        assert!(matches!(
+            create(&pool, draft("  "), None).await,
+            Err(SessionError::InvalidTask)
         ));
     }
 
@@ -443,7 +503,7 @@ mod tests {
             &pool,
             &task.id,
             TaskDraft {
-                title: "Login v2".into(),
+                description: "Login v2".into(),
                 ..linked.clone()
             },
         )

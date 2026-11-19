@@ -83,6 +83,7 @@ pub async fn insert<'e>(
     executor: impl SqliteExecutor<'e>,
     id: &str,
     workspace_id: &str,
+    title: &str,
     draft: &TaskDraft,
     origin_room_id: Option<&str>,
     origin_message_id: Option<&str>,
@@ -96,7 +97,7 @@ pub async fn insert<'e>(
     .bind(&draft.repository_id)
     .bind(origin_room_id)
     .bind(origin_message_id)
-    .bind(&draft.title)
+    .bind(title)
     .bind(&draft.description)
     .bind(draft.priority.as_str())
     .bind(&draft.base_ref)
@@ -109,19 +110,39 @@ pub async fn update<'e>(
     executor: impl SqliteExecutor<'e>,
     workspace_id: &str,
     id: &str,
+    title: &str,
     draft: &TaskDraft,
 ) -> Result<bool, sqlx::Error> {
     let result = sqlx::query(sqlx::AssertSqlSafe(format!(
         "UPDATE tasks SET title = ?, description = ?, priority = ?, repository_id = ?, base_ref = ?, updated_at = {NOW} \
          WHERE id = ? AND workspace_id = ?"
     )))
-    .bind(&draft.title)
+    .bind(title)
     .bind(&draft.description)
     .bind(draft.priority.as_str())
     .bind(&draft.repository_id)
     .bind(&draft.base_ref)
     .bind(id)
     .bind(workspace_id)
+    .execute(executor)
+    .await?;
+    Ok(result.rows_affected() > 0)
+}
+
+pub async fn set_generated_title<'e>(
+    executor: impl SqliteExecutor<'e>,
+    workspace_id: &str,
+    id: &str,
+    description: &str,
+    title: &str,
+) -> Result<bool, sqlx::Error> {
+    let result = sqlx::query(
+        "UPDATE tasks SET title = ? WHERE id = ? AND workspace_id = ? AND description = ?",
+    )
+    .bind(title)
+    .bind(id)
+    .bind(workspace_id)
+    .bind(description)
     .execute(executor)
     .await?;
     Ok(result.rows_affected() > 0)

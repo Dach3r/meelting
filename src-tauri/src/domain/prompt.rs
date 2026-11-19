@@ -140,6 +140,26 @@ fn merge(turns: Vec<Turn>) -> Vec<Turn> {
     merged
 }
 
+const TITLE_SOURCE_CHARS: usize = 4000;
+
+pub fn task_title(locale: Locale, description: &str) -> Prompt {
+    let system = match locale {
+        Locale::Es => {
+            "Escribe un título breve (máximo 10 palabras, sin comillas ni punto final) para la tarea que describe el usuario. Usa el mismo idioma que la descripción. Responde solo con el título."
+        }
+        Locale::En => {
+            "Write a short title (at most 10 words, no quotes, no trailing period) for the task the user describes. Use the same language as the description. Reply with only the title."
+        }
+    };
+    Prompt {
+        system: system.into(),
+        turns: vec![Turn {
+            role: Role::User,
+            text: description.chars().take(TITLE_SOURCE_CHARS).collect(),
+        }],
+    }
+}
+
 fn system_text(input: &PromptInput) -> String {
     let participants: Vec<String> = input
         .participants

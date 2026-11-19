@@ -1,4 +1,3 @@
-import { ListChecks } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
 import type {
@@ -90,20 +89,14 @@ export function TaskForm({
   return (
     <form onSubmit={submit} className="grid gap-5 p-6 sm:px-10 sm:pb-8">
       <Field
-        label={t("tasks.form.title")}
-        value={draft.title}
-        onChange={(title) => update({ title })}
-        maxLength={120}
-        icon={ListChecks}
-        autoFocus
-      />
-      <Field
         label={t("tasks.form.description")}
         hint={t("tasks.form.descriptionHint")}
         value={draft.description}
         onChange={(description) => update({ description })}
         maxLength={10000}
         multiline
+        rows={5}
+        autoFocus
       />
       <div className="grid gap-2">
         <span className="text-sm font-medium text-muted">
@@ -167,7 +160,7 @@ export function TaskForm({
           size="pill"
           disabled={
             busy ||
-            draft.title.trim() === "" ||
+            draft.description.trim() === "" ||
             (draft.repository_id !== null && branches === null && !branchErrorKey)
           }
         >

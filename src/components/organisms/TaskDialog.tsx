@@ -35,7 +35,6 @@ export function TaskDialog({
   const [mode, setMode] = useState<"create" | "link">("create");
   const initial: TaskDraft = task
     ? {
-        title: task.title,
         description: task.description,
         priority: task.priority,
         repository_id: task.repository_id,
@@ -43,7 +42,6 @@ export function TaskDialog({
         agent_ids: task.agent_ids,
       }
     : {
-        title: "",
         description,
         priority: "medium",
         repository_id: null,

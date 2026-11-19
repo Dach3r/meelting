@@ -49,6 +49,7 @@ pub mod task_delete;
 pub mod task_room_link;
 pub mod task_save;
 pub mod task_status_change;
+pub mod task_title_generate;
 pub mod tasks_list;
 pub mod team_create;
 pub mod team_delete;

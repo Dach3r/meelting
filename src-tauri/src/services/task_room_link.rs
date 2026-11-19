@@ -54,8 +54,7 @@ mod tests {
 
     fn draft(title: &str) -> TaskDraft {
         TaskDraft {
-            title: title.into(),
-            description: String::new(),
+            description: title.into(),
             priority: TaskPriority::Medium,
             repository_id: None,
             base_ref: None,

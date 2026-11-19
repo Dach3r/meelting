@@ -58,7 +58,7 @@ Unique `(workspace_id, git_common_dir)` and `(id, workspace_id)`.
 | `repository_id` | `TEXT` | Nullable; `(repository_id, workspace_id)` → `repositories (id, workspace_id)` `NO ACTION` |
 | `origin_room_id` | `TEXT` | Nullable; `(origin_room_id, workspace_id)` → `rooms (id, workspace_id)` `NO ACTION` |
 | `origin_message_id` | `TEXT` | Nullable; `(origin_message_id, origin_room_id)` → `messages (id, room_id)` `NO ACTION`; requires `origin_room_id` |
-| `title` | `TEXT` | 1–120 characters |
+| `title` | `TEXT` | 1–120 characters. Never typed by the user: it is derived from the description (see BR-03b) |
 | `description` | `TEXT` | `NOT NULL`, up to 10,000 characters (`''` when empty) |
 | `status` | `TEXT` | `pending`, `in_progress`, `blocked`, `completed`, `canceled` |
 | `priority` | `TEXT` | `low`, `medium`, `high` |
@@ -135,6 +135,10 @@ Registering never runs `clone`, `init`, `pull` or writes any file.
 ### BR-02. Creating tasks (4A ✅)
 
 A task can be created without a repository and without agents. With a repository, the user picks the base branch among its local branches; the default branch (`origin/HEAD` when it points to an existing local branch, otherwise the current branch of the main working tree) is suggested. A task is saved as `pending`, and saving never prepares an environment.
+
+### BR-03b. Task titles
+
+The user writes only the description (required, up to 10,000 characters); the form has no title field. On save the title is the **provisional title**: the first non-empty line of the description, whitespace collapsed and cut to 120 characters. Right after, when the task has at least one assigned agent, the **first assigned agent** (by name) writes a short title in the background with its own provider and model, in the interface language; a cloud agent needs its key, and nothing switches provider or model silently. The result replaces the provisional title only if the description has not changed meanwhile, and reaches the UI with the `task:updated` event. If there is no agent, the agent is unavailable or the call fails, the provisional title stays. Editing the description resets the title to a new provisional one and asks the agent again; editing anything else keeps the generated title. A task whose generated title equals the provisional one may be asked again on a later edit.
 
 ### BR-03. Creating from rooms (4A ✅)
 
@@ -362,7 +366,7 @@ A task can change its repository only while it has never had a worktree; once it
 ## 5. Interface
 
 - **Tasks** (rail): list with filters by status, repository and agent; priority; environment indicator (4B); «New task». Repositories are managed from the same screen.
-- **Task form** (shared by Tasks and rooms): title, description, priority, optional repository, base branch when there is one, multi-agent picker.
+- **Task form** (shared by Tasks and rooms): description (required, the only text the user writes), priority, optional repository, base branch when there is one, multi-agent picker.
 - **Task detail:** information (description, status, priority, agents, origin) with the allowed status actions, edit and delete; **Environment** (4B) and **Changes** (4C stage 3C ✅, below).
 - **Files** and **Trash** (rail; Trash above «Collapse»): see BR-16.
 - **Settings › Environments** (4B): configured folder, native picker, validation state, effect on new worktrees only.

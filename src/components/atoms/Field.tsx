@@ -46,6 +46,7 @@ export function Field({
           rows={rows}
           maxLength={rest.maxLength}
           placeholder={rest.placeholder}
+          autoFocus={rest.autoFocus}
           className={`${fieldClasses} resize-none ${grow ? "min-h-32 flex-1" : "field-sizing-content min-h-20 max-h-40"}`}
         />
       ) : (

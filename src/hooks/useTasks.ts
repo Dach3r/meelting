@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { useCallback, useEffect, useState } from "react";
 
 export type TaskStatus =
@@ -86,7 +87,6 @@ export type RemovalCheck = {
 };
 
 export type TaskDraft = {
-  title: string;
   description: string;
   priority: TaskPriority;
   repository_id: string | null;
@@ -130,6 +130,19 @@ export function useTasks() {
   useEffect(() => {
     reload();
   }, [reload]);
+
+  useEffect(() => {
+    const unlisten = listen<Task>("task:updated", (event) =>
+      setTasks((current) =>
+        current?.map((task) =>
+          task.id === event.payload.id ? event.payload : task,
+        ) ?? null,
+      ),
+    );
+    return () => {
+      unlisten.then((stop) => stop());
+    };
+  }, []);
 
   function replace(task: Task) {
     setTasks((current) =>

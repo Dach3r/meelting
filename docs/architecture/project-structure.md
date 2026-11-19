@@ -36,7 +36,7 @@ src-tauri/src/
 │   ├── app_settings.rs    ✅ get_open_at_login, change_open_at_login (OS login item through `tauri-plugin-autostart`), open_data_folder (`tauri-plugin-opener`)
 │   ├── repositories.rs    ✅ list_repositories, register_repository (folder dialog; `None` if cancelled), unregister_repository, list_repository_branches
 │   ├── worktrees.rs       ✅ get_worktrees_root, change_worktrees_root (folder dialog; `None` if cancelled), prepare_task_environment, discard_task_environment, check_task_environment_removal, remove_task_environment, pick_task_environment_files (file dialog in the repository; `None` if cancelled), copy_task_environment_files (selection id and secret confirmation only), list_task_environments, trash_task_environments, restore_task_environments, purge_task_environments (task ids only; each returns the per-task failures)
-│   ├── tasks.rs           ✅ list_tasks, create_task, update_task, change_task_status, link_task_to_room, delete_task
+│   ├── tasks.rs           ✅ list_tasks, create_task, update_task, change_task_status, link_task_to_room, delete_task (create_task and update_task also start the title generation)
 │   ├── rooms.rs           ✅ list_rooms, create_room, get_room (with runs, snapshots and agents who left), finish_room, add_room_agents, remove_room_agent
 │   └── session.rs         ✅ load_session, complete_first_launch, create_workspace, switch_workspace, list_teams, create_team, create_agent, get_agent, update_agent, delete_agent, save_canvas_positions, reset_canvas_positions, list_agent_templates, list_agent_roles, list_llm_providers, detect_local_models, change_locale, change_theme, change_ui_scale, change_loading_enabled, change_time_format, change_reduce_motion, change_notification
 ├── services/              Layer 2: business actions (verbs)
@@ -91,6 +91,7 @@ src-tauri/src/
 │   ├── repository_branches_list.rs ✅ local branches of a registered repository and the suggested default (`origin/HEAD` if it exists locally, otherwise the current branch)
 │   ├── tasks_list.rs      ✅ tasks of the current workspace by recent activity with their assigned agents and origin room name
 │   ├── task_room_link.rs  ✅ links an existing task to an open room and optionally one of its messages; idempotent, skips the task's own origin
+│   ├── task_title_generate.rs ✅ asks the first assigned agent for a task title in the background (guarded by the description it read) and reports the updated task through a callback
 │   ├── task_save.rs       ✅ creates and edits tasks: validates the draft, agents and repository of the workspace, the base branch against the local branches (only when it changes) and the origin room (open) and message (of that room); replaces the assigned agents; never creates runs or worktrees
 │   ├── task_status_change.rs ✅ applies a transition allowed by the domain state machine, guarded by the current status
 │   ├── task_delete.rs     ✅ deletes a task without an active environment: in `BEGIN IMMEDIATE`, removes its `removed` worktree history and then the task (assignments and copies go in cascade)

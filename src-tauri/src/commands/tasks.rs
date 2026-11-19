@@ -1,8 +1,12 @@
 use crate::domain::task::{Task, TaskDraft, TaskOrigin, TaskStatus};
+use crate::services::agent_run_engine::Engine;
 use crate::services::session_load::SessionError;
-use crate::services::{task_delete, task_room_link, task_save, task_status_change, tasks_list};
+use crate::services::{
+    task_delete, task_room_link, task_save, task_status_change, task_title_generate, tasks_list,
+};
 use sqlx::SqlitePool;
-use tauri::State;
+use std::sync::Arc;
+use tauri::{AppHandle, Emitter, State};
 
 #[tauri::command]
 pub async fn list_tasks(pool: State<'_, SqlitePool>) -> Result<Vec<Task>, SessionError> {
@@ -11,20 +15,26 @@ pub async fn list_tasks(pool: State<'_, SqlitePool>) -> Result<Vec<Task>, Sessio
 
 #[tauri::command]
 pub async fn create_task(
-    pool: State<'_, SqlitePool>,
+    app: AppHandle,
+    engine: State<'_, Arc<Engine>>,
     draft: TaskDraft,
     origin: Option<TaskOrigin>,
 ) -> Result<Task, SessionError> {
-    task_save::create(&pool, draft, origin).await
+    let task = task_save::create(&engine.pool, draft, origin).await?;
+    generate_title(&app, &engine, &task);
+    Ok(task)
 }
 
 #[tauri::command]
 pub async fn update_task(
-    pool: State<'_, SqlitePool>,
+    app: AppHandle,
+    engine: State<'_, Arc<Engine>>,
     task_id: String,
     draft: TaskDraft,
 ) -> Result<Task, SessionError> {
-    task_save::update(&pool, &task_id, draft).await
+    let task = task_save::update(&engine.pool, &task_id, draft).await?;
+    generate_title(&app, &engine, &task);
+    Ok(task)
 }
 
 #[tauri::command]
@@ -51,4 +61,11 @@ pub async fn delete_task(
     task_id: String,
 ) -> Result<Vec<Task>, SessionError> {
     task_delete::run(&pool, &task_id).await
+}
+
+fn generate_title(app: &AppHandle, engine: &Arc<Engine>, task: &Task) {
+    let app = app.clone();
+    task_title_generate::spawn(engine, task.clone(), move |task| {
+        let _ = app.emit("task:updated", task);
+    });
 }
