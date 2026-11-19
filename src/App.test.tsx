@@ -38,6 +38,11 @@ function session(overrides = {}) {
     theme: "system",
     ui_scale: 100,
     loading_enabled: true,
+    time_format: "auto",
+    reduce_motion: "system",
+    notify_run_succeeded: true,
+    notify_run_failed: true,
+    notify_sound: false,
     current_workspace_id: "1",
     workspaces: [acme],
     ...overrides,
@@ -54,6 +59,7 @@ beforeEach(() => {
   vi.restoreAllMocks();
   invokeMock.mockReset();
   delete document.documentElement.dataset.theme;
+  delete document.documentElement.dataset.motion;
   document.documentElement.style.fontSize = "";
 });
 
@@ -1673,6 +1679,25 @@ describe("agent catalog", () => {
 });
 
 describe("settings", () => {
+  it("forces reduced or full motion on the page and follows the system otherwise", async () => {
+    mockCore(session({ locale: "en", reduce_motion: "on" }));
+    const { unmount } = render(<App />);
+    await screen.findByRole("button", { name: "Settings" });
+    expect(document.documentElement.dataset.motion).toBe("reduce");
+    unmount();
+
+    mockCore(session({ locale: "en", reduce_motion: "off" }));
+    const second = render(<App />);
+    await screen.findByRole("button", { name: "Settings" });
+    expect(document.documentElement.dataset.motion).toBe("full");
+    second.unmount();
+
+    mockCore(session({ locale: "en", reduce_motion: "system" }));
+    render(<App />);
+    await screen.findByRole("button", { name: "Settings" });
+    expect(document.documentElement.dataset.motion).toBeUndefined();
+  });
+
   it("opens from the rail and marks Settings as the current page", async () => {
     mockCore(session({ locale: "en" }));
     const user = userEvent.setup();

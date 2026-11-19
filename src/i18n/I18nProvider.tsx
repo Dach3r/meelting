@@ -1,18 +1,24 @@
 import { createContext, useContext, type ReactNode } from "react";
-import { translate, type Locale } from "./translate";
+import { translate, type Locale, type TimeFormat } from "./translate";
 
-type I18n = { locale: Locale; t: (key: string) => string };
+type I18n = {
+  locale: Locale;
+  timeFormat: TimeFormat;
+  t: (key: string) => string;
+};
 
 const I18nContext = createContext<I18n | null>(null);
 
 export function I18nProvider({
   locale,
+  timeFormat = "auto",
   children,
 }: {
   locale: Locale;
+  timeFormat?: TimeFormat;
   children: ReactNode;
 }) {
-  const value = { locale, t: (key: string) => translate(locale, key) };
+  const value = { locale, timeFormat, t: (key: string) => translate(locale, key) };
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 }
 

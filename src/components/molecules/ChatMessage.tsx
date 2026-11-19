@@ -15,7 +15,7 @@ export function ChatMessage({
   footer?: string;
   onCreateTask: () => void;
 }) {
-  const { t, locale } = useI18n();
+  const { t, locale, timeFormat } = useI18n();
   return (
     <li className="group/message flex min-w-0 gap-3">
       <Avatar
@@ -30,10 +30,10 @@ export function ChatMessage({
           </span>
           <time
             dateTime={message.created_at}
-            title={formatDateTime(locale, message.created_at)}
+            title={formatDateTime(locale, message.created_at, timeFormat)}
             className="shrink-0 text-xs whitespace-nowrap text-muted"
           >
-            {formatTime(locale, message.created_at)}
+            {formatTime(locale, message.created_at, timeFormat)}
           </time>
           <button
             type="button"

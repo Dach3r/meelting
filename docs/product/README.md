@@ -20,6 +20,7 @@ This product replaces the original Rails SaaS (repository `meelting`), which sta
 | [rooms.md](rooms.md) | Work rooms: goal, participants and persistent conversation |
 | [agent-execution.md](agent-execution.md) | Agent runs: providers (cloud and local), streaming, states, limits and errors |
 | [voice-meetings.md](voice-meetings.md) | Conversational meetings with agents: modes, turn coordination, voice (proposal) |
+| [settings.md](settings.md) | Settings: sections, groups, defaults and behavior |
 | [decisions.md](decisions.md) | Log of approved, pending and discarded decisions |
 | [users.md](users.md) | Target users and main experience (journey) |
 | [roadmap.md](roadmap.md) | Phases, scope and what is not built |

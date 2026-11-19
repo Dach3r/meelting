@@ -40,7 +40,7 @@ export function TaskEnvironment({
   onPickFiles,
   onCopyFiles,
 }: Props) {
-  const { t, locale } = useI18n();
+  const { t, locale, timeFormat } = useI18n();
   const [removal, setRemoval] = useState<RemovalCheck | null>(null);
   const [preview, setPreview] = useState<CopyPreview | null>(null);
   const worktree = task.worktree;
@@ -113,7 +113,7 @@ export function TaskEnvironment({
             </code>
           </Detail>
           <Detail label={t("tasks.detail.created")}>
-            {formatDateTime(locale, worktree.created_at)}
+            {formatDateTime(locale, worktree.created_at, timeFormat)}
           </Detail>
         </dl>
       )}
@@ -133,7 +133,7 @@ export function TaskEnvironment({
                 <code className="min-w-0 truncate">{copy.relative_path}</code>
                 <span className="shrink-0 text-xs text-muted">
                   {formatBytes(locale, copy.size_bytes)} ·{" "}
-                  {formatDateTime(locale, copy.copied_at)}
+                  {formatDateTime(locale, copy.copied_at, timeFormat)}
                 </span>
               </li>
             ))}

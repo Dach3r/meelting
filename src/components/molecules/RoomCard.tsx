@@ -8,7 +8,7 @@ import { Button } from "../atoms/Button";
 const SEATS = 3;
 
 export function RoomCard({ room, onOpen }: { room: Room; onOpen: () => void }) {
-  const { t, locale } = useI18n();
+  const { t, locale, timeFormat } = useI18n();
   const nameId = useId();
   const seated = [
     { id: "you", name: t("rooms.you") },
@@ -17,8 +17,8 @@ export function RoomCard({ room, onOpen }: { room: Room; onOpen: () => void }) {
   const extra = room.agents.length - (seated.length - 1);
   const finished = room.finished_at !== null;
   const activity = room.finished_at
-    ? `${t("rooms.finishedAt")} ${formatDateTime(locale, room.finished_at)}`
-    : `${t("rooms.lastActivity")} ${formatDateTime(locale, room.updated_at)}`;
+    ? `${t("rooms.finishedAt")} ${formatDateTime(locale, room.finished_at, timeFormat)}`
+    : `${t("rooms.lastActivity")} ${formatDateTime(locale, room.updated_at, timeFormat)}`;
   return (
     <li
       aria-disabled={finished || undefined}

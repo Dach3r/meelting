@@ -20,6 +20,9 @@ function App() {
     changeTheme,
     changeUiScale,
     changeLoadingEnabled,
+    changeTimeFormat,
+    changeReduceMotion,
+    changeNotification,
   } = useSession();
   const {
     teams,
@@ -48,6 +51,13 @@ function App() {
     document.documentElement.style.fontSize = `${uiScale}%`;
   }, [uiScale]);
 
+  const reduceMotion = session?.reduce_motion ?? "system";
+  useEffect(() => {
+    const root = document.documentElement;
+    if (reduceMotion === "system") delete root.dataset.motion;
+    else root.dataset.motion = reduceMotion === "on" ? "reduce" : "full";
+  }, [reduceMotion]);
+
   if (!loaded) return null;
 
   const locale = session?.locale ?? draftLocale;
@@ -60,7 +70,7 @@ function App() {
     : null;
 
   return (
-    <I18nProvider locale={locale}>
+    <I18nProvider locale={locale} timeFormat={session?.time_format}>
       {!session ? (
         <NewWorkspacePage
           busy={busy}
@@ -103,6 +113,14 @@ function App() {
           onChangeTheme={changeTheme}
           onChangeUiScale={changeUiScale}
           onChangeLoadingEnabled={changeLoadingEnabled}
+          timeFormat={session.time_format}
+          reduceMotion={session.reduce_motion}
+          notifyRunSucceeded={session.notify_run_succeeded}
+          notifyRunFailed={session.notify_run_failed}
+          notifySound={session.notify_sound}
+          onChangeTimeFormat={changeTimeFormat}
+          onChangeReduceMotion={changeReduceMotion}
+          onChangeNotification={changeNotification}
           currentId={session.current_workspace_id}
           busy={busy}
           errorMessage={errorMessage}

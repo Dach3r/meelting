@@ -14,7 +14,7 @@ export function EnvironmentDetail({
   status,
   actions,
 }: Props) {
-  const { t, locale } = useI18n();
+  const { t, locale, timeFormat } = useI18n();
   const { worktree } = environment;
   const rows = [
     [t("files.detail.repository"), environment.repository_name],
@@ -68,7 +68,7 @@ export function EnvironmentDetail({
                 </code>
                 <span className="shrink-0 text-xs text-muted">
                   {formatBytes(locale, copy.size_bytes)} ·{" "}
-                  {formatDateTime(locale, copy.copied_at)}
+                  {formatDateTime(locale, copy.copied_at, timeFormat)}
                 </span>
               </li>
             ))}

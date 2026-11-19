@@ -16,6 +16,17 @@
   src: url("./assets/fonts/Rubik-Bold.woff2") format("woff2");
 }
 
+@custom-variant motion-reduce {
+  @media (prefers-reduced-motion: reduce) {
+    &:where(html:not([data-motion="full"]) *) {
+      @slot;
+    }
+  }
+  &:where(html[data-motion="reduce"] *) {
+    @slot;
+  }
+}
+
 @theme {
   --color-surface: light-dark(#ffffff, #1d1d20);
   --color-shell: light-dark(#e5e7eb, #151517);

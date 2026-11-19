@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { useCallback, useEffect, useState } from "react";
-import type { Locale } from "../i18n/translate";
+import type { Locale, TimeFormat } from "../i18n/translate";
 
 export type Workspace = { id: string; name: string };
 
@@ -8,11 +8,20 @@ export type Theme = "system" | "light" | "dark";
 
 export type UiScale = 90 | 100 | 110 | 125 | 150;
 
+export type ReduceMotion = "system" | "on" | "off";
+
+export type NotificationSetting = "run_succeeded" | "run_failed" | "sound";
+
 export type Session = {
   locale: Locale;
   theme: Theme;
   ui_scale: UiScale;
   loading_enabled: boolean;
+  time_format: TimeFormat;
+  reduce_motion: ReduceMotion;
+  notify_run_succeeded: boolean;
+  notify_run_failed: boolean;
+  notify_sound: boolean;
   current_workspace_id: string;
   workspaces: Workspace[];
 };
@@ -59,6 +68,12 @@ export function useSession() {
     run("change_ui_scale", { uiScale });
   const changeLoadingEnabled = (loadingEnabled: boolean) =>
     run("change_loading_enabled", { loadingEnabled });
+  const changeTimeFormat = (timeFormat: TimeFormat) =>
+    run("change_time_format", { timeFormat });
+  const changeReduceMotion = (reduceMotion: ReduceMotion) =>
+    run("change_reduce_motion", { reduceMotion });
+  const changeNotification = (setting: NotificationSetting, enabled: boolean) =>
+    run("change_notification", { setting, enabled });
 
   return {
     session,
@@ -73,5 +88,8 @@ export function useSession() {
     changeTheme,
     changeUiScale,
     changeLoadingEnabled,
+    changeTimeFormat,
+    changeReduceMotion,
+    changeNotification,
   };
 }

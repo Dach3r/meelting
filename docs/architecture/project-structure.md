@@ -33,11 +33,12 @@ src-tauri/src/
 │   ├── provider_keys.rs   ✅ list_provider_keys, save_provider_key, check_provider_key, delete_provider_key (take only the provider; the core resolves the workspace)
 │   ├── agent_runs.rs      ✅ send_intervention, resolve_recipient, check_agent_availability, cancel_agent_run and the engine's event emitter (agent_run:status, agent_run:token, message:created)
 │   ├── dialog.rs          ✅ native folder and multiple-file dialogs opened from Rust (`tauri-plugin-dialog`); the webview never sends a path
+│   ├── app_settings.rs    ✅ get_open_at_login, change_open_at_login (OS login item through `tauri-plugin-autostart`), open_data_folder (`tauri-plugin-opener`)
 │   ├── repositories.rs    ✅ list_repositories, register_repository (folder dialog; `None` if cancelled), unregister_repository, list_repository_branches
 │   ├── worktrees.rs       ✅ get_worktrees_root, change_worktrees_root (folder dialog; `None` if cancelled), prepare_task_environment, discard_task_environment, check_task_environment_removal, remove_task_environment, pick_task_environment_files (file dialog in the repository; `None` if cancelled), copy_task_environment_files (selection id and secret confirmation only), list_task_environments, trash_task_environments, restore_task_environments, purge_task_environments (task ids only; each returns the per-task failures)
 │   ├── tasks.rs           ✅ list_tasks, create_task, update_task, change_task_status, delete_task
 │   ├── rooms.rs           ✅ list_rooms, create_room, get_room (with runs, snapshots and agents who left), finish_room, add_room_agents, remove_room_agent
-│   └── session.rs         ✅ load_session, complete_first_launch, create_workspace, switch_workspace, list_teams, create_team, create_agent, get_agent, update_agent, delete_agent, save_canvas_positions, reset_canvas_positions, list_agent_templates, list_agent_roles, list_llm_providers, detect_local_models, change_locale, change_theme, change_ui_scale, change_loading_enabled
+│   └── session.rs         ✅ load_session, complete_first_launch, create_workspace, switch_workspace, list_teams, create_team, create_agent, get_agent, update_agent, delete_agent, save_canvas_positions, reset_canvas_positions, list_agent_templates, list_agent_roles, list_llm_providers, detect_local_models, change_locale, change_theme, change_ui_scale, change_loading_enabled, change_time_format, change_reduce_motion, change_notification
 ├── services/              Layer 2: business actions (verbs)
 │   ├── session_load.rs    ✅ loads the profile and the workspaces; defines SessionError
 │   ├── engine_check.rs    ✅ validates a provider/model pair: cloud against `llm.yml`, local against the models installed in the running runtime (localhost); used by creating and editing agents
@@ -49,6 +50,10 @@ src-tauri/src/
 │   ├── theme_change.rs    ✅ saves the profile theme
 │   ├── ui_scale_change.rs ✅ saves the profile interface size
 │   ├── loading_change.rs  ✅ saves whether the transition effect is on
+│   ├── time_format_change.rs ✅ saves the profile time format
+│   ├── reduce_motion_change.rs ✅ saves the profile motion preference
+│   ├── notification_change.rs ✅ saves one notification preference (run succeeded, run failed or sound)
+│   ├── run_notice.rs      ✅ builds the system notification of a finished run (agent name, localized text, sound) or nothing when the matching preference is off or the run was cancelled or expired
 │   ├── team_create.rs     ✅ creates a team and returns the updated list
 │   ├── agent_create.rs    ✅ validates and creates an agent (custom or from a template) and returns the updated list
 │   ├── agent_get.rs       ✅ full detail of an agent in the current workspace
@@ -135,6 +140,9 @@ src-tauri/src/
 │   ├── locale.rs          ✅ es/en language
 │   ├── theme.rs           ✅ system/light/dark theme
 │   ├── ui_scale.rs        ✅ interface size (90–150 % presets)
+│   ├── time_format.rs     ✅ automatic/12 h/24 h time format
+│   ├── reduce_motion.rs   ✅ system/on/off motion preference
+│   ├── notification.rs    ✅ notification preference identifiers (run succeeded, run failed, sound)
 │   ├── profile.rs         ✅ local profile
 │   ├── file_copy.rs       ✅ copy limits, problems, outcomes, preview and record types, portable relative paths without `.git` segments, and the secret name heuristic
 │   ├── storage.rs         ✅ storage issue, file system classification, the parsers of `mountinfo`, `diskutil` plists and Dropbox `info.json`, and path containment (pure; each platform parser is compiled only where it is used)
@@ -203,12 +211,14 @@ src/
 │   ├── useRecipientPreview.ts ✅ invoke resolve_recipient 150 ms after the last draft change (local IPC, no network); discards stale responses
 │   ├── agentRunState.ts   ✅ pure run state: logical state order (queued n = 2n, running n = 2n − 1, final last), tokens by (attempt, seq), snapshots and live text
 │   ├── useAgentTemplates.ts ✅ invoke list_agent_templates (reloads when the language changes)
-│   └── useAgentRoles.ts   ✅ invoke list_agent_roles
+│   ├── useAgentRoles.ts   ✅ invoke list_agent_roles
+│   ├── useOpenAtLogin.ts  ✅ invoke get_open_at_login and change_open_at_login
+│   └── useDataFolder.ts   ✅ invoke open_data_folder
 ├── test/setup.ts          Vitest configuration (jest-dom)
 └── components/            Atomic design (overview.md §8)
-    ├── atoms/             Avatar, Button, CardSelect, Field, Icons, Logo, Select (native select with label), SelectField
-    ├── molecules/         AgentPicker, AgentRunStatus, AgentTemplateDetail, Alert, ChatMessage, ConfirmDialog, EnvironmentDetail (details and actions of the focused environment), EnvironmentList (selectable environment rows), EnginePicker, InviteAgentsForm, IslandMenu, LocalProviderRow, LocaleSwitcher, MentionSuggestions, MessageComposer, Modal, NavItem, OrgAgentCard, OrgCard, OrgDrawer, OrgNode, ParticipantTile, FileCopyDialog, ProviderKeyRow, RepositoryList, RoomCard, RoomForm, TaskBadges, TaskCard, TaskEnvironment, TaskForm, SegmentedControl, SettingsRow, TransitionOverlay, TeamForm, TeamPicker, ThemeSwitcher, UiScaleSwitcher, WorkspaceSwitcher, ZoomControls; agentLabel.ts omits the role when it repeats the name; mentionDraft.ts detects the mention in progress, filters agents by name or role and inserts the chosen one
-    ├── organisms/         AgentCatalogPage, AgentEditForm, AgentForm, EnvironmentsPage (Files and Trash views of the rail), NewWorkspacePage, OrgChart, ProvidersPage, Rail, RoomChat, RoomView, RoomsPage, SettingsPage, TaskDetail, TaskDialog (task form with repositories and saving, shared by TasksPage and RoomView, which opens it from «Create task» and from «Turn into task» in ChatMessage), TasksPage, TeamsPage, Topbar, WorktreesRootSetting (Settings › Environments); authorName.ts resolves a message's author among present agents and those who left
+    ├── atoms/             Avatar, Button, CardSelect, Field, Icons, Logo, Select (native select with label), Switch (on/off switch), SelectField
+    ├── molecules/         AgentPicker, AgentRunStatus, AgentTemplateDetail, Alert, ChatMessage, ConfirmDialog, EnvironmentDetail (details and actions of the focused environment), EnvironmentList (selectable environment rows), EnginePicker, InviteAgentsForm, IslandMenu, LocalProviderRow, LocaleSwitcher, MentionSuggestions, MessageComposer, Modal, NavItem, OrgAgentCard, OrgCard, OrgDrawer, OrgNode, ParticipantTile, FileCopyDialog, ProviderKeyRow, RepositoryList, RoomCard, RoomForm, TaskBadges, TaskCard, TaskEnvironment, TaskForm, SegmentedControl, SettingsGroup (titled card of settings), SettingsRow, TransitionOverlay, TeamForm, TeamPicker, ThemeSwitcher, UiScaleSwitcher, WorkspaceSwitcher, ZoomControls; agentLabel.ts omits the role when it repeats the name; mentionDraft.ts detects the mention in progress, filters agents by name or role and inserts the chosen one
+    ├── organisms/         AgentCatalogPage, AgentEditForm, AgentForm, EnvironmentsPage (Files and Trash views of the rail), NewWorkspacePage, OrgChart, ProvidersPage, Rail, RoomChat, RoomView, RoomsPage, SettingsPage (sections with one card per group), OpenAtLoginSetting, DataFolderSetting, TaskDetail, TaskDialog (task form with repositories and saving, shared by TasksPage and RoomView, which opens it from «Create task» and from «Turn into task» in ChatMessage), TasksPage, TeamsPage, Topbar, WorktreesRootSetting (Settings › Environments); authorName.ts resolves a message's author among present agents and those who left
     └── templates/         Workspace (rail + topbar + content)
 ```
 

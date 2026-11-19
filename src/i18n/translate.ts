@@ -3,6 +3,8 @@ import es from "./es.json";
 
 export type Locale = "es" | "en";
 
+export type TimeFormat = "auto" | "12h" | "24h";
+
 const messages: Record<Locale, unknown> = { es, en };
 
 export function translate(locale: Locale, key: string): string {
@@ -21,17 +23,33 @@ export function translateError(locale: Locale, code: string): string {
   return text === key ? translate(locale, "errors.unknown") : text;
 }
 
-export function formatDateTime(locale: Locale, iso: string): string {
+function hourOptions(timeFormat: TimeFormat): Intl.DateTimeFormatOptions {
+  if (timeFormat === "12h") return { hour12: true };
+  if (timeFormat === "24h") return { hourCycle: "h23" };
+  return {};
+}
+
+export function formatDateTime(
+  locale: Locale,
+  iso: string,
+  timeFormat: TimeFormat = "auto",
+): string {
   return new Intl.DateTimeFormat(locale, {
     dateStyle: "medium",
     timeStyle: "short",
+    ...hourOptions(timeFormat),
   }).format(new Date(iso));
 }
 
-export function formatTime(locale: Locale, iso: string): string {
-  return new Intl.DateTimeFormat(locale, { timeStyle: "short" }).format(
-    new Date(iso),
-  );
+export function formatTime(
+  locale: Locale,
+  iso: string,
+  timeFormat: TimeFormat = "auto",
+): string {
+  return new Intl.DateTimeFormat(locale, {
+    timeStyle: "short",
+    ...hourOptions(timeFormat),
+  }).format(new Date(iso));
 }
 
 export function formatAgentCount(locale: Locale, count: number): string {

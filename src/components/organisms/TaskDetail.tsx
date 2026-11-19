@@ -59,7 +59,7 @@ export function TaskDetail({
   onDelete,
   onClearError,
 }: Props) {
-  const { t, locale } = useI18n();
+  const { t, locale, timeFormat } = useI18n();
   const [deleting, setDeleting] = useState(false);
   const assigned = task.agent_ids.flatMap((agentId) =>
     agents.filter((agent) => agent.id === agentId),
@@ -214,11 +214,11 @@ export function TaskDetail({
             </Item>
           )}
           <Item label={t("tasks.detail.created")}>
-            {formatDateTime(locale, task.created_at)}
+            {formatDateTime(locale, task.created_at, timeFormat)}
           </Item>
           {task.completed_at && (
             <Item label={t("tasks.detail.completed")}>
-              {formatDateTime(locale, task.completed_at)}
+              {formatDateTime(locale, task.completed_at, timeFormat)}
             </Item>
           )}
         </dl>

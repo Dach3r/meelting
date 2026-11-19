@@ -3,6 +3,8 @@ import en from "./en.json";
 import es from "./es.json";
 import {
   formatAgentCount,
+  formatDateTime,
+  formatTime,
   translate,
   translateError,
   translateRunError,
@@ -108,5 +110,23 @@ describe("translate", () => {
 
   it("has the same keys in both languages", () => {
     expect(keys(es).sort()).toEqual(keys(en).sort());
+  });
+});
+
+describe("time format", () => {
+  const iso = "2026-11-18T15:30:00.000Z";
+
+  it("keeps the locale default when automatic", () => {
+    expect(formatTime("en", iso)).toBe(formatTime("en", iso, "auto"));
+  });
+
+  it("forces the 12-hour clock", () => {
+    expect(formatTime("es", iso, "12h")).toMatch(/[ap]\.?\s?m/i);
+    expect(formatDateTime("es", iso, "12h")).toMatch(/[ap]\.?\s?m/i);
+  });
+
+  it("forces the 24-hour clock", () => {
+    expect(formatTime("en", iso, "24h")).not.toMatch(/[ap]\.?m/i);
+    expect(formatDateTime("en", iso, "24h")).not.toMatch(/[ap]\.?m/i);
   });
 });

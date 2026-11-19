@@ -1,7 +1,12 @@
 import { useState } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
-import type { Theme, UiScale } from "../../hooks/useSession";
-import type { Locale } from "../../i18n/translate";
+import type {
+  NotificationSetting,
+  ReduceMotion,
+  Theme,
+  UiScale,
+} from "../../hooks/useSession";
+import type { Locale, TimeFormat } from "../../i18n/translate";
 import type {
   AgentDetail,
   AgentDraft,
@@ -54,6 +59,17 @@ type WorkspaceProps = WorkspaceSwitcherProps & {
   onChangeTheme: (theme: Theme) => void;
   onChangeUiScale: (uiScale: UiScale) => void;
   onChangeLoadingEnabled: (loadingEnabled: boolean) => void;
+  timeFormat: TimeFormat;
+  reduceMotion: ReduceMotion;
+  notifyRunSucceeded: boolean;
+  notifyRunFailed: boolean;
+  notifySound: boolean;
+  onChangeTimeFormat: (timeFormat: TimeFormat) => void;
+  onChangeReduceMotion: (reduceMotion: ReduceMotion) => void;
+  onChangeNotification: (
+    setting: NotificationSetting,
+    enabled: boolean,
+  ) => void;
   errorMessage: string | null;
   onDismissError: () => void;
 };
@@ -79,6 +95,14 @@ export function Workspace({
   onChangeTheme,
   onChangeUiScale,
   onChangeLoadingEnabled,
+  timeFormat,
+  reduceMotion,
+  notifyRunSucceeded,
+  notifyRunFailed,
+  notifySound,
+  onChangeTimeFormat,
+  onChangeReduceMotion,
+  onChangeNotification,
   errorMessage,
   onDismissError,
   ...props
@@ -158,6 +182,14 @@ export function Workspace({
                   onChangeTheme={onChangeTheme}
                   onChangeUiScale={onChangeUiScale}
                   onChangeLoadingEnabled={onChangeLoadingEnabled}
+                  timeFormat={timeFormat}
+                  reduceMotion={reduceMotion}
+                  notifyRunSucceeded={notifyRunSucceeded}
+                  notifyRunFailed={notifyRunFailed}
+                  notifySound={notifySound}
+                  onChangeTimeFormat={onChangeTimeFormat}
+                  onChangeReduceMotion={onChangeReduceMotion}
+                  onChangeNotification={onChangeNotification}
                 />
               ) : view === "files" || view === "trash" ? (
                 <EnvironmentsPage

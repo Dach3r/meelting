@@ -62,7 +62,9 @@
     "environment_in_trash": "This environment is in the trash. Restore it from the Trash to use it.",
     "environment_not_in_trash": "This environment is not in the trash.",
     "environment_move_refused": "Git could not move the environment folder. Nothing was changed.",
-    "environment_branch_not_deleted": "The environment was deleted, but Git could not delete its branch."
+    "environment_branch_not_deleted": "The environment was deleted, but Git could not delete its branch.",
+    "data_folder_unavailable": "Meelting could not open the data folder.",
+    "autostart_unavailable": "Meelting could not change the login item of this computer."
   },
   "newWorkspace": {
     "title": "Create your workspace",
@@ -210,7 +212,6 @@
     }
   },
   "settings": {
-    "title": "Settings",
     "categories": {
       "label": "Settings categories",
       "general": {
@@ -221,9 +222,17 @@
         "title": "Appearance",
         "description": "How Meelting looks."
       },
+      "notifications": {
+        "title": "Notifications",
+        "description": "Choose what Meelting lets you know about."
+      },
       "environments": {
         "title": "Environments",
         "description": "Where Meelting prepares the Git worktrees of your tasks."
+      },
+      "advanced": {
+        "title": "Advanced",
+        "description": "Your data and system integration."
       }
     },
     "language": {
@@ -260,6 +269,57 @@
         "synced": "This folder is synchronized by a cloud service. Worktrees can only be prepared on fixed local storage.",
         "unknown": "Meelting could not confirm that this folder is on fixed local storage, so it will not prepare worktrees here."
       }
+    },
+    "groups": {
+      "languageRegion": "Language and region",
+      "startup": "Startup",
+      "theme": "Theme",
+      "interface": "Interface",
+      "alerts": "Alerts",
+      "sound": "Sound",
+      "location": "Location",
+      "data": "Data"
+    },
+    "timeFormat": {
+      "title": "Time format",
+      "description": "Show times with a 12-hour or 24-hour clock.",
+      "auto": "Automatic",
+      "12h": "12 h",
+      "24h": "24 h"
+    },
+    "openAtLogin": {
+      "title": "Open at login",
+      "description": "Start Meelting when you sign in to your computer."
+    },
+    "reduceMotion": {
+      "title": "Reduce motion",
+      "description": "Limit animations. Automatic follows your system setting.",
+      "system": "Automatic",
+      "on": "Enabled",
+      "off": "Disabled"
+    },
+    "notifications": {
+      "runSucceeded": {
+        "title": "Run finished",
+        "description": "Notify when an agent finishes a run."
+      },
+      "runFailed": {
+        "title": "Run failed",
+        "description": "Notify when an agent run fails."
+      },
+      "sound": {
+        "title": "Sound",
+        "description": "Play a sound with notifications."
+      }
+    },
+    "dataFolder": {
+      "title": "Data folder",
+      "description": "Where Meelting keeps its local database.",
+      "open": "Open folder"
+    },
+    "providerKeys": {
+      "title": "Provider keys",
+      "description": "Keys are stored in your operating system keychain, never in Meelting files."
     }
   },
   "providers": {

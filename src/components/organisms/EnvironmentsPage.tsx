@@ -110,7 +110,7 @@ export function EnvironmentsPage({ mode }: { mode: "files" | "trash" }) {
   return (
     <div className="flex min-h-0 flex-1 gap-3">
       <section
-        className={`flex min-h-0 flex-col gap-5 overflow-y-auto rounded-3xl border border-line bg-pill p-3 ${focused ? "w-100 shrink-0" : "flex-1"}`}
+        className="flex min-h-0 w-100 shrink-0 flex-col gap-5 overflow-y-auto rounded-3xl border border-line bg-pill p-3"
       >
         <div className="grid gap-2 px-4 pt-3">
           <h1 className="text-2xl leading-6 font-bold text-ink">{t(`${mode}.title`)}</h1>
@@ -228,7 +228,7 @@ export function EnvironmentsPage({ mode }: { mode: "files" | "trash" }) {
           )}
         </div>
       </section>
-      {focused && (
+      {focused ? (
         <EnvironmentDetail
           environment={focused}
           status={pill(focused)}
@@ -271,6 +271,11 @@ export function EnvironmentsPage({ mode }: { mode: "files" | "trash" }) {
               </Button>
             )
           }
+        />
+      ) : (
+        <aside
+          aria-hidden
+          className="min-w-0 flex-1 rounded-3xl border border-line bg-pill"
         />
       )}
       {pending && (
