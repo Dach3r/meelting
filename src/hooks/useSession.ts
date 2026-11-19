@@ -6,9 +6,12 @@ export type Workspace = { id: string; name: string };
 
 export type Theme = "system" | "light" | "dark";
 
+export type UiScale = 90 | 100 | 110 | 125 | 150;
+
 export type Session = {
   locale: Locale;
   theme: Theme;
+  ui_scale: UiScale;
   current_workspace_id: string;
   workspaces: Workspace[];
 };
@@ -48,6 +51,7 @@ export function useSession() {
     run("switch_workspace", { workspaceId });
   const changeLocale = (locale: Locale) => run("change_locale", { locale });
   const changeTheme = (theme: Theme) => run("change_theme", { theme });
+  const changeUiScale = (uiScale: UiScale) => run("change_ui_scale", { uiScale });
 
   return {
     session,
@@ -60,5 +64,6 @@ export function useSession() {
     switchWorkspace,
     changeLocale,
     changeTheme,
+    changeUiScale,
   };
 }

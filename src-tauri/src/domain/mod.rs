@@ -9,4 +9,5 @@ pub mod room;
 pub mod session;
 pub mod team;
 pub mod theme;
+pub mod ui_scale;
 pub mod workspace;

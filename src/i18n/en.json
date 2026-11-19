@@ -183,6 +183,10 @@
       "system": "System",
       "light": "Light",
       "dark": "Dark"
+    },
+    "uiScale": {
+      "title": "Interface size",
+      "description": "Make everything in the app smaller or larger."
     }
   },
   "rooms": {

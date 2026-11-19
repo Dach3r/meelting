@@ -1,20 +1,24 @@
 use crate::domain::locale::Locale;
 use crate::domain::profile::Profile;
 use crate::domain::theme::Theme;
+use crate::domain::ui_scale::UiScale;
 use sqlx::SqliteExecutor;
 
 pub async fn get<'e>(executor: impl SqliteExecutor<'e>) -> Result<Option<Profile>, sqlx::Error> {
-    let row: Option<(String, String, Option<String>)> =
-        sqlx::query_as("SELECT locale, theme, current_workspace_id FROM profile")
+    let row: Option<(String, String, u16, Option<String>)> =
+        sqlx::query_as("SELECT locale, theme, ui_scale, current_workspace_id FROM profile")
             .fetch_optional(executor)
             .await?;
-    Ok(row.and_then(|(locale, theme, current_workspace_id)| {
-        Some(Profile {
-            locale: Locale::parse(&locale)?,
-            theme: Theme::parse(&theme)?,
-            current_workspace_id,
-        })
-    }))
+    Ok(
+        row.and_then(|(locale, theme, ui_scale, current_workspace_id)| {
+            Some(Profile {
+                locale: Locale::parse(&locale)?,
+                theme: Theme::parse(&theme)?,
+                ui_scale: UiScale::from_percent(ui_scale)?,
+                current_workspace_id,
+            })
+        }),
+    )
 }
 
 pub async fn create<'e>(
@@ -70,6 +74,19 @@ pub async fn set_theme<'e>(
     Ok(())
 }
 
+pub async fn set_ui_scale<'e>(
+    executor: impl SqliteExecutor<'e>,
+    ui_scale: UiScale,
+) -> Result<(), sqlx::Error> {
+    sqlx::query(
+        "UPDATE profile SET ui_scale = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')",
+    )
+    .bind(ui_scale.percent())
+    .execute(executor)
+    .await?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -94,6 +111,7 @@ mod tests {
             Some(Profile {
                 locale: Locale::Es,
                 theme: Theme::System,
+                ui_scale: UiScale::default(),
                 current_workspace_id: Some("01".into())
             })
         );
@@ -124,6 +142,20 @@ mod tests {
         let profile = get(&pool).await.unwrap().unwrap();
         assert_eq!(profile.locale, Locale::Es);
         assert_eq!(profile.theme, Theme::Dark);
+    }
+
+    #[tokio::test]
+    async fn changes_ui_scale() {
+        let (pool, _dir) = open_for_test().await;
+        workspaces::insert(&pool, "01", "Acme").await.unwrap();
+        create(&pool, Locale::En, "01").await.unwrap();
+
+        set_ui_scale(&pool, UiScale::from_percent(150).unwrap())
+            .await
+            .unwrap();
+
+        let profile = get(&pool).await.unwrap().unwrap();
+        assert_eq!(profile.ui_scale.percent(), 150);
     }
 
     #[tokio::test]

@@ -183,6 +183,10 @@
       "system": "Sistema",
       "light": "Claro",
       "dark": "Oscuro"
+    },
+    "uiScale": {
+      "title": "Tamaño de la interfaz",
+      "description": "Haz todo en la app más pequeño o más grande."
     }
   },
   "rooms": {

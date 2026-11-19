@@ -34,7 +34,7 @@ src-tauri/src/
 │   ├── worktree.rs        ✅ run_in_worktree
 │   ├── agent_runs.rs      ✅ send_intervention, resolve_recipient, check_agent_availability, cancel_agent_run y el emisor de eventos del motor (agent_run:status, agent_run:token, message:created)
 │   ├── rooms.rs           ✅ list_rooms, create_room, get_room (con ejecuciones, instantáneas y agentes que salieron), finish_room, add_room_agents, remove_room_agent
-│   └── session.rs         ✅ load_session, complete_first_launch, create_workspace, switch_workspace, list_teams, create_team, create_agent, get_agent, update_agent, delete_agent, save_canvas_positions, reset_canvas_positions, list_agent_templates, list_agent_roles, list_llm_providers, detect_local_models, change_locale, change_theme
+│   └── session.rs         ✅ load_session, complete_first_launch, create_workspace, switch_workspace, list_teams, create_team, create_agent, get_agent, update_agent, delete_agent, save_canvas_positions, reset_canvas_positions, list_agent_templates, list_agent_roles, list_llm_providers, detect_local_models, change_locale, change_theme, change_ui_scale
 ├── services/              Capa 2: acciones de negocio (verbos)
 │   ├── worktree_run.rs    ✅ crea un worktree y ejecuta un comando en él
 │   ├── session_load.rs    ✅ carga el perfil y los workspaces; define SessionError
@@ -44,6 +44,7 @@ src-tauri/src/
 │   ├── teams_list.rs      ✅ equipos del workspace actual con sus agentes
 │   ├── locale_change.rs   ✅ guarda el idioma del perfil
 │   ├── theme_change.rs    ✅ guarda el tema del perfil
+│   ├── ui_scale_change.rs ✅ guarda el tamaño de la interfaz del perfil
 │   ├── team_create.rs     ✅ crea un equipo y devuelve la lista actualizada
 │   ├── agent_create.rs    ✅ valida y crea un agente (personalizado o desde plantilla) y devuelve la lista actualizada
 │   ├── agent_get.rs       ✅ detalle completo de un agente del workspace actual
@@ -98,6 +99,7 @@ src-tauri/src/
 │   ├── local_provider.rs  ✅ proveedor local detectado (clave, en ejecución, modelos)
 │   ├── locale.rs          ✅ idioma es/en
 │   ├── theme.rs           ✅ tema system/light/dark
+│   ├── ui_scale.rs        ✅ tamaño de la interfaz (presets 90–150 %)
 │   ├── profile.rs         ✅ perfil local
 │   ├── room.rs            ✅ sala, participante, mensaje y sus listas; validación del cuerpo y deduplicación de agentes
 │   ├── session.rs         ✅ perfil + workspaces que recibe la UI
@@ -147,7 +149,7 @@ src/
 ├── assets/fonts/          Inter y Rubik (woff2)
 ├── i18n/                  es.json, en.json, translate.ts (texto, valores con nombre, errores de comando y de ejecución, fecha y número de agentes) e I18nProvider
 ├── hooks/                 Acceso al núcleo y estado asociado
-│   ├── useSession.ts      ✅ invoke load_session, complete_first_launch, create_workspace, switch_workspace, change_locale, change_theme
+│   ├── useSession.ts      ✅ invoke load_session, complete_first_launch, create_workspace, switch_workspace, change_locale, change_theme, change_ui_scale
 │   ├── useTeams.ts        ✅ invoke list_teams, create_team, create_agent, get_agent, update_agent, delete_agent, save_canvas_positions (con debounce de 500 ms), reset_canvas_positions
 │   ├── useRooms.ts        ✅ invoke list_rooms, create_room, finish_room
 │   ├── useRoom.ts         ✅ invoke get_room, send_intervention (un client_request_id por envío, reutilizado en los reintentos automáticos y tras un timeout del IPC; sin reintentos si el destinatario es «Nadie») cancel_agent_run, add_room_agents y remove_room_agent; listen message:created, agent_run:status y agent_run:token antes de cargar la sala, con los eventos de la carga en espera
@@ -159,7 +161,7 @@ src/
 ├── test/setup.ts          Configuración de Vitest (jest-dom)
 └── components/            Atomic design (overview.md §8)
     ├── atoms/             Avatar, Button, CardSelect, Field, Icons, Logo
-    ├── molecules/         AgentPicker, AgentRunStatus, AgentTemplateDetail, Alert, ChatMessage, EnginePicker, InviteAgentsForm, IslandMenu, LocaleSwitcher, MentionSuggestions, MessageComposer, Modal, NavItem, OrgAgentCard, OrgCard, OrgDrawer, OrgNode, ParticipantTile, RoomCard, RoomForm, SegmentedControl, SettingsRow, SwitchingOverlay, TeamForm, TeamPicker, ThemeSwitcher, WorkspaceSwitcher, ZoomControls; agentLabel.ts omite el rol cuando repite el nombre; mentionDraft.ts detecta la mención en curso, filtra agentes por nombre o rol e inserta la elegida
+    ├── molecules/         AgentPicker, AgentRunStatus, AgentTemplateDetail, Alert, ChatMessage, EnginePicker, InviteAgentsForm, IslandMenu, LocaleSwitcher, MentionSuggestions, MessageComposer, Modal, NavItem, OrgAgentCard, OrgCard, OrgDrawer, OrgNode, ParticipantTile, RoomCard, RoomForm, SegmentedControl, SettingsRow, SwitchingOverlay, TeamForm, TeamPicker, ThemeSwitcher, UiScaleSwitcher, WorkspaceSwitcher, ZoomControls; agentLabel.ts omite el rol cuando repite el nombre; mentionDraft.ts detecta la mención en curso, filtra agentes por nombre o rol e inserta la elegida
     ├── organisms/         AgentCatalogPage, AgentEditForm, AgentForm, NewWorkspacePage, OrgChart, Rail, RoomChat, RoomView, RoomsPage, SettingsPage, TeamsPage, Topbar; authorName.ts resuelve el autor de un mensaje entre los agentes presentes y los que salieron
     └── templates/         Workspace (riel + topbar + contenido)
 ```

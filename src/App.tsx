@@ -18,6 +18,7 @@ function App() {
     switchWorkspace,
     changeLocale,
     changeTheme,
+    changeUiScale,
   } = useSession();
   const {
     teams,
@@ -40,6 +41,11 @@ function App() {
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
   }, [theme]);
+
+  const uiScale = session?.ui_scale ?? 100;
+  useEffect(() => {
+    document.documentElement.style.fontSize = `${uiScale}%`;
+  }, [uiScale]);
 
   if (!loaded) return null;
 
@@ -86,8 +92,10 @@ function App() {
           onClearTeamsActionError={clearTeamsActionError}
           locale={session.locale}
           theme={session.theme}
+          uiScale={session.ui_scale}
           onChangeLocale={changeLocale}
           onChangeTheme={changeTheme}
+          onChangeUiScale={changeUiScale}
           currentId={session.current_workspace_id}
           busy={busy}
           errorMessage={errorMessage}

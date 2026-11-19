@@ -117,7 +117,7 @@ Reglas generales:
 
 | Tabla | Columnas | Notas |
 |---|---|---|
-| `profile` (una fila) | `id` (`'singleton'`), `locale` (`es`/`en`), `theme` (`system`/`light`/`dark`, por defecto `system`), `current_workspace_id`, timestamps | Reemplaza `users`. Nombre y apellido se añaden cuando haya UI que los pida |
+| `profile` (una fila) | `id` (`'singleton'`), `locale` (`es`/`en`), `theme` (`system`/`light`/`dark`, por defecto `system`), `ui_scale` (`90`/`100`/`110`/`125`/`150`, por defecto `100`), `current_workspace_id`, timestamps | Reemplaza `users`. Nombre y apellido se añaden cuando haya UI que los pida |
 | `workspaces` | `id`, `name` (1–80), timestamps | |
 | `teams` | `id`, `workspace_id`, `name` (1–80), timestamps | Única `(id, workspace_id)` para la clave foránea compuesta de `agents` |
 | `agents` | `id`, `workspace_id`, `team_id`, `template_key`, `name` (1–80), `role` (1–80), `description`, `instructions`, `provider`, `model`, timestamps | FK compuesta `(team_id, workspace_id)` `ON DELETE RESTRICT`; `provider`/`model` no vacíos |
@@ -217,7 +217,7 @@ Pantallas: equipos (organigrama), contratar y editar agentes, catálogo, salas (
 
 ## 9. Internacionalización
 
-- Idiomas `es` y `en`; el valor por defecto de código es `en`; el idioma elegido se guarda en `profile.locale` y se cambia desde Ajustes. El tema (`system`, `light`, `dark`) se guarda en `profile.theme`.
+- Idiomas `es` y `en`; el valor por defecto de código es `en`; el idioma elegido se guarda en `profile.locale` y se cambia desde Ajustes. El tema (`system`, `light`, `dark`) se guarda en `profile.theme`. El tamaño de la interfaz (90–150 %) se guarda en `profile.ui_scale` y se aplica como `font-size` de `<html>`, por lo que todo lo medido en `rem` escala.
 - Se parte de `config/locales/{es,en}.yml` del repositorio Rails, filtrando claves de Devise y de funcionalidades eliminadas, convertidas a JSON anidado.
 - Los textos de error de proveedor se resuelven en la UI a partir de `error_kind`; el núcleo no los envía.
 - Las plantillas de agentes conservan sus YAML con contenido `es` y `en`.

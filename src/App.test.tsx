@@ -31,6 +31,7 @@ function session(overrides = {}) {
   return {
     locale: "es",
     theme: "system",
+    ui_scale: 100,
     current_workspace_id: "1",
     workspaces: [acme],
     ...overrides,
@@ -45,6 +46,7 @@ beforeEach(() => {
   vi.restoreAllMocks();
   invokeMock.mockReset();
   delete document.documentElement.dataset.theme;
+  document.documentElement.style.fontSize = "";
 });
 
 describe("first launch", () => {
@@ -1222,6 +1224,25 @@ describe("settings", () => {
     expect(invokeMock).toHaveBeenCalledWith("change_theme", { theme: "dark" });
     await waitFor(() => expect(document.documentElement.dataset.theme).toBe("dark"));
     expect(screen.getByRole("button", { name: "Dark" })).toHaveAttribute("aria-current", "true");
+  });
+
+  it("changes the interface size and applies it to the document", async () => {
+    invokeMock.mockImplementation(async (command) => {
+      if (command === "list_teams") return [];
+      if (command === "change_ui_scale") return session({ locale: "en", ui_scale: 125 });
+      return session({ locale: "en" });
+    });
+    const user = userEvent.setup();
+    render(<App />);
+
+    await waitFor(() => expect(document.documentElement.style.fontSize).toBe("100%"));
+    await user.click(await screen.findByRole("button", { name: "Settings" }));
+    await user.click(screen.getByRole("button", { name: "Appearance" }));
+    await user.click(screen.getByRole("button", { name: "125%" }));
+
+    expect(invokeMock).toHaveBeenCalledWith("change_ui_scale", { uiScale: 125 });
+    await waitFor(() => expect(document.documentElement.style.fontSize).toBe("125%"));
+    expect(screen.getByRole("button", { name: "125%" })).toHaveAttribute("aria-current", "true");
   });
 
   it("shows the translated error when saving fails", async () => {

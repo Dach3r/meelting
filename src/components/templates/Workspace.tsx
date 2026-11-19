@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { Theme } from "../../hooks/useSession";
+import type { Theme, UiScale } from "../../hooks/useSession";
 import type { Locale } from "../../i18n/translate";
 import type { AgentDetail, AgentDraft, AgentEdit, Team } from "../../hooks/useTeams";
 import type { WorkspaceSwitcherProps } from "../molecules/WorkspaceSwitcher";
@@ -37,8 +37,10 @@ type WorkspaceProps = WorkspaceSwitcherProps & {
   onClearTeamsActionError: () => void;
   locale: Locale;
   theme: Theme;
+  uiScale: UiScale;
   onChangeLocale: (locale: Locale) => void;
   onChangeTheme: (theme: Theme) => void;
+  onChangeUiScale: (uiScale: UiScale) => void;
   errorMessage: string | null;
   onDismissError: () => void;
 };
@@ -58,8 +60,10 @@ export function Workspace({
   onClearTeamsActionError,
   locale,
   theme,
+  uiScale,
   onChangeLocale,
   onChangeTheme,
+  onChangeUiScale,
   errorMessage,
   onDismissError,
   ...props
@@ -113,10 +117,12 @@ export function Workspace({
                 <SettingsPage
                   locale={locale}
                   theme={theme}
+                  uiScale={uiScale}
                   busy={props.busy}
                   errorMessage={errorMessage}
                   onChangeLocale={onChangeLocale}
                   onChangeTheme={onChangeTheme}
+                  onChangeUiScale={onChangeUiScale}
                 />
               ) : view === "rooms" ? (
                 <RoomsPage key={props.currentId} agents={teams.flatMap((team) => team.agents)} />

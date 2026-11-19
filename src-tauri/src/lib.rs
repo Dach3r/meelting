@@ -55,6 +55,7 @@ pub fn run() {
             commands::session::list_agent_templates,
             commands::session::change_locale,
             commands::session::change_theme,
+            commands::session::change_ui_scale,
             commands::rooms::list_rooms,
             commands::rooms::create_room,
             commands::rooms::get_room,

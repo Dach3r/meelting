@@ -2,19 +2,22 @@ import { Palette, SlidersHorizontal } from "lucide-react";
 import { useState } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
 import type { Locale } from "../../i18n/translate";
-import type { Theme } from "../../hooks/useSession";
+import type { Theme, UiScale } from "../../hooks/useSession";
 import { Alert } from "../molecules/Alert";
 import { LocaleSwitcher } from "../molecules/LocaleSwitcher";
 import { SettingsRow } from "../molecules/SettingsRow";
 import { ThemeSwitcher } from "../molecules/ThemeSwitcher";
+import { UiScaleSwitcher } from "../molecules/UiScaleSwitcher";
 
 type Props = {
   locale: Locale;
   theme: Theme;
+  uiScale: UiScale;
   busy: boolean;
   errorMessage: string | null;
   onChangeLocale: (locale: Locale) => void;
   onChangeTheme: (theme: Theme) => void;
+  onChangeUiScale: (uiScale: UiScale) => void;
 };
 
 const categories = ["general", "appearance"] as const;
@@ -22,7 +25,16 @@ type Category = (typeof categories)[number];
 
 const categoryIcons = { general: SlidersHorizontal, appearance: Palette };
 
-export function SettingsPage({ locale, theme, busy, errorMessage, onChangeLocale, onChangeTheme }: Props) {
+export function SettingsPage({
+  locale,
+  theme,
+  uiScale,
+  busy,
+  errorMessage,
+  onChangeLocale,
+  onChangeTheme,
+  onChangeUiScale,
+}: Props) {
   const { t } = useI18n();
   const [category, setCategory] = useState<Category>("general");
   return (
@@ -58,9 +70,14 @@ export function SettingsPage({ locale, theme, busy, errorMessage, onChangeLocale
             </SettingsRow>
           )}
           {category === "appearance" && (
-            <SettingsRow title={t("settings.theme.title")} description={t("settings.theme.description")}>
-              <ThemeSwitcher value={theme} onChange={onChangeTheme} disabled={busy} />
-            </SettingsRow>
+            <>
+              <SettingsRow title={t("settings.theme.title")} description={t("settings.theme.description")}>
+                <ThemeSwitcher value={theme} onChange={onChangeTheme} disabled={busy} />
+              </SettingsRow>
+              <SettingsRow title={t("settings.uiScale.title")} description={t("settings.uiScale.description")}>
+                <UiScaleSwitcher value={uiScale} onChange={onChangeUiScale} disabled={busy} />
+              </SettingsRow>
+            </>
           )}
         </div>
       </div>
