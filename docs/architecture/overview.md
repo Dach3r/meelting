@@ -1,283 +1,283 @@
-# Arquitectura
+# Architecture
 
-> **Estado:** Fases 0–2 completadas; Fase 3 con salas, mensajes y ejecución de agentes (`AgentRun`) construidos. Hoy existe el scaffold Tauri 2 (React 19 + TypeScript + Vite + Tailwind v4), SQLite con `profile`, `workspaces`, `teams`, `agents`, `canvas_positions`, `rooms`, `room_agents` y `messages`, el primer arranque, el shell y el cambio de workspace, equipos, agentes y organigrama, salas con participantes y mensajes, `agent_runs` y el motor de ejecución con adaptadores para Anthropic, OpenAI y Chat Completions (Groq, Ollama, LM Studio), el módulo `keychain` con los comandos `save_secret`, `secret_last_four` y `delete_secret`, y el spike `run_in_worktree` (git worktree + PTY con salida en vivo). La organización de carpetas está en [project-structure.md](project-structure.md). El resto de este documento describe la arquitectura **objetivo**; cada sección marca lo que ya existe.
+> **Status:** Phases 0–2 complete; Phase 3 with rooms, messages and agent runs (`AgentRun`) built. Today there is the Tauri 2 scaffold (React 19 + TypeScript + Vite + Tailwind v4), SQLite with `profile`, `workspaces`, `teams`, `agents`, `canvas_positions`, `rooms`, `room_agents` and `messages`, the first launch, the shell and workspace switching, teams, agents and the org chart, rooms with participants and messages, `agent_runs` and the execution engine with adapters for Anthropic, OpenAI and Chat Completions (Groq, Ollama, LM Studio), the `keychain` module with the `save_secret`, `secret_last_four` and `delete_secret` commands, and the `run_in_worktree` spike (git worktree + PTY with live output). The folder layout is in [project-structure.md](project-structure.md). The rest of this document describes the **target** architecture; each section marks what already exists.
 >
-> Este producto reemplaza al SaaS Rails (repositorio `meelting`), congelado como referencia de diseño: modelo de dominio, estados, errores, textos, plantillas y specs como casos de prueba.
+> This product replaces the Rails SaaS (repository `meelting`), frozen as a design reference: domain model, states, errors, copy, templates and specs as test cases.
 
-## 1. Contexto y decisión
+## 1. Context and decision
 
-**Necesidad:** que los agentes completen tareas reales de código. Cada tarea necesita su propio `git worktree`, ejecutar comandos, levantar contenedores Docker y usar modelos de IA locales.
+**Need:** agents must complete real code tasks. Each task needs its own `git worktree`, to run commands, start Docker containers and use local AI models.
 
-**Requisitos**
-- **Operación híbrida online/offline:** soporta **modelos locales** (Ollama, LM Studio, llama.cpp) y servicios en la nube, combinables y elegidos por el usuario sin preferencia obligatoria. Lo local (datos, historial y agentes con modelos locales en ejecución) funciona sin conexión; lo que depende de la nube informa que no está disponible y nunca se sustituye en silencio por otro proveedor ([decisions.md](../product/decisions.md) D6).
-- Corre en **macOS, Windows y Linux**.
-- Arranque rápido y poca memoria.
-- **Sin API remota ni cuenta**: todo en la máquina del usuario.
+**Requirements**
+- **Hybrid online/offline operation:** supports **local models** (Ollama, LM Studio, llama.cpp) and cloud services, combinable and chosen by the user with no mandatory preference. Local things (data, history and agents with running local models) work offline; whatever depends on the cloud reports that it is unavailable and is never silently replaced by another provider ([decisions.md](../product/decisions.md) D6).
+- Runs on **macOS, Windows and Linux**.
+- Fast startup and low memory.
+- **No remote API or account**: everything on the user's machine.
 
-**Alternativas evaluadas**
+**Alternatives evaluated**
 
-| Opción | Resultado |
+| Option | Result |
 |---|---|
-| Rails en servidor + runner local | Descartada: no funciona offline y deja el cerebro fuera de la máquina |
-| Rails empaquetado en Tauri/Electron (sidecar) | Descartada: distribuir Ruby y gemas nativas en tres SO, migrar a SQLite y gestionar procesos, sin ganar nada sin servidor |
-| Cliente Tauri + API Rails remota | Descartada: sin servidor remoto no aporta; añade sync y dos codebases |
-| **App de escritorio nueva, sin servidor propio (datos locales; modelos locales o en la nube)** | **Elegida** |
+| Rails on a server + local runner | Discarded: does not work offline and leaves the brain outside the machine |
+| Rails packaged in Tauri/Electron (sidecar) | Discarded: shipping Ruby and native gems on three OSes, migrating to SQLite and managing processes, gaining nothing without a server |
+| Tauri client + remote Rails API | Discarded: without a remote server it adds nothing; adds sync and two codebases |
+| **New desktop app, no server of its own (local data; local or cloud models)** | **Chosen** |
 
-## 2. Arquitectura
+## 2. Architecture
 
 ```
-┌────────────────────────── Aplicación Tauri 2 ──────────────────────────┐
-│  UI (webview)                       Núcleo (Rust)                       │
-│  React + TypeScript           ←IPC→ Comandos y eventos Tauri            │
-│  Tailwind (tokens Grafito)          ├─ Repositorios SQLite (sqlx)       │
-│  Estado: stores + eventos           ├─ Motor de ejecución (AgentRun)    │
-│                                     ├─ Proveedores LLM (reqwest + SSE)  │
-│                                     ├─ Herramientas (fs, git, shell)    │
-│                                     ├─ Terminal (PTY portable)          │
-│                                     ├─ Docker (CLI/bollard, opcional)   │
-│                                     └─ Secretos (keychain del SO)       │
+┌────────────────────────── Tauri 2 application ─────────────────────────┐
+│  UI (webview)                       Core (Rust)                         │
+│  React + TypeScript           ←IPC→ Tauri commands and events           │
+│  Tailwind (Grafito tokens)          ├─ SQLite repositories (sqlx)       │
+│  State: stores + events             ├─ Execution engine (AgentRun)      │
+│                                     ├─ LLM providers (reqwest + SSE)    │
+│                                     ├─ Tools (fs, git, shell)           │
+│                                     ├─ Terminal (portable PTY)          │
+│                                     ├─ Docker (CLI/bollard, optional)   │
+│                                     └─ Secrets (OS keychain)            │
 └────────────────────────────────────────────────────────────────────────┘
-        │ HTTP local            │ procesos hijo            │ socket Docker
+        │ local HTTP            │ child processes          │ Docker socket
    Ollama / LM Studio       git, shell, PTY             Docker Engine
 ```
 
 ### Stack
 
-| Capa | Elección | Estado |
+| Layer | Choice | Status |
 |---|---|---|
 | Shell | Tauri 2 | ✅ scaffold |
-| Núcleo | Rust (edición 2024) | ✅ scaffold |
-| UI | React 19 + TypeScript + Vite; Tailwind v4 con los tokens Grafito | React/Vite/Tailwind ✅; i18n propio `es`/`en` ✅ |
-| Ventana | `tauri-plugin-window-state`: recuerda tamaño, posición y estado maximizado entre arranques; sin permisos para la UI | ✅ |
-| Secretos | crate `keyring` 3 (Keychain, Credential Manager, Secret Service) | ✅ spike |
-| Datos | SQLite con `sqlx`, modo WAL, migraciones `sqlx migrate` | ✅ `profile`, `workspaces`, `teams`, `agents`, `canvas_positions`, `rooms`, `room_agents` y `messages`; el resto de tablas con su fase |
-| HTTP/streaming | `reqwest` + SSE (`eventsource-stream`) | ✅ adaptadores de los tres protocolos |
-| Terminal | `portable-pty` (ConPTY en Windows) | ✅ spike |
-| Git | CLI `git` por `tokio::process` | ✅ spike |
-| Docker | CLI `docker` por `tokio::process` (o `bollard`); opcional | pendiente |
-| Tests | `cargo test`, Vitest, WebDriver (`tauri-driver`) | `cargo test` y Vitest ✅; WebDriver pendiente |
+| Core | Rust (edition 2024) | ✅ scaffold |
+| UI | React 19 + TypeScript + Vite; Tailwind v4 with the Grafito tokens | React/Vite/Tailwind ✅; own `es`/`en` i18n ✅ |
+| Window | `tauri-plugin-window-state`: remembers size, position and maximized state across launches; no permissions for the UI | ✅ |
+| Secrets | crate `keyring` 3 (Keychain, Credential Manager, Secret Service) | ✅ spike |
+| Data | SQLite with `sqlx`, WAL mode, `sqlx migrate` migrations | ✅ `profile`, `workspaces`, `teams`, `agents`, `canvas_positions`, `rooms`, `room_agents` and `messages`; the rest of the tables with their phase |
+| HTTP/streaming | `reqwest` + SSE (`eventsource-stream`) | ✅ adapters for the three protocols |
+| Terminal | `portable-pty` (ConPTY on Windows) | ✅ spike |
+| Git | `git` CLI via `tokio::process` | ✅ spike |
+| Docker | `docker` CLI via `tokio::process` (or `bollard`); optional | pending |
+| Tests | `cargo test`, Vitest, WebDriver (`tauri-driver`) | `cargo test` and Vitest ✅; WebDriver pending |
 
-**Git y Docker se invocan como procesos, no con librerías:** `git2` (libgit2) no soporta `worktree` completo ni los hooks del usuario, y la CLI es lo que el usuario espera.
+**Git and Docker are invoked as processes, not with libraries:** `git2` (libgit2) does not fully support `worktree` or the user's hooks, and the CLI is what the user expects.
 
-## 3. Capas del núcleo
+## 3. Core layers
 
-- **Comandos Tauri** (`#[tauri::command]`, en `commands/`): delgados. Validan argumentos, llaman a un servicio y devuelven el resultado. Sin reglas de negocio ni SQL.
-- **Servicios** (`services/`): acciones de negocio (verbos): contratar agente, crear sala, enviar instrucción, crear tarea. Reciben el workspace actual y validan la integridad entre tablas.
-- **Repositorios**: acceso a SQLite; las transiciones de `AgentRun` son funciones atómicas en una transacción.
-- **Catálogos**: colecciones de solo lectura embebidas en la app (`agent_templates/*.yml`, `llm.yml`), leídas con `serde_yaml`. Un catálogo nunca orquesta: la acción que lo usa es un servicio.
-- **Integración con el SO** (`system/`): procesos hijo (`git`), PTY y keychain; sin reglas de negocio.
-- **Dominio puro** (modelos, `BuildPrompt`, normalización de proveedores, path jail) separado del código de integración con el SO, para poder testearlo sin I/O.
-- **Eventos** (`emit`) del núcleo a la UI: `message:created`, `agent_run:status` (✅, ambos tras confirmar la transacción) y `agent_run:token` (✅, agrupado cada ≤ 50 ms, con `attempt` y `seq`); previsto `tool_call:output`. Los eventos propuestos para las reuniones y la voz (plan, disponibilidad, captura, transcripción, reproducción) están en [conversation-engine.md §11](conversation-engine.md#11-contratos-ipc-propuestos-nombres-no-definitivos).
-- **Ejecución de agentes** (✅ construida según el diseño aprobado): [agent-run.md](agent-run.md).
-- **Reuniones conversacionales y voz** (propuesta): [conversation-engine.md](conversation-engine.md) y [voice-engine.md](voice-engine.md). La captura y la reproducción de audio irían en el núcleo; `AgentRun` permanece independiente del audio.
+- **Tauri commands** (`#[tauri::command]`, in `commands/`): thin. They validate arguments, call a service and return the result. No business rules or SQL.
+- **Services** (`services/`): business actions (verbs): hire agent, create room, send instruction, create task. They receive the current workspace and validate cross-table integrity.
+- **Repositories**: SQLite access; `AgentRun` transitions are atomic functions within a transaction.
+- **Catalogs**: read-only collections embedded in the app (`agent_templates/*.yml`, `llm.yml`), read with `serde_yaml`. A catalog never orchestrates: the action that uses it is a service.
+- **OS integration** (`system/`): child processes (`git`), PTY and keychain; no business rules.
+- **Pure domain** (models, `BuildPrompt`, provider normalization, path jail) separated from the OS integration code, so it can be tested without I/O.
+- **Events** (`emit`) from the core to the UI: `message:created`, `agent_run:status` (✅, both after the transaction commits) and `agent_run:token` (✅, batched every ≤ 50 ms, with `attempt` and `seq`); `tool_call:output` planned. The events proposed for meetings and voice (plan, availability, capture, transcription, playback) are in [conversation-engine.md §11](conversation-engine.md#11-proposed-ipc-contracts-names-not-final).
+- **Agent runs** (✅ built according to the approved design): [agent-run.md](agent-run.md).
+- **Conversational meetings and voice** (proposal): [conversation-engine.md](conversation-engine.md) and [voice-engine.md](voice-engine.md). Audio capture and playback would live in the core; `AgentRun` stays independent of audio.
 
-El webview **no recibe acceso directo a `fs` ni `shell`**: las capabilities de Tauri se declaran mínimas, solo los comandos propios.
+The webview **gets no direct access to `fs` or `shell`**: Tauri capabilities are declared minimal, only the app's own commands.
 
-Estructura de carpetas, responsabilidades y dónde ubicar código nuevo: [project-structure.md](project-structure.md).
+Folder layout, responsibilities and where to put new code: [project-structure.md](project-structure.md).
 
-## 4. Mapa desde el producto Rails
+## 4. Map from the Rails product
 
-| Rails | Destino |
+| Rails | Destination |
 |---|---|
-| `User`, Devise, onboarding de cuenta | Se elimina. Un `profile` local (nombre, idioma) y primer arranque |
-| `Workspace`, `Team`, `Agent`, `Room`, `RoomAgent`, `Message` | Se mantienen |
-| `AgentRun` y su máquina de estados | Se mantiene como tarea async en Rust |
-| `LlmCredential` (Postgres, cifrada) | Keychain del SO; la tabla solo registra qué proveedores tienen clave |
-| `AgentTemplate`, `LlmProvider`, `LlmModel` | Archivos embebidos `agent_templates/*.yml` y `llm.yml` |
-| `Llm::Complete` + adaptadores | Trait `Provider` en Rust |
-| `Llm::Error` (`Transient`/`Permanent`) | Enum `LlmError` con los mismos `kind` |
-| Solid Queue, `AgentRunJob`, `ExpireStaleAgentRunsJob` | Tareas `tokio`; al arrancar, `running` huérfanas pasan a `failed` |
-| Solid Cable, Turbo Streams, `RoomChannel` | Eventos Tauri |
-| Controladores | Comandos Tauri |
-| Rate limiting por IP/usuario | Se elimina; límites diarios opcionales |
-| `config/locales/{es,en}.yml` | Base del JSON de i18n del frontend |
-| Componentes ViewComponent (atomic design) | Componentes React con la misma jerarquía y nombres |
-| Controladores Stimulus | Componentes y hooks (ver §8) |
+| `User`, Devise, account onboarding | Removed. A local `profile` (name, language) and first launch |
+| `Workspace`, `Team`, `Agent`, `Room`, `RoomAgent`, `Message` | Kept |
+| `AgentRun` and its state machine | Kept as an async task in Rust |
+| `LlmCredential` (Postgres, encrypted) | OS keychain; the table only records which providers have a key |
+| `AgentTemplate`, `LlmProvider`, `LlmModel` | Embedded files `agent_templates/*.yml` and `llm.yml` |
+| `Llm::Complete` + adapters | `Provider` trait in Rust |
+| `Llm::Error` (`Transient`/`Permanent`) | `LlmError` enum with the same `kind`s |
+| Solid Queue, `AgentRunJob`, `ExpireStaleAgentRunsJob` | `tokio` tasks; at startup, orphaned `running` ones become `failed` |
+| Solid Cable, Turbo Streams, `RoomChannel` | Tauri events |
+| Controllers | Tauri commands |
+| Rate limiting by IP/user | Removed; optional daily limits |
+| `config/locales/{es,en}.yml` | Basis of the frontend i18n JSON |
+| ViewComponent components (atomic design) | React components with the same hierarchy and names |
+| Stimulus controllers | Components and hooks (see §8) |
 
-## 5. Convenciones
+## 5. Conventions
 
-- Nombres internos en **inglés**, `snake_case` en tablas y columnas.
-- Texto visible traducido, nunca escrito en el código. Español usa «correo electrónico», no «email».
-- Sin comentarios en el código; que se explique solo.
-- **Sin código muerto:** todo método, comando, componente o constante tiene un uso real.
-- Sin sobre-ingeniería: con dos o tres casos, un condicional directo.
-- Validaciones reflejadas en la base de datos (índices únicos, claves foráneas, `CHECK`).
-- Commits gitmoji + Conventional Commits, un cambio lógico por commit.
+- Internal names in **English**, `snake_case` in tables and columns.
+- Visible text translated, never written in the code. Spanish uses "correo electrónico", not "email".
+- No code comments; code should explain itself.
+- **No dead code:** every method, command, component or constant has a real use.
+- No over-engineering: with two or three cases, a direct conditional.
+- Validations mirrored in the database (unique indexes, foreign keys, `CHECK`).
+- gitmoji + Conventional Commits, one logical change per commit.
 - Linters: `clippy -D warnings`, `rustfmt --check`, ESLint, `tsc`.
-- No crear migraciones ni cambiar columnas sin presentar la propuesta y recibir aprobación.
+- Do not create migrations or change columns without presenting the proposal and getting approval.
 
-## Modelo de datos
+## Data model
 
-> **Propuesta.** Se presenta para aprobación antes de crear ninguna migración.
+> **Proposal.** Presented for approval before creating any migration.
 
-Reglas generales:
-- IDs `TEXT` con **UUID v7** generados en la aplicación (ordenables, listos para un sync futuro).
-- Fechas `TEXT` ISO-8601 UTC (`created_at`, `updated_at`).
+General rules:
+- `TEXT` IDs with **UUID v7** generated in the application (sortable, ready for a future sync).
+- `TEXT` ISO-8601 UTC dates (`created_at`, `updated_at`).
 - `PRAGMA foreign_keys = ON`, `journal_mode = WAL`.
 
-| Tabla | Columnas | Notas |
+| Table | Columns | Notes |
 |---|---|---|
-| `profile` (una fila) | `id` (`'singleton'`), `locale` (`es`/`en`), `theme` (`system`/`light`/`dark`, por defecto `system`), `ui_scale` (`90`/`100`/`110`/`125`/`150`, por defecto `100`), `current_workspace_id`, timestamps | Reemplaza `users`. Nombre y apellido se añaden cuando haya UI que los pida |
+| `profile` (one row) | `id` (`'singleton'`), `locale` (`es`/`en`), `theme` (`system`/`light`/`dark`, default `system`), `ui_scale` (`90`/`100`/`110`/`125`/`150`, default `100`), `current_workspace_id`, timestamps | Replaces `users`. First and last name are added when there is UI that asks for them |
 | `workspaces` | `id`, `name` (1–80), timestamps | |
-| `teams` | `id`, `workspace_id`, `name` (1–80), timestamps | Única `(id, workspace_id)` para la clave foránea compuesta de `agents` |
-| `agents` | `id`, `workspace_id`, `team_id`, `template_key`, `name` (1–80), `role` (1–80), `description`, `instructions`, `provider`, `model`, timestamps | FK compuesta `(team_id, workspace_id)` `ON DELETE RESTRICT`; `provider`/`model` no vacíos |
-| `canvas_positions` | `workspace_id`, `node_id`, `x`, `y` | PK `(workspace_id, node_id)`; `node_id` es un equipo o agente; `x`,`y` son el desplazamiento respecto a la disposición automática del organigrama; se borra con el workspace y al eliminar el agente |
-| `rooms` | `id`, `workspace_id`, `name` (1–80), `created_at`, `updated_at`, `finished_at` (NULL = llamada en curso; `CHECK (finished_at IS NULL OR finished_at >= created_at)`) | Única `(id, workspace_id)`. `updated_at` es la última actividad: igual a `created_at` al crear y se actualiza con cada mensaje en la misma transacción. Índice `(workspace_id, updated_at DESC, id DESC)` para el listado; las salas finalizadas se listan al final y el núcleo las trata como inexistentes (`room_not_found`) |
-| `room_agents` | `room_id`, `agent_id`, `workspace_id`, `created_at`, `left_at` (NULL = presente) | PK `(room_id, agent_id)`, sin `id` ni `updated_at`. `left_at >= created_at`; salir de la sala marca `left_at` y volver a entrar lo pone a NULL (D24). FK compuestas `(room_id, workspace_id) → rooms` y `(agent_id, workspace_id) → agents`, ambas `ON DELETE CASCADE`; la segunda usa el índice único `agents (id, workspace_id)` |
-| `messages` | `id`, `room_id`, `agent_id` (NULL = usuario), `body`, `created_at` | Inmutables, sin `updated_at`. `body` no vacío; máximo 4000 caracteres solo si es del usuario (`agent_id IS NULL`). `room_id → rooms` `ON DELETE CASCADE`; `(room_id, agent_id) → room_agents` `ON DELETE NO ACTION`: un agente solo escribe en salas donde participa, y un agente con mensajes no se puede eliminar, y al quitarlo de la sala su participación queda con `left_at` en lugar de borrarse. Al eliminar la sala, la comprobación al final de la sentencia permite borrar participaciones y mensajes juntos |
-| `agent_runs` | ✅ Migraciones aprobadas y aplicadas ([agent-run.md §2](agent-run.md#2-esquema-sql-final)): `id`, `room_id`, `agent_id`, `request_message_id`, `response_message_id`, `client_request_id`, `status`, `error_kind`, `attempts`, `provider`, `model`, `input_tokens`, `output_tokens`, `created_at`, `started_at`, `finished_at` | Únicas: `(room_id, client_request_id)`, `request_message_id`, `response_message_id` y una ejecución activa por `(room_id, agent_id)` (índice parcial). FK compuestas hacia `messages` para que solicitud y respuesta sean de la misma sala y la respuesta del mismo agente; requieren dos índices únicos en `messages` (✅). No porta de Rails `user_id`, `updated_at`, `finish_reason`, `response_model`, `cached_input_tokens` ni `provider_request_id` |
-| `llm_providers_configured` | `provider`, `base_url`, `updated_at` | Planificada para la pantalla «Claves de IA»; `AgentRun` no la necesita (consulta el keychain al ejecutar) |
-| `tasks` | `id`, `workspace_id`, `room_id`, `agent_id`, `title`, `repo_path`, `base_branch`, `branch`, `worktree_path`, `status`, `created_at`, `updated_at`, `finished_at` | Fase 4. `status`: `preparing`, `ready`, `running`, `waiting_approval`, `done`, `failed`, `discarded` |
-| `tool_calls` | `id`, `agent_run_id`, `task_id`, `tool`, `arguments` (JSON), `status`, `output`, `exit_code`, `created_at`, `finished_at` | Fase 5 |
-| `approvals` | `id`, `tool_call_id`, `decision` (`pending`/`approved`/`denied`), `decided_at`, `remember` (`never`/`task`/`workspace`) | Fase 5 |
-| `settings` | `key`, `value` | Límites diarios, ruta de Docker, shell preferido |
+| `teams` | `id`, `workspace_id`, `name` (1–80), timestamps | Unique `(id, workspace_id)` for the composite foreign key of `agents` |
+| `agents` | `id`, `workspace_id`, `team_id`, `template_key`, `name` (1–80), `role` (1–80), `description`, `instructions`, `provider`, `model`, timestamps | Composite FK `(team_id, workspace_id)` `ON DELETE RESTRICT`; `provider`/`model` not empty |
+| `canvas_positions` | `workspace_id`, `node_id`, `x`, `y` | PK `(workspace_id, node_id)`; `node_id` is a team or agent; `x`,`y` are the offset from the org chart's automatic layout; deleted with the workspace and when the agent is deleted |
+| `rooms` | `id`, `workspace_id`, `name` (1–80), `created_at`, `updated_at`, `finished_at` (NULL = call in progress; `CHECK (finished_at IS NULL OR finished_at >= created_at)`) | Unique `(id, workspace_id)`. `updated_at` is the last activity: equal to `created_at` on creation and updated with each message in the same transaction. Index `(workspace_id, updated_at DESC, id DESC)` for the list; finished rooms are listed last and the core treats them as nonexistent (`room_not_found`) |
+| `room_agents` | `room_id`, `agent_id`, `workspace_id`, `created_at`, `left_at` (NULL = present) | PK `(room_id, agent_id)`, no `id` or `updated_at`. `left_at >= created_at`; leaving the room sets `left_at` and joining again sets it to NULL (D24). Composite FKs `(room_id, workspace_id) → rooms` and `(agent_id, workspace_id) → agents`, both `ON DELETE CASCADE`; the second uses the unique index `agents (id, workspace_id)` |
+| `messages` | `id`, `room_id`, `agent_id` (NULL = user), `body`, `created_at` | Immutable, no `updated_at`. `body` not empty; maximum 4000 characters only if it is from the user (`agent_id IS NULL`). `room_id → rooms` `ON DELETE CASCADE`; `(room_id, agent_id) → room_agents` `ON DELETE NO ACTION`: an agent only writes in rooms where it participates, an agent with messages cannot be deleted, and removing it from the room leaves its participation with `left_at` instead of deleting it. When the room is deleted, the check at the end of the statement allows deleting participations and messages together |
+| `agent_runs` | ✅ Migrations approved and applied ([agent-run.md §2](agent-run.md#2-final-sql-schema)): `id`, `room_id`, `agent_id`, `request_message_id`, `response_message_id`, `client_request_id`, `status`, `error_kind`, `attempts`, `provider`, `model`, `input_tokens`, `output_tokens`, `created_at`, `started_at`, `finished_at` | Unique: `(room_id, client_request_id)`, `request_message_id`, `response_message_id` and one active run per `(room_id, agent_id)` (partial index). Composite FKs to `messages` so that request and response belong to the same room and the response to the same agent; they require two unique indexes on `messages` (✅). Does not port from Rails `user_id`, `updated_at`, `finish_reason`, `response_model`, `cached_input_tokens` or `provider_request_id` |
+| `llm_providers_configured` | `provider`, `base_url`, `updated_at` | Planned for the "AI keys" screen; `AgentRun` does not need it (it queries the keychain when running) |
+| `tasks` | `id`, `workspace_id`, `room_id`, `agent_id`, `title`, `repo_path`, `base_branch`, `branch`, `worktree_path`, `status`, `created_at`, `updated_at`, `finished_at` | Phase 4. `status`: `preparing`, `ready`, `running`, `waiting_approval`, `done`, `failed`, `discarded` |
+| `tool_calls` | `id`, `agent_run_id`, `task_id`, `tool`, `arguments` (JSON), `status`, `output`, `exit_code`, `created_at`, `finished_at` | Phase 5 |
+| `approvals` | `id`, `tool_call_id`, `decision` (`pending`/`approved`/`denied`), `decided_at`, `remember` (`never`/`task`/`workspace`) | Phase 5 |
+| `settings` | `key`, `value` | Daily limits, Docker path, preferred shell |
 
-**Integridad entre tablas:** el aislamiento por workspace (un equipo, agente o participante debe pertenecer al mismo workspace) se valida en la capa de servicios y se prueba; donde sea posible se refuerza con claves foráneas compuestas `(id, workspace_id)`.
+**Cross-table integrity:** workspace isolation (a team, agent or participant must belong to the same workspace) is validated in the services layer and tested; where possible it is reinforced with composite foreign keys `(id, workspace_id)`.
 
-## 6. Motor de agentes y proveedores
+## 6. Agent engine and providers
 
-Proveedores de la Fase 3 (decisión aprobada D9): los cinco del catálogo real `src-tauri/src/catalogs/llm.yml`, con tres protocolos. Diseño aprobado y construido ([agent-run.md](agent-run.md)): el adaptador se elige con un `match` sobre el protocolo declarado en el catálogo, sin trait mientras haya tres casos.
+Phase 3 providers (approved decision D9): the five in the real catalog `src-tauri/src/catalogs/llm.yml`, with three protocols. Approved and built design ([agent-run.md](agent-run.md)): the adapter is chosen with a `match` on the protocol declared in the catalog, with no trait while there are three cases.
 
-| Protocolo | Proveedores | Notas |
+| Protocol | Providers | Notes |
 |---|---|---|
-| Messages API, SSE | `anthropic` | `system`, `messages`, `max_tokens`; texto = bloques `text` |
-| Responses API, SSE | `openai` | `instructions` + `input`; `store: false`; los tokens de razonamiento cuentan en `max_output_tokens` |
-| Chat Completions, SSE | `groq` (nube, con clave), `ollama` y `lmstudio` (local, sin clave; modelos con `GET /v1/models`) | Instrucciones como `system`; timeout más largo en local; parámetro de tokens de salida según el catálogo. Sustituye al spike `stream_completion` |
+| Messages API, SSE | `anthropic` | `system`, `messages`, `max_tokens`; text = `text` blocks |
+| Responses API, SSE | `openai` | `instructions` + `input`; `store: false`; reasoning tokens count toward `max_output_tokens` |
+| Chat Completions, SSE | `groq` (cloud, with key), `ollama` and `lmstudio` (local, no key; models via `GET /v1/models`) | Instructions as `system`; longer timeout locally; output tokens parameter per the catalog. Replaces the `stream_completion` spike |
 
-Reglas:
-- La clave solo se lee del keychain en el núcleo; **nunca llega a la UI, a logs ni a eventos**. No se registran prompts ni razonamiento.
-- Un run **nunca cambia de proveedor ni de modelo** si falla.
-- `max_retries = 0` en el cliente HTTP; solo el motor reintenta.
-- Los errores no incluyen texto del proveedor: se reducen a un `error_kind` por estado HTTP y código.
-- Una respuesta que no es JSON o SSE válido es `invalid_response`.
-- Modelos y proveedores viven **solo** en `llm.yml`; el código no nombra ningún modelo.
+Rules:
+- The key is only read from the keychain in the core; **it never reaches the UI, logs or events**. Prompts and reasoning are not logged.
+- A run **never switches provider or model** if it fails.
+- `max_retries = 0` in the HTTP client; only the engine retries.
+- Errors do not include provider text: they are reduced to an `error_kind` by HTTP status and code.
+- A response that is not valid JSON or SSE is `invalid_response`.
+- Models and providers live **only** in `llm.yml`; the code names no model.
 
-**Errores (`error_kind`):** transitorios `rate_limited`, `timeout`, `provider_unavailable`; permanentes `provider_not_configured`, `model_unavailable`, `provider_auth_failed`, `provider_billing`, `provider_rejected`, `content_filtered`, `output_truncated`, `invalid_response`, `context_too_large`, además de `cancelled` y `expired`. HTTP: 401/403 → auth, 402 → billing, 404 → modelo no disponible, 408 → timeout, 429 → rate limit (respetando `retry-after`; `insufficient_quota` → billing), 5xx y 529 → unavailable, resto → rejected.
+**Errors (`error_kind`):** transient `rate_limited`, `timeout`, `provider_unavailable`; permanent `provider_not_configured`, `model_unavailable`, `provider_auth_failed`, `provider_billing`, `provider_rejected`, `content_filtered`, `output_truncated`, `invalid_response`, `context_too_large`, plus `cancelled` and `expired`. HTTP: 401/403 → auth, 402 → billing, 404 → model unavailable, 408 → timeout, 429 → rate limit (honoring `retry-after`; `insufficient_quota` → billing), 5xx and 529 → unavailable, rest → rejected.
 
-**Máquina de estados de `AgentRun`:** `queued → running → succeeded | failed`. Transiciones solo por funciones del repositorio, atómicas y con guarda de estado: `claim` (suma `attempts`), `requeue`, `succeed`, `fail`, `cancel`, `expire_active`. Hasta 3 intentos con espera de 2 y 8 s. Idempotencia por `(room_id, client_request_id)` único e índice parcial. Al iniciar la app, toda ejecución `queued` o `running` pasa a `failed` con `error_kind = expired` (✅). La cancelación usa `CancellationToken` y termina en `failed` con `error_kind = cancelled`. El texto parcial se acumula en memoria; solo se persiste el mensaje final.
+**`AgentRun` state machine:** `queued → running → succeeded | failed`. Transitions only through repository functions, atomic and state-guarded: `claim` (increments `attempts`), `requeue`, `succeed`, `fail`, `cancel`, `expire_active`. Up to 3 attempts with waits of 2 and 8 s. Idempotency through unique `(room_id, client_request_id)` and a partial index. When the app starts, every `queued` or `running` run becomes `failed` with `error_kind = expired` (✅). Cancellation uses `CancellationToken` and ends in `failed` with `error_kind = cancelled`. Partial text is accumulated in memory; only the final message is persisted.
 
-**Contexto del prompt (`BuildPrompt`):** instrucciones del agente, nombre de la sala (no hay columna de objetivo, D11) y mensajes de la sala anteriores a la instrucción, hasta un tope interno de caracteres y 100 mensajes, congelados al empezar la ejecución; los de otros se envían con su nombre. **Longitud de la respuesta** (D10): sin límite de caracteres; la acotan los tokens de salida del catálogo y una respuesta cortada falla como `output_truncated` sin crear mensaje.
+**Prompt context (`BuildPrompt`):** agent instructions, room name (there is no goal column, D11) and the room messages before the instruction, up to an internal character cap and 100 messages, frozen when the run starts; others' messages are sent with their name. **Response length** (D10): no character limit; it is bounded by the catalog's output tokens and a truncated response fails as `output_truncated` without creating a message.
 
-## 7. Tareas, worktrees y herramientas
+## 7. Tasks, worktrees and tools
 
-Ciclo de vida: el usuario crea una tarea desde una sala (agente, repositorio, rama base) → `preparing` valida `git` → se crea la rama `meelting/<slug>-<id corto>` y el worktree en `<datos de la app>/worktrees/<workspace>/<tarea>` con `git worktree add -b` → el agente trabaja solo dentro de `worktree_path` → el usuario revisa `git diff <base>...<rama>` y conserva la rama, descarta (`git worktree remove --force` + `git branch -D`) o abre la carpeta en su editor.
+Lifecycle: the user creates a task from a room (agent, repository, base branch) → `preparing` validates `git` → the branch `meelting/<slug>-<short id>` and the worktree in `<app data>/worktrees/<workspace>/<task>` are created with `git worktree add -b` → the agent works only inside `worktree_path` → the user reviews `git diff <base>...<branch>` and keeps the branch, discards it (`git worktree remove --force` + `git branch -D`) or opens the folder in their editor.
 
-Reglas: varias tareas del mismo repo corren en paralelo en worktrees distintos; concurrencia por defecto 2 tareas activas por workspace; un reconciliador al arrancar compara `git worktree list` con `tasks` y marca huérfanos sin borrar nada; **nunca** `push`, `merge` ni modificar la rama base.
+Rules: several tasks from the same repo run in parallel in different worktrees; default concurrency of 2 active tasks per workspace; a reconciler at startup compares `git worktree list` with `tasks` and marks orphans without deleting anything; **never** `push`, `merge` or modify the base branch.
 
-| Herramienta | Efecto | Aprobación |
+| Tool | Effect | Approval |
 |---|---|---|
-| `read_file`, `list_dir`, `search` | Lectura dentro del worktree | No |
-| `write_file`, `edit_file` | Escritura dentro del worktree | No (reversible con git) |
-| `run_command` | Comando con cwd en el worktree | **Sí**, salvo lista permitida |
-| `git_status`, `git_diff`, `git_commit` | Git acotado al worktree | `git_commit` no; nada de `push` |
+| `read_file`, `list_dir`, `search` | Read inside the worktree | No |
+| `write_file`, `edit_file` | Write inside the worktree | No (reversible with git) |
+| `run_command` | Command with cwd in the worktree | **Yes**, unless allowlisted |
+| `git_status`, `git_diff`, `git_commit` | Git scoped to the worktree | `git_commit` no; no `push` at all |
 
-**Seguridad (riesgo principal del producto):**
-- **Path jail:** toda ruta se canonicaliza y debe quedar dentro del worktree; se rechazan `..`, symlinks que escapen y rutas absolutas externas (incluidas UNC y letras de unidad).
-- **Aprobación humana** de `run_command` con el comando exacto.
-- **Entorno saneado:** el proceso hijo no hereda `*_API_KEY`, tokens ni `SSH_AUTH_SOCK`.
-- **Timeout y límite de salida** por comando; se mata el árbol de procesos.
-- **Docker opcional** como aislamiento fuerte (worktree montado, sin red, usuario no root); sin Docker la app avisa que la ejecución no está aislada.
-- Capabilities de Tauri mínimas.
+**Security (main product risk):**
+- **Path jail:** every path is canonicalized and must stay inside the worktree; `..`, escaping symlinks and external absolute paths (including UNC and drive letters) are rejected.
+- **Human approval** of `run_command` with the exact command.
+- **Sanitized environment:** the child process does not inherit `*_API_KEY`, tokens or `SSH_AUTH_SOCK`.
+- **Timeout and output limit** per command; the process tree is killed.
+- **Optional Docker** as strong isolation (worktree mounted, no network, non-root user); without Docker the app warns that execution is not isolated.
+- Minimal Tauri capabilities.
 
-La salida en vivo se emite como `tool_call:output` con límite de tamaño y se muestra en un panel por tarea.
+Live output is emitted as `tool_call:output` with a size limit and shown in a panel per task.
 
-**Compatibilidad entre sistemas**
+**Cross-platform compatibility**
 
-| Tema | macOS | Linux | Windows |
+| Topic | macOS | Linux | Windows |
 |---|---|---|---|
-| Shell de `run_command` | `zsh`/`bash` | `bash`/`sh` | `PowerShell` (configurable) |
+| `run_command` shell | `zsh`/`bash` | `bash`/`sh` | `PowerShell` (configurable) |
 | Keychain | Keychain | Secret Service (libsecret) | Credential Manager |
 | Docker | Docker Desktop | Docker Engine | Docker Desktop (WSL2) |
 | PTY | PTY | PTY | ConPTY |
 | Webview | WKWebView | WebKitGTK | WebView2 |
-| Git en Windows | — | — | `core.longpaths`, respetar `core.autocrlf` |
+| Git on Windows | — | — | `core.longpaths`, respect `core.autocrlf` |
 
-El webview de Linux es el menos predecible: se prueba en CI desde la Fase 0.
+The Linux webview is the least predictable: it is tested in CI from Phase 0.
 
-## 8. Interfaz
+## 8. Interface
 
-**Diseño Grafito:** tokens `ink`, `surface`, `shell`, `rail`, `raised`, `line`, `primary`, `sand` en `@theme` de Tailwind v4 (valores copiados de `app/assets/tailwind/application.css` del repositorio Rails). Iconos: `lucide`.
+**Grafito design:** tokens `ink`, `surface`, `shell`, `rail`, `raised`, `line`, `primary`, `sand` in Tailwind v4's `@theme` (values copied from `app/assets/tailwind/application.css` in the Rails repository). Icons: `lucide`.
 
-**Atomic design** en `src/components/<nivel>/<Nombre>`, con los mismos nombres que en Rails:
+**Atomic design** in `src/components/<level>/<Name>`, with the same names as in Rails:
 - **atoms:** `AgentAvatar`, `Button`, `Checkbox`, `Input`, `Label`, `Link`, `Logo`, `Select`, `StatusPill`.
 - **molecules:** `AgentPicker`, `AgentRow`, `AgentRunStatus`, `AgentTile`, `Alert`, `CheckboxField`, `ConfirmDialog`, `ErrorSummary`, `FieldGroup`, `FormField`, `IdentityPill`, `InstructionsDocument`, `IslandMenu`, `LinkList`, `LocaleSwitcher`, `Message`, `MessageComposer`, `ModelSelect`, `NavItem`, `ParticipantTile`, `RoomCard`, `SettingsRow`, `TeamNode`, `Toast`, `WorkspaceSwitcher`.
 - **organisms:** `Rail`, `RoomChat`, `TeamTree`, `ToastRegion`, `Topbar`.
 - **templates:** `Workspace`, `Settings`.
-- **nuevos:** `TaskCard`, `TaskPanel`, `TerminalPanel`, `ApprovalDialog`, `ToolCallRow`, `DiffViewer`.
-- No se migran: auth de Devise (`AuthInput`, `AuthField`, `AuthCard`, plantilla `Auth`); `UserMenu` se simplifica.
+- **new:** `TaskCard`, `TaskPanel`, `TerminalPanel`, `ApprovalDialog`, `ToolCallRow`, `DiffViewer`.
+- Not migrated: Devise auth (`AuthInput`, `AuthField`, `AuthCard`, `Auth` template); `UserMenu` is simplified.
 
-| Stimulus (Rails) | Frontend nuevo |
+| Stimulus (Rails) | New frontend |
 |---|---|
-| `canvas` (organigrama arrastrable, líneas SVG, guardado con debounce 500 ms) | `TeamTree` con React Flow o SVG propio; posiciones vía comando Tauri |
-| `composer`, `scroll_bottom`, `local_time` | Hooks de `MessageComposer` y `RoomChat` |
-| `agent_picker`, `agent_wizard`, `llm_model` | `AgentPicker`, asistente de contratación, `ModelSelect` |
-| `confirm`, `modal`, `drawer`, `disclosure`, `sidebar`, `toast`, `password_visibility` | Componentes equivalentes |
+| `canvas` (draggable org chart, SVG lines, saved with a 500 ms debounce) | `TeamTree` with React Flow or custom SVG; positions via a Tauri command |
+| `composer`, `scroll_bottom`, `local_time` | `MessageComposer` and `RoomChat` hooks |
+| `agent_picker`, `agent_wizard`, `llm_model` | `AgentPicker`, hiring wizard, `ModelSelect` |
+| `confirm`, `modal`, `drawer`, `disclosure`, `sidebar`, `toast`, `password_visibility` | Equivalent components |
 
-Pantallas: equipos (organigrama), contratar y editar agentes, catálogo, salas (lista, detalle, nueva), claves de IA, ajustes (perfil, idioma, workspace, Docker, shell, proveedor local), tareas y detalle de tarea con terminal y diff. Reglas: estados vacíos, errores y confirmaciones siempre presentes; nunca mostrar como disponible lo no construido.
+Screens: teams (org chart), hire and edit agents, catalog, rooms (list, detail, new), AI keys, settings (profile, language, workspace, Docker, shell, local provider), tasks and task detail with terminal and diff. Rules: empty states, errors and confirmations always present; never show what is not built as available.
 
-## 9. Internacionalización
+## 9. Internationalization
 
-- Idiomas `es` y `en`; el valor por defecto de código es `en`; el idioma elegido se guarda en `profile.locale` y se cambia desde Ajustes. El tema (`system`, `light`, `dark`) se guarda en `profile.theme`. El tamaño de la interfaz (90–150 %) se guarda en `profile.ui_scale` y se aplica como `font-size` de `<html>`, por lo que todo lo medido en `rem` escala.
-- Se parte de `config/locales/{es,en}.yml` del repositorio Rails, filtrando claves de Devise y de funcionalidades eliminadas, convertidas a JSON anidado.
-- Los textos de error de proveedor se resuelven en la UI a partir de `error_kind`; el núcleo no los envía.
-- Las plantillas de agentes conservan sus YAML con contenido `es` y `en`.
-- Una prueba falla si una clave existe en un idioma y no en el otro.
+- Languages `es` and `en`; the code default is `en`; the chosen language is stored in `profile.locale` and changed from Settings. The theme (`system`, `light`, `dark`) is stored in `profile.theme`. The interface size (90–150 %) is stored in `profile.ui_scale` and applied as the `font-size` of `<html>`, so everything measured in `rem` scales.
+- Starts from `config/locales/{es,en}.yml` in the Rails repository, filtering out Devise keys and those of removed features, converted to nested JSON.
+- Provider error texts are resolved in the UI from `error_kind`; the core does not send them.
+- Agent templates keep their YAML with `es` and `en` content.
+- A test fails if a key exists in one language and not in the other.
 
-## 10. Claves y privacidad
+## 10. Keys and privacy
 
-- Claves en el keychain bajo el servicio `meelting` y el nombre `<workspace>/<provider>`. Nunca en SQLite, archivos de configuración ni logs.
-- Se **verifican antes de guardar** con una llamada mínima al proveedor.
-- La UI solo recibe el estado «conectado» y los últimos 4 caracteres.
-- Ninguna telemetría ni llamada de red salvo a los proveedores configurados; con solo el proveedor local la app no sale a internet.
-- Los datos viven en el directorio de datos de la app (`~/Library/Application Support`, `%APPDATA%`, `~/.local/share`) y el usuario puede exportarlos o borrarlos desde Ajustes.
+- Keys in the keychain under the `meelting` service and the name `<workspace>/<provider>`. Never in SQLite, configuration files or logs.
+- They are **verified before saving** with a minimal call to the provider.
+- The UI only receives the "connected" status and the last 4 characters.
+- No telemetry or network calls except to the configured providers; with only the local provider the app does not go out to the internet.
+- Data lives in the app data directory (`~/Library/Application Support`, `%APPDATA%`, `~/.local/share`) and the user can export or delete it from Settings.
 
-## 11. Pruebas
+## 11. Tests
 
-| Nivel | Herramienta | Cubre |
+| Level | Tool | Covers |
 |---|---|---|
-| Núcleo Rust | `cargo test` | Repositorios y `CHECK`, máquina de `AgentRun`, `BuildPrompt`, proveedores con servidor simulado (`wiremock`), path jail, bucle de herramientas |
-| Contrato de proveedores | Suite compartida | Mismos casos para los tres protocolos (éxito, tokens, cada final, cada error) sin APIs reales |
-| Git | Repos temporales reales | Worktrees, huérfanos, rutas con espacios y Unicode |
-| Componentes | Vitest + Testing Library | Cada componente del atomic design |
-| E2E | `tauri-driver` en CI | Crear workspace, contratar agente, enviar instrucción con proveedor simulado, aprobar un comando, descartar una tarea |
-| Proveedores reales | Opcionales, con variable de entorno | Nunca en CI por defecto; incluye Ollama |
+| Rust core | `cargo test` | Repositories and `CHECK`, `AgentRun` machine, `BuildPrompt`, providers with a mock server (`wiremock`), path jail, tool loop |
+| Provider contract | Shared suite | Same cases for the three protocols (success, tokens, each ending, each error) without real APIs |
+| Git | Real temporary repos | Worktrees, orphans, paths with spaces and Unicode |
+| Components | Vitest + Testing Library | Every atomic design component |
+| E2E | `tauri-driver` in CI | Create workspace, hire agent, send instruction with a mock provider, approve a command, discard a task |
+| Real providers | Optional, with an environment variable | Never in CI by default; includes Ollama |
 
-CI (`.github/workflows/ci.yml`), tres trabajos en paralelo: `lint` (Ubuntu: `rustfmt --check`, `clippy -D warnings`, `pnpm build` y `pnpm test`), `test` (`cargo test` en macOS, Windows y Ubuntu) y `bundle` (instaladores en los tres SO, solo en `main` o a mano, e imprime el tamaño de cada instalador). Los specs de Rails (`spec/services/llm`, `spec/models/agent_run_spec.rb`, `spec/catalogs`, `spec/requests`) se leen como lista de casos a portar: cada criterio de aceptación de [agent-execution.md](../product/agent-execution.md) debe tener una prueba equivalente. La política de cobertura (100 % en el dominio del núcleo, alta y medida en el resto) está pendiente de decisión.
+CI (`.github/workflows/ci.yml`), three jobs in parallel: `lint` (Ubuntu: `rustfmt --check`, `clippy -D warnings`, `pnpm build` and `pnpm test`), `test` (`cargo test` on macOS, Windows and Ubuntu) and `bundle` (installers on the three OSes, only on `main` or manually, and prints the size of each installer). The Rails specs (`spec/services/llm`, `spec/models/agent_run_spec.rb`, `spec/catalogs`, `spec/requests`) are read as a list of cases to port: every acceptance criterion in [agent-execution.md](../product/agent-execution.md) must have an equivalent test. The coverage policy (100 % in the core domain, high and measured elsewhere) is pending a decision.
 
-## 12. Empaquetado y distribución
+## 12. Packaging and distribution
 
-- Instaladores: `.dmg`/`.app` (macOS Intel y Apple Silicon), `.msi`/`.exe` (Windows), `.AppImage` y `.deb` (Linux), generados por el bundler de Tauri en GitHub Actions.
-- **Firma:** macOS con Developer ID y notarización; Windows con certificado de firma de código. Iniciar los trámites temprano.
-- **Actualizaciones:** `tauri-plugin-updater` con artefactos firmados (p. ej. GitHub Releases); opcional.
-- Objetivos: instalador < 30 MB, arranque en frío < 2 s en hardware medio.
-- Los modelos locales **no se incluyen**: la app detecta Ollama/LM Studio y guía la instalación.
+- Installers: `.dmg`/`.app` (macOS Intel and Apple Silicon), `.msi`/`.exe` (Windows), `.AppImage` and `.deb` (Linux), generated by the Tauri bundler in GitHub Actions.
+- **Signing:** macOS with Developer ID and notarization; Windows with a code signing certificate. Start the paperwork early.
+- **Updates:** `tauri-plugin-updater` with signed artifacts (e.g. GitHub Releases); optional.
+- Targets: installer < 30 MB, cold start < 2 s on average hardware.
+- Local models are **not included**: the app detects Ollama/LM Studio and guides the installation.
 
-## 13. Decisiones abiertas
+## 13. Open decisions
 
-| # | Decisión | Recomendación |
+| # | Decision | Recommendation |
 |---|---|---|
-| 1 | Tauri o Electron | Tauri; Electron si la Fase 0 muestra problemas en Linux o falta dominio de Rust |
-| 2 | Framework de UI | React (ya elegido en el scaffold; librería de grafos para el organigrama) |
-| 3 | Datos del Rails actual | No migrarlos, salvo que existan datos reales |
-| 4 | Política de cobertura | 100 % en el dominio del núcleo, alto en el resto, medido en CI |
-| 5 | Límites diarios | Opcionales y desactivados para los proveedores locales; después del primer corte de `AgentRun` |
-| 6 | Cancelar ejecución | Incluirlo (imprescindible con modelos locales lentos) |
-| 7 | Autoactualización | Opcional vía GitHub Releases firmados |
-| 8 | Soporte mínimo de SO | macOS 12+, Windows 10+ (WebView2), Ubuntu 22.04+ |
-| 9 | Concurrencia de tareas | 2 por workspace |
-| 10 | Eliminar un workspace (Rails solo permitía cancelar la cuenta) | Permitirlo desde Ajustes con confirmación; borra equipos, agentes, salas y claves del keychain. Falta aprobación |
+| 1 | Tauri or Electron | Tauri; Electron if Phase 0 shows problems on Linux or Rust expertise is lacking |
+| 2 | UI framework | React (already chosen in the scaffold; graph library for the org chart) |
+| 3 | Data from the current Rails app | Do not migrate it, unless there is real data |
+| 4 | Coverage policy | 100 % in the core domain, high elsewhere, measured in CI |
+| 5 | Daily limits | Optional and disabled for local providers; after the first cut of `AgentRun` |
+| 6 | Cancel a run | Include it (essential with slow local models) |
+| 7 | Auto-update | Optional via signed GitHub Releases |
+| 8 | Minimum OS support | macOS 12+, Windows 10+ (WebView2), Ubuntu 22.04+ |
+| 9 | Task concurrency | 2 per workspace |
+| 10 | Delete a workspace (Rails only allowed cancelling the account) | Allow it from Settings with confirmation; deletes teams, agents, rooms and keychain keys. Approval pending |
 
-Las decisiones nuevas (reuniones, voz, operación híbrida) se registran en [decisions.md](../product/decisions.md).
+New decisions (meetings, voice, hybrid operation) are recorded in [decisions.md](../product/decisions.md).
 
-## 14. Riesgos
+## 14. Risks
 
-| Riesgo | Mitigación |
+| Risk | Mitigation |
 |---|---|
-| Un agente ejecuta un comando destructivo | Worktree aislado, path jail, aprobación obligatoria, entorno saneado, Docker opcional, nunca `push`/`merge` |
-| WebKitGTK o WebView2 se comportan distinto | Matriz de CI y E2E desde la Fase 0; plan B Electron |
-| Rutas, shells y fin de línea en Windows | Pruebas de git con espacios y Unicode, `core.longpaths`, shell configurable |
-| Modelos locales lentos o con poco contexto | Streaming, cancelación, tope de contexto configurable |
-| Firma de código | Iniciar trámites en la Fase 1 |
-| Reescribir la UI desde cero | Paridad medida contra los criterios de `docs/product/` y los specs de Rails |
-| Curva de Rust | Fase 0 como prueba; dominio puro separado del código de integración |
-| Scope creep hacia integraciones y colaboración | Mantener la exclusión explícita del roadmap |
+| An agent runs a destructive command | Isolated worktree, path jail, mandatory approval, sanitized environment, optional Docker, never `push`/`merge` |
+| WebKitGTK or WebView2 behave differently | CI matrix and E2E from Phase 0; Electron as plan B |
+| Paths, shells and line endings on Windows | Git tests with spaces and Unicode, `core.longpaths`, configurable shell |
+| Slow local models or with little context | Streaming, cancellation, configurable context cap |
+| Code signing | Start the paperwork in Phase 1 |
+| Rewriting the UI from scratch | Parity measured against the criteria in `docs/product/` and the Rails specs |
+| Rust learning curve | Phase 0 as a trial; pure domain separated from the integration code |
+| Scope creep toward integrations and collaboration | Keep the explicit exclusion in the roadmap |
