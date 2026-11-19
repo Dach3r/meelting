@@ -132,7 +132,7 @@ export function RoomsPage({
           />
         </Modal>
       )}
-      <header className="-mx-8 -mt-8 flex items-center justify-between gap-4 border-b border-line bg-linear-to-b from-shell to-surface px-8 py-5">
+      <header className="flex items-center justify-between gap-4">
         <h1 className="text-2xl font-bold text-ink">{t("rooms.title")}</h1>
         <Button type="button" size="pill" onClick={openForm}>
           <Plus aria-hidden className="size-4" />
