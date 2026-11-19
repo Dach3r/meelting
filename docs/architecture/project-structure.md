@@ -1,6 +1,6 @@
 # Project structure
 
-> **Status:** Phases 0–3 complete; Phase 4A (repositories, tasks with several agents, creation from rooms) and Phase 4B (Git environments) implemented (verified on macOS and Ubuntu; Windows verification pending, see [tasks.md §7.1](../product/tasks.md#71-verification-evidence)). Only the modules listed here as "✅" exist. Whatever is marked "pending" is the **planned** location; the folder is not created until there is code that uses it (no dead code).
+> **Status:** Phases 0–3 complete; Phase 4A (repositories, tasks with several agents, creation from rooms) and Phase 4B (Git environments) implemented (verified within the scope tested on macOS, Ubuntu and Windows, limits in [tasks.md §7.1](../product/tasks.md#71-verification-evidence)). Only the modules listed here as "✅" exist. Whatever is marked "pending" is the **planned** location; the folder is not created until there is code that uses it (no dead code).
 
 Layer rules and conventions: [overview.md](overview.md) §3 and §5.
 
