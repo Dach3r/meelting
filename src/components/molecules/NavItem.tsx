@@ -43,23 +43,8 @@ function Flyout({
             values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 -9"
             result="shape"
           />
-          <feMorphology
-            in="shape"
-            operator="dilate"
-            radius="1"
-            result="grown"
-          />
-          <feFlood
-            className="[flood-color:color-mix(in_srgb,var(--color-ink)_22%,var(--color-rail))]"
-            result="line"
-          />
-          <feComposite in="line" in2="grown" operator="in" result="ring" />
-          <feMerge result="outlined">
-            <feMergeNode in="ring" />
-            <feMergeNode in="shape" />
-          </feMerge>
           <feDropShadow
-            in="outlined"
+            in="shape"
             dx="0"
             dy="8"
             stdDeviation="10"
