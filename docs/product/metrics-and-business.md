@@ -1,40 +1,40 @@
-# Indicadores de éxito y modelo de negocio
+# Success metrics and business model
 
-## Indicadores de éxito
+## Success metrics
 
-### Activación
+### Activation
 
-- % de usuarios que completan el primer arranque.
-- % de usuarios que crean su primer workspace.
-- Tiempo hasta acceder al primer workspace.
+- % of users who complete the first launch.
+- % of users who create their first workspace.
+- Time to reach the first workspace.
 
-### Adopción futura
+### Future adoption
 
-- Usuarios que crean su primera sala.
-- Usuarios que ejecutan una tarea con un agente.
-- Frecuencia de uso de agentes.
+- Users who create their first room.
+- Users who run a task with an agent.
+- Frequency of agent use.
 
-### Valor entregado
+### Value delivered
 
-- Tareas completadas satisfactoriamente.
-- Tiempo dedicado por el usuario a supervisión.
-- % de tareas que requieren intervención humana.
-- % de ejecuciones con resultados verificables.
+- Tasks completed successfully.
+- Time the user spends supervising.
+- % of tasks that require human intervention.
+- % of runs with verifiable results.
 
-### Retención
+### Retention
 
-- Usuarios activos semanalmente (sin telemetría remota: solo métricas locales o voluntarias).
-- Workspaces activos.
-- Frecuencia de retorno al producto.
+- Weekly active users (no remote telemetry: only local or opt-in metrics).
+- Active workspaces.
+- Frequency of return to the product.
 
-## Modelo de negocio
+## Business model
 
-**Por definir.** Hipótesis a evaluar (no son decisiones comerciales):
+**To be defined.** Hypotheses to evaluate (these are not commercial decisions):
 
-- Suscripción por workspace.
-- Planes según cantidad de agentes.
-- Límites de consumo de IA.
-- Planes para equipos.
-- Funcionalidades premium de automatización e integraciones.
+- Subscription per workspace.
+- Plans based on the number of agents.
+- AI usage limits.
+- Team plans.
+- Premium automation and integration features.
 
-No tomar decisiones comerciales definitivas sin validación.
+Do not make final commercial decisions without validation.
