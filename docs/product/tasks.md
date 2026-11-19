@@ -72,13 +72,46 @@ Origin references use `NO ACTION`, not `SET NULL`: a `SET NULL` on a composite k
 
 `task_id`, `agent_id`, `workspace_id`, `created_at`; PK `(task_id, agent_id)`; `(task_id, workspace_id)` → `tasks (id, workspace_id)` and `(agent_id, workspace_id)` → `agents (id, workspace_id)`, both `ON DELETE CASCADE`. Parent keys are backed by `UNIQUE (id, workspace_id)` on `tasks` and the unique index `agents_id_workspace_id`.
 
-### 3.4 `task_worktrees` and `task_worktree_file_copies` (4B, not created)
+### 3.4 `task_worktrees` (4B ✅ schema)
 
-The full definition (PK, foreign keys, constraints and indexes) is presented for approval before 4B starts. Approved direction: `id`, `task_id`, `repository_id`, `path`, `branch_name`, `base_ref`, `base_commit_sha`, `status` (`preparing`, `ready`, `failed`, `missing`, `removing`, `removed`), `error_code`, timestamps and `removed_at`; at most one non-`removed` row per task (partial unique index); copies keyed by `(task_worktree_id, relative_path)` with `size_bytes` and `copied_at`, only for successful copies.
+Migrations `add_id_repository_id_index_to_tasks` (unique `tasks (id, repository_id)`, needed as the parent key below) and `create_task_worktrees`.
 
-### 3.5 Settings (4B)
+| Column | Type | Rule |
+|---|---|---|
+| `id` | `TEXT` | PK, UUID v7 |
+| `workspace_id` | `TEXT` | `NOT NULL` → `workspaces` `ON DELETE CASCADE` |
+| `task_id`, `repository_id` | `TEXT` | `NOT NULL`; `(task_id, repository_id)` → `tasks (id, repository_id)` and `(repository_id, workspace_id)` → `repositories (id, workspace_id)`, both `NO ACTION` |
+| `path` | `TEXT` | `NOT NULL`, unique among all rows (removed ones included); absolute path of the worktree |
+| `branch_name` | `TEXT` | `NOT NULL`, unique among all rows; 10–120 characters, starts with `meelting/`, only `a-z`, `0-9`, `/` and `-` |
+| `base_ref` | `TEXT` | `NOT NULL`; the base branch chosen when preparing |
+| `base_commit_sha` | `TEXT` | `NOT NULL`; 40 or 64 lowercase hexadecimal characters; the immutable starting commit |
+| `status` | `TEXT` | `preparing`, `ready`, `failed`, `missing`, `removing`, `removed` |
+| `error_code` | `TEXT` | Nullable; 1–64 characters of `a-z` and `_`; required when `failed`, allowed only when `failed` or `removed` (a discarded failure keeps its reason); the list of codes is a Rust enum |
+| `created_at`, `updated_at` | `TEXT` | `NOT NULL`; `updated_at >= created_at` |
+| `removed_at` | `TEXT` | Set if and only if `removed`; `>= created_at` |
 
-`profile.worktrees_root` (nullable `TEXT`): global per installation. Without a value, `~/Meelting/worktrees` (the home folder of each OS). Changing it only affects new worktrees; existing ones are never moved.
+Indexes: unique partial `task_worktrees_active_task_id (task_id) WHERE status <> 'removed'` (at most one active environment per task), `(task_id, repository_id)` and `(repository_id, workspace_id)` for the foreign keys.
+
+**What the foreign keys guarantee.** The first key makes the worktree use the repository of its task, and the second makes that repository belong to the worktree's workspace. Since `tasks` already requires its repository to belong to the task's workspace, task, repository and worktree always share one workspace. Because the first key points at `(id, repository_id)`, a task cannot change or clear its repository while any worktree row (removed ones included) references it, so rule C is enforced by SQLite. The repository row has no update path and cannot be deleted while a worktree references it, so the history keeps the original `git_common_dir`.
+
+**Deletion.** A task cannot be deleted while any worktree row references it (`NO ACTION`). To delete a task, Rust checks in one `BEGIN IMMEDIATE` transaction that no row is active, deletes the `removed` rows (their copies go in cascade) and then the task. A repository cannot be unregistered while tasks or worktrees reference it. Deleting a workspace removes tasks, repositories, worktree rows and copies in the same statement; `NO ACTION` is checked at the end of the statement, so the cascade succeeds. `RESTRICT` is not used because it is checked immediately and would break that cascade depending on the order rows are deleted.
+
+### 3.5 `task_worktree_file_copies` (4B ✅ schema)
+
+Migration `create_task_worktree_file_copies`. One row per file the user copied into a worktree; contents are never stored.
+
+| Column | Type | Rule |
+|---|---|---|
+| `task_worktree_id` | `TEXT` | `NOT NULL` → `task_worktrees` `ON DELETE CASCADE` |
+| `relative_path` | `TEXT` | `NOT NULL`, 1–1,024 characters, `/` separators, no leading `/`, no `\`, no `:`, no empty, `.` or `..` segment and no `.git` segment in any letter case |
+| `size_bytes` | `INTEGER` | `NOT NULL`, 0–10,485,760 (10 MiB) |
+| `copied_at` | `TEXT` | `NOT NULL` |
+
+PK `(task_worktree_id, relative_path)`. Workspace isolation comes from the parent worktree. The path checks are a safety net: the real validation happens in Rust before copying (BR-06). Rows are kept as history when the worktree is removed and disappear only when the worktree row is deleted together with its task.
+
+### 3.6 Settings (4B ✅ schema)
+
+Migration `add_worktrees_root_to_profile`: `profile.worktrees_root` (nullable `TEXT`, not empty), global per installation. Without a value, `~/Meelting/worktrees` (the home folder of each OS). Changing it only affects new worktrees; existing ones are never moved.
 
 ## 4. Business rules
 

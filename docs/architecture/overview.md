@@ -117,7 +117,7 @@ General rules:
 
 | Table | Columns | Notes |
 |---|---|---|
-| `profile` (one row) | `id` (`'singleton'`), `locale` (`es`/`en`), `theme` (`system`/`light`/`dark`, default `system`), `ui_scale` (`90`/`100`/`110`/`125`/`150`, default `100`), `loading_enabled` (boolean, default on), `current_workspace_id`, timestamps | Replaces `users`. First and last name are added when there is UI that asks for them |
+| `profile` (one row) | `id` (`'singleton'`), `locale` (`es`/`en`), `theme` (`system`/`light`/`dark`, default `system`), `ui_scale` (`90`/`100`/`110`/`125`/`150`, default `100`), `loading_enabled` (boolean, default on), `worktrees_root` (nullable, global worktree folder), `current_workspace_id`, timestamps | Replaces `users`. First and last name are added when there is UI that asks for them |
 | `workspaces` | `id`, `name` (1–80), timestamps | |
 | `teams` | `id`, `workspace_id`, `name` (1–80), timestamps | Unique `(id, workspace_id)` for the composite foreign key of `agents` |
 | `agents` | `id`, `workspace_id`, `team_id`, `template_key`, `name` (1–80), `role` (1–80), `description`, `instructions`, `provider`, `model`, timestamps | Composite FK `(team_id, workspace_id)` `ON DELETE RESTRICT`; `provider`/`model` not empty |
@@ -130,7 +130,8 @@ General rules:
 | `repositories` | ✅ `id`, `workspace_id`, `name` (1–80), `path`, `git_common_dir`, timestamps | Phase 4A ([tasks.md §3](../product/tasks.md#3-data-model)). Unique `(workspace_id, git_common_dir)` (the Git identity) and `(id, workspace_id)` |
 | `tasks` | ✅ `id`, `workspace_id`, `repository_id`, `origin_room_id`, `origin_message_id`, `title` (1–120), `description` (≤ 10,000), `status` (`pending`/`in_progress`/`blocked`/`completed`/`canceled`), `priority` (`low`/`medium`/`high`), `base_ref`, `completed_at`, timestamps | Phase 4A. `completed_at` set if and only if `completed`; `base_ref` only with a repository; composite FKs `NO ACTION` to `repositories (id, workspace_id)`, `rooms (id, workspace_id)` and `messages (id, room_id)` |
 | `task_agents` | ✅ `task_id`, `agent_id`, `workspace_id`, `created_at` | Phase 4A. PK `(task_id, agent_id)`; composite FKs to `tasks` and `agents`, both `ON DELETE CASCADE`. Assigning starts no run (D29) |
-| `task_worktrees`, `task_worktree_file_copies` | See [tasks.md §3.4](../product/tasks.md#34-task_worktrees-and-task_worktree_file_copies-4b-not-created) | Phase 4B; full definition presented for approval before creating them |
+| `task_worktrees` | ✅ `id`, `workspace_id`, `task_id`, `repository_id`, `path`, `branch_name`, `base_ref`, `base_commit_sha`, `status`, `error_code`, timestamps, `removed_at` | Phase 4B ([tasks.md §3.4](../product/tasks.md#34-task_worktrees-4b--schema)). One active row per task (partial unique index); composite FKs `NO ACTION` to `tasks (id, repository_id)` and `repositories (id, workspace_id)` |
+| `task_worktree_file_copies` | ✅ `task_worktree_id`, `relative_path`, `size_bytes`, `copied_at` | Phase 4B. PK `(task_worktree_id, relative_path)`, cascade with the worktree row; never stores contents |
 | `tool_calls` | `id`, `agent_run_id`, `task_id`, `tool`, `arguments` (JSON), `status`, `output`, `exit_code`, `created_at`, `finished_at` | Phase 5 |
 | `approvals` | `id`, `tool_call_id`, `decision` (`pending`/`approved`/`denied`), `decided_at`, `remember` (`never`/`task`/`workspace`) | Phase 5 |
 | `settings` | `key`, `value` | Daily limits, Docker path, preferred shell |
