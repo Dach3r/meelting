@@ -6,7 +6,8 @@ use sqlx::SqlitePool;
 
 pub async fn run(pool: &SqlitePool, agent_id: &str) -> Result<Vec<Team>, SessionError> {
     let workspace_id = session_load::require(pool).await?.current_workspace_id;
-    let deleted = agents::delete(pool, &workspace_id, agent_id)
+    let mut transaction = pool.begin_with("BEGIN IMMEDIATE").await?;
+    let deleted = agents::delete(&mut *transaction, &workspace_id, agent_id)
         .await
         .map_err(|error| match error.as_database_error() {
             Some(database) if database.is_foreign_key_violation() => SessionError::AgentHasActivity,
@@ -15,7 +16,8 @@ pub async fn run(pool: &SqlitePool, agent_id: &str) -> Result<Vec<Team>, Session
     if !deleted {
         return Err(SessionError::AgentNotFound);
     }
-    canvas_positions::delete(pool, &workspace_id, agent_id).await?;
+    canvas_positions::delete(&mut *transaction, &workspace_id, agent_id).await?;
+    transaction.commit().await?;
     teams_list::run(pool).await
 }
 
@@ -79,6 +81,33 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(left, 0);
+    }
+
+    #[tokio::test]
+    async fn keeps_the_agent_when_its_position_cannot_be_removed() {
+        let (pool, _dir) = open_for_test().await;
+        let agent_id = setup(&pool).await;
+        sqlx::query("INSERT INTO canvas_positions SELECT workspace_id, id, 1.0, 2.0 FROM agents")
+            .execute(&pool)
+            .await
+            .unwrap();
+        sqlx::query(
+            "CREATE TRIGGER block_position_delete BEFORE DELETE ON canvas_positions \
+             BEGIN SELECT RAISE(ABORT, 'blocked'); END",
+        )
+        .execute(&pool)
+        .await
+        .unwrap();
+
+        assert!(matches!(
+            run(&pool, &agent_id).await,
+            Err(SessionError::Database(_))
+        ));
+        let agents: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM agents")
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+        assert_eq!(agents, 1);
     }
 
     #[tokio::test]

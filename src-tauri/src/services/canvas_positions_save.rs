@@ -5,15 +5,17 @@ use sqlx::SqlitePool;
 
 pub async fn run(pool: &SqlitePool, positions: Vec<Position>) -> Result<(), SessionError> {
     let workspace_id = session_load::require(pool).await?.current_workspace_id;
+    let mut transaction = pool.begin_with("BEGIN IMMEDIATE").await?;
     for position in positions {
-        let known = teams::exists(pool, &workspace_id, &position.node_id).await?
-            || agents::get(pool, &workspace_id, &position.node_id)
+        let known = teams::exists(&mut *transaction, &workspace_id, &position.node_id).await?
+            || agents::get(&mut *transaction, &workspace_id, &position.node_id)
                 .await?
                 .is_some();
         if known {
-            canvas_positions::save(pool, &workspace_id, &position).await?;
+            canvas_positions::save(&mut *transaction, &workspace_id, &position).await?;
         }
     }
+    transaction.commit().await?;
     Ok(())
 }
 
@@ -84,6 +86,25 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(saved, 2);
+    }
+
+    #[tokio::test]
+    async fn saves_nothing_when_one_position_fails() {
+        let (pool, _dir) = open_for_test().await;
+        setup(&pool).await;
+
+        let result = run(
+            &pool,
+            vec![position("t1", 10.0, 20.0), position("a1", f64::NAN, 6.0)],
+        )
+        .await;
+
+        assert!(matches!(result, Err(SessionError::Database(_))));
+        let saved: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM canvas_positions")
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+        assert_eq!(saved, 0);
     }
 
     #[tokio::test]
