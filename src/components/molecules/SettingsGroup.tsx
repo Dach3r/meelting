@@ -12,7 +12,7 @@ export function SettingsGroup({
       <p className="px-1 text-xs font-bold tracking-wider text-muted uppercase">
         {title}
       </p>
-      <div className="divide-y divide-line/50 overflow-hidden rounded-2xl border border-line bg-hi/30">
+      <div className="divide-y divide-ink/10 overflow-hidden rounded-2xl border border-ink/20 bg-pill-hover">
         {children}
       </div>
     </section>
