@@ -66,6 +66,24 @@ export function EnvironmentsPage({ mode }: { mode: "files" | "trash" }) {
     setSelected(new Set());
   }
 
+  function statusClass(worktree: Environment["worktree"]) {
+    return worktree.status === "ready"
+      ? "border-ink text-ink"
+      : worktree.status === "failed" || worktree.status === "missing"
+        ? "border-error text-error"
+        : "border-line text-muted";
+  }
+
+  function pill({ worktree }: Environment) {
+    return (
+      <span
+        className={`rounded-full border px-2.5 py-0.5 text-xs font-semibold ${statusClass(worktree)}`}
+      >
+        {t(`tasks.environment.status.${worktree.status}`)}
+      </span>
+    );
+  }
+
   function aside(environment: Environment) {
     const { worktree } = environment;
     if (inTrash && worktree.status === "ready" && worktree.trashed_at) {
@@ -79,107 +97,110 @@ export function EnvironmentsPage({ mode }: { mode: "files" | "trash" }) {
     }
     return (
       <span
-        className={`rounded-full border px-2.5 py-0.5 text-xs font-semibold ${worktree.status === "ready" ? "border-ink text-ink" : worktree.status === "failed" || worktree.status === "missing" ? "border-error text-error" : "border-line text-muted"}`}
-      >
-        {t(`tasks.environment.status.${worktree.status}`)}
-      </span>
+        role="img"
+        aria-label={t(`tasks.environment.status.${worktree.status}`)}
+        title={t(`tasks.environment.status.${worktree.status}`)}
+        className={`block size-2.5 rounded-full ${worktree.status === "ready" ? "bg-success" : worktree.status === "failed" || worktree.status === "missing" ? "bg-error" : "bg-muted"}`}
+      />
     );
   }
 
   return (
-    <div className="grid content-start gap-6">
-      <div>
-        <h1 className="text-2xl font-bold text-ink">{t(`${mode}.title`)}</h1>
-        <p className="text-sm text-muted">{t(`${mode}.description`)}</p>
-      </div>
-      {errorKey && <Alert message={translateError(locale, errorKey)} />}
-      {failures.length > 0 && (
-        <div
-          role="alert"
-          className="grid gap-2 rounded-2xl border border-error p-4"
-        >
-          <p className="text-sm font-semibold text-error">
-            {translateWith(locale, "files.failed", { count: failures.length })}
-          </p>
-          <ul className="grid gap-1 text-sm">
-            {failures.map((failure) => (
-              <li key={failure.task_id} className="text-ink">
-                <span className="font-medium">
-                  {titles.get(failure.task_id) ?? failure.task_id}
-                </span>
-                {": "}
-                {translateError(locale, failure.error)}
-              </li>
-            ))}
-          </ul>
+    <div className="flex min-h-0 flex-1 gap-3">
+      <section
+        className={`flex min-h-0 flex-col gap-5 overflow-y-auto rounded-3xl border border-line bg-pill p-6 ${focused ? "w-100 shrink-0" : "flex-1"}`}
+      >
+        <div className="grid gap-1.5">
+          <h1 className="text-2xl font-bold text-ink">{t(`${mode}.title`)}</h1>
+          <p className="text-sm text-muted">{t(`${mode}.description`)}</p>
         </div>
-      )}
-      <div className="flex flex-wrap gap-2">
-        {inTrash ? (
-          <>
-            <Button
-              type="button"
-              variant="ghost"
-              size="pill"
-              className="border-line"
-              disabled={busy || chosen.length === 0}
-              onClick={() => run(restore, chosen)}
-            >
-              {translateWith(locale, "trash.restore", { count: chosen.length })}
-            </Button>
-            <Button
-              type="button"
-              variant="danger"
-              size="pill"
-              disabled={busy || chosen.length === 0}
-              onClick={() => setPending({ action: "purge", taskIds: chosen })}
-            >
-              {translateWith(locale, "trash.purge", { count: chosen.length })}
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              size="pill"
-              disabled={busy || candidates.length === 0}
-              onClick={() =>
-                setPending({ action: "purge", taskIds: candidates })
-              }
-            >
-              {t("trash.emptyTrash")}
-            </Button>
-          </>
-        ) : (
-          <>
-            <Button
-              type="button"
-              variant="danger"
-              size="pill"
-              disabled={busy || chosen.length === 0}
-              onClick={() => setPending({ action: "trash", taskIds: chosen })}
-            >
-              {translateWith(locale, "files.trash", { count: chosen.length })}
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              size="pill"
-              disabled={busy || candidates.length === 0}
-              onClick={() =>
-                setPending({ action: "trash", taskIds: candidates })
-              }
-            >
-              {t("files.trashAll")}
-            </Button>
-          </>
+        {errorKey && <Alert message={translateError(locale, errorKey)} />}
+        {failures.length > 0 && (
+          <div
+            role="alert"
+            className="grid gap-2 rounded-2xl border border-error p-4"
+          >
+            <p className="text-sm font-semibold text-error">
+              {translateWith(locale, "files.failed", {
+                count: failures.length,
+              })}
+            </p>
+            <ul className="grid gap-1 text-sm">
+              {failures.map((failure) => (
+                <li key={failure.task_id} className="text-ink">
+                  <span className="font-medium">
+                    {titles.get(failure.task_id) ?? failure.task_id}
+                  </span>
+                  {": "}
+                  {translateError(locale, failure.error)}
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
-      </div>
-      {environments &&
-        (shown.length === 0 ? (
-          <p className="rounded-2xl border border-line px-4 py-6 text-center text-sm text-muted">
-            {t(`${mode}.empty`)}
-          </p>
-        ) : (
-          <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_24rem]">
+        <div className="flex flex-wrap gap-2">
+          {inTrash ? (
+            <>
+              <Button
+                type="button"
+                variant="ghost"
+                size="pill"
+                className="border-line"
+                disabled={busy || chosen.length === 0}
+                onClick={() => run(restore, chosen)}
+              >
+                {translateWith(locale, "trash.restore", {
+                  count: chosen.length,
+                })}
+              </Button>
+              <Button
+                type="button"
+                variant="danger"
+                size="pill"
+                disabled={busy || chosen.length === 0}
+                onClick={() => setPending({ action: "purge", taskIds: chosen })}
+              >
+                {translateWith(locale, "trash.purge", { count: chosen.length })}
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                size="pill"
+                disabled={busy || candidates.length === 0}
+                onClick={() =>
+                  setPending({ action: "purge", taskIds: candidates })
+                }
+              >
+                {t("trash.emptyTrash")}
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                type="button"
+                variant="danger"
+                size="pill"
+                disabled={busy || chosen.length === 0}
+                onClick={() => setPending({ action: "trash", taskIds: chosen })}
+              >
+                {translateWith(locale, "files.trash", { count: chosen.length })}
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                size="pill"
+                disabled={busy || candidates.length === 0}
+                onClick={() =>
+                  setPending({ action: "trash", taskIds: candidates })
+                }
+              >
+                {t("files.trashAll")}
+              </Button>
+            </>
+          )}
+        </div>
+        {environments &&
+          (focused ? (
             <EnvironmentList
               label={t(`${mode}.title`)}
               environments={shown}
@@ -191,52 +212,58 @@ export function EnvironmentsPage({ mode }: { mode: "files" | "trash" }) {
               onToggleAll={toggleAll}
               aside={aside}
             />
-            <EnvironmentDetail
-              environment={focused}
-              status={aside(focused)}
-              hint={t(`${dialogKeys[inTrash ? "purge" : "trash"]}.body`)}
-              actions={
-                inTrash ? (
-                  <>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="pill"
-                      className="border-line"
-                      disabled={busy}
-                      onClick={() => run(restore, [focused.task_id])}
-                    >
-                      {t("trash.restoreOne")}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="danger"
-                      size="pill"
-                      disabled={busy}
-                      onClick={() =>
-                        setPending({ action: "purge", taskIds: [focused.task_id] })
-                      }
-                    >
-                      {t("trash.purgeDialog.confirm")}
-                    </Button>
-                  </>
-                ) : (
-                  <Button
-                    type="button"
-                    variant="danger"
-                    size="pill"
-                    disabled={busy || !selectable(focused)}
-                    onClick={() =>
-                      setPending({ action: "trash", taskIds: [focused.task_id] })
-                    }
-                  >
-                    {t("files.trashDialog.confirm")}
-                  </Button>
-                )
-              }
-            />
-          </div>
-        ))}
+          ) : (
+            <p className="rounded-2xl border border-line px-4 py-6 text-center text-sm text-muted">
+              {t(`${mode}.empty`)}
+            </p>
+          ))}
+      </section>
+      {focused && (
+        <EnvironmentDetail
+          environment={focused}
+          status={pill(focused)}
+          hint={t(`${dialogKeys[inTrash ? "purge" : "trash"]}.body`)}
+          actions={
+            inTrash ? (
+              <>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="pill"
+                  className="border-line"
+                  disabled={busy}
+                  onClick={() => run(restore, [focused.task_id])}
+                >
+                  {t("trash.restoreOne")}
+                </Button>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="pill"
+                  disabled={busy}
+                  onClick={() =>
+                    setPending({ action: "purge", taskIds: [focused.task_id] })
+                  }
+                >
+                  {t("trash.purgeDialog.confirm")}
+                </Button>
+              </>
+            ) : (
+              <Button
+                type="button"
+                variant="destructive"
+                size="pill"
+                disabled={busy || !selectable(focused)}
+                onClick={() =>
+                  setPending({ action: "trash", taskIds: [focused.task_id] })
+                }
+              >
+                {t("files.trashDialog.confirm")}
+              </Button>
+            )
+          }
+        />
+      )}
       {pending && (
         <ConfirmDialog
           title={translateWith(locale, `${dialogKeys[pending.action]}.title`, {

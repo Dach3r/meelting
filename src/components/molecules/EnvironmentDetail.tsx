@@ -21,40 +21,34 @@ export function EnvironmentDetail({
     [t("files.detail.repository"), environment.repository_name],
     [t("tasks.environment.branch"), worktree.branch_name],
     [t("tasks.environment.base"), worktree.base_ref],
+    [t("tasks.environment.path"), worktree.trash_path ?? worktree.path],
   ];
   return (
     <aside
       aria-label={environment.task_title}
-      className="grid content-start gap-5 rounded-2xl border border-line p-6"
+      className="flex min-h-0 min-w-0 flex-1 flex-col gap-7 overflow-y-auto rounded-3xl border border-line bg-pill p-10"
     >
-      <div className="grid justify-items-start gap-2">
+      <div className="grid justify-items-start gap-3">
         {status}
-        <h2 className="text-xl font-bold text-ink">{environment.task_title}</h2>
+        <h2 className="text-3xl font-bold text-ink">{environment.task_title}</h2>
       </div>
-      <dl className="grid gap-4 border-y border-line py-4 text-sm">
-        {rows.map(([label, value]) => (
-          <div key={label} className="grid gap-1">
-            <dt className="text-xs font-medium text-muted uppercase">
+      <dl className="grid grid-cols-[9rem_minmax(0,1fr)] overflow-hidden rounded-2xl border border-line text-sm">
+        {rows.map(([label, value], index) => {
+          const edge = index === 0 ? "" : "border-t border-line";
+          return (
+          <div key={label} className="contents">
+            <dt className={`${edge} bg-shell px-5 py-4 text-muted`}>
               {label}
             </dt>
-            <dd>
+            <dd className={`${edge} px-5 py-4`}>
               <code className="break-all text-ink select-text">{value}</code>
             </dd>
           </div>
-        ))}
-        <div className="grid gap-1">
-          <dt className="text-xs font-medium text-muted uppercase">
-            {t("tasks.environment.path")}
-          </dt>
-          <dd>
-            <code className="break-all text-ink select-text">
-              {worktree.trash_path ?? worktree.path}
-            </code>
-          </dd>
-        </div>
+          );
+        })}
       </dl>
       <div className="flex flex-wrap gap-2">{actions}</div>
-      <p className="text-sm text-muted">{hint}</p>
+      <p className="max-w-xl text-sm text-muted">{hint}</p>
     </aside>
   );
 }

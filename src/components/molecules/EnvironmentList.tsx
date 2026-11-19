@@ -32,8 +32,8 @@ export function EnvironmentList({
     candidates.length > 0 &&
     candidates.every((environment) => selected.has(environment.task_id));
   return (
-    <div className="grid overflow-hidden rounded-2xl border border-line">
-      <label className="flex cursor-pointer items-center gap-3 border-b border-line bg-shell px-4 py-3 text-sm font-medium text-muted">
+    <div className="grid gap-2">
+      <label className="flex cursor-pointer items-center gap-3 px-3 py-2 text-sm font-medium text-muted">
         <input
           type="checkbox"
           checked={allSelected}
@@ -42,13 +42,13 @@ export function EnvironmentList({
         />
         {t("files.selectAll")}
       </label>
-      <ul aria-label={label} className="grid">
+      <ul aria-label={label} className="grid gap-1">
         {environments.map((environment) => {
           const focused = environment.task_id === focusedId;
           return (
             <li
               key={environment.task_id}
-              className={`flex min-w-0 items-center gap-3 border-b border-line/60 px-4 py-2 last:border-b-0 ${focused ? "bg-raised" : ""}`}
+              className={`flex min-w-0 items-center gap-3 rounded-2xl border px-3 py-1.5 ${focused ? "border-line bg-raised" : "border-transparent"}`}
             >
               <input
                 type="checkbox"

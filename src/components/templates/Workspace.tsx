@@ -124,6 +124,8 @@ export function Workspace({
     }
   }
 
+  const split = view === "files" || view === "trash";
+
   return (
     <div
       data-collapsed={collapsed || undefined}
@@ -138,8 +140,12 @@ export function Workspace({
       <div className="flex min-h-0 min-w-0 flex-col overflow-hidden rounded-3xl bg-shell">
         <Topbar {...props} onSwitch={switchWorkspace} />
         <main className="flex min-h-0 flex-1 flex-col px-8 pb-8">
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl border border-line bg-pill">
-            <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-8">
+          <div
+            className={`flex min-h-0 flex-1 flex-col overflow-hidden ${split ? "" : "rounded-3xl border border-line bg-pill"}`}
+          >
+            <div
+              className={`flex min-h-0 flex-1 flex-col ${split ? "" : "overflow-y-auto p-8"}`}
+            >
               {view === "settings" ? (
                 <SettingsPage
                   locale={locale}
