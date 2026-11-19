@@ -56,6 +56,7 @@
     "environment_has_changes": "El entorno tiene archivos que se perderían, así que se conservó.",
     "environment_operation_in_progress": "Hay una operación de Git en curso en el entorno, así que se conservó.",
     "environment_remove_refused": "Git se negó a eliminar el entorno, así que se conservó.",
+    "environment_check_refused": "No se pudo comprobar el entorno de forma completa y segura, así que se conservó. No se cambió nada.",
     "copy_too_large": "Los archivos seleccionados suman más de 50 MiB. Elige menos archivos.",
     "copy_selection_expired": "Esa selección ya no es válida. Vuelve a elegir los archivos.",
     "secrets_not_confirmed": "Confirma que quieres copiar archivos que pueden contener secretos.",

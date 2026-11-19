@@ -2,7 +2,8 @@ use crate::domain::repository::RepositoryIdentity;
 use crate::domain::storage::StorageIssue;
 use crate::domain::task::Task;
 use crate::domain::worktree::{
-    IN_PROGRESS_MARKERS, RemovalCheck, Worktree, WorktreeErrorCode, WorktreeStatus, parse_status,
+    ChangeKind, IN_PROGRESS_MARKERS, PendingChange, RemovalCheck, Worktree, WorktreeErrorCode,
+    WorktreeStatus, parse_status,
 };
 use crate::repositories::{git_repositories, task_worktrees};
 use crate::services::repository_locks::RepositoryLocks;
@@ -11,6 +12,7 @@ use crate::services::tasks_list;
 use crate::services::worktree_prepare::{check_repository, git_error};
 use crate::services::worktrees_reconcile::{gone, intact};
 use crate::system::git;
+use crate::system::git_guarded::{Guard, GuardError};
 use sqlx::SqlitePool;
 use std::path::Path;
 
@@ -56,22 +58,53 @@ pub async fn verify_identity(
     Ok(())
 }
 
+fn guard_error(error: GuardError) -> SessionError {
+    match error {
+        GuardError::Unavailable(_) => SessionError::GitUnavailable,
+        GuardError::GitTooOld => SessionError::GitTooOld,
+        _ => SessionError::EnvironmentCheckRefused,
+    }
+}
+
 async fn inspect(
     repository: &RepositoryIdentity,
     worktree: &Worktree,
     check_storage: &impl AsyncFn(&Path) -> Result<(), StorageIssue>,
 ) -> Result<RemovalCheck, SessionError> {
     verify_identity(repository, worktree, check_storage).await?;
-    let path = Path::new(&worktree.path);
-    let changes = parse_status(&git::status(path).await.map_err(git_error)?);
+    let guard = Guard::open(
+        repository,
+        Path::new(&worktree.path),
+        &worktree.base_commit_sha,
+    )
+    .await
+    .map_err(guard_error)?;
+    let expected = format!("refs/heads/{}", worktree.branch_name);
+    if guard.head_reference().await.map_err(guard_error)? != Some(expected) {
+        return Err(SessionError::EnvironmentIdentityMismatch);
+    }
+    let mut changes = parse_status(&guard.status_exhaustive().await.map_err(guard_error)?);
+    changes.extend(
+        guard
+            .gitlinks()
+            .await
+            .map_err(guard_error)?
+            .into_iter()
+            .map(|path| PendingChange {
+                kind: ChangeKind::Tracked,
+                path,
+            }),
+    );
     let mut operation_in_progress = false;
     for marker in IN_PROGRESS_MARKERS {
-        let marker = git::git_path(path, marker).await.map_err(git_error)?;
+        let marker = guard.git_path(marker).await.map_err(guard_error)?;
         operation_in_progress |= std::fs::symlink_metadata(marker).is_ok();
     }
-    let commits_ahead = git::commits_ahead(path, &worktree.base_commit_sha, &worktree.branch_name)
+    let commits_ahead = guard
+        .commits_ahead(&worktree.branch_name)
         .await
-        .map_err(git_error)?;
+        .map_err(guard_error)?;
+    guard.finish().await.map_err(guard_error)?;
     Ok(RemovalCheck {
         changes,
         operation_in_progress,
@@ -148,6 +181,21 @@ mod tests {
             .status()
             .unwrap()
             .success()
+    }
+
+    fn index_lock(worktree: &Path) -> PathBuf {
+        let output = std::process::Command::new("git")
+            .arg("-C")
+            .arg(worktree)
+            .args([
+                "rev-parse",
+                "--path-format=absolute",
+                "--git-path",
+                "index.lock",
+            ])
+            .output()
+            .unwrap();
+        PathBuf::from(String::from_utf8_lossy(&output.stdout).trim_end())
     }
 
     #[tokio::test]
@@ -247,7 +295,7 @@ mod tests {
         let fixture = fixture().await;
         let busy = task(&fixture, "Busy", "main").await;
         let busy_path = PathBuf::from(prepare(&fixture, &busy).await.worktree.unwrap().path);
-        let lock = git::git_path(&busy_path, "index.lock").await.unwrap();
+        let lock = index_lock(&busy_path);
         std::fs::write(&lock, "").unwrap();
         let switched = task(&fixture, "Switched", "main").await;
         let switched_path =
@@ -282,6 +330,128 @@ mod tests {
             run(&fixture.pool, &fixture.locks, &other, local).await,
             Err(SessionError::EnvironmentNotFound)
         ));
+    }
+
+    fn probe(marker: &Path) -> String {
+        format!(
+            "echo run >> '{}'; cat",
+            marker.to_string_lossy().replace('\\', "/")
+        )
+    }
+
+    #[tokio::test]
+    async fn a_filter_that_appears_after_preparation_is_never_run_and_blocks_the_check() {
+        let fixture = fixture().await;
+        std::fs::write(fixture.repo.join(".gitattributes"), "*.md filter=probe\n").unwrap();
+        git(&fixture.repo, &["add", ".gitattributes"]);
+        git(&fixture.repo, &["commit", "-m", "attributes"]);
+        let task = task(&fixture, "Late filter", "main").await;
+        let path = PathBuf::from(prepare(&fixture, &task).await.worktree.unwrap().path);
+        let markers = tempfile::tempdir().unwrap();
+        let marker = markers.path().join("marker");
+        git(
+            &fixture.repo,
+            &["config", "filter.probe.clean", &probe(&marker)],
+        );
+        std::fs::write(path.join("README.md"), "world\n").unwrap();
+
+        let checked = check(&fixture.pool, &fixture.locks, &task.id, local).await;
+        let removed = run(&fixture.pool, &fixture.locks, &task.id, local).await;
+
+        assert!(matches!(
+            checked,
+            Err(SessionError::EnvironmentCheckRefused)
+        ));
+        assert!(matches!(
+            removed,
+            Err(SessionError::EnvironmentCheckRefused)
+        ));
+        assert!(!marker.exists());
+        assert_eq!(
+            std::fs::read_to_string(path.join("README.md")).unwrap(),
+            "world\n"
+        );
+        let reloaded = tasks_list::one(&fixture.pool, &workspace(&fixture.pool).await, &task.id)
+            .await
+            .unwrap();
+        assert_eq!(reloaded.worktree.unwrap().status, WorktreeStatus::Ready);
+    }
+
+    #[tokio::test]
+    async fn attributes_written_in_the_worktree_do_not_run_a_defined_filter() {
+        let fixture = fixture().await;
+        let task = task(&fixture, "Worktree attributes", "main").await;
+        let path = PathBuf::from(prepare(&fixture, &task).await.worktree.unwrap().path);
+        let markers = tempfile::tempdir().unwrap();
+        let marker = markers.path().join("marker");
+        git(
+            &fixture.repo,
+            &["config", "filter.probe.clean", &probe(&marker)],
+        );
+        std::fs::write(path.join(".gitattributes"), "*.md filter=probe\n").unwrap();
+        std::fs::write(path.join("README.md"), "world\n").unwrap();
+
+        let report = check(&fixture.pool, &fixture.locks, &task.id, local)
+            .await
+            .unwrap();
+
+        assert!(!marker.exists());
+        assert!(
+            report
+                .changes
+                .iter()
+                .any(|change| change.path == "README.md")
+        );
+        assert!(
+            report
+                .changes
+                .iter()
+                .any(|change| change.path == ".gitattributes")
+        );
+    }
+
+    #[tokio::test]
+    async fn an_info_attributes_file_with_rules_refuses_the_check() {
+        let fixture = fixture().await;
+        let task = task(&fixture, "Info attributes", "main").await;
+        prepare(&fixture, &task).await;
+        let common = git::layout(&fixture.repo).await.unwrap().common_dir;
+        let info = PathBuf::from(common).join("info");
+        std::fs::create_dir_all(&info).unwrap();
+        std::fs::write(info.join("attributes"), "*.md filter=probe\n").unwrap();
+
+        let checked = check(&fixture.pool, &fixture.locks, &task.id, local).await;
+
+        assert!(matches!(
+            checked,
+            Err(SessionError::EnvironmentCheckRefused)
+        ));
+    }
+
+    #[tokio::test]
+    async fn a_gitlink_blocks_removal_like_any_other_change() {
+        let fixture = fixture().await;
+        let task = task(&fixture, "Gitlink", "main").await;
+        let path = PathBuf::from(prepare(&fixture, &task).await.worktree.unwrap().path);
+        let nested = path.join("nested");
+        std::fs::create_dir(&nested).unwrap();
+        git(&nested, &["init", "-q"]);
+        git(&nested, &["commit", "-q", "--allow-empty", "-m", "n"]);
+        git(&path, &["add", "nested"]);
+
+        let report = check(&fixture.pool, &fixture.locks, &task.id, local)
+            .await
+            .unwrap();
+
+        assert!(report.changes.contains(&PendingChange {
+            kind: ChangeKind::Tracked,
+            path: "nested".into(),
+        }));
+        assert!(matches!(
+            run(&fixture.pool, &fixture.locks, &task.id, local).await,
+            Err(SessionError::EnvironmentHasChanges)
+        ));
+        assert!(nested.exists());
     }
 
     async fn task_without_environment(
