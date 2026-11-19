@@ -160,12 +160,23 @@ mod platform {
         Ok(path)
     }
 
+    fn refused(path: &Path, error: std::io::Error) -> SafeFileError {
+        let folder = error.kind() == std::io::ErrorKind::PermissionDenied
+            && std::fs::symlink_metadata(path).is_ok_and(|metadata| metadata.is_dir());
+        if folder {
+            SafeFileError::NotAFile
+        } else {
+            SafeFileError::Io(error)
+        }
+    }
+
     pub fn open_source(root: &Path, relative: &str) -> Result<File, SafeFileError> {
         let path = walk(root, relative, false)?;
         let file = OpenOptions::new()
             .read(true)
             .custom_flags(FILE_FLAG_OPEN_REPARSE_POINT)
-            .open(path)?;
+            .open(&path)
+            .map_err(|error| refused(&path, error))?;
         let metadata = file.metadata()?;
         if metadata.file_type().is_symlink() {
             return Err(SafeFileError::SymbolicLink);

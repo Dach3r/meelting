@@ -10,6 +10,7 @@ pub mod provider_key;
 pub mod recipient;
 pub mod reduce_motion;
 pub mod repository;
+pub mod review;
 pub mod room;
 pub mod session;
 pub mod storage;

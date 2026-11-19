@@ -25,11 +25,13 @@ pub fn read(name: &str) -> Result<Option<String>, KeychainError> {
 }
 
 pub fn last_four(name: &str) -> Result<Option<String>, KeychainError> {
-    Ok(read(name)?.map(|secret| {
-        let chars: Vec<char> = secret.chars().collect();
-        let start = chars.len().saturating_sub(4);
-        chars[start..].iter().collect()
-    }))
+    Ok(read(name)?.map(|secret| tail(&secret)))
+}
+
+pub fn tail(secret: &str) -> String {
+    let chars: Vec<char> = secret.chars().collect();
+    let start = chars.len().saturating_sub(4);
+    chars[start..].iter().collect()
 }
 
 pub fn remove(name: &str) -> Result<(), KeychainError> {

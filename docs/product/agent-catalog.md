@@ -1,6 +1,6 @@
 # AI agent catalog
 
-> **Status:** Phase 2 complete. Already available: listing teams and agents, creating teams (name only), the catalog of 25 templates (embedded es/en YAML) with search and category filter, each template's detail, hiring with a step-by-step wizard, creating custom agents by choosing the model from `llm.yml` (cloud or on this computer, with search; in "On my computer" the user picks Ollama or LM Studio and the models responding on `localhost` are listed, detected when the step opens, with a warning and a "Detect again" button if the runtime is not running or has no models; the model name is never typed by hand) and an org chart shaped like a board ("You" → teams → agents on a dotted canvas, with cards, collapsing and expanding teams and agents, card selection with handles, free dragging of teams and agents with persisted positions (agents follow their team, cards do not leave the org chart area, lines are SVG and a "Rearrange" button restores the layout), a side panel with the selected agent's data (team, role, provider and model) or the selected team's (a team's panel lists its agents), with edit and delete with confirmation, and floating zoom). Pending: "Hire now with the template data" (requires a default provider and model from `llm.yml`), warning for a provider without a key, minimap, pinning, each agent's status and the initial "General" team. Behavior ported from the Rails product, where it was already implemented.
+> **Status:** Phase 2 complete. Already available: listing teams and agents, creating teams (name only), deleting empty teams (with confirmation, from the team panel), the catalog of 25 templates (embedded es/en YAML) with search and category filter, each template's detail, hiring with a step-by-step wizard, creating custom agents by choosing the model from `llm.yml` (cloud or on this computer, with search; in "On my computer" the user picks Ollama or LM Studio and the models responding on `localhost` are listed, detected when the step opens, with a warning and a "Detect again" button if the runtime is not running or has no models; the model name is never typed by hand) and an org chart shaped like a board ("You" → teams → agents on a dotted canvas, with cards, collapsing and expanding teams and agents, card selection with handles, free dragging of teams and agents with persisted positions (agents follow their team, cards do not leave the org chart area, lines are SVG and a "Rearrange" button restores the layout), a side panel with the selected agent's data (team, role, provider and model) or the selected team's (a team's panel lists its agents), with edit and delete with confirmation, and floating zoom). Pending: "Hire now with the template data" (requires a default provider and model from `llm.yml`), warning for a provider without a key, minimap, pinning, each agent's status and the initial "General" team. Behavior ported from the Rails product, where it was already implemented.
 
 **Problem:** the workspace starts empty; the user cannot build their team, which is the foundation of the virtual office.
 **Goal:** let the user hire agents from a template catalog, customize them and manage them as their workspace's persistent team. Each agent has its own AI provider and model and works when the user directs an instruction to it in a room ([agent-execution.md](agent-execution.md)).
@@ -58,7 +58,7 @@ Full detail in [../architecture/overview.md](../architecture/overview.md#data-mo
 
 **`agents`:** `id` (UUID v7), `workspace_id`, `team_id` (FK `ON DELETE RESTRICT`), `template_key` (NULL if custom), `name` (1–80), `role` (1–80), `description` (≤ 500), `instructions` (≤ 10 000), `provider` and `model` (non-empty), timestamps. `(team_id, workspace_id)` is a composite foreign key to `teams`.
 
-**`teams`:** `id`, `workspace_id`, `name` (1–80), timestamps.
+**`teams`:** `id`, `workspace_id`, `name` (1–80, lowercase slug with hyphens, e.g. "Main Website" → `main-website`; normalized in the form and again in the core), timestamps.
 
 **Validations:** mirrored in the database with `CHECK`; `provider` and `model` are validated against `llm.yml` on creation and when they change (done); an agent whose model left the catalog remains editable and its "Model" tab warns that another one must be chosen.
 
@@ -84,7 +84,7 @@ Localized content lives only in the YAML; interface text goes in the frontend i1
 | Command | Effect |
 |---|---|
 | `list_agent_templates`, `get_agent_template(key)` | Catalog in the active language |
-| `list_teams`, `create_team`, `update_team`, `delete_team` | Teams of the current workspace |
+| `list_teams`, `create_team`, `delete_team`, `update_team` | Teams of the current workspace |
 | `list_agents`, `get_agent`, `create_agent`, `update_agent`, `delete_agent` | Agents of the current workspace |
 | `save_canvas_positions(positions)` | Org chart: saves the offset of teams and agents (ignores unknown nodes) |
 | `reset_canvas_positions` | Org chart: deletes the saved positions and returns the teams in their automatic layout |

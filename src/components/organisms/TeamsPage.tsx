@@ -1,7 +1,7 @@
 import { LayoutDashboard, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
-import type { Agent, AgentDetail, AgentEdit, Team } from "../../hooks/useTeams";
+import type { AgentDetail, AgentEdit, Team } from "../../hooks/useTeams";
 import { Button } from "../atoms/Button";
 import { Alert } from "../molecules/Alert";
 import { Modal } from "../molecules/Modal";
@@ -19,6 +19,7 @@ type Props = {
   onHireAgent: (teamId: string) => void;
   onLoadAgent: (agentId: string) => Promise<AgentDetail | null>;
   onUpdateAgent: (agentId: string, edit: AgentEdit) => Promise<boolean>;
+  onDeleteTeam: (teamId: string) => Promise<boolean>;
   onDeleteAgent: (agentId: string) => Promise<boolean>;
   onMoveNode: (nodeId: string, x: number, y: number) => void;
   onResetPositions: () => Promise<boolean>;
@@ -34,6 +35,7 @@ export function TeamsPage({
   onHireAgent,
   onLoadAgent,
   onUpdateAgent,
+  onDeleteTeam,
   onDeleteAgent,
   onMoveNode,
   onResetPositions,
@@ -42,7 +44,11 @@ export function TeamsPage({
   const { t } = useI18n();
   const [creatingTeam, setCreatingTeam] = useState(false);
   const [editing, setEditing] = useState<AgentDetail | null>(null);
-  const [deleting, setDeleting] = useState<Agent | null>(null);
+  const [deleting, setDeleting] = useState<{
+    kind: "agent" | "team";
+    id: string;
+    name: string;
+  } | null>(null);
   const [zoom, setZoom] = useState(1);
 
   function openTeamForm() {
@@ -62,17 +68,28 @@ export function TeamsPage({
     if (agent) setEditing(agent);
   }
 
-  function askToDelete(agentId: string) {
+  function askToDeleteAgent(agentId: string) {
+    const agent = teams
+      .flatMap((team) => team.agents)
+      .find((candidate) => candidate.id === agentId);
+    if (!agent) return;
     onClearActionError();
-    setDeleting(
-      teams
-        .flatMap((team) => team.agents)
-        .find((agent) => agent.id === agentId) ?? null,
-    );
+    setDeleting({ kind: "agent", id: agent.id, name: agent.name });
   }
 
-  async function confirmDelete(agent: Agent) {
-    if (await onDeleteAgent(agent.id)) setDeleting(null);
+  function askToDeleteTeam(teamId: string) {
+    const team = teams.find((candidate) => candidate.id === teamId);
+    if (!team) return;
+    onClearActionError();
+    setDeleting({ kind: "team", id: team.id, name: team.name });
+  }
+
+  async function confirmDelete(target: NonNullable<typeof deleting>) {
+    const deleted =
+      target.kind === "agent"
+        ? await onDeleteAgent(target.id)
+        : await onDeleteTeam(target.id);
+    if (deleted) setDeleting(null);
   }
 
   if (errorMessage) {
@@ -113,7 +130,7 @@ export function TeamsPage({
       )}
       {deleting && (
         <Modal
-          title={t("teams.agent.deleteTitle").replace("{name}", deleting.name)}
+          title={t(`teams.${deleting.kind}.deleteTitle`).replace("{name}", deleting.name)}
           onClose={close}
           bare
           narrow
@@ -125,13 +142,13 @@ export function TeamsPage({
               </span>
               <div className="grid gap-1.5">
                 <h2 className="text-lg font-bold text-ink">
-                  {t("teams.agent.deleteTitle").replace(
+                  {t(`teams.${deleting.kind}.deleteTitle`).replace(
                     "{name}",
                     deleting.name,
                   )}
                 </h2>
                 <p className="text-sm text-muted">
-                  {t("teams.agent.deleteBody")}
+                  {t(`teams.${deleting.kind}.deleteBody`)}
                 </p>
               </div>
             </div>
@@ -152,7 +169,7 @@ export function TeamsPage({
                 disabled={busy}
                 onClick={() => confirmDelete(deleting)}
               >
-                {t("teams.agent.delete")}
+                {t(`teams.${deleting.kind}.delete`)}
               </Button>
             </div>
           </div>
@@ -166,7 +183,8 @@ export function TeamsPage({
           onNewAgent={onHireAgent}
           onEditAgent={editAgent}
           onLoadAgent={onLoadAgent}
-          onDeleteAgent={askToDelete}
+          onDeleteTeam={askToDeleteTeam}
+          onDeleteAgent={askToDeleteAgent}
           onMoveNode={onMoveNode}
         />
         {teams.length > 0 && (

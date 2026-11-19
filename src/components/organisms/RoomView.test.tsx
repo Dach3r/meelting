@@ -23,8 +23,20 @@ const room: Room = {
   updated_at: "2026-11-18T10:00:00.000Z",
   finished_at: null,
   agents: [
-    { id: "a1", name: "Ana", role: "QA Engineer" },
-    { id: "a2", name: "Bob", role: "Developer" },
+    {
+      id: "a1",
+      name: "Ana",
+      role: "QA Engineer",
+      provider: "ollama",
+      model: "llama3",
+    },
+    {
+      id: "a2",
+      name: "Bob",
+      role: "Developer",
+      provider: "ollama",
+      model: "llama3",
+    },
   ],
 };
 
@@ -186,6 +198,16 @@ afterEach(() => {
 });
 
 describe("asking an agent", () => {
+  it("shows each participant's provider and model on its tile", async () => {
+    core({ get_room: () => detail() });
+    await renderRoom();
+
+    const participants = screen.getByRole("region", { name: "Participants" });
+    expect(within(participants).getAllByText("Ollama · llama3")).toHaveLength(
+      2,
+    );
+  });
+
   it("sends an instruction to the chosen agent and shows that it is waiting", async () => {
     core({
       get_room: () => detail(),
@@ -764,7 +786,13 @@ describe("reading the conversation", () => {
           room: {
             ...room,
             agents: [
-              { id: "a1", name: "Tech Lead", role: "tech lead" },
+              {
+                id: "a1",
+                name: "Tech Lead",
+                role: "tech lead",
+                provider: "ollama",
+                model: "llama3",
+              },
               ...room.agents.slice(1),
             ],
           },
@@ -998,7 +1026,16 @@ describe("people joining and leaving", () => {
     core({
       get_room: () => detail(),
       add_room_agents: () => ({
-        agents: [...room.agents, { id: "a3", name: "Cleo", role: "Designer" }],
+        agents: [
+          ...room.agents,
+          {
+            id: "a3",
+            name: "Cleo",
+            role: "Designer",
+            provider: "ollama",
+            model: "llama3",
+          },
+        ],
         former_agents: [],
       }),
     });
@@ -1108,7 +1145,15 @@ describe("people joining and leaving", () => {
       get_room: () =>
         detail({
           room: { ...room, agents: [] },
-          former_agents: [{ id: "a1", name: "Ana", role: "QA Engineer" }],
+          former_agents: [
+            {
+              id: "a1",
+              name: "Ana",
+              role: "QA Engineer",
+              provider: "ollama",
+              model: "llama3",
+            },
+          ],
           messages: [message("m1", "Done", { agent_id: "a1" })],
         }),
     });

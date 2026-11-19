@@ -1,6 +1,6 @@
 # Project structure
 
-> **Status:** Phases 0–3 complete; Phase 4A (repositories, tasks with several agents, creation from rooms) and Phase 4B (Git environments) implemented (verified on macOS and Ubuntu; Windows verification pending, see [tasks.md §7.1](../product/tasks.md#71-verification-evidence)). Only the modules listed here as "✅" exist. Whatever is marked "pending" is the **planned** location; the folder is not created until there is code that uses it (no dead code).
+> **Status:** Phases 0–3 complete; Phase 4A (repositories, tasks with several agents, creation from rooms) and Phase 4B (Git environments) implemented (verified within the scope tested on macOS, Ubuntu and Windows, limits in [tasks.md §7.1](../product/tasks.md#71-verification-evidence)). Only the modules listed here as "✅" exist. Whatever is marked "pending" is the **planned** location; the folder is not created until there is code that uses it (no dead code).
 
 Layer rules and conventions: [overview.md](overview.md) §3 and §5.
 
@@ -55,6 +55,7 @@ src-tauri/src/
 │   ├── notification_change.rs ✅ saves one notification preference (run succeeded, run failed or sound)
 │   ├── run_notice.rs      ✅ builds the system notification of a finished run (agent name, localized text, sound) or nothing when the matching preference is off or the run was cancelled or expired
 │   ├── team_create.rs     ✅ creates a team and returns the updated list
+│   ├── team_delete.rs     ✅ deletes an empty team of the current workspace and returns the updated list; with agents it fails with team_has_agents
 │   ├── agent_create.rs    ✅ validates and creates an agent (custom or from a template) and returns the updated list
 │   ├── agent_get.rs       ✅ full detail of an agent in the current workspace
 │   ├── availability_check.rs ✅ availability of a room's agents: local based on the server and installed models (localhost), cloud based on the catalog, the keychain key and the last in-memory connection failure; no network calls to the cloud
@@ -82,7 +83,7 @@ src-tauri/src/
 │   ├── environments_list.rs ✅ active environments of the workspace (in the trash or not) with their task title and repository name, for the Files and Trash views
 │   ├── worktree_trash.rs ✅ moves `ready` environments into `.trash/` next to their folder with `git worktree move` (local files included) and back; records failures per task
 │   ├── worktree_purge.rs ✅ deletes trashed environments completely (`git worktree remove --force` and `git branch -D` of their `meelting/…` branch), on request or after 30 days in the trash
-│   ├── worktree_remove.rs ✅ removal check (identity, storage, `git status` with ignored files, operations in progress, commits only in the branch) and removal of a clean `ready` environment with `git worktree remove` without `--force`; the branch is always kept
+│   ├── worktree_remove.rs ✅ removal check (identity, storage, guarded `git status` with ignored files and gitlinks, operations in progress, commits only in the branch) and removal of a clean `ready` environment with `git worktree remove` without `--force`; the branch is always kept
 │   ├── worktrees_reconcile.rs ✅ startup recovery of `preparing`, `ready`, `missing` and `removing` rows, following an unrecorded move into or out of the trash; never deletes anything
 │   ├── repository_unregister.rs ✅ unregisters a repository no task references (`repository_in_use`); the folder is never touched
 │   ├── repository_branches_list.rs ✅ local branches of a registered repository and the suggested default (`origin/HEAD` if it exists locally, otherwise the current branch)
@@ -104,7 +105,8 @@ src-tauri/src/
 │   ├── llm_providers_list.rs ✅ catalog providers and models
 │   └── local_models_detect.rs ✅ queries the catalog's local providers and returns whether they are running and their models
 ├── system/                Layer 3: OS integration, no business rules
-│   ├── git.rs             ✅ git via tokio::process without a shell and without inherited `GIT_DIR`-style variables: read-only queries (bare, layout with `--path-format=absolute`, commits, submodules, local branches, symbolic refs), and the worktree operations (exact branch commit, branch existence, effective `filter` attributes with `check-attr --source`, filter drivers, `worktree add`, `worktree list`, `HEAD`, `status --porcelain=v2 -z --ignored=matching`, `--git-path`, commits ahead, tracked check with a `:(literal)` pathspec, `worktree remove` without `--force`, and for the trash `worktree move`, `worktree remove --force` and `branch -D`). Every call disables hooks (`core.hooksPath` to `/dev/null` or `NUL`) and fsmonitor, sets `GIT_TERMINAL_PROMPT=0` and `GIT_OPTIONAL_LOCKS=0`, drops inherited `GIT_*` location and config variables and, on Windows, enables long paths and hides the console. No other module spawns processes: the Phase 0 `run_in_worktree` spike (shell command in a PTY) was removed in 4B (D27)
+│   ├── git.rs             ✅ git via tokio::process without a shell and without inherited `GIT_DIR`-style variables: read-only queries (bare, layout with `--path-format=absolute`, commits, submodules, local branches, symbolic refs), and the worktree operations (exact branch commit, branch existence, effective `filter` attributes with `check-attr --source`, filter drivers, `worktree add`, `worktree list`, `HEAD`, tracked check with a `:(literal)` pathspec, `worktree remove` without `--force`, and for the trash `worktree move`, `worktree remove --force` and `branch -D`). Every call disables hooks (`core.hooksPath` to `/dev/null` or `NUL`) and fsmonitor, sets `GIT_TERMINAL_PROMPT=0` and `GIT_OPTIONAL_LOCKS=0`, drops inherited `GIT_*` location and config variables and, on Windows, enables long paths and hides the console. No other module spawns processes: the Phase 0 `run_in_worktree` spike (shell command in a PTY) was removed in 4B (D27)
+│   ├── git_guarded.rs     ✅ guarded Git queries inside a worktree (BR-17): explicit admin dir from the shared registry, controlled environment and configuration, pinned attributes, `info/attributes` and executable-filter checks, timeout and output limits, process group kill, configuration re-check; used by the removal check. Its review queries (`review_status`, `diff_numstat`, `diff_file` with literal pathspecs and the review limits) are 4C stage 2 and carry `#[allow(dead_code)]` until stage 3
 │   ├── llm_stream.rs      ✅ HTTP + SSE shared by the adapters: connection (marks unreachable if it could not connect), inactivity, HTTP errors by status and code, retry-after
 │   ├── anthropic_messages.rs ✅ Anthropic Messages API adapter
 │   ├── openai_responses.rs ✅ OpenAI Responses API adapter
@@ -147,6 +149,7 @@ src-tauri/src/
 │   ├── file_copy.rs       ✅ copy limits, problems, outcomes, preview and record types, portable relative paths without `.git` segments, and the secret name heuristic
 │   ├── storage.rs         ✅ storage issue, file system classification, the parsers of `mountinfo`, `diskutil` plists and Dropbox `info.json`, and path containment (pure; each platform parser is compiled only where it is used)
 │   ├── worktree.rs        ✅ worktree root (default `~/Meelting/worktrees`), Windows verbatim prefix removal, worktree status and error codes, names from the random end of the UUID v7, the trash folder next to each worktree and its 30-day period, the `git worktree list --porcelain -z` parser and the Git 2.40 check
+│   ├── review.rs          ✅ (4C stage 2, not used by a command yet) parsers that keep path bytes: `git status --porcelain=v2 -z` with staged and unstaged apart, renames, conflicts, untracked and ignored entries; `diff --numstat -z`; a single-file patch into hunks; entry, line and width limits and an explicit `complete` flag. It carries `#![allow(dead_code)]` until the review service of stage 3 uses it
 │   ├── repository.rs      ✅ registered repository, branches, name from the folder and default branch suggestion
 │   ├── task.rs            ✅ task, status machine, priority, draft validation (title 1–120, description up to 10,000, base branch only with a repository) and origin
 │   ├── room.rs            ✅ room, participant, message and their lists; body validation and agent deduplication

@@ -13,6 +13,8 @@ pub enum SessionError {
     WorkspaceNotFound,
     #[error("team_not_found")]
     TeamNotFound,
+    #[error("team_has_agents")]
+    TeamHasAgents,
     #[error("agent_not_found")]
     AgentNotFound,
     #[error("invalid_agent")]
@@ -107,6 +109,8 @@ pub enum SessionError {
     EnvironmentOperationInProgress,
     #[error("environment_remove_refused")]
     EnvironmentRemoveRefused,
+    #[error("environment_check_refused")]
+    EnvironmentCheckRefused,
     #[error("environment_in_trash")]
     EnvironmentInTrash,
     #[error("environment_not_in_trash")]

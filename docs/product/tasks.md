@@ -1,6 +1,6 @@
 # Tasks and worktrees (Phase 4)
 
-> **Status:** product decisions approved (D27–D48 in [decisions.md](decisions.md)). Phase 4A (repositories, tasks, agent assignment, creation from rooms) is built and verified. Phase 4B (Git environments) is **implemented** and verified on macOS and Ubuntu, but **not yet verified on Windows** (see [§7.1](#71-verification-evidence)). 4C (review, drift warnings and E2E) is approved in scope but not started. Platforms: macOS, Windows and Linux.
+> **Status:** product decisions approved (D27–D48 in [decisions.md](decisions.md)). Phase 4A (repositories, tasks, agent assignment, creation from rooms) is built and verified. Phase 4B (Git environments) is **implemented and verified within the scope tested** on macOS, Ubuntu and Windows (Rust tests), with limits recorded in [§7.1](#71-verification-evidence): no E2E, no real-storage check on runners, no real process-kill test, and a pipeline that is not fully green. 4C (review, drift warnings and E2E) is approved in scope but not started. Platforms: macOS, Windows and Linux.
 >
 > In this document ✅ means *implemented*. What has been *verified*, and on which platform, is recorded only in §7.1.
 
@@ -189,6 +189,8 @@ Intended behavior: if the base branch moves, the environment is not updated and 
 
 Working branch, base branch and commit, Git status, files added/modified/deleted, commits since the base commit, staged and unstaged changes, untracked files and ignored files relevant for preservation, and a read-only textual diff with size and rendering limits. Binary files are shown as metadata.
 
+**Stage 2 (infrastructure, no command yet):** the review reads the worktree only through the guarded executor (BR-17), so `.gitattributes` changes made after the base commit are not reflected, a worktree whose base-commit attributes use an executable filter is refused, and every list or patch carries an explicit `complete` flag: a cut or malformed Git output is never shown as complete. The review status uses `--untracked-files=normal` (an untracked folder is one entry that can be expanded later); the removal check keeps `--untracked-files=all`.
+
 ### BR-09. Completing a task (4A ✅)
 
 Completing sets `completed` and `completed_at`. It never commits, merges, pushes, deletes branches or worktrees, finishes rooms or starts agents. Tasks without a repository can be completed. Reopening is explicit and leaves any worktree untouched.
@@ -201,9 +203,11 @@ Removal is manual and only applies to a `ready` environment. «Remove environmen
 
 1. The repository still holds the registered repository (`repository_moved` otherwise) and the repository, its `git_common_dir` and the worktree folder are on fixed local storage.
 2. **Identity:** the folder exists, `git worktree list --porcelain -z` of the repository registers it on the expected branch, its top level is the folder, its `git_common_dir` is the repository's, and `HEAD` points at the branch `meelting/…` that Meelting created. Any difference keeps the environment (`environment_identity_mismatch`). `HEAD` itself may have moved with commits; that is allowed.
-3. **Local data:** `git status --porcelain=v2 -z --untracked-files=all --ignored=matching` in the worktree. Any entry blocks removal: modified or staged tracked files, conflicts, untracked files and **ignored files** (for example a copied `.env` or a build folder). This step is required because `git worktree remove` without `--force` still deletes ignored files.
+3. **Local data:** `git status --porcelain=v2 -z --untracked-files=all --ignored=matching --ignore-submodules=all` in the worktree, run through the guarded executor (BR-17), plus every gitlink in the index (`git ls-files --stage`), which counts as a tracked change. Any entry blocks removal: modified or staged tracked files, conflicts, untracked files and **ignored files** (for example a copied `.env` or a build folder). This step is required because `git worktree remove` without `--force` still deletes ignored files.
 4. **Git operations in progress:** `MERGE_HEAD`, `rebase-merge`, `rebase-apply`, `CHERRY_PICK_HEAD`, `REVERT_HEAD`, `BISECT_LOG` or `index.lock`, resolved with `git rev-parse --git-path` inside the worktree.
 5. **Commits only in the branch:** `git rev-list --count <base commit>..refs/heads/<branch>`. They are not uncommitted changes and do not block removal.
+
+If the guarded executor cannot complete the check (a filter applies, `info/attributes` has rules, Git is older than 2.40, a timeout, output beyond the limit or a configuration that changed during the check), nothing is removed and the error is `environment_check_refused`. An incomplete check is never treated as clean.
 
 If step 3 or 4 finds anything, the UI lists every file with its kind (modified, conflict, not tracked, ignored) or the operation in progress, explains that the files would be lost, and keeps the environment. Meelting never deletes those files for the user (D44).
 
@@ -250,7 +254,7 @@ A `ready` environment whose `HEAD` moved or whose branch was switched stays `rea
 ### BR-15. Isolation and security (4B ✅)
 
 - **No shell from the webview:** the Phase 0 `run_in_worktree` spike was removed. No command takes a command line or an arbitrary path; folders and files are chosen with native dialogs opened from Rust, and every worktree command takes only a task id (plus a selection id for copies).
-- **Git:** always a child process with structured arguments and no shell; hooks disabled (`core.hooksPath` to `/dev/null` or `NUL`), fsmonitor disabled, `GIT_TERMINAL_PROMPT=0`, `GIT_OPTIONAL_LOCKS=0`, inherited `GIT_DIR`-style and config variables removed, references always fully qualified after `--end-of-options`, pathspecs `:(literal)`, long paths on Windows. Repositories with executable checkout filters or submodules are rejected.
+- **Git:** always a child process with structured arguments and no shell; queries inside a worktree follow BR-17; hooks disabled (`core.hooksPath` to `/dev/null` or `NUL`), fsmonitor disabled, `GIT_TERMINAL_PROMPT=0`, `GIT_OPTIONAL_LOCKS=0`, inherited `GIT_DIR`-style and config variables removed, references always fully qualified after `--end-of-options`, pathspecs `:(literal)`, long paths on Windows. Repositories with executable checkout filters or submodules are rejected.
 - **Paths:** compared after canonicalization (with the Windows verbatim prefix removed for drive paths), worktree folders never created through symbolic links, identity always checked with Git rather than trusted from the stored path, file copies opened through handles that refuse symbolic links (BR-06).
 - **Storage:** fixed local storage only (BR-12).
 - **Not a sandbox:** a worktree shares the repository's object store and configuration. No project script, dependency or tool runs in Phase 4.
@@ -263,6 +267,20 @@ A `ready` environment whose `HEAD` moved or whose branch was switched stays `rea
 **Trash** (rail, above «Collapse») lists the trashed environments with the days left. Both views are a list with a details panel: the list shows task, repository and status per row, and the panel shows the focused environment (the first one by default) with its repository, branch, base and folder, and its own actions (move to trash in Files; restore or delete permanently in Trash). **Restore** moves the folder back to its original path (`worktree_path_conflict` if something is there). **Delete permanently** and **Empty trash** ask for confirmation and then run `git worktree remove --force` and `git branch -D` of the `meelting/…` branch: uncommitted changes, local files and commits only in that branch are lost. The same deletion runs on its own 30 days after `trashed_at`, at startup and every hour while the app is open, in every workspace. A `failed` or `missing` trashed environment is only marked `removed` once it is gone. Batch actions go on after a failure and report each failed task with its error code.
 
 Recovery (BR-14) follows a move that Git did but SQLite did not record: a `ready` or `missing` row that is not intact where it is stored but is intact on the other side of the trash is updated to its real location.
+
+### BR-17. Guarded Git queries inside a worktree (hardening of 4B, base of 4C)
+
+Reading a worktree with Git can run programs chosen by configuration: clean and process filters (during `status` and `diff`), `textconv` and external diff drivers, `core.fsmonitor`, hooks, and whatever a rewritten `.git` file of the worktree points to. Behavior was measured in an isolated spike (Git 2.54 on macOS, repositories in temporary folders, probe programs that only write marker files); Linux and Windows are covered only by the Rust tests that run in CI. Every query inside a managed worktree goes through `system/git_guarded.rs`:
+
+- **Identity (P1):** Git runs with `--git-dir=<admin dir>` and `--work-tree=<folder>` taken from `<git_common_dir>/worktrees/*/gitdir` (real folders only, exactly one match), never from the `.git` file of the worktree. The usual identity checks (BR-10 step 2) still apply.
+- **Controlled process (P2):** every inherited `GIT_*` variable is dropped (any letter case); system and global configuration are ignored; hooks (`core.hooksPath` to the null device), `core.fsmonitor` and `diff.autoRefreshIndex` are disabled; `GIT_OPTIONAL_LOCKS=0`; submodules are ignored; callers of `diff` and `log -p` add `--no-ext-diff --no-textconv`. A timeout and a limit on the bytes read apply to every call; going over either kills the process (the whole process group on Unix) and the result is an error or an explicit partial result, never a complete one. Standard error is drained and never stored.
+- **Pinned attributes (P3):** `--attr-source=<base_commit_sha>` and no global attributes file, so attribute changes made in the worktree (including nested `.gitattributes`) never select a filter. A `.gitattributes` change committed after the base commit is not reflected in these results. It needs Git 2.40 or later; with an older Git the query is refused (`git_too_old`).
+- **`info/attributes` (P4):** it lives in the shared Git directory and is read even with a pinned source, so the query is refused unless the file is absent or only contains blank and comment lines. A symbolic link, a folder, an unreadable file or more than 64 KiB is refused.
+- **Executable filters (P5):** the `filter.*.{clean,smudge,process}` definitions visible to the query (repository, worktree and included files) are listed; only when one of them is used by the base commit's attributes is the query refused. Definitions that are not used do not block anything.
+- **Concurrent changes (P6):** the repository and worktree configuration files and `info/attributes` are compared after each call, and the filter definitions again at the end. A difference discards the result (`ConfigChanged`). This detects a change; it cannot undo a program that already ran. A privileged writer that changes the configuration between the check and the call is a residual risk, as are any Git settings that the tests do not cover.
+- **Conversions (P7):** `core.autocrlf` (`true`, `false`, `input`) and `core.eol` (`lf`, `crlf`, `native`) are read from the effective configuration and passed with `-c` only when they match that list.
+
+Residual risks: on Windows a killed `git.exe` does not end its descendants, although the controlled process starts none; Git for Windows and Linux behavior is checked by the tests in CI, not assumed.
 
 ### Deletion rules (D30–D33)
 
@@ -327,38 +345,47 @@ File and Git operations are tested with real temporary repositories, including u
 
 Implemented (✅ above) is not the same as verified. Evidence is dated and tied to a commit.
 
-**Rust tests of 4B.** Last CI run of the repository, on `a55329d` (2026-11-19):
+**Phase 4B is verified within the scope tested below.** The scope is the Rust tests of 4B on macOS, Ubuntu and Windows plus the frontend checks. It does not cover the points listed under *Not verified*.
+
+**Rust tests.** CI run `44577671082` (2026-11-19, manual dispatch on branch `fix/4b-windows-verification`, commit `76cb3a3`):
 
 | Platform | Result | 4B tests |
 |---|---|---|
 | macOS | 504 passed, 0 failed, 4 ignored | all pass |
 | Ubuntu | 504 passed, 0 failed, 4 ignored | all pass |
-| Windows | 496 passed, **5 failed**, 4 ignored | **3 fail** (below) |
+| Windows | 499 passed, **2 failed**, 4 ignored | all pass; the 2 failures are outside 4B (below) |
 
-The same three 4B tests fail on Windows in the earlier runs on `4e3401b` and `3d56dbd`.
+Lint passes (`pnpm build`, frontend tests with 12 files and 200 tests, `cargo fmt --check` and `cargo clippy --all-targets -- -D warnings`). Bundles for Ubuntu and Windows pass; the macOS bundle fails (below).
 
-| Windows failure (4B) | Diagnosis |
-|---|---|
-| `worktree_prepare::tests::interrupted_preparations_are_recovered_or_marked_failed_without_deleting` | The fixture root was not stripped of the `\\?\` prefix that `canonicalize` adds on Windows, and Git rejects it: `could not create leading directories of '//?/C:/…'` |
-| `worktree_prepare::tests::prepares_a_worktree_from_the_exact_commit_without_touching_the_repository` | Same fixture root: `worktree.path` is stripped by the implementation and the fixture is not, so `starts_with` fails. The assertions before it passed; the later ones (`HEAD`, original repository untouched) did not run |
-| `system::safe_file::tests::opens_regular_files_below_the_root` | Opening a folder on Windows fails with access denied and surfaces as an I/O error instead of «not a regular file». The outcome of a copy is the same (the file is refused) |
+**Windows failures of 4B that are now fixed.** On the previous run (`a55329d`: 496 passed, 5 failed) three 4B tests failed. Commit `76cb3a3` fixes them and they pass in run `44577671082`, together with the other worktree, trash, purge, removal, recovery and file-copy tests on Windows:
 
-Windows preparation and recovery therefore have **no passing evidence yet**. These failures are open until a CI run on Windows passes them.
+| Test | Cause | Fix |
+|---|---|---|
+| `worktree_prepare::tests::interrupted_preparations_are_recovered_or_marked_failed_without_deleting` | The test fixture root kept the `\\?\` prefix that `canonicalize` adds on Windows, and Git rejects it | The fixture root removes the prefix like the implementation does |
+| `worktree_prepare::tests::prepares_a_worktree_from_the_exact_commit_without_touching_the_repository` | Same fixture root: `worktree.path` is stripped by the implementation, the fixture was not | Same fixture change; the later assertions now run and pass |
+| `system::safe_file::tests::opens_regular_files_below_the_root` | Opening a folder on Windows fails with access denied and surfaced as an I/O error | `safe_file` classifies a folder refused by the OS as «not a regular file». It runs only after the open was refused, so the checks on the opened handle are unchanged |
 
-**Other failures, outside 4B and not addressed here:**
+**Failures outside 4B, still open and not addressed here:**
 
-- Windows and (once, on `4e3401b`) macOS: `intervention_send::tests::failed_or_cancelled_replies_do_not_change_the_proposal` (`ProviderAuthFailed` instead of `Cancelled`).
+- Windows (and once, on `4e3401b`, macOS): `intervention_send::tests::failed_or_cancelled_replies_do_not_change_the_proposal` (`ProviderAuthFailed` instead of `Cancelled`).
 - Windows: `llm_stream::tests::a_refused_connection_is_an_unreachable_provider` (`Timeout` instead of `ProviderUnavailable`).
-- Bundle (macOS): `failed to run actool … Icon.icon`. Bundles for Ubuntu and Windows pass.
+- Bundle (macOS): `failed to run actool … Icon.icon`.
 
-**Frontend.** `pnpm test` and `pnpm build` ran locally with an x64 Node 26.3.0 matching the installed native bindings (the default Node on that machine is arm64 and cannot load them): 12 files and 200 tests passed, the build passed. One earlier run of the same suite failed `RoomsPage.test.tsx` once (`scrolls to the new message…`), so that test is flaky. CI uses Node 22: the local and CI Node versions differ and the environments are not claimed to be equivalent. CI runs the frontend checks on Ubuntu only.
+The pipeline as a whole is therefore **not green**: the Windows test job and the macOS bundle still fail.
 
-**Not verified at all:** Linux and Windows end-to-end flows (no E2E harness exists), the real fixed-storage check (BR-12) on CI runners (the Rust tests inject a permissive checker), and interrupted operations on a real process kill (only simulated).
+**Frontend.** CI (Node 22, Ubuntu): 12 files and 200 tests pass and the build passes. Locally the same commands ran with an x64 Node 26.3.0 matching the installed native bindings (the default Node on that machine is arm64 and cannot load them) with the same results; the versions differ, so the environments are not claimed to be equivalent. `RoomsPage.test.tsx` (`scrolls to the new message…`) failed once in one local run, so it is flaky. CI runs the frontend checks on Ubuntu only.
+
+**Not verified:**
+
+- End-to-end flows on Linux and Windows (no E2E harness exists) and the macOS manual checklist (AC29).
+- The real fixed-storage check (BR-12) on CI runners: the Rust tests inject a permissive checker.
+- Interrupted operations on a real process kill: recovery is only simulated.
+- Base branch drift (BR-07, AC14) and every 4C capability, which are not built.
 
 ## 8. Delivery
 
 - **4A — Domain, repositories and tasks:** migrations `repositories`, `tasks`, `task_agents`; repository registration; task CRUD with statuses, priorities and several agents; creation from rooms; tests.
-- **4B — Git environments ✅ (implemented; Windows verification pending, §7.1):** root setting, storage checks, preparation, base commit, file copies, technical states, concurrency, recovery, safe removal. Step 1 removed the Phase 0 `run_in_worktree` spike (arbitrary shell command in a PTY), `terminal.rs` and `portable-pty` (D27).
+- **4B — Git environments ✅ (implemented; verified within the scope tested, §7.1):** root setting, storage checks, preparation, base commit, file copies, technical states, concurrency, recovery, safe removal. Step 1 removed the Phase 0 `run_in_worktree` spike (arbitrary shell command in a PTY), `terminal.rs` and `portable-pty` (D27).
 - **4C — Review and interface:** environment detail, Git status, read-only diff, drift warnings (BR-07, AC14), error and recovery screens, E2E on Linux and Windows.
 
 ## 9. Out of scope

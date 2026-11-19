@@ -40,6 +40,19 @@ pub async fn exists<'e>(
         .await
 }
 
+pub async fn delete<'e>(
+    executor: impl SqliteExecutor<'e>,
+    workspace_id: &str,
+    id: &str,
+) -> Result<bool, sqlx::Error> {
+    let result = sqlx::query("DELETE FROM teams WHERE id = ? AND workspace_id = ?")
+        .bind(id)
+        .bind(workspace_id)
+        .execute(executor)
+        .await?;
+    Ok(result.rows_affected() > 0)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -124,6 +124,7 @@ export function useTeams(workspaceId: string | null) {
   };
 
   const createTeam = (name: string) => run("create_team", { name });
+  const deleteTeam = (teamId: string) => run("delete_team", { teamId });
   const createAgent = (draft: AgentDraft) => run("create_agent", { draft });
   const updateAgent = (agentId: string, edit: AgentEdit) =>
     run("update_agent", { agentId, edit });
@@ -145,6 +146,7 @@ export function useTeams(workspaceId: string | null) {
     actionErrorKey,
     busy,
     createTeam,
+    deleteTeam,
     createAgent,
     updateAgent,
     deleteAgent,

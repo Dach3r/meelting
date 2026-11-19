@@ -87,5 +87,6 @@ export function useProviderKeys() {
       attempt(provider, "save_provider_key", { key }),
     check: (provider: string) => attempt(provider, "check_provider_key", {}),
     remove,
+    retry: reload,
   };
 }

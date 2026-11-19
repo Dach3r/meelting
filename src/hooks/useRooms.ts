@@ -1,7 +1,13 @@
 import { invoke } from "@tauri-apps/api/core";
 import { useCallback, useEffect, useState } from "react";
 
-export type Participant = { id: string; name: string; role: string };
+export type Participant = {
+  id: string;
+  name: string;
+  role: string;
+  provider: string;
+  model: string;
+};
 
 export type Room = {
   id: string;

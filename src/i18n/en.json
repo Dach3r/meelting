@@ -10,6 +10,7 @@
     "unknown": "Something went wrong. Try again.",
     "agent_not_found": "That agent no longer exists.",
     "team_not_found": "That team no longer exists.",
+    "team_has_agents": "This team still has agents. Move or delete them first.",
     "invalid_agent": "Check the fields: name and role up to 80 characters, description up to 500, instructions up to 10,000, and the model must be one from the list.",
     "room_not_found": "That room no longer exists.",
     "invalid_message": "Write a message of up to 4,000 characters.",
@@ -56,6 +57,7 @@
     "environment_has_changes": "The environment has files that would be lost, so it was kept.",
     "environment_operation_in_progress": "A Git operation is in progress in the environment, so it was kept.",
     "environment_remove_refused": "Git refused to remove the environment, so it was kept.",
+    "environment_check_refused": "The environment could not be checked completely and safely, so it was kept. Nothing was changed.",
     "copy_too_large": "The selected files add up to more than 50 MiB. Pick fewer files.",
     "copy_selection_expired": "That selection is no longer valid. Pick the files again.",
     "secrets_not_confirmed": "Confirm that you want to copy files that may hold secrets.",
@@ -94,6 +96,11 @@
       "in": "Zoom in",
       "out": "Zoom out",
       "reset": "Reset zoom"
+    },
+    "team": {
+      "delete": "Delete team",
+      "deleteTitle": "Delete {name}?",
+      "deleteBody": "The empty team will be removed from your office and can't be brought back."
     },
     "agent": {
       "team": "Team",
@@ -354,6 +361,7 @@
       "check": "Check connection",
       "checking": "Checking…",
       "delete": "Delete",
+      "retryKeychain": "Retry keychain access",
       "cancel": "Cancel",
       "save": "Verify and save",
       "verifying": "Verifying…"

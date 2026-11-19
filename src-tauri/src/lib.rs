@@ -71,6 +71,7 @@ pub fn run() {
             commands::session::switch_workspace,
             commands::session::list_teams,
             commands::session::create_team,
+            commands::session::delete_team,
             commands::session::create_agent,
             commands::session::get_agent,
             commands::session::update_agent,

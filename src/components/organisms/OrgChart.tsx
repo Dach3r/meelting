@@ -64,6 +64,7 @@ type Props = {
   onNewTeam: () => void;
   onNewAgent: (teamId: string) => void;
   onEditAgent: (agentId: string) => void;
+  onDeleteTeam: (teamId: string) => void;
   onDeleteAgent: (agentId: string) => void;
   onLoadAgent: (agentId: string) => Promise<AgentDetail | null>;
   onMoveNode: (nodeId: string, x: number, y: number) => void;
@@ -75,6 +76,7 @@ export function OrgChart({
   onNewTeam,
   onNewAgent,
   onEditAgent,
+  onDeleteTeam,
   onDeleteAgent,
   onLoadAgent,
   onMoveNode,
@@ -346,14 +348,27 @@ export function OrgChart({
             },
           ]}
           actions={
-            <Button
-              type="button"
-              size="pill"
-              onClick={() => onNewAgent(drawerTeam.id)}
-            >
-              <UserPlus aria-hidden className="size-4" />
-              {t("teams.hireAgent")}
-            </Button>
+            <>
+              <Button
+                type="button"
+                size="pill"
+                onClick={() => onNewAgent(drawerTeam.id)}
+              >
+                <UserPlus aria-hidden className="size-4" />
+                {t("teams.hireAgent")}
+              </Button>
+              {drawerTeam.agents.length === 0 && (
+                <Button
+                  type="button"
+                  variant="danger"
+                  size="pill"
+                  onClick={() => onDeleteTeam(drawerTeam.id)}
+                >
+                  <Trash2 aria-hidden className="size-4" />
+                  {t("teams.team.delete")}
+                </Button>
+              )}
+            </>
           }
           onClose={() => setSelectedId(null)}
         >

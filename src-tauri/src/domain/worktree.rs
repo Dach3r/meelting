@@ -269,6 +269,39 @@ pub fn parse_worktree_list(porcelain: &str) -> Vec<RegisteredWorktree> {
     entries
 }
 
+pub const INFO_ATTRIBUTES_MAX_BYTES: usize = 64 * 1024;
+
+pub fn info_attributes_allowed(content: &[u8]) -> bool {
+    content.len() <= INFO_ATTRIBUTES_MAX_BYTES
+        && content
+            .split(|byte| *byte == b'\n')
+            .all(|line| matches!(line.trim_ascii().first(), None | Some(b'#')))
+}
+
+pub fn parse_executable_filters(config_null: &[u8]) -> std::collections::BTreeSet<String> {
+    String::from_utf8_lossy(config_null)
+        .split('\0')
+        .filter_map(|record| record.split_once('\n'))
+        .filter(|(_, value)| !value.trim().is_empty())
+        .filter_map(|(key, _)| {
+            let name = key.strip_prefix("filter.")?;
+            ["clean", "smudge", "process"]
+                .iter()
+                .find_map(|kind| name.strip_suffix(&format!(".{kind}")))
+                .map(String::from)
+        })
+        .collect()
+}
+
+pub fn parse_gitlinks(stage_listing: &[u8]) -> Vec<String> {
+    String::from_utf8_lossy(stage_listing)
+        .split('\0')
+        .filter_map(|record| record.split_once('\t'))
+        .filter(|(info, _)| info.starts_with("160000 "))
+        .map(|(_, path)| path.to_string())
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -425,5 +458,35 @@ mod tests {
             ]
         );
         assert!(parse_status(b"").is_empty());
+    }
+    #[test]
+    fn info_attributes_must_be_empty_or_only_comments() {
+        assert!(info_attributes_allowed(b""));
+        assert!(info_attributes_allowed(b"# note\n\n   \n\t# other\r\n"));
+        assert!(!info_attributes_allowed(b"*.txt filter=lfs\n"));
+        assert!(!info_attributes_allowed(b"# note\n* text=auto\n"));
+        assert!(!info_attributes_allowed(&vec![
+            b'#';
+            INFO_ATTRIBUTES_MAX_BYTES + 1
+        ]));
+    }
+
+    #[test]
+    fn reads_the_filters_that_have_an_executable_driver() {
+        let config = b"filter.lfs.clean\ngit-lfs clean -- %f\0filter.lfs.required\ntrue\0\
+            filter.a.b.process\nrun\0filter.empty.smudge\n  \0filter.x.smudge\ncat\0diff.t.textconv\nx";
+
+        let names: Vec<String> = parse_executable_filters(config).into_iter().collect();
+
+        assert_eq!(names, ["a.b", "lfs", "x"]);
+        assert!(parse_executable_filters(b"").is_empty());
+    }
+
+    #[test]
+    fn finds_gitlinks_in_the_staged_listing_even_with_odd_names() {
+        let listing = b"100644 aaaa 0\tREADME.md\x00160000 bbbb 0\tnested repo\xc3\xb1\0\
+            100644 cccc 0\t160000 fake\x00160000 dddd 0\tsub/dir\0";
+
+        assert_eq!(parse_gitlinks(listing), ["nested repoñ", "sub/dir"]);
     }
 }
