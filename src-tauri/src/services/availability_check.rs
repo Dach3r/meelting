@@ -1,5 +1,6 @@
 use crate::catalogs::llm::{Location, Provider};
 use crate::domain::agent_run::ErrorKind;
+use crate::domain::provider_key;
 use crate::repositories::{agents, room_agents, rooms};
 use crate::services::agent_run_engine::Engine;
 use crate::services::session_load::{self, SessionError};
@@ -114,7 +115,7 @@ fn cloud(
     if !provider.models.iter().any(|entry| entry.key == model) {
         return (Availability::Unavailable, Some(ErrorKind::ModelUnavailable));
     }
-    let has_key = keychain::read(&format!("{workspace_id}/{}", provider.key))
+    let has_key = keychain::read(&provider_key::secret_name(workspace_id, &provider.key))
         .ok()
         .flatten()
         .is_some();

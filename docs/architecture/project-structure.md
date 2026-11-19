@@ -80,6 +80,7 @@ src-tauri/src/
 │   ├── anthropic_messages.rs ✅ Anthropic Messages API adapter
 │   ├── openai_responses.rs ✅ OpenAI Responses API adapter
 │   ├── chat_completions.rs ✅ Chat Completions adapter (Groq, Ollama, LM Studio)
+│   ├── llm_call.rs        ✅ picks the adapter for the catalog provider's protocol and streams the request; shared by the engine and key verification
 │   ├── local_models.rs    ✅ lists the models of a local provider (GET /models)
 │   └── keychain.rs        ✅ OS keychain (crate keyring)
 ├── repositories/          SQLite access (sqlx); migrations live in src-tauri/migrations
@@ -98,6 +99,7 @@ src-tauri/src/
 │   ├── recipient.rs       ✅ recipient resolution: selection (automatic, nobody, agent, confirmed), @ mentions by name or role ignoring case and accents, leading vocative, ambiguity, multiple agents and conflict
 │   ├── prompt.rs          ✅ BuildPrompt: instructions, framing, labeled history (author and, in the user's questions, the agent they were addressed to) and budget; context_too_large if the minimum does not fit
 │   ├── provider_error.rs  ✅ normalization of provider errors by HTTP status and code
+│   ├── provider_key.rs    ✅ keychain name of a provider key (`<workspace_id>/<provider>`)
 │   ├── local_provider.rs  ✅ detected local provider (key, running, models)
 │   ├── locale.rs          ✅ es/en language
 │   ├── theme.rs           ✅ system/light/dark theme
@@ -135,7 +137,7 @@ src-tauri/src/
 - **Services without Tauri:** they receive `impl Fn` for output and completion, so they are tested without a window or `AppHandle`.
 - **Events to the UI:** emitted by the commands layer. Current names: `terminal-output` (text), `terminal-exit` (exit code), `message:created` (full message with its `room_id`, after the commit), `agent_run:status` (the full run, after the commit of each transition) and `agent_run:token` (`run_id`, `room_id`, `attempt`, `seq`, `text`). The execution engine receives a *callback* (`Emit`) that `commands/agent_runs.rs` translates into Tauri events, so services still know nothing about Tauri.
 - **Keys:** only the run task reads them from the keychain (`<workspace_id>/<provider>`) right before each attempt; they never travel to the UI, events or errors. Provider errors are reduced to an `error_kind`; their text never leaves the adapter.
-- **Providers without names in the code:** the adapter is chosen with a `match` on the catalog's `protocol` and receives `base_url`, `model` and the output cap; no model is named in production code.
+- **Providers without names in the code:** the adapter is chosen with a `match` on the catalog's `protocol` (`system/llm_call.rs`) and receives `base_url`, `model` and the output cap; no model is named in production code.
 - **Tests next to the code** (`#[cfg(test)] mod tests`), with real temporary git repositories (`tempfile`) and no external APIs.
 - File names in `snake_case`; a service is named after the action (`worktree_run`), not the resource.
 

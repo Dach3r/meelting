@@ -1,13 +1,14 @@
-use crate::catalogs::llm::{Location, Protocol, Provider};
+use crate::catalogs::llm::{Location, Provider};
 use crate::domain::agent_run::{
     AgentRun, ErrorKind, LocationLimits, NextStep, TOKEN_FLUSH, after_failure,
 };
 use crate::domain::locale::Locale;
 use crate::domain::prompt::{self, Author, Budget, HistoryMessage, Prompt, PromptInput};
+use crate::domain::provider_key;
 use crate::repositories::{agent_runs, agents, messages, profile, room_agents, rooms};
 use crate::services::agent_run_engine::{Engine, RunEvent};
 use crate::system::llm_stream::{Failure, StreamRequest, Usage};
-use crate::system::{anthropic_messages, chat_completions, keychain, openai_responses};
+use crate::system::{keychain, llm_call};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::time::{Instant, MissedTickBehavior};
@@ -158,20 +159,7 @@ async fn attempt(
             .push(&run.id, text, max_bytes)
             .map_err(|_| Failure::from(ErrorKind::OutputTruncated))
     };
-    let protocol = target.provider.protocol;
-    let output_tokens_param = target
-        .provider
-        .output_tokens_param
-        .map_or("max_tokens", |param| param.as_str());
-    let call = async {
-        match protocol {
-            Protocol::AnthropicMessages => anthropic_messages::stream(&request, &mut on_text).await,
-            Protocol::OpenaiResponses => openai_responses::stream(&request, &mut on_text).await,
-            Protocol::ChatCompletions => {
-                chat_completions::stream(&request, output_tokens_param, &mut on_text).await
-            }
-        }
-    };
+    let call = llm_call::stream(target.provider, &request, &mut on_text);
     tokio::pin!(call);
     let mut ticker = tokio::time::interval(TOKEN_FLUSH);
     ticker.set_missed_tick_behavior(MissedTickBehavior::Delay);
@@ -307,7 +295,7 @@ async fn load_context(
 
 async fn read_key(pool: &sqlx::SqlitePool, run: &AgentRun) -> Option<String> {
     let workspace_id = rooms::workspace_id(pool, &run.room_id).await.ok()??;
-    keychain::read(&format!("{workspace_id}/{}", run.provider))
+    keychain::read(&provider_key::secret_name(&workspace_id, &run.provider))
         .ok()
         .flatten()
 }

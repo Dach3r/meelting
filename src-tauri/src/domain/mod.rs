@@ -4,6 +4,7 @@ pub mod locale;
 pub mod profile;
 pub mod prompt;
 pub mod provider_error;
+pub mod provider_key;
 pub mod recipient;
 pub mod room;
 pub mod session;
