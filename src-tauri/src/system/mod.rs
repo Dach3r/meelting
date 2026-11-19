@@ -1,5 +1,6 @@
 pub mod anthropic_messages;
 pub mod chat_completions;
+pub mod child_limit;
 pub mod git;
 pub mod git_guarded;
 pub mod keychain;

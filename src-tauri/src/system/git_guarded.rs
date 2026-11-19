@@ -4,6 +4,7 @@ use crate::domain::worktree::{
     git_supports_attribute_source, has_config_includes, info_attributes_allowed,
     parse_executable_filters, parse_gitlinks,
 };
+use crate::system::child_limit;
 use crate::system::git::{self, GitError};
 use std::collections::BTreeSet;
 use std::ffi::{OsStr, OsString};
@@ -30,6 +31,8 @@ pub enum GuardError {
     ConfigIncludes,
     #[error("the git configuration changed during the query")]
     ConfigChanged,
+    #[error("git tried to run a program")]
+    FilterBlocked,
     #[error("git timed out")]
     TimedOut,
     #[error("git output too large")]
@@ -102,6 +105,15 @@ fn command(isolated: bool) -> Command {
     command
 }
 
+const DIAGNOSTICS_BYTES: u64 = 8 * 1024;
+
+fn tried_to_run_a_program(diagnostics: &[u8]) -> bool {
+    let text = String::from_utf8_lossy(diagnostics);
+    ["external filter", "cannot fork", "cannot spawn"]
+        .iter()
+        .any(|marker| text.contains(marker))
+}
+
 async fn terminate(child: &mut Child) {
     #[cfg(unix)]
     if let Some(pid) = child.id() {
@@ -112,7 +124,39 @@ async fn terminate(child: &mut Child) {
     let _ = child.kill().await;
 }
 
-async fn execute(mut command: Command, limits: Limits) -> Result<Output, GuardError> {
+async fn execute(command: Command, limits: Limits) -> Result<Output, GuardError> {
+    #[cfg(windows)]
+    let active_processes = windows_active_processes().await?;
+    run(
+        command,
+        limits,
+        #[cfg(windows)]
+        active_processes,
+    )
+    .await
+}
+
+#[cfg(windows)]
+async fn windows_active_processes() -> Result<u32, GuardError> {
+    static LEARNED: std::sync::OnceLock<u32> = std::sync::OnceLock::new();
+    if let Some(known) = LEARNED.get() {
+        return Ok(*known);
+    }
+    for active in 1..=3 {
+        let mut version = command(false);
+        version.arg("version");
+        if run(version, REMOVAL_LIMITS, active).await.is_ok() {
+            return Ok(*LEARNED.get_or_init(|| active));
+        }
+    }
+    Err(GuardError::Failed(None))
+}
+
+async fn run(
+    mut command: Command,
+    limits: Limits,
+    #[cfg(windows)] active_processes: u32,
+) -> Result<Output, GuardError> {
     command
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
@@ -120,13 +164,28 @@ async fn execute(mut command: Command, limits: Limits) -> Result<Output, GuardEr
         .kill_on_drop(true);
     #[cfg(unix)]
     command.process_group(0);
+    child_limit::prepare(&mut command);
     let mut child = command.spawn()?;
+    #[cfg(windows)]
+    let _job = match child_limit::confine(&child, active_processes) {
+        Ok(job) => job,
+        Err(error) => {
+            terminate(&mut child).await;
+            return Err(GuardError::Unavailable(error));
+        }
+    };
     let (Some(mut stdout), Some(mut stderr)) = (child.stdout.take(), child.stderr.take()) else {
         terminate(&mut child).await;
         return Err(GuardError::Failed(None));
     };
-    tokio::spawn(async move {
+    let diagnostics = tokio::spawn(async move {
+        let mut head = Vec::new();
+        let _ = (&mut stderr)
+            .take(DIAGNOSTICS_BYTES)
+            .read_to_end(&mut head)
+            .await;
         let _ = tokio::io::copy(&mut stderr, &mut tokio::io::sink()).await;
+        head
     });
     let deadline = Instant::now() + limits.timeout;
     let mut buffer = Vec::new();
@@ -160,10 +219,19 @@ async fn execute(mut command: Command, limits: Limits) -> Result<Output, GuardEr
             Err(GuardError::TimedOut)
         }
         Ok(Err(error)) => Err(GuardError::Unavailable(error)),
-        Ok(Ok(status)) if status.success() => Ok(Output {
-            stdout: buffer,
-            truncated: false,
-        }),
+        Ok(Ok(status)) if status.success() => {
+            let head = timeout_at(deadline, diagnostics)
+                .await
+                .map_err(|_| GuardError::TimedOut)?
+                .unwrap_or_default();
+            if tried_to_run_a_program(&head) {
+                return Err(GuardError::FilterBlocked);
+            }
+            Ok(Output {
+                stdout: buffer,
+                truncated: false,
+            })
+        }
         Ok(Ok(status)) => Err(GuardError::Failed(status.code())),
     }
 }
@@ -443,6 +511,8 @@ impl Guard {
             .arg(flag("--attr-source=", Path::new(&self.base_commit)))
             .args(["-c", "core.fsmonitor=false"])
             .args(["-c", "diff.autoRefreshIndex=false"])
+            .args(["-c", "core.preloadIndex=false"])
+            .args(["-c", "index.threads=false"])
             .arg("-c")
             .arg(format!("core.hooksPath={NULL_DEVICE}"))
             .arg("-c")
@@ -1109,6 +1179,29 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn a_new_filter_name_defined_and_selected_after_the_check_never_runs() {
+        let fx = fixture(&[]);
+        fx.dirty();
+        let guard = fx.guard().await.unwrap();
+        fx.config("filter.fresh.clean", &fx.probe("clean"));
+        std::fs::write(
+            fx.repo.join(".git").join("info").join("attributes"),
+            "*.txt filter=fresh\n",
+        )
+        .unwrap();
+        assert!(
+            fx.plain_git_executes(),
+            "the setup must be able to run the filter"
+        );
+
+        let status = guard.status_exhaustive().await;
+        let diff = guard.query(DIFF, REMOVAL_LIMITS).await;
+
+        assert_eq!(fx.executed(), "", "no unauthorized program may run");
+        assert!(status.is_err() && diff.is_err());
+    }
+
+    #[tokio::test]
     async fn textconv_and_external_diff_do_not_run() {
         let fx = fixture(&[(".gitattributes", "*.bin diff=probe\n")]);
         fx.config("diff.probe.textconv", &fx.probe("textconv"));
@@ -1293,8 +1386,15 @@ mod tests {
 
     #[tokio::test]
     async fn a_slow_git_is_stopped_at_the_timeout() {
-        let mut slow = command(true);
-        slow.args(["-c", "alias.slow=!sleep 20", "slow"]);
+        let slow = if cfg!(windows) {
+            let mut ping = Command::new("ping");
+            ping.args(["-n", "20", "127.0.0.1"]);
+            ping
+        } else {
+            let mut sleep = Command::new("sleep");
+            sleep.arg("20");
+            sleep
+        };
         let started = std::time::Instant::now();
 
         let result = execute(
@@ -1308,6 +1408,17 @@ mod tests {
 
         assert!(matches!(result, Err(GuardError::TimedOut)));
         assert!(started.elapsed() < Duration::from_secs(10));
+    }
+
+    #[test]
+    fn diagnostics_about_a_blocked_program_are_recognised() {
+        assert!(tried_to_run_a_program(
+            b"error: cannot fork to run external filter 'x'\n"
+        ));
+        assert!(tried_to_run_a_program(b"error: cannot spawn sh: denied\n"));
+        assert!(!tried_to_run_a_program(
+            b"warning: in the working copy of 'a', LF will be replaced by CRLF\n"
+        ));
     }
 
     #[test]
