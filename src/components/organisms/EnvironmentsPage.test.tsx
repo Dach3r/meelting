@@ -101,6 +101,34 @@ describe("files", () => {
     expect(within(list).getByText("Payments")).toBeTruthy();
   });
 
+  it("lists the local files copied into the focused environment", async () => {
+    core([
+      environment("t1", "Login", {
+        copies: [
+          {
+            relative_path: ".env",
+            size_bytes: 2048,
+            copied_at: "2026-11-24T11:00:00.000Z",
+          },
+        ],
+      }),
+      environment("t2", "Payments"),
+    ]);
+    renderPage("files");
+
+    const detail = await screen.findByRole("complementary", { name: "Login" });
+    expect(within(detail).getByText("Copied files")).toBeTruthy();
+    expect(within(detail).getByText(".env")).toBeTruthy();
+    await userEvent
+      .setup()
+      .click(screen.getByRole("button", { name: /Payments/ }));
+    expect(
+      within(screen.getByRole("complementary", { name: "Payments" })).queryByText(
+        "Copied files",
+      ),
+    ).toBeNull();
+  });
+
   it("shows the details of the focused environment and moves only that one", async () => {
     const calls = core([
       environment("t1", "Login"),

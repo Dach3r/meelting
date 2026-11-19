@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
+import { formatBytes, formatDateTime } from "../../i18n/translate";
 import type { Environment } from "../../hooks/useEnvironments";
 
 type Props = {
@@ -15,7 +16,7 @@ export function EnvironmentDetail({
   hint,
   actions,
 }: Props) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const { worktree } = environment;
   const rows = [
     [t("files.detail.repository"), environment.repository_name],
@@ -53,6 +54,32 @@ export function EnvironmentDetail({
           );
         })}
       </dl>
+      {worktree.copies.length > 0 && (
+        <section className="grid gap-3">
+          <h3 className="text-sm font-semibold text-ink">
+            {t("tasks.environment.copy.copied")}
+          </h3>
+          <ul className="grid overflow-hidden rounded-2xl border border-line text-sm">
+            {worktree.copies.map((copy) => (
+              <li
+                key={copy.relative_path}
+                className="flex min-w-0 items-center justify-between gap-4 border-b border-line px-5 py-3 last:border-b-0"
+              >
+                <code className="min-w-0 truncate text-ink select-text">
+                  {copy.relative_path}
+                </code>
+                <span className="shrink-0 text-xs text-muted">
+                  {formatBytes(locale, copy.size_bytes)} ·{" "}
+                  {formatDateTime(locale, copy.copied_at)}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <p className="text-xs text-muted">
+            {t("tasks.environment.copy.copiedHint")}
+          </p>
+        </section>
+      )}
       <p className="rounded-2xl bg-shell px-5 py-4 text-sm leading-relaxed text-muted">
         {hint}
       </p>
