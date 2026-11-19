@@ -168,7 +168,7 @@ export function Workspace({
             className={`flex min-h-0 flex-1 flex-col overflow-hidden ${split ? "" : "rounded-3xl border border-line bg-pill"}`}
           >
             <div
-              className={`flex min-h-0 flex-1 flex-col ${split ? "" : "overflow-y-auto p-8"}`}
+              className={`flex min-h-0 flex-1 flex-col ${split || view === "settings" ? "" : "overflow-y-auto p-8"}`}
             >
               {view === "settings" ? (
                 <SettingsPage

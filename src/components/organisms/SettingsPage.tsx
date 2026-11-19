@@ -298,10 +298,10 @@ export function SettingsPage({
     sections[item].reduce((total, group) => total + group.rows.length, 0);
 
   return (
-    <div className="grid min-h-0 flex-1 grid-cols-[15rem_minmax(0,1fr)] gap-10">
+    <div className="grid min-h-0 flex-1 grid-cols-[16rem_minmax(0,1fr)]">
       <nav
         aria-label={t("settings.categories.label")}
-        className="flex flex-col gap-1"
+        className="flex flex-col gap-1 border-r border-line py-8 pr-4 pl-8"
       >
         {sectionOrder.map((item) => {
           const Icon = sectionIcons[item];
@@ -327,7 +327,7 @@ export function SettingsPage({
           );
         })}
       </nav>
-      <div className="grid w-full content-start gap-6">
+      <div className="grid min-h-0 w-full content-start gap-6 overflow-y-auto p-8 pl-10">
         {errorMessage && <Alert message={errorMessage} />}
         <div>
           <h2 className="text-xl font-bold text-ink">
