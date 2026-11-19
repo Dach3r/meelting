@@ -309,13 +309,9 @@ export function SettingsPage({
               type="button"
               aria-current={active ? "true" : undefined}
               onClick={() => setSection(item)}
-              className={`flex cursor-pointer items-center gap-3 border-b border-l-2 border-b-line px-6 py-4 text-left text-sm focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ink ${active ? "border-l-ink bg-hi font-semibold text-ink" : "border-l-transparent font-medium text-muted hover:bg-pill-hover hover:text-ink"}`}
+              className={`flex cursor-pointer items-center gap-3 border-b border-line px-6 py-4 text-left text-sm focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ink ${active ? "bg-hi font-semibold text-ink" : "font-medium text-muted hover:bg-pill-hover hover:text-ink"}`}
             >
-              <span
-                className={`grid size-9 shrink-0 place-items-center rounded-lg border ${active ? "border-ink" : "border-line"}`}
-              >
-                <Icon className="size-4" aria-hidden />
-              </span>
+              <Icon className="size-5 shrink-0" aria-hidden />
               {t(`settings.categories.${item}.title`)}
             </button>
           );
