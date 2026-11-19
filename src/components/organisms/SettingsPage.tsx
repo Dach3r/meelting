@@ -309,7 +309,7 @@ export function SettingsPage({
               type="button"
               aria-current={active ? "true" : undefined}
               onClick={() => setSection(item)}
-              className={`flex cursor-pointer items-center gap-3 border-b border-line px-6 py-4 text-left text-sm focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ink ${active ? "bg-hi font-semibold text-ink" : "font-medium text-muted hover:bg-pill-hover hover:text-ink"}`}
+              className={`flex cursor-pointer items-center gap-3 border-t border-b border-b-line px-6 py-4 text-left text-sm focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ink ${active ? "border-t-ink/30 border-b-ink/30 bg-hi font-semibold text-ink" : "border-t-transparent font-medium text-muted hover:bg-pill-hover hover:text-ink"}`}
             >
               <Icon className="size-5 shrink-0" aria-hidden />
               {t(`settings.categories.${item}.title`)}
