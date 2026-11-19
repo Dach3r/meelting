@@ -49,6 +49,7 @@ export function Rail({ collapsed, onToggle, view, onSelectView }: Props) {
             key={item.key}
             label={t(`home.nav.${item.key}`)}
             icon={item.icon}
+            collapsed={collapsed}
             current={item.view === view}
             onSelect={item.view ? () => onSelectView(item.view!) : undefined}
           />
