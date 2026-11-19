@@ -134,7 +134,7 @@ mod tests {
     use crate::domain::task::{TaskPriority, TaskStatus};
     use crate::domain::team::AgentDraft;
     use crate::repositories::database::open_for_test;
-    use crate::services::repository_register::tests::{git, repo_with_commit};
+    use crate::services::repository_register::tests::{git, local, repo_with_commit};
     use crate::services::{
         agent_create, agent_delete, first_launch, message_send, repository_register,
         repository_unregister, room_create, task_delete, task_status_change, team_create,
@@ -231,7 +231,7 @@ mod tests {
         workspace_create::run(&pool, "Globex").await.unwrap();
         let eva = hire(&pool, "Eva").await;
         let parent = repo_with_commit("app");
-        let foreign = repository_register::run(&pool, &parent.path().join("app"))
+        let foreign = repository_register::run(&pool, &parent.path().join("app"), local)
             .await
             .unwrap()[0]
             .id
@@ -330,7 +330,7 @@ mod tests {
         let parent = repo_with_commit("app");
         let repo = parent.path().join("app");
         git(&repo, &["branch", "develop"]);
-        let repository_id = repository_register::run(&pool, &repo).await.unwrap()[0]
+        let repository_id = repository_register::run(&pool, &repo, local).await.unwrap()[0]
             .id
             .clone();
         let entries = std::fs::read_dir(parent.path()).unwrap().count();
@@ -421,7 +421,7 @@ mod tests {
         let (pool, _dir, _) = setup().await;
         let parent = repo_with_commit("app");
         let repo = parent.path().join("app");
-        let repository_id = repository_register::run(&pool, &repo).await.unwrap()[0]
+        let repository_id = repository_register::run(&pool, &repo, local).await.unwrap()[0]
             .id
             .clone();
         let linked = TaskDraft {
@@ -488,7 +488,7 @@ mod tests {
         let (pool, _dir, _) = setup().await;
         let parent = repo_with_commit("app");
         let repo = parent.path().join("app");
-        let repository_id = repository_register::run(&pool, &repo).await.unwrap()[0]
+        let repository_id = repository_register::run(&pool, &repo, local).await.unwrap()[0]
             .id
             .clone();
         let task = create(

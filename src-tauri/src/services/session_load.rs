@@ -67,8 +67,30 @@ pub enum SessionError {
     InvalidTaskTransition,
     #[error("message_not_found")]
     MessageNotFound,
+    #[error("storage_network")]
+    StorageNetwork,
+    #[error("storage_removable")]
+    StorageRemovable,
+    #[error("storage_synced")]
+    StorageSynced,
+    #[error("storage_unknown")]
+    StorageUnknown,
+    #[error("invalid_worktrees_root")]
+    InvalidWorktreesRoot,
     #[error("keychain_unavailable")]
     Keychain(#[from] crate::system::keychain::KeychainError),
+}
+
+impl From<crate::domain::storage::StorageIssue> for SessionError {
+    fn from(issue: crate::domain::storage::StorageIssue) -> Self {
+        use crate::domain::storage::StorageIssue;
+        match issue {
+            StorageIssue::Network => SessionError::StorageNetwork,
+            StorageIssue::Removable => SessionError::StorageRemovable,
+            StorageIssue::Synced => SessionError::StorageSynced,
+            StorageIssue::Unknown => SessionError::StorageUnknown,
+        }
+    }
 }
 
 impl Serialize for SessionError {

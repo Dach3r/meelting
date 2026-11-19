@@ -72,6 +72,8 @@ pub fn run() {
             commands::repositories::register_repository,
             commands::repositories::unregister_repository,
             commands::repositories::list_repository_branches,
+            commands::worktrees::get_worktrees_root,
+            commands::worktrees::change_worktrees_root,
             commands::tasks::list_tasks,
             commands::tasks::create_task,
             commands::tasks::update_task,

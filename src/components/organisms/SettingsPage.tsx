@@ -1,4 +1,4 @@
-import { Palette, SlidersHorizontal } from "lucide-react";
+import { FolderGit2, Palette, SlidersHorizontal } from "lucide-react";
 import { useState } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
 import type { Locale } from "../../i18n/translate";
@@ -9,6 +9,7 @@ import { SegmentedControl } from "../molecules/SegmentedControl";
 import { SettingsRow } from "../molecules/SettingsRow";
 import { ThemeSwitcher } from "../molecules/ThemeSwitcher";
 import { UiScaleSwitcher } from "../molecules/UiScaleSwitcher";
+import { WorktreesRootSetting } from "./WorktreesRootSetting";
 
 type Props = {
   locale: Locale;
@@ -23,12 +24,13 @@ type Props = {
   onChangeLoadingEnabled: (loadingEnabled: boolean) => void;
 };
 
-const categories = ["general", "appearance"] as const;
+const categories = ["general", "appearance", "environments"] as const;
 type Category = (typeof categories)[number];
 
 const categoryIcons = {
   general: SlidersHorizontal,
   appearance: Palette,
+  environments: FolderGit2,
 };
 
 export function SettingsPage({
@@ -134,6 +136,7 @@ export function SettingsPage({
               </SettingsRow>
             </>
           )}
+          {category === "environments" && <WorktreesRootSetting />}
         </div>
       </div>
     </div>

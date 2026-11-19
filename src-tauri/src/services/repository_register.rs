@@ -1,4 +1,5 @@
 use crate::domain::repository::{Repository, name_from_path};
+use crate::domain::storage::StorageIssue;
 use crate::repositories::git_repositories;
 use crate::services::repositories_list;
 use crate::services::session_load::{self, SessionError};
@@ -14,7 +15,11 @@ fn inspection_error(error: GitError) -> SessionError {
     }
 }
 
-pub async fn run(pool: &SqlitePool, folder: &Path) -> Result<Vec<Repository>, SessionError> {
+pub async fn run(
+    pool: &SqlitePool,
+    folder: &Path,
+    check_storage: impl AsyncFn(&Path) -> Result<(), StorageIssue>,
+) -> Result<Vec<Repository>, SessionError> {
     let workspace_id = session_load::require(pool).await?.current_workspace_id;
     if git::is_bare(folder).await.map_err(inspection_error)? {
         return Err(SessionError::RepositoryBare);
@@ -33,6 +38,8 @@ pub async fn run(pool: &SqlitePool, folder: &Path) -> Result<Vec<Repository>, Se
     {
         return Err(SessionError::RepositoryWithSubmodules);
     }
+    check_storage(toplevel).await?;
+    check_storage(Path::new(&layout.common_dir)).await?;
     git_repositories::insert(
         pool,
         &Uuid::now_v7().to_string(),
@@ -58,6 +65,10 @@ pub mod tests {
     use crate::repositories::database::open_for_test;
     use crate::services::{first_launch, workspace_create};
     use std::process::Command;
+
+    pub async fn local(_: &Path) -> Result<(), StorageIssue> {
+        Ok(())
+    }
 
     pub fn git(path: &Path, args: &[&str]) {
         let status = Command::new("git")
@@ -95,7 +106,7 @@ pub mod tests {
         let nested = repo.join("src");
         std::fs::create_dir(&nested).unwrap();
 
-        let list = run(&pool, &nested).await.unwrap();
+        let list = run(&pool, &nested, local).await.unwrap();
 
         assert_eq!(list.len(), 1);
         assert_eq!(list[0].name, "my app ñ");
@@ -111,14 +122,14 @@ pub mod tests {
         first_launch::run(&pool, Locale::En, "Acme").await.unwrap();
         let parent = repo_with_commit("app");
         let repo = parent.path().join("app");
-        run(&pool, &repo).await.unwrap();
+        run(&pool, &repo, local).await.unwrap();
 
         assert!(matches!(
-            run(&pool, &repo.join(".")).await,
+            run(&pool, &repo.join("."), local).await,
             Err(SessionError::RepositoryAlreadyRegistered)
         ));
         workspace_create::run(&pool, "Globex").await.unwrap();
-        assert_eq!(run(&pool, &repo).await.unwrap().len(), 1);
+        assert_eq!(run(&pool, &repo, local).await.unwrap().len(), 1);
         assert_eq!(count(&pool).await, 2);
     }
 
@@ -151,28 +162,42 @@ pub mod tests {
         git(&modules, &["commit", "-m", "modules"]);
 
         assert!(matches!(
-            run(&pool, plain.path()).await,
+            run(&pool, plain.path(), local).await,
             Err(SessionError::NotARepository)
         ));
         assert!(matches!(
-            run(&pool, &plain.path().join("missing")).await,
+            run(&pool, &plain.path().join("missing"), local).await,
             Err(SessionError::NotARepository)
         ));
         assert!(matches!(
-            run(&pool, bare.path()).await,
+            run(&pool, bare.path(), local).await,
             Err(SessionError::RepositoryBare)
         ));
         assert!(matches!(
-            run(&pool, empty.path()).await,
+            run(&pool, empty.path(), local).await,
             Err(SessionError::RepositoryWithoutCommits)
         ));
         assert!(matches!(
-            run(&pool, &worktree).await,
+            run(&pool, &worktree, local).await,
             Err(SessionError::RepositoryIsWorktree)
         ));
         assert!(matches!(
-            run(&pool, &modules).await,
+            run(&pool, &modules, local).await,
             Err(SessionError::RepositoryWithSubmodules)
+        ));
+        assert_eq!(count(&pool).await, 0);
+    }
+
+    #[tokio::test]
+    async fn rejects_repositories_on_unsupported_storage_without_writing() {
+        let (pool, _dir) = open_for_test().await;
+        first_launch::run(&pool, Locale::En, "Acme").await.unwrap();
+        let parent = repo_with_commit("app");
+        let synced = async |_: &Path| Err(StorageIssue::Synced);
+
+        assert!(matches!(
+            run(&pool, &parent.path().join("app"), synced).await,
+            Err(SessionError::StorageSynced)
         ));
         assert_eq!(count(&pool).await, 0);
     }

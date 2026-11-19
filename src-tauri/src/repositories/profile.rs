@@ -102,6 +102,30 @@ pub async fn set_loading_enabled<'e>(
     Ok(())
 }
 
+pub async fn worktrees_root<'e>(
+    executor: impl SqliteExecutor<'e>,
+) -> Result<Option<String>, sqlx::Error> {
+    Ok(
+        sqlx::query_scalar::<_, Option<String>>("SELECT worktrees_root FROM profile")
+            .fetch_optional(executor)
+            .await?
+            .flatten(),
+    )
+}
+
+pub async fn set_worktrees_root<'e>(
+    executor: impl SqliteExecutor<'e>,
+    root: &str,
+) -> Result<(), sqlx::Error> {
+    sqlx::query(
+        "UPDATE profile SET worktrees_root = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')",
+    )
+    .bind(root)
+    .execute(executor)
+    .await?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

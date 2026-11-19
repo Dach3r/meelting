@@ -39,7 +39,9 @@ mod tests {
     use crate::domain::locale::Locale;
     use crate::repositories::database::open_for_test;
     use crate::services::first_launch;
-    use crate::services::repository_register::{self, tests::git, tests::repo_with_commit};
+    use crate::services::repository_register::{
+        self, tests::git, tests::local, tests::repo_with_commit,
+    };
 
     #[tokio::test]
     async fn lists_the_local_branches_and_suggests_the_current_one() {
@@ -48,7 +50,7 @@ mod tests {
         let parent = repo_with_commit("app");
         let repo = parent.path().join("app");
         git(&repo, &["branch", "feature/login"]);
-        let id = repository_register::run(&pool, &repo).await.unwrap()[0]
+        let id = repository_register::run(&pool, &repo, local).await.unwrap()[0]
             .id
             .clone();
 
@@ -64,7 +66,7 @@ mod tests {
         first_launch::run(&pool, Locale::En, "Acme").await.unwrap();
         let parent = repo_with_commit("app");
         let repo = parent.path().join("app");
-        let id = repository_register::run(&pool, &repo).await.unwrap()[0]
+        let id = repository_register::run(&pool, &repo, local).await.unwrap()[0]
             .id
             .clone();
         std::fs::remove_dir_all(&repo).unwrap();

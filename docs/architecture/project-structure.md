@@ -32,7 +32,9 @@ src-tauri/src/
 ├── commands/              Layer 1: Tauri commands (thin)
 │   ├── provider_keys.rs   ✅ list_provider_keys, save_provider_key, check_provider_key, delete_provider_key (take only the provider; the core resolves the workspace)
 │   ├── agent_runs.rs      ✅ send_intervention, resolve_recipient, check_agent_availability, cancel_agent_run and the engine's event emitter (agent_run:status, agent_run:token, message:created)
-│   ├── repositories.rs    ✅ list_repositories, register_repository (opens the native folder dialog from Rust; `None` if cancelled), unregister_repository, list_repository_branches
+│   ├── dialog.rs          ✅ native folder dialog opened from Rust (`tauri-plugin-dialog`), shared by the commands that take a folder; the webview never sends a path
+│   ├── repositories.rs    ✅ list_repositories, register_repository (folder dialog; `None` if cancelled), unregister_repository, list_repository_branches
+│   ├── worktrees.rs       ✅ get_worktrees_root, change_worktrees_root (folder dialog; `None` if cancelled)
 │   ├── tasks.rs           ✅ list_tasks, create_task, update_task, change_task_status, delete_task
 │   ├── rooms.rs           ✅ list_rooms, create_room, get_room (with runs, snapshots and agents who left), finish_room, add_room_agents, remove_room_agent
 │   └── session.rs         ✅ load_session, complete_first_launch, create_workspace, switch_workspace, list_teams, create_team, create_agent, get_agent, update_agent, delete_agent, save_canvas_positions, reset_canvas_positions, list_agent_templates, list_agent_roles, list_llm_providers, detect_local_models, change_locale, change_theme, change_ui_scale, change_loading_enabled
@@ -65,7 +67,9 @@ src-tauri/src/
 │   ├── provider_key_save.rs ✅ validates the key, verifies it and only then saves it; a failed replacement keeps the previous key
 │   ├── provider_key_delete.rs ✅ deletes the key of the current workspace (idempotent) and returns the updated list
 │   ├── repositories_list.rs ✅ registered repositories of the current workspace
-│   ├── repository_register.rs ✅ checks a folder with read-only git (not bare, not a linked worktree, with commits, without submodules) and registers its top level and `git_common_dir`; never writes to the repository
+│   ├── repository_register.rs ✅ checks a folder with read-only git (not bare, not a linked worktree, with commits, without submodules) and the storage of its top level and `git_common_dir`, and registers them; never writes to the repository
+│   ├── worktrees_root_get.rs ✅ resolves the worktree root (`profile.worktrees_root` or `~/Meelting/worktrees`) and its storage status
+│   ├── worktrees_root_change.rs ✅ validates a chosen root (exists, canonical, outside every registered repository, fixed local storage) and saves it
 │   ├── repository_unregister.rs ✅ unregisters a repository no task references (`repository_in_use`); the folder is never touched
 │   ├── repository_branches_list.rs ✅ local branches of a registered repository and the suggested default (`origin/HEAD` if it exists locally, otherwise the current branch)
 │   ├── tasks_list.rs      ✅ tasks of the current workspace by recent activity with their assigned agents and origin room name
@@ -93,7 +97,8 @@ src-tauri/src/
 │   ├── chat_completions.rs ✅ Chat Completions adapter (Groq, Ollama, LM Studio)
 │   ├── llm_call.rs        ✅ picks the adapter for the catalog provider's protocol and streams the request; shared by the engine and key verification
 │   ├── local_models.rs    ✅ lists the models of a local provider (GET /models)
-│   └── keychain.rs        ✅ OS keychain (crate keyring)
+│   ├── keychain.rs        ✅ OS keychain (crate keyring)
+│   └── storage.rs         ✅ fixed local storage check: synchronized folders, then `statfs` + `diskutil` (macOS), `/proc/self/mountinfo` + `/sys` (Linux) or `GetDriveTypeW` + `IOCTL_STORAGE_QUERY_PROPERTY` (Windows)
 ├── repositories/          SQLite access (sqlx); migrations live in src-tauri/migrations
 │   ├── database.rs        ✅ opens the pool (WAL, foreign keys) and applies migrations
 │   ├── profile.rs         ✅ profile table queries
@@ -119,6 +124,8 @@ src-tauri/src/
 │   ├── theme.rs           ✅ system/light/dark theme
 │   ├── ui_scale.rs        ✅ interface size (90–150 % presets)
 │   ├── profile.rs         ✅ local profile
+│   ├── storage.rs         ✅ storage issue, file system classification, the parsers of `mountinfo`, `diskutil` plists and Dropbox `info.json`, and path containment (pure; each platform parser is compiled only where it is used)
+│   ├── worktree.rs        ✅ worktree root (default `~/Meelting/worktrees`) and removal of the Windows verbatim prefix from canonical drive paths
 │   ├── repository.rs      ✅ registered repository, branches, name from the folder and default branch suggestion
 │   ├── task.rs            ✅ task, status machine, priority, draft validation (title 1–120, description up to 10,000, base branch only with a repository) and origin
 │   ├── room.rs            ✅ room, participant, message and their lists; body validation and agent deduplication
@@ -148,7 +155,7 @@ src-tauri/src/
 
 - **One error per module** with `thiserror`. `Serialize` is only implemented on the error that crosses to the UI (the service's or `keychain`'s), as a string.
 - **Secrets only through services:** the webview never names a keychain entry. `commands/provider_keys.rs` takes a provider; the services check that it is a cloud provider of the catalog and build `<workspace_id>/<provider>` from the current workspace.
-- **Errors to the UI as codes:** `SessionError` is serialized as a stable code (`invalid_name`, `invalid_agent`, `invalid_message`, `workspace_not_found`, `team_not_found`, `agent_not_found`, `room_not_found`, `agent_has_activity`, `invalid_client_request_id`, `agent_busy`, `client_request_conflict`, `not_set_up`, `invalid_provider`, `invalid_api_key`, `provider_not_configured`, `git_unavailable`, `not_a_repository`, `repository_bare`, `repository_is_worktree`, `repository_without_commits`, `repository_with_submodules`, `repository_already_registered`, `repository_not_found`, `repository_in_use`, `repository_unavailable`, `invalid_base_ref`, `invalid_task`, `task_not_found`, `invalid_task_transition`, `message_not_found`, `keychain_unavailable`, `database`); the UI translates it. A run's failures are not command errors: they travel as `error_kind` in the run. Database details do not travel.
+- **Errors to the UI as codes:** `SessionError` is serialized as a stable code (`invalid_name`, `invalid_agent`, `invalid_message`, `workspace_not_found`, `team_not_found`, `agent_not_found`, `room_not_found`, `agent_has_activity`, `invalid_client_request_id`, `agent_busy`, `client_request_conflict`, `not_set_up`, `invalid_provider`, `invalid_api_key`, `provider_not_configured`, `git_unavailable`, `not_a_repository`, `repository_bare`, `repository_is_worktree`, `repository_without_commits`, `repository_with_submodules`, `repository_already_registered`, `repository_not_found`, `repository_in_use`, `repository_unavailable`, `invalid_base_ref`, `invalid_task`, `task_not_found`, `invalid_task_transition`, `message_not_found`, `storage_network`, `storage_removable`, `storage_synced`, `storage_unknown`, `invalid_worktrees_root`, `keychain_unavailable`, `database`); the UI translates it. A run's failures are not command errors: they travel as `error_kind` in the run. Database details do not travel.
 - **Database:** the pool is opened in `setup` (`app_data_dir()/meelting.db`) and registered as Tauri state; commands receive it with `State<SqlitePool>`. Repositories accept any `SqliteExecutor` so they can be used inside transactions. Writes that read and then write (create room, send message) open the transaction with `pool.begin_with("BEGIN IMMEDIATE")` on a new pool connection (never nested): they take the write lock at the start and wait up to sqlx's `busy_timeout` (5 s); if it runs out, the error arrives as `database`. Multi-table reads use a normal transaction to read a consistent snapshot.
 - **Services without Tauri:** they receive `impl Fn` for output and completion, so they are tested without a window or `AppHandle`.
 - **Events to the UI:** emitted by the commands layer. Current names: `message:created` (full message with its `room_id`, after the commit), `agent_run:status` (the full run, after the commit of each transition) and `agent_run:token` (`run_id`, `room_id`, `attempt`, `seq`, `text`). The execution engine receives a *callback* (`Emit`) that `commands/agent_runs.rs` translates into Tauri events, so services still know nothing about Tauri.
@@ -177,6 +184,7 @@ src/
 │   ├── useRepositories.ts ✅ invoke list_repositories, register_repository, unregister_repository and list_repository_branches
 │   ├── useTasks.ts        ✅ invoke list_tasks, change_task_status, delete_task; task types and the status transitions mirrored from the core for the buttons
 │   ├── useTaskSave.ts     ✅ invoke create_task and update_task
+│   ├── useWorktreesRoot.ts ✅ invoke get_worktrees_root and change_worktrees_root
 │   ├── useProviderKeys.ts ✅ invoke list_provider_keys, save_provider_key, check_provider_key, delete_provider_key; keeps the result of each check in memory and never stores the key
 │   ├── useRecipientPreview.ts ✅ invoke resolve_recipient 150 ms after the last draft change (local IPC, no network); discards stale responses
 │   ├── agentRunState.ts   ✅ pure run state: logical state order (queued n = 2n, running n = 2n − 1, final last), tokens by (attempt, seq), snapshots and live text
@@ -186,7 +194,7 @@ src/
 └── components/            Atomic design (overview.md §8)
     ├── atoms/             Avatar, Button, CardSelect, Field, Icons, Logo, Select (native select with label), SelectField
     ├── molecules/         AgentPicker, AgentRunStatus, AgentTemplateDetail, Alert, ChatMessage, EnginePicker, InviteAgentsForm, IslandMenu, LocalProviderRow, LocaleSwitcher, MentionSuggestions, MessageComposer, Modal, NavItem, OrgAgentCard, OrgCard, OrgDrawer, OrgNode, ParticipantTile, ProviderKeyRow, RepositoryList, RoomCard, RoomForm, TaskBadges, TaskCard, TaskForm, SegmentedControl, SettingsRow, TransitionOverlay, TeamForm, TeamPicker, ThemeSwitcher, UiScaleSwitcher, WorkspaceSwitcher, ZoomControls; agentLabel.ts omits the role when it repeats the name; mentionDraft.ts detects the mention in progress, filters agents by name or role and inserts the chosen one
-    ├── organisms/         AgentCatalogPage, AgentEditForm, AgentForm, NewWorkspacePage, OrgChart, ProvidersPage, Rail, RoomChat, RoomView, RoomsPage, SettingsPage, TaskDetail, TaskDialog (task form with repositories and saving, shared by TasksPage and RoomView, which opens it from «Create task» and from «Turn into task» in ChatMessage), TasksPage, TeamsPage, Topbar; authorName.ts resolves a message's author among present agents and those who left
+    ├── organisms/         AgentCatalogPage, AgentEditForm, AgentForm, NewWorkspacePage, OrgChart, ProvidersPage, Rail, RoomChat, RoomView, RoomsPage, SettingsPage, TaskDetail, TaskDialog (task form with repositories and saving, shared by TasksPage and RoomView, which opens it from «Create task» and from «Turn into task» in ChatMessage), TasksPage, TeamsPage, Topbar, WorktreesRootSetting (Settings › Environments); authorName.ts resolves a message's author among present agents and those who left
     └── templates/         Workspace (rail + topbar + content)
 ```
 
@@ -196,7 +204,7 @@ src/
 | `hooks/` | The only place that calls `invoke` or `listen`. One hook per use case, named `use<Verb><Object>` |
 | `App.tsx` | Composes organisms or templates; no logic |
 
-Vitest tests live next to the code (`App.test.tsx`, `translate.test.ts`, `RoomsPage.test.tsx`, `RoomView.test.tsx`, `ProvidersPage.test.tsx`, `TasksPage.test.tsx`, `agentRunState.test.ts`). The Phase 0 spikes are gone: `stream_completion` was replaced by the `AgentRun` adapters and `run_in_worktree` was removed in 4B.
+Vitest tests live next to the code (`App.test.tsx`, `translate.test.ts`, `RoomsPage.test.tsx`, `RoomView.test.tsx`, `ProvidersPage.test.tsx`, `TasksPage.test.tsx`, `WorktreesRootSetting.test.tsx`, `agentRunState.test.ts`). The Phase 0 spikes are gone: `stream_completion` was replaced by the `AgentRun` adapters and `run_in_worktree` was removed in 4B.
 
 ## Where to put new things
 

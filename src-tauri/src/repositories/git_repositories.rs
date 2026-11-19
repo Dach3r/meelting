@@ -66,6 +66,14 @@ pub async fn delete<'e>(
     Ok(result.rows_affected() > 0)
 }
 
+pub async fn all_locations<'e>(
+    executor: impl SqliteExecutor<'e>,
+) -> Result<Vec<(String, String)>, sqlx::Error> {
+    sqlx::query_as("SELECT path, git_common_dir FROM repositories")
+        .fetch_all(executor)
+        .await
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

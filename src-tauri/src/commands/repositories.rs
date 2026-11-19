@@ -1,11 +1,12 @@
+use crate::commands::dialog;
 use crate::domain::repository::{Repository, RepositoryBranches};
 use crate::services::session_load::SessionError;
 use crate::services::{
     repositories_list, repository_branches_list, repository_register, repository_unregister,
 };
+use crate::system::storage;
 use sqlx::SqlitePool;
 use tauri::{State, WebviewWindow};
-use tauri_plugin_dialog::DialogExt;
 
 #[tauri::command]
 pub async fn list_repositories(
@@ -19,21 +20,12 @@ pub async fn register_repository(
     window: WebviewWindow,
     pool: State<'_, SqlitePool>,
 ) -> Result<Option<Vec<Repository>>, SessionError> {
-    let (sender, receiver) = tokio::sync::oneshot::channel();
-    window
-        .dialog()
-        .file()
-        .set_parent(&window)
-        .pick_folder(move |folder| {
-            let _ = sender.send(folder);
-        });
-    let Some(folder) = receiver.await.ok().flatten() else {
+    let Some(folder) = dialog::pick_folder(&window).await else {
         return Ok(None);
     };
-    let folder = folder
-        .into_path()
-        .map_err(|_| SessionError::NotARepository)?;
-    repository_register::run(&pool, &folder).await.map(Some)
+    repository_register::run(&pool, &folder, storage::check)
+        .await
+        .map(Some)
 }
 
 #[tauri::command]
