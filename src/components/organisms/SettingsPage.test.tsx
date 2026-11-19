@@ -60,24 +60,18 @@ beforeEach(() => {
 });
 
 describe("settings navigation", () => {
-  it("lists the sections without a title or group headings and shows how many settings each has", () => {
+  it("lists the sections without a title or group headings", () => {
     renderPage();
     expect(nav().queryByRole("heading")).not.toBeInTheDocument();
-    expect(nav().getByRole("button", { name: "General" })).toHaveTextContent(
-      "3",
-    );
-    expect(nav().getByRole("button", { name: "Appearance" })).toHaveTextContent(
-      "4",
-    );
-    expect(
-      nav().getByRole("button", { name: "Notifications" }),
-    ).toHaveTextContent("3");
-    expect(
-      nav().getByRole("button", { name: "Environments" }),
-    ).toHaveTextContent("1");
-    expect(nav().getByRole("button", { name: "Advanced" })).toHaveTextContent(
-      "2",
-    );
+    for (const name of [
+      "General",
+      "Appearance",
+      "Notifications",
+      "Environments",
+      "Advanced",
+    ]) {
+      expect(nav().getByRole("button", { name })).toHaveAccessibleName(name);
+    }
   });
 
   it("marks the open section and switches between them", async () => {

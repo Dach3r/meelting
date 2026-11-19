@@ -294,35 +294,29 @@ export function SettingsPage({
     ],
   };
 
-  const count = (item: Section) =>
-    sections[item].reduce((total, group) => total + group.rows.length, 0);
-
   return (
     <div className="grid min-h-0 flex-1 grid-cols-[16rem_minmax(0,1fr)]">
       <nav
         aria-label={t("settings.categories.label")}
-        className="flex flex-col gap-1 border-r border-line py-8 pr-4 pl-8"
+        className="flex flex-col border-r border-line"
       >
         {sectionOrder.map((item) => {
           const Icon = sectionIcons[item];
+          const active = item === section;
           return (
             <button
               key={item}
               type="button"
-              aria-current={item === section ? "true" : undefined}
+              aria-current={active ? "true" : undefined}
               onClick={() => setSection(item)}
-              className={`flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ink ${item === section ? "bg-pill-hover font-semibold text-ink" : "font-medium text-muted hover:bg-pill-hover hover:text-ink"}`}
+              className={`flex cursor-pointer items-center gap-3 border-b border-l-2 border-b-line px-6 py-4 text-left text-sm focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ink ${active ? "border-l-ink bg-hi font-semibold text-ink" : "border-l-transparent font-medium text-muted hover:bg-pill-hover hover:text-ink"}`}
             >
-              <Icon className="size-4 shrink-0" aria-hidden />
-              <span className="flex-1">
-                {t(`settings.categories.${item}.title`)}
-              </span>
               <span
-                aria-hidden
-                className="rounded-full bg-pill px-2 text-xs font-semibold text-muted"
+                className={`grid size-9 shrink-0 place-items-center rounded-lg border ${active ? "border-ink" : "border-line"}`}
               >
-                {count(item)}
+                <Icon className="size-4" aria-hidden />
               </span>
+              {t(`settings.categories.${item}.title`)}
             </button>
           );
         })}

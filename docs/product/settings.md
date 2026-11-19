@@ -4,7 +4,7 @@ Preferences of the installation. They are global (one row in `profile`), not per
 
 ## Layout
 
-A left navigation that lists the sections, each with a count of its settings, with no title or group headings. The content shows the active section as one card per group of settings, with the group title above the card. A new setting is added to a group, a new group to a section and a new section to the list, so the screen grows without changing its structure.
+A left navigation that lists the sections as full-width rows separated by borders, each with a bordered icon and no title, group headings or counts; the active row has an inked left border. The content shows the active section as one card per group of settings, with the group title above the card. A new setting is added to a group, a new group to a section and a new section to the list, so the screen grows without changing its structure.
 
 | Section | Group | Setting | Values (default) |
 |---|---|---|---|
