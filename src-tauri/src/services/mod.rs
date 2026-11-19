@@ -49,6 +49,7 @@ pub mod workspace_create;
 pub mod workspace_switch;
 pub mod worktree_discard;
 pub mod worktree_prepare;
+pub mod worktree_remove;
 pub mod worktrees_reconcile;
 pub mod worktrees_root_change;
 pub mod worktrees_root_get;

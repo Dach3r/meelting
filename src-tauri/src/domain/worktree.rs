@@ -118,6 +118,64 @@ pub fn git_supports_attribute_source(version: &str) -> bool {
     matches!(numbers[..], [major, minor] if (major, minor) >= (2, 40))
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ChangeKind {
+    Tracked,
+    Conflicted,
+    Untracked,
+    Ignored,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct PendingChange {
+    pub kind: ChangeKind,
+    pub path: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct RemovalCheck {
+    pub changes: Vec<PendingChange>,
+    pub operation_in_progress: bool,
+    pub commits_ahead: u32,
+}
+
+pub const IN_PROGRESS_MARKERS: &[&str] = &[
+    "MERGE_HEAD",
+    "rebase-merge",
+    "rebase-apply",
+    "CHERRY_PICK_HEAD",
+    "REVERT_HEAD",
+    "BISECT_LOG",
+    "index.lock",
+];
+
+pub fn parse_status(porcelain: &[u8]) -> Vec<PendingChange> {
+    let text = String::from_utf8_lossy(porcelain);
+    let mut fields = text.split('\0').filter(|field| !field.is_empty());
+    let mut changes = Vec::new();
+    while let Some(field) = fields.next() {
+        let (kind, skipped) = match field.as_bytes()[0] {
+            b'1' => (ChangeKind::Tracked, 8),
+            b'2' => (ChangeKind::Tracked, 9),
+            b'u' => (ChangeKind::Conflicted, 10),
+            b'?' => (ChangeKind::Untracked, 1),
+            b'!' => (ChangeKind::Ignored, 1),
+            _ => continue,
+        };
+        if let Some(path) = field.splitn(skipped + 1, ' ').nth(skipped) {
+            changes.push(PendingChange {
+                kind,
+                path: path.to_string(),
+            });
+        }
+        if field.starts_with('2') {
+            fields.next();
+        }
+    }
+    changes
+}
+
 pub const SLUG_MAX_CHARS: usize = 40;
 
 pub fn slug(text: &str) -> String {
@@ -309,5 +367,29 @@ mod tests {
             "git version 2.39.5 (Apple Git-154)"
         ));
         assert!(!git_supports_attribute_source("nonsense"));
+    }
+
+    #[test]
+    fn parses_every_kind_of_pending_change_including_spaces_and_renames() {
+        let porcelain = b"1 .M N... 100644 100644 100644 aaa aaa src/my file.rs\x002 R. N... 100644 100644 100644 aaa bbb R100 new name.rs\x00old name.rs\x00u UU N... 100644 100644 100644 100644 a b c conflict.rs\x00? notes.txt\x00! .env\x00! node_modules/\x00";
+
+        let changes = parse_status(porcelain);
+
+        let summary: Vec<(ChangeKind, &str)> = changes
+            .iter()
+            .map(|change| (change.kind, change.path.as_str()))
+            .collect();
+        assert_eq!(
+            summary,
+            [
+                (ChangeKind::Tracked, "src/my file.rs"),
+                (ChangeKind::Tracked, "new name.rs"),
+                (ChangeKind::Conflicted, "conflict.rs"),
+                (ChangeKind::Untracked, "notes.txt"),
+                (ChangeKind::Ignored, ".env"),
+                (ChangeKind::Ignored, "node_modules/"),
+            ]
+        );
+        assert!(parse_status(b"").is_empty());
     }
 }

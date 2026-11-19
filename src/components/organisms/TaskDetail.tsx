@@ -5,6 +5,7 @@ import { formatDateTime, translateWith } from "../../i18n/translate";
 import type { Repository } from "../../hooks/useRepositories";
 import {
   nextStatuses,
+  type RemovalCheck,
   type Task,
   type TaskStatus,
 } from "../../hooks/useTasks";
@@ -27,6 +28,8 @@ type Props = {
   onChangeStatus: (status: TaskStatus) => void;
   onPrepareEnvironment: () => void;
   onDiscardEnvironment: () => void;
+  onCheckRemoval: () => Promise<RemovalCheck | null>;
+  onRemoveEnvironment: () => Promise<void>;
   onDelete: () => Promise<void>;
   onClearError: () => void;
 };
@@ -42,6 +45,8 @@ export function TaskDetail({
   onChangeStatus,
   onPrepareEnvironment,
   onDiscardEnvironment,
+  onCheckRemoval,
+  onRemoveEnvironment,
   onDelete,
   onClearError,
 }: Props) {
@@ -215,6 +220,8 @@ export function TaskDetail({
           busy={busy}
           onPrepare={onPrepareEnvironment}
           onDiscard={onDiscardEnvironment}
+          onCheckRemoval={onCheckRemoval}
+          onRemove={onRemoveEnvironment}
         />
       )}
     </div>

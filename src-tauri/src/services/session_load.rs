@@ -99,6 +99,14 @@ pub enum SessionError {
     TaskHasEnvironment,
     #[error("task_repository_locked")]
     TaskRepositoryLocked,
+    #[error("environment_identity_mismatch")]
+    EnvironmentIdentityMismatch,
+    #[error("environment_has_changes")]
+    EnvironmentHasChanges,
+    #[error("environment_operation_in_progress")]
+    EnvironmentOperationInProgress,
+    #[error("environment_remove_refused")]
+    EnvironmentRemoveRefused,
     #[error("keychain_unavailable")]
     Keychain(#[from] crate::system::keychain::KeychainError),
 }

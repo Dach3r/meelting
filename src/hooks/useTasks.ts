@@ -47,6 +47,15 @@ export type Task = {
   updated_at: string;
 };
 
+export type RemovalCheck = {
+  changes: {
+    kind: "tracked" | "conflicted" | "untracked" | "ignored";
+    path: string;
+  }[];
+  operation_in_progress: boolean;
+  commits_ahead: number;
+};
+
 export type TaskDraft = {
   title: string;
   description: string;
@@ -123,6 +132,25 @@ export function useTasks() {
   const discardEnvironment = (taskId: string) =>
     update(() => invoke<Task>("discard_task_environment", { taskId }));
 
+  const removeEnvironment = (taskId: string) =>
+    update(() => invoke<Task>("remove_task_environment", { taskId }));
+
+  async function checkRemoval(taskId: string) {
+    setBusy(true);
+    setActionErrorKey(null);
+    try {
+      return await invoke<RemovalCheck>("check_task_environment_removal", {
+        taskId,
+      });
+    } catch (error) {
+      setActionErrorKey(String(error));
+      await reload();
+      return null;
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function deleteTask(taskId: string) {
     setBusy(true);
     setActionErrorKey(null);
@@ -146,6 +174,8 @@ export function useTasks() {
     changeStatus,
     prepareEnvironment,
     discardEnvironment,
+    removeEnvironment,
+    checkRemoval,
     deleteTask,
     clearActionError: () => setActionErrorKey(null),
   };

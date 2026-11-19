@@ -51,7 +51,11 @@
     "filters_not_supported": "Este repositorio usa filtros de Git que ejecutan programas al hacer checkout (por ejemplo, Git LFS), y aún no son compatibles.",
     "worktree_path_conflict": "Ya existe algo donde se crearía el entorno. No se cambió nada.",
     "task_has_environment": "Elimina o descarta el entorno de la tarea antes de borrarla.",
-    "task_repository_locked": "Esta tarea ya tuvo un entorno, así que su repositorio ya no puede cambiar."
+    "task_repository_locked": "Esta tarea ya tuvo un entorno, así que su repositorio ya no puede cambiar.",
+    "environment_identity_mismatch": "La carpeta, el registro en Git o la rama del entorno ya no coinciden con lo que creó Meelting, así que se conservó.",
+    "environment_has_changes": "El entorno tiene archivos que se perderían, así que se conservó.",
+    "environment_operation_in_progress": "Hay una operación de Git en curso en el entorno, así que se conservó.",
+    "environment_remove_refused": "Git se negó a eliminar el entorno, así que se conservó."
   },
   "newWorkspace": {
     "title": "Crea tu workspace",
@@ -534,7 +538,25 @@
         "removal_interrupted": "Meelting se cerró mientras eliminaba este entorno."
       },
       "missingHelp": "La carpeta de este entorno ya no está donde Meelting la creó. Restáurala o descarta el entorno cuando Git ya no lo liste (por ejemplo, después de ejecutar tú mismo git worktree prune en el repositorio).",
-      "failedHelp": "Descártalo para preparar uno nuevo. Meelting solo lo descarta cuando su carpeta y su registro en Git ya no existen, y nunca borra ramas ni commits."
+      "failedHelp": "Descártalo para preparar uno nuevo. Meelting solo lo descarta cuando su carpeta y su registro en Git ya no existen, y nunca borra ramas ni commits.",
+      "remove": "Eliminar entorno",
+      "removeDialog": {
+        "title": "¿Eliminar el entorno?",
+        "body": "Meelting ejecutará git worktree remove sobre {path}. La carpeta solo se borra porque está limpia; no se fuerza nada.",
+        "branchKept": "La rama {branch} se conserva.",
+        "branchWithCommits": "La rama {branch} se conserva con sus {count} commits que no están en la rama base.",
+        "confirm": "Eliminar",
+        "blockedTitle": "Todavía no se puede eliminar el entorno",
+        "blockedBody": "Estos archivos se perderían. Haz commit, muévelos o bórralos tú y vuelve a intentarlo. Los archivos copiados, como .env, también cuentan.",
+        "operation": "Hay una operación de Git en curso en este entorno (merge, rebase, cherry-pick, revert, bisect o un bloqueo).",
+        "keep": "Conservar entorno",
+        "kinds": {
+          "tracked": "Modificado",
+          "conflicted": "Conflicto",
+          "untracked": "Sin versionar",
+          "ignored": "Ignorado"
+        }
+      }
     },
     "environmentReady": "Entorno listo"
   }

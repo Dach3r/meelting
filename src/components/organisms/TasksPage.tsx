@@ -28,6 +28,8 @@ export function TasksPage({ agents }: { agents: Agent[] }) {
     changeStatus,
     prepareEnvironment,
     discardEnvironment,
+    removeEnvironment,
+    checkRemoval,
     deleteTask,
     clearActionError,
   } = useTasks();
@@ -111,6 +113,8 @@ export function TasksPage({ agents }: { agents: Agent[] }) {
           onChangeStatus={(status) => changeStatus(openTask.id, status)}
           onPrepareEnvironment={() => prepareEnvironment(openTask.id)}
           onDiscardEnvironment={() => discardEnvironment(openTask.id)}
+          onCheckRemoval={() => checkRemoval(openTask.id)}
+          onRemoveEnvironment={() => removeEnvironment(openTask.id)}
           onDelete={async () => {
             if (await deleteTask(openTask.id)) setOpenId(null);
           }}

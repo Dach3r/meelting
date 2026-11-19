@@ -87,6 +87,8 @@ pub fn run() {
             commands::worktrees::change_worktrees_root,
             commands::worktrees::prepare_task_environment,
             commands::worktrees::discard_task_environment,
+            commands::worktrees::check_task_environment_removal,
+            commands::worktrees::remove_task_environment,
             commands::tasks::list_tasks,
             commands::tasks::create_task,
             commands::tasks::update_task,

@@ -1,10 +1,10 @@
 use crate::commands::dialog;
 use crate::domain::task::Task;
-use crate::domain::worktree::WorktreesRoot;
+use crate::domain::worktree::{RemovalCheck, WorktreesRoot};
 use crate::services::repository_locks::RepositoryLocks;
 use crate::services::session_load::SessionError;
 use crate::services::{
-    worktree_discard, worktree_prepare, worktrees_root_change, worktrees_root_get,
+    worktree_discard, worktree_prepare, worktree_remove, worktrees_root_change, worktrees_root_get,
 };
 use crate::system::storage;
 use sqlx::SqlitePool;
@@ -46,4 +46,22 @@ pub async fn discard_task_environment(
     task_id: String,
 ) -> Result<Task, SessionError> {
     worktree_discard::run(&pool, &locks, &task_id).await
+}
+
+#[tauri::command]
+pub async fn check_task_environment_removal(
+    pool: State<'_, SqlitePool>,
+    locks: State<'_, RepositoryLocks>,
+    task_id: String,
+) -> Result<RemovalCheck, SessionError> {
+    worktree_remove::check(&pool, &locks, &task_id, storage::check).await
+}
+
+#[tauri::command]
+pub async fn remove_task_environment(
+    pool: State<'_, SqlitePool>,
+    locks: State<'_, RepositoryLocks>,
+    task_id: String,
+) -> Result<Task, SessionError> {
+    worktree_remove::run(&pool, &locks, &task_id, storage::check).await
 }

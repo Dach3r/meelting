@@ -51,7 +51,11 @@
     "filters_not_supported": "This repository uses Git filters that run programs on checkout (for example Git LFS), which are not supported yet.",
     "worktree_path_conflict": "Something already exists where the environment would be created. Nothing was changed.",
     "task_has_environment": "Remove or discard the task's environment before deleting it.",
-    "task_repository_locked": "This task already had an environment, so its repository can no longer change."
+    "task_repository_locked": "This task already had an environment, so its repository can no longer change.",
+    "environment_identity_mismatch": "The environment's folder, Git registration or branch no longer match what Meelting created, so it was kept.",
+    "environment_has_changes": "The environment has files that would be lost, so it was kept.",
+    "environment_operation_in_progress": "A Git operation is in progress in the environment, so it was kept.",
+    "environment_remove_refused": "Git refused to remove the environment, so it was kept."
   },
   "newWorkspace": {
     "title": "Create your workspace",
@@ -534,7 +538,25 @@
         "removal_interrupted": "Meelting closed while removing this environment."
       },
       "missingHelp": "The folder of this environment is no longer where Meelting created it. Restore it, or discard the environment once Git no longer lists it (for example after running git worktree prune in the repository yourself).",
-      "failedHelp": "Discard it to prepare a new one. Meelting only discards it when its folder and its Git registration are gone, and never deletes branches or commits."
+      "failedHelp": "Discard it to prepare a new one. Meelting only discards it when its folder and its Git registration are gone, and never deletes branches or commits.",
+      "remove": "Remove environment",
+      "removeDialog": {
+        "title": "Remove the environment?",
+        "body": "Meelting will run git worktree remove on {path}. The folder is deleted only because it is clean; nothing is forced.",
+        "branchKept": "The branch {branch} is kept.",
+        "branchWithCommits": "The branch {branch} is kept with its {count} commits that are not in the base branch.",
+        "confirm": "Remove",
+        "blockedTitle": "The environment cannot be removed yet",
+        "blockedBody": "These files would be lost. Commit them, move them or delete them yourself, then try again. Copied files such as .env count too.",
+        "operation": "A Git operation (merge, rebase, cherry-pick, revert, bisect or a lock) is in progress in this environment.",
+        "keep": "Keep environment",
+        "kinds": {
+          "tracked": "Modified",
+          "conflicted": "Conflict",
+          "untracked": "Not tracked",
+          "ignored": "Ignored"
+        }
+      }
     },
     "environmentReady": "Environment ready"
   }

@@ -453,3 +453,94 @@ describe("task environment", () => {
     ).toBeInTheDocument();
   });
 });
+
+describe("removing an environment", () => {
+  const ready = task("t1", "Login", {
+    repository_id: "p1",
+    base_ref: "main",
+    worktree: {
+      id: "w1",
+      path: "/w/login",
+      branch_name: "meelting/login-5c6d7e8f9a0b",
+      base_ref: "main",
+      base_commit_sha: "0123456789abcdef0123456789abcdef01234567",
+      status: "ready",
+      error_code: null,
+      created_at: "2026-11-25T10:00:00.000Z",
+      updated_at: "2026-11-25T10:00:00.000Z",
+    },
+  });
+
+  it("lists the files that would be lost and keeps the environment", async () => {
+    const user = userEvent.setup();
+    const remove = vi.fn();
+    core({
+      list_tasks: () => [ready],
+      list_repositories: () => [app],
+      check_task_environment_removal: () => ({
+        changes: [
+          { kind: "ignored", path: ".env" },
+          { kind: "tracked", path: "src/app.ts" },
+        ],
+        operation_in_progress: false,
+        commits_ahead: 0,
+      }),
+      remove_task_environment: remove,
+    });
+    renderPage();
+
+    await user.click(await screen.findByRole("button", { name: /Login/ }));
+    await user.click(
+      screen.getByRole("button", { name: "Remove environment" }),
+    );
+    const dialog = within(
+      await screen.findByRole("dialog", {
+        name: "The environment cannot be removed yet",
+      }),
+    );
+
+    expect(dialog.getByText(".env")).toBeInTheDocument();
+    expect(dialog.getByText("Ignored")).toBeInTheDocument();
+    expect(dialog.getByText("src/app.ts")).toBeInTheDocument();
+    expect(
+      dialog.queryByRole("button", { name: "Remove" }),
+    ).not.toBeInTheDocument();
+    await user.click(dialog.getByRole("button", { name: "Keep environment" }));
+    expect(remove).not.toHaveBeenCalled();
+  });
+
+  it("confirms, warns that the branch keeps its commits and removes", async () => {
+    const user = userEvent.setup();
+    const remove = vi.fn(() => ({ ...ready, worktree: null }));
+    core({
+      list_tasks: () => [ready],
+      list_repositories: () => [app],
+      check_task_environment_removal: () => ({
+        changes: [],
+        operation_in_progress: false,
+        commits_ahead: 2,
+      }),
+      remove_task_environment: remove,
+    });
+    renderPage();
+
+    await user.click(await screen.findByRole("button", { name: /Login/ }));
+    await user.click(
+      screen.getByRole("button", { name: "Remove environment" }),
+    );
+    const dialog = within(
+      await screen.findByRole("dialog", { name: "Remove the environment?" }),
+    );
+    expect(
+      dialog.getByText(
+        "The branch meelting/login-5c6d7e8f9a0b is kept with its 2 commits that are not in the base branch.",
+      ),
+    ).toBeInTheDocument();
+    await user.click(dialog.getByRole("button", { name: "Remove" }));
+
+    expect(remove).toHaveBeenCalledWith({ taskId: "t1" });
+    expect(
+      await screen.findByRole("button", { name: "Prepare environment" }),
+    ).toBeInTheDocument();
+  });
+});
