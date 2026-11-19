@@ -248,7 +248,10 @@ describe("trash", () => {
         { command: "restore_task_environments", taskIds: ["t1"] },
       ]),
     );
-    expect(await screen.findByText("The trash is empty.")).toBeTruthy();
+    const guide = await screen.findByRole("complementary", {
+      name: "How the trash works",
+    });
+    expect(within(guide).getAllByRole("listitem")).toHaveLength(3);
   });
 
   it("restores or deletes only the focused environment from its details", async () => {

@@ -158,13 +158,7 @@ export function EnvironmentsPage({ mode }: { mode: "files" | "trash" }) {
               onToggleAll={toggleAll}
               aside={aside}
             />
-          ) : (
-            inTrash && (
-              <p className="mx-4 rounded-2xl border border-line px-4 py-6 text-center text-sm text-muted">
-                {t("trash.empty")}
-              </p>
-            )
-          ))}
+          ) : null)}
         <div className="mt-auto grid gap-2 pt-2">
           {inTrash ? (
             <>
@@ -275,8 +269,8 @@ export function EnvironmentsPage({ mode }: { mode: "files" | "trash" }) {
             )
           }
         />
-      ) : !inTrash && environments ? (
-        <EnvironmentsEmptyGuide />
+      ) : environments ? (
+        <EnvironmentsEmptyGuide mode={mode} />
       ) : (
         <aside
           aria-hidden

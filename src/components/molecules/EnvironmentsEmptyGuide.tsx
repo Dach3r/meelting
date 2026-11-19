@@ -1,12 +1,12 @@
 import { useI18n } from "../../i18n/I18nProvider";
 
-const steps = ["repository", "task", "environment"] as const;
+const steps = ["first", "second", "third"] as const;
 
-export function EnvironmentsEmptyGuide() {
+export function EnvironmentsEmptyGuide({ mode }: { mode: "files" | "trash" }) {
   const { t } = useI18n();
   return (
     <aside
-      aria-label={t("files.guide.title")}
+      aria-label={t(`${mode}.guide.title`)}
       className="grid min-w-0 flex-1 place-items-center rounded-3xl border border-line bg-pill p-7"
     >
       <ol className="grid w-full max-w-[340px]">
@@ -29,10 +29,10 @@ export function EnvironmentsEmptyGuide() {
             </span>
             <div>
               <p className="block text-[13px] font-bold text-ink">
-                {t(`files.guide.${step}.title`)}
+                {t(`${mode}.guide.${step}.title`)}
               </p>
               <p className="block text-xs text-muted">
-                {t(`files.guide.${step}.body`)}
+                {t(`${mode}.guide.${step}.body`)}
               </p>
             </div>
           </li>

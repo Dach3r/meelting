@@ -665,15 +665,15 @@
     "description": "Entornos de trabajo (worktrees) de las tareas de este workspace. Los que mandes a la papelera se eliminan por completo a los 30 días.",
     "guide": {
       "title": "Cómo preparar un entorno",
-      "repository": {
+      "first": {
         "title": "Registra un repositorio",
         "body": "Una carpeta Git local con commits."
       },
-      "task": {
+      "second": {
         "title": "Crea una tarea",
         "body": "Elige el repositorio y la rama base."
       },
-      "environment": {
+      "third": {
         "title": "Prepara el entorno",
         "body": "Se crea un worktree aislado y aparece aquí."
       }
@@ -696,7 +696,21 @@
   "trash": {
     "title": "Papelera",
     "description": "Los entornos se eliminan por completo 30 días después de entrar a la papelera.",
-    "empty": "La papelera está vacía.",
+    "guide": {
+      "title": "Cómo funciona la papelera",
+      "first": {
+        "title": "Manda un entorno a la papelera",
+        "body": "Desde Archivos, con su carpeta y sus cambios."
+      },
+      "second": {
+        "title": "Espera hasta 30 días",
+        "body": "Puedes restaurarlo cuando quieras."
+      },
+      "third": {
+        "title": "Se elimina por completo",
+        "body": "Pasados los 30 días se borra con su rama."
+      }
+    },
     "restoreOne": "Restaurar",
     "restore": "Restaurar ({count})",
     "purge": "Eliminar definitivamente ({count})",

@@ -665,15 +665,15 @@
     "description": "Working environments (worktrees) of this workspace's tasks. Environments sent to the trash are deleted completely after 30 days.",
     "guide": {
       "title": "How to prepare an environment",
-      "repository": {
+      "first": {
         "title": "Register a repository",
         "body": "A local Git folder with commits."
       },
-      "task": {
+      "second": {
         "title": "Create a task",
         "body": "Pick the repository and the base branch."
       },
-      "environment": {
+      "third": {
         "title": "Prepare the environment",
         "body": "An isolated worktree is created and shows up here."
       }
@@ -696,7 +696,21 @@
   "trash": {
     "title": "Trash",
     "description": "Environments are deleted completely 30 days after entering the trash.",
-    "empty": "The trash is empty.",
+    "guide": {
+      "title": "How the trash works",
+      "first": {
+        "title": "Send an environment to the trash",
+        "body": "From Files, with its folder and changes."
+      },
+      "second": {
+        "title": "Wait up to 30 days",
+        "body": "You can restore it any time."
+      },
+      "third": {
+        "title": "It is deleted completely",
+        "body": "After 30 days it is removed along with its branch."
+      }
+    },
     "restoreOne": "Restore",
     "restore": "Restore ({count})",
     "purge": "Delete permanently ({count})",
