@@ -101,6 +101,17 @@ describe("files", () => {
     expect(within(list).getByText("Payments")).toBeTruthy();
   });
 
+  it("guides the user through the three steps when there are no environments", async () => {
+    core([]);
+    renderPage("files");
+
+    const guide = await screen.findByRole("complementary", {
+      name: "How to prepare an environment",
+    });
+    expect(within(guide).getAllByRole("listitem")).toHaveLength(3);
+    expect(within(guide).getByText("Create a task")).toBeTruthy();
+  });
+
   it("lists the local files copied into the focused environment", async () => {
     core([
       environment("t1", "Login", {

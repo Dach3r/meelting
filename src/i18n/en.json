@@ -663,7 +663,21 @@
   "files": {
     "title": "Files",
     "description": "Working environments (worktrees) of this workspace's tasks. Environments sent to the trash are deleted completely after 30 days.",
-    "empty": "There are no environments yet. Prepare one from a task.",
+    "guide": {
+      "title": "How to prepare an environment",
+      "repository": {
+        "title": "Register a repository",
+        "body": "A local Git folder with commits."
+      },
+      "task": {
+        "title": "Create a task",
+        "body": "Pick the repository and the base branch."
+      },
+      "environment": {
+        "title": "Prepare the environment",
+        "body": "An isolated worktree is created and shows up here."
+      }
+    },
     "detail": {
       "repository": "Repository",
       "commit": "Base commit"

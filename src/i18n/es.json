@@ -663,7 +663,21 @@
   "files": {
     "title": "Archivos",
     "description": "Entornos de trabajo (worktrees) de las tareas de este workspace. Los que mandes a la papelera se eliminan por completo a los 30 días.",
-    "empty": "Todavía no hay entornos. Prepara uno desde una tarea.",
+    "guide": {
+      "title": "Cómo preparar un entorno",
+      "repository": {
+        "title": "Registra un repositorio",
+        "body": "Una carpeta Git local con commits."
+      },
+      "task": {
+        "title": "Crea una tarea",
+        "body": "Elige el repositorio y la rama base."
+      },
+      "environment": {
+        "title": "Prepara el entorno",
+        "body": "Se crea un worktree aislado y aparece aquí."
+      }
+    },
     "detail": {
       "repository": "Repositorio",
       "commit": "Commit base"

@@ -6,6 +6,7 @@ import { Button } from "../atoms/Button";
 import { Alert } from "../molecules/Alert";
 import { ConfirmDialog } from "../molecules/ConfirmDialog";
 import { EnvironmentDetail } from "../molecules/EnvironmentDetail";
+import { EnvironmentsEmptyGuide } from "../molecules/EnvironmentsEmptyGuide";
 import { EnvironmentList } from "../molecules/EnvironmentList";
 
 const trashDays = 30;
@@ -158,9 +159,11 @@ export function EnvironmentsPage({ mode }: { mode: "files" | "trash" }) {
               aside={aside}
             />
           ) : (
-            <p className="mx-4 rounded-2xl border border-line px-4 py-6 text-center text-sm text-muted">
-              {t(`${mode}.empty`)}
-            </p>
+            inTrash && (
+              <p className="mx-4 rounded-2xl border border-line px-4 py-6 text-center text-sm text-muted">
+                {t("trash.empty")}
+              </p>
+            )
           ))}
         <div className="mt-auto grid gap-2 pt-2">
           {inTrash ? (
@@ -272,6 +275,8 @@ export function EnvironmentsPage({ mode }: { mode: "files" | "trash" }) {
             )
           }
         />
+      ) : !inTrash && environments ? (
+        <EnvironmentsEmptyGuide />
       ) : (
         <aside
           aria-hidden
