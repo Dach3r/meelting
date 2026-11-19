@@ -71,7 +71,7 @@ pub async fn run(engine: &Engine, provider: &str) -> Result<ProviderKeyResult, S
     let verification = verify(engine, found, &key).await;
     Ok(ProviderKeyResult {
         verification,
-        last_four: keychain::last_four(&name)?,
+        last_four: Some(keychain::tail(&key)),
     })
 }
 
