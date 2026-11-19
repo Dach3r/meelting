@@ -1,55 +1,55 @@
-# Visión del producto
+# Product vision
 
-## Qué es
+## What it is
 
-Plataforma de trabajo colaborativo donde el usuario crea una oficina virtual con agentes de IA especializados. Inspirada en apps de videoconferencia (Google Meet), pero en lugar de reunir solo personas, reúne agentes que representan roles de un equipo. Cada agente tiene responsabilidades, conocimientos, herramientas y capacidades propias.
+A collaborative work platform where the user creates a virtual office with specialized AI agents. Inspired by video conferencing apps (Google Meet), but instead of bringing together only people, it brings together agents that represent the roles of a team. Each agent has its own responsibilities, knowledge, tools and capabilities.
 
-**Propuesta principal:** transformar la interacción tradicional con asistentes de IA en una experiencia de trabajo colaborativo, visual y supervisable.
+**Main proposition:** turn the traditional interaction with AI assistants into a collaborative, visual and supervisable work experience.
 
-## Problema
+## Problem
 
-Automatizar trabajo con agentes de IA hoy implica:
+Automating work with AI agents today means:
 
-- Interactuar manualmente con distintas herramientas y asistentes.
-- Trabajo de agentes difícil de observar y comprender.
-- Sin representación intuitiva de cómo colaboran varios agentes.
-- Tareas complejas exigen coordinar herramientas, conocimientos y responsabilidades.
-- Difícil mantener supervisión, trazabilidad y control de acciones automatizadas.
-- El usuario debe intervenir constantemente para dar contexto o coordinar.
+- Manually interacting with different tools and assistants.
+- Agent work that is hard to observe and understand.
+- No intuitive representation of how several agents collaborate.
+- Complex tasks require coordinating tools, knowledge and responsibilities.
+- Hard to maintain supervision, traceability and control of automated actions.
+- The user must constantly step in to provide context or coordinate.
 
-Meelting ofrece un entorno centralizado donde los agentes trabajan como integrantes de un equipo.
+Meelting offers a centralized environment where agents work as members of a team.
 
-## Propuesta de valor
+## Value proposition
 
-Meelting no es solo un chatbot, una herramienta de videollamadas ni un administrador de tareas. Es un espacio donde los agentes pueden:
+Meelting is not just a chatbot, a video call tool or a task manager. It is a space where agents can:
 
-1. Recibir objetivos y tareas.
-2. Planificar cómo ejecutarlos.
-3. Comunicarse entre sí.
-4. Usar herramientas externas.
-5. Ejecutar acciones autorizadas.
-6. Compartir visualmente su actividad.
-7. Solicitar intervención humana.
-8. Entregar resultados verificables.
+1. Receive goals and tasks.
+2. Plan how to carry them out.
+3. Communicate with each other.
+4. Use external tools.
+5. Perform authorized actions.
+6. Share their activity visually.
+7. Request human intervention.
+8. Deliver verifiable results.
 
-**Diferenciador:** el usuario observa y dirige el trabajo como si coordinara un equipo real.
+**Differentiator:** the user observes and directs the work as if coordinating a real team.
 
-## Principios
+## Principles
 
-| Principio | Significado |
+| Principle | Meaning |
 |---|---|
-| Simplicidad | Intuitivo, sin exigir conocimiento de arquitecturas multiagente. |
-| Transparencia | El usuario entiende qué hacen los agentes, qué completaron y qué necesitan. |
-| Control humano | Acciones sensibles, destructivas o de impacto externo respetan permisos y requieren aprobación cuando corresponda. |
-| Colaboración | Los agentes comparten contexto, delegan y coordinan tareas. |
-| Autonomía progresiva | Se empieza con capacidades controladas; la autonomía crece al existir mecanismos confiables de ejecución y supervisión. |
-| Resultados reales | El valor es completar trabajo verificable. La interfaz no sustituye la ejecución real. |
-| Experiencia premium | Interfaz minimalista, moderna, limpia, enfocada en productividad. |
-| Operación híbrida | Sin backend propio ni cuenta, los datos viven en la máquina. El usuario combina modelos y motores en la nube y locales, sin preferencia obligatoria. Lo local funciona sin conexión; lo que depende de la nube informa cuándo no está disponible, y nunca se cambia de proveedor sin consentimiento. |
-| Conversación como en una reunión | El usuario habla o escribe con sus agentes como en una reunión de trabajo, dirigiendo quién interviene. Ver [voice-meetings.md](voice-meetings.md). |
+| Simplicity | Intuitive, without requiring knowledge of multi-agent architectures. |
+| Transparency | The user understands what the agents are doing, what they completed and what they need. |
+| Human control | Sensitive, destructive or externally impactful actions respect permissions and require approval when appropriate. |
+| Collaboration | Agents share context, delegate and coordinate tasks. |
+| Progressive autonomy | Start with controlled capabilities; autonomy grows as reliable execution and supervision mechanisms exist. |
+| Real results | The value is completing verifiable work. The interface does not replace real execution. |
+| Premium experience | Minimalist, modern, clean interface focused on productivity. |
+| Hybrid operation | No backend of its own or account; data lives on the machine. The user combines cloud and local models and engines, with no mandatory preference. Local things work offline; whatever depends on the cloud reports when it is unavailable, and the provider is never switched without consent. |
+| Conversation like in a meeting | The user talks or writes with their agents as in a work meeting, directing who speaks. See [voice-meetings.md](voice-meetings.md). |
 
-## Principio fundamental
+## Fundamental principle
 
-> Meelting no busca simular que una inteligencia artificial está trabajando. Busca permitir que inteligencias artificiales trabajen realmente, mientras el usuario observa, colabora y mantiene el control.
+> Meelting does not aim to simulate that an artificial intelligence is working. It aims to let artificial intelligences really work, while the user observes, collaborates and stays in control.
 
-La oficina virtual, los avatares y las salas son la interfaz que hace comprensible ese trabajo. El verdadero producto es la capacidad de delegar, coordinar, supervisar y completar tareas reales mediante agentes de IA.
+The virtual office, the avatars and the rooms are the interface that makes that work understandable. The real product is the ability to delegate, coordinate, supervise and complete real tasks through AI agents.
