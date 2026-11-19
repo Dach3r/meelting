@@ -20,7 +20,7 @@ type Props = {
 type Tone = "ok" | "neutral" | "problem";
 
 const dotTones: Record<Tone, string> = {
-  ok: "bg-accent",
+  ok: "bg-success",
   neutral: "bg-muted",
   problem: "bg-error",
 };
@@ -119,8 +119,8 @@ export function ProviderKeyRow({
     !editing && check && check.status !== "verified" ? describe(check) : null;
 
   return (
-    <div className="flex flex-col gap-4 px-6 py-5">
-      <div className="flex items-center gap-6">
+    <div className="flex flex-col gap-4 rounded-2xl bg-pill-hover px-5 py-4">
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
         <div className="min-w-0 flex-1">
           <h3 className="text-base font-semibold text-ink">{status.name}</h3>
           <p className="flex items-center gap-2 text-sm text-muted">
@@ -132,7 +132,7 @@ export function ProviderKeyRow({
           </p>
         </div>
         {!editing && (
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {configured ? (
               <>
                 <Button

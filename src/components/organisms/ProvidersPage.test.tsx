@@ -97,6 +97,28 @@ describe("ProvidersPage", () => {
     expect(screen.getByText("Not running")).toBeInTheDocument();
   });
 
+  it("lists the models installed in a running local runtime", async () => {
+    mockCore();
+    renderPage();
+
+    await screen.findByText("Running · 2 models");
+    const ollama = screen
+      .getByRole("heading", { name: "Ollama" })
+      .closest("div.flex-col") as HTMLElement;
+
+    expect(
+      within(ollama)
+        .getAllByRole("listitem")
+        .map((item) => item.textContent),
+    ).toEqual(["qwen", "llama"]);
+    expect(
+      screen
+        .getByRole("heading", { name: "LM Studio" })
+        .closest("div.flex-col")!
+        .querySelector("ul"),
+    ).toBeNull();
+  });
+
   it("verifies a new key, saves it and clears the field", async () => {
     const saved = vi.fn(() => {
       statuses[0] = { ...statuses[0], last_four: "4321" };

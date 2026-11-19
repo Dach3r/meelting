@@ -33,6 +33,7 @@
   --color-rail-ink: light-dark(#f3f4f6, #f4f4f5);
   --color-rail-muted: light-dark(#9ca3af, #a9a9b1);
   --color-error: light-dark(#c62828, #ff8a80);
+  --color-success: light-dark(#15803d, #6ee7a8);
 
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-brand: "Rubik", ui-sans-serif, system-ui, sans-serif;

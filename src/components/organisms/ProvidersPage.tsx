@@ -1,3 +1,4 @@
+import { Cloud, HardDrive } from "lucide-react";
 import { useState } from "react";
 import { useLlmProviders } from "../../hooks/useLlmProviders";
 import { useLocalModels } from "../../hooks/useLocalModels";
@@ -37,71 +38,85 @@ export function ProvidersPage() {
         <p className="text-sm text-muted">{t("providers.description")}</p>
       </div>
       {errorKey && <Alert message={translateError(locale, errorKey)} />}
-      <section className="grid gap-3">
-        <div className="flex items-end justify-between gap-4">
-          <div>
-            <h2 className="text-base font-semibold text-ink">
-              {t("providers.cloud.title")}
-            </h2>
-            <p className="text-sm text-muted">
-              {t("providers.cloud.description")}
-            </p>
+      <div className="grid items-start gap-4 xl:grid-cols-2">
+        <section className="grid gap-5 rounded-3xl border border-line p-6">
+          <div className="flex items-start gap-4">
+            <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-pill-hover text-ink">
+              <Cloud aria-hidden className="size-6" strokeWidth={1.75} />
+            </span>
+            <div className="grid min-w-0 flex-1 gap-1">
+              <div className="flex items-center justify-between gap-4">
+                <h2 className="text-lg font-bold text-ink">
+                  {t("providers.cloud.title")}
+                </h2>
+                {statuses && (
+                  <p className="shrink-0 text-sm font-medium text-muted">
+                    {translateWith(locale, "providers.cloud.summary", {
+                      count: configured,
+                      total: statuses.length,
+                    })}
+                  </p>
+                )}
+              </div>
+              <p className="text-sm text-muted">
+                {t("providers.cloud.description")}
+              </p>
+            </div>
           </div>
-          {statuses && (
-            <p className="shrink-0 text-sm font-medium text-muted">
-              {translateWith(locale, "providers.cloud.summary", {
-                count: configured,
-                total: statuses.length,
-              })}
-            </p>
-          )}
-        </div>
-        <div className="divide-y divide-line rounded-2xl bg-pill-hover">
-          {statuses?.map((status) => (
-            <ProviderKeyRow
-              key={status.provider}
-              status={status}
-              check={checks[status.provider]}
-              onSave={(key) => save(status.provider, key)}
-              onCheck={() => check(status.provider)}
-              onDelete={() => setDeleting(status)}
-            />
-          ))}
-        </div>
-      </section>
-      <section className="grid gap-3">
-        <div className="flex items-end justify-between gap-4">
-          <div>
-            <h2 className="text-base font-semibold text-ink">
-              {t("providers.local.title")}
-            </h2>
-            <p className="text-sm text-muted">
-              {t("providers.local.description")}
-            </p>
-          </div>
-          <Button
-            variant="ghost"
-            size="compact"
-            disabled={detected === null}
-            onClick={detectAgain}
-          >
-            {t("providers.local.detectAgain")}
-          </Button>
-        </div>
-        <div className="divide-y divide-line rounded-2xl bg-pill-hover">
-          {local.map((provider) => {
-            const found = detected?.find((entry) => entry.key === provider.key);
-            return (
-              <LocalProviderRow
-                key={provider.key}
-                name={provider.name}
-                detecting={detected === null}
-                models={found?.running ? found.models : null}
+          <div className="grid gap-3">
+            {statuses?.map((status) => (
+              <ProviderKeyRow
+                key={status.provider}
+                status={status}
+                check={checks[status.provider]}
+                onSave={(key) => save(status.provider, key)}
+                onCheck={() => check(status.provider)}
+                onDelete={() => setDeleting(status)}
               />
-            );
-          })}
-        </div>
-      </section>
+            ))}
+          </div>
+        </section>
+        <section className="grid gap-5 rounded-3xl border border-line p-6">
+          <div className="flex items-start gap-4">
+            <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-pill-hover text-ink">
+              <HardDrive aria-hidden className="size-6" strokeWidth={1.75} />
+            </span>
+            <div className="grid min-w-0 flex-1 gap-1">
+              <div className="flex items-center justify-between gap-4">
+                <h2 className="text-lg font-bold text-ink">
+                  {t("providers.local.title")}
+                </h2>
+                <Button
+                  variant="ghost"
+                  size="compact"
+                  disabled={detected === null}
+                  onClick={detectAgain}
+                >
+                  {t("providers.local.detectAgain")}
+                </Button>
+              </div>
+              <p className="text-sm text-muted">
+                {t("providers.local.description")}
+              </p>
+            </div>
+          </div>
+          <div className="grid gap-3">
+            {local.map((provider) => {
+              const found = detected?.find(
+                (entry) => entry.key === provider.key,
+              );
+              return (
+                <LocalProviderRow
+                  key={provider.key}
+                  name={provider.name}
+                  detecting={detected === null}
+                  models={found?.running ? found.models : null}
+                />
+              );
+            })}
+          </div>
+        </section>
+      </div>
       {deleting && (
         <Modal
           title={translateWith(locale, "providers.deleteDialog.title", {
