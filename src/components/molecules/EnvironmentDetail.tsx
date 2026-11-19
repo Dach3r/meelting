@@ -21,6 +21,7 @@ export function EnvironmentDetail({
     [t("files.detail.repository"), environment.repository_name],
     [t("tasks.environment.branch"), worktree.branch_name],
     [t("tasks.environment.base"), worktree.base_ref],
+    [t("files.detail.commit"), worktree.base_commit_sha.slice(0, 12)],
     [t("tasks.environment.path"), worktree.trash_path ?? worktree.path],
   ];
   return (
@@ -28,9 +29,14 @@ export function EnvironmentDetail({
       aria-label={environment.task_title}
       className="flex min-h-0 min-w-0 flex-1 flex-col gap-7 overflow-y-auto rounded-3xl border border-line bg-pill p-10"
     >
-      <div className="grid justify-items-start gap-3">
-        {status}
-        <h2 className="text-3xl font-bold text-ink">{environment.task_title}</h2>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div className="grid justify-items-start gap-3">
+          {status}
+          <h2 className="text-3xl font-bold text-ink">
+            {environment.task_title}
+          </h2>
+        </div>
+        <div className="flex flex-wrap gap-2">{actions}</div>
       </div>
       <dl className="grid grid-cols-[9rem_minmax(0,1fr)] overflow-hidden rounded-2xl border border-line text-sm">
         {rows.map(([label, value], index) => {
@@ -47,8 +53,9 @@ export function EnvironmentDetail({
           );
         })}
       </dl>
-      <div className="flex flex-wrap gap-2">{actions}</div>
-      <p className="max-w-xl text-sm text-muted">{hint}</p>
+      <p className="rounded-2xl bg-shell px-5 py-4 text-sm leading-relaxed text-muted">
+        {hint}
+      </p>
     </aside>
   );
 }

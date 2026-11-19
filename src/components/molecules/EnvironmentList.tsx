@@ -1,4 +1,3 @@
-import { FolderGit2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
 import type { Environment } from "../../hooks/useEnvironments";
@@ -32,8 +31,8 @@ export function EnvironmentList({
     candidates.length > 0 &&
     candidates.every((environment) => selected.has(environment.task_id));
   return (
-    <div className="grid gap-2">
-      <label className="flex cursor-pointer items-center gap-3 px-3 py-2 text-sm font-medium text-muted">
+    <div className="grid gap-1">
+      <label className="flex cursor-pointer items-center gap-3 px-4 py-2 text-sm font-medium text-muted">
         <input
           type="checkbox"
           checked={allSelected}
@@ -48,7 +47,7 @@ export function EnvironmentList({
           return (
             <li
               key={environment.task_id}
-              className={`flex min-w-0 items-center gap-3 rounded-2xl border px-3 py-1.5 ${focused ? "border-line bg-raised" : "border-transparent"}`}
+              className={`flex min-w-0 items-center gap-3 rounded-2xl px-4 transition-colors ${focused ? "bg-hi" : "hover:bg-raised"}`}
             >
               <input
                 type="checkbox"
@@ -61,22 +60,17 @@ export function EnvironmentList({
                 type="button"
                 aria-current={focused}
                 onClick={() => onFocus(environment.task_id)}
-                className="flex min-h-11 min-w-0 flex-1 cursor-pointer items-center gap-3 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+                className="grid min-h-16 min-w-0 flex-1 cursor-pointer content-center gap-1 rounded-xl text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
               >
-                <FolderGit2
-                  aria-hidden
-                  className="size-5 shrink-0 text-muted"
-                />
-                <span className="grid min-w-0 flex-1 gap-0.5">
-                  <span className="truncate font-semibold text-ink">
-                    {environment.task_title}
-                  </span>
-                  <span className="truncate text-xs text-muted">
-                    {environment.repository_name}
-                  </span>
+                <span className="truncate font-semibold text-ink">
+                  {environment.task_title}
+                </span>
+                <span className="flex min-w-0 items-center gap-2 text-xs text-muted">
+                  <span className="truncate">{environment.repository_name}</span>
+                  <span aria-hidden>·</span>
+                  {aside(environment)}
                 </span>
               </button>
-              <div className="shrink-0">{aside(environment)}</div>
             </li>
           );
         })}

@@ -88,20 +88,22 @@ export function EnvironmentsPage({ mode }: { mode: "files" | "trash" }) {
     const { worktree } = environment;
     if (inTrash && worktree.status === "ready" && worktree.trashed_at) {
       return (
-        <span className="text-xs font-medium text-muted">
+        <span>
           {translateWith(locale, "trash.daysLeft", {
             days: daysLeft(worktree.trashed_at, Date.now()),
           })}
         </span>
       );
     }
+    const label = t(`tasks.environment.status.${worktree.status}`);
     return (
-      <span
-        role="img"
-        aria-label={t(`tasks.environment.status.${worktree.status}`)}
-        title={t(`tasks.environment.status.${worktree.status}`)}
-        className={`block size-2.5 rounded-full ${worktree.status === "ready" ? "bg-success" : worktree.status === "failed" || worktree.status === "missing" ? "bg-error" : "bg-muted"}`}
-      />
+      <span className="inline-flex items-center gap-1.5">
+        <span
+          aria-hidden
+          className={`size-2 rounded-full ${worktree.status === "ready" ? "bg-success" : worktree.status === "failed" || worktree.status === "missing" ? "bg-error" : "bg-muted"}`}
+        />
+        {label}
+      </span>
     );
   }
 
@@ -138,67 +140,6 @@ export function EnvironmentsPage({ mode }: { mode: "files" | "trash" }) {
             </ul>
           </div>
         )}
-        <div className="flex flex-wrap gap-2">
-          {inTrash ? (
-            <>
-              <Button
-                type="button"
-                variant="ghost"
-                size="pill"
-                className="border-line"
-                disabled={busy || chosen.length === 0}
-                onClick={() => run(restore, chosen)}
-              >
-                {translateWith(locale, "trash.restore", {
-                  count: chosen.length,
-                })}
-              </Button>
-              <Button
-                type="button"
-                variant="danger"
-                size="pill"
-                disabled={busy || chosen.length === 0}
-                onClick={() => setPending({ action: "purge", taskIds: chosen })}
-              >
-                {translateWith(locale, "trash.purge", { count: chosen.length })}
-              </Button>
-              <Button
-                type="button"
-                variant="destructive"
-                size="pill"
-                disabled={busy || candidates.length === 0}
-                onClick={() =>
-                  setPending({ action: "purge", taskIds: candidates })
-                }
-              >
-                {t("trash.emptyTrash")}
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button
-                type="button"
-                variant="danger"
-                size="pill"
-                disabled={busy || chosen.length === 0}
-                onClick={() => setPending({ action: "trash", taskIds: chosen })}
-              >
-                {translateWith(locale, "files.trash", { count: chosen.length })}
-              </Button>
-              <Button
-                type="button"
-                variant="destructive"
-                size="pill"
-                disabled={busy || candidates.length === 0}
-                onClick={() =>
-                  setPending({ action: "trash", taskIds: candidates })
-                }
-              >
-                {t("files.trashAll")}
-              </Button>
-            </>
-          )}
-        </div>
         {environments &&
           (focused ? (
             <EnvironmentList
@@ -217,6 +158,71 @@ export function EnvironmentsPage({ mode }: { mode: "files" | "trash" }) {
               {t(`${mode}.empty`)}
             </p>
           ))}
+        <div className="mt-auto grid gap-2 pt-2">
+          {inTrash ? (
+            <>
+              <Button
+                type="button"
+                variant="ghost"
+                size="pill"
+                className="w-full border-line"
+                disabled={busy || chosen.length === 0}
+                onClick={() => run(restore, chosen)}
+              >
+                {translateWith(locale, "trash.restore", {
+                  count: chosen.length,
+                })}
+              </Button>
+              <Button
+                type="button"
+                variant="danger"
+                size="pill"
+                className="w-full"
+                disabled={busy || chosen.length === 0}
+                onClick={() => setPending({ action: "purge", taskIds: chosen })}
+              >
+                {translateWith(locale, "trash.purge", { count: chosen.length })}
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                size="pill"
+                className="w-full"
+                disabled={busy || candidates.length === 0}
+                onClick={() =>
+                  setPending({ action: "purge", taskIds: candidates })
+                }
+              >
+                {t("trash.emptyTrash")}
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                type="button"
+                variant="danger"
+                size="pill"
+                className="w-full"
+                disabled={busy || chosen.length === 0}
+                onClick={() => setPending({ action: "trash", taskIds: chosen })}
+              >
+                {translateWith(locale, "files.trash", { count: chosen.length })}
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                size="pill"
+                className="w-full"
+                disabled={busy || candidates.length === 0}
+                onClick={() =>
+                  setPending({ action: "trash", taskIds: candidates })
+                }
+              >
+                {t("files.trashAll")}
+              </Button>
+            </>
+          )}
+        </div>
       </section>
       {focused && (
         <EnvironmentDetail

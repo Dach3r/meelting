@@ -605,7 +605,8 @@
     "description": "Working environments (worktrees) of this workspace's tasks. Environments sent to the trash are deleted completely after 30 days.",
     "empty": "There are no environments yet. Prepare one from a task.",
     "detail": {
-      "repository": "Repository"
+      "repository": "Repository",
+      "commit": "Base commit"
     },
     "selectAll": "Select all",
     "trash": "Move to trash ({count})",
