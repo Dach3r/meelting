@@ -1,10 +1,12 @@
-#![allow(dead_code)]
+use crate::domain::file_copy::looks_secret;
+use serde::{Deserialize, Serialize};
 
 pub const MAX_ENTRIES: usize = 2_000;
 pub const MAX_DIFF_LINES: usize = 2_000;
 pub const MAX_LINE_CHARS: usize = 2_000;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
 pub enum ChangeCode {
     Added,
     Modified,
@@ -14,8 +16,10 @@ pub enum ChangeCode {
     TypeChanged,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
 pub enum EntryKind {
+    Committed,
     Changed,
     Conflicted,
     Untracked,
@@ -37,11 +41,92 @@ pub struct ReviewStatus {
     pub complete: bool,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum DiffSource {
     Unstaged,
     Staged,
     Branch,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum DriftState {
+    UpToDate,
+    Moved,
+    Rewritten,
+    Unavailable,
+}
+
+pub fn classify_drift(
+    base_commit: &str,
+    current: Option<&str>,
+    base_is_ancestor: Option<bool>,
+) -> DriftState {
+    match (current, base_is_ancestor) {
+        (None, _) => DriftState::Unavailable,
+        (Some(current), _) if current == base_commit => DriftState::UpToDate,
+        (Some(_), Some(true)) => DriftState::Moved,
+        (Some(_), Some(false)) => DriftState::Rewritten,
+        (Some(_), None) => DriftState::Unavailable,
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct Drift {
+    pub state: DriftState,
+    pub base_ref: String,
+    pub current_commit: Option<String>,
+}
+
+pub fn protected_path(path: &[u8]) -> bool {
+    String::from_utf8_lossy(path)
+        .split('/')
+        .filter(|component| !component.is_empty())
+        .any(looks_secret)
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct EntryView {
+    pub id: u32,
+    pub kind: EntryKind,
+    pub path: String,
+    pub original_path: Option<String>,
+    pub lossy_path: bool,
+    pub staged: Option<ChangeCode>,
+    pub unstaged: Option<ChangeCode>,
+    pub sources: Vec<DiffSource>,
+    pub protected: bool,
+    pub folder: bool,
+    pub added: Option<u64>,
+    pub deleted: Option<u64>,
+    pub binary: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct EnvironmentReview {
+    pub review_id: String,
+    pub branch: String,
+    pub base_commit_sha: String,
+    pub head_commit_sha: Option<String>,
+    pub commits_ahead: u32,
+    pub drift: Drift,
+    pub operation_in_progress: bool,
+    pub entries: Vec<EntryView>,
+    pub complete: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct FolderListing {
+    pub entries: Vec<EntryView>,
+    pub complete: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+pub struct DiffRequest {
+    pub review_id: String,
+    pub entry_id: u32,
+    pub source: DiffSource,
 }
 
 pub fn display_path(path: &[u8]) -> (String, bool) {
@@ -220,7 +305,8 @@ pub fn parse_numstat(output: &[u8], output_truncated: bool) -> Numstat {
     Numstat { entries, complete }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
 pub enum LineKind {
     Context,
     Added,
@@ -228,19 +314,19 @@ pub enum LineKind {
     NoNewline,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct DiffLine {
     pub kind: LineKind,
     pub text: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct Hunk {
     pub header: String,
     pub lines: Vec<DiffLine>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct FileDiff {
     pub binary: bool,
     pub hunks: Vec<Hunk>,

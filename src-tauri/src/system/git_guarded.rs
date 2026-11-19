@@ -54,13 +54,11 @@ pub const REMOVAL_LIMITS: Limits = Limits {
     max_stdout: 32 * 1024 * 1024,
 };
 
-#[allow(dead_code)]
 pub const REVIEW_STATUS_LIMITS: Limits = Limits {
     timeout: Duration::from_secs(20),
     max_stdout: 4 * 1024 * 1024,
 };
 
-#[allow(dead_code)]
 pub const REVIEW_DIFF_LIMITS: Limits = Limits {
     timeout: Duration::from_secs(20),
     max_stdout: 512 * 1024,
@@ -391,6 +389,18 @@ fn fingerprint(common_dir: &Path, admin_dir: &Path) -> Result<Fingerprint, Guard
     })
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct ReviewState {
+    head: Option<String>,
+    index: Option<(u64, std::time::SystemTime)>,
+}
+
+impl ReviewState {
+    pub fn head(&self) -> Option<&str> {
+        self.head.as_deref()
+    }
+}
+
 #[derive(Debug)]
 pub struct Guard {
     admin_dir: PathBuf,
@@ -632,7 +642,6 @@ impl Guard {
     }
 }
 
-#[allow(dead_code)]
 fn literal_pathspec(path: &[u8]) -> Result<OsString, GuardError> {
     let mut pathspec = OsString::from(":(literal)");
     #[cfg(unix)]
@@ -645,7 +654,6 @@ fn literal_pathspec(path: &[u8]) -> Result<OsString, GuardError> {
     Ok(pathspec)
 }
 
-#[allow(dead_code)]
 impl Guard {
     pub async fn review_status(&self) -> Result<Output, GuardError> {
         self.query_partial(
@@ -656,6 +664,41 @@ impl Guard {
                 "--untracked-files=normal",
                 "--ignored=matching",
                 "--ignore-submodules=all",
+            ],
+            REVIEW_STATUS_LIMITS,
+        )
+        .await
+    }
+
+    pub async fn review_state(&self) -> Result<ReviewState, GuardError> {
+        let head = match self
+            .query(
+                ["rev-parse", "--verify", "--quiet", "HEAD^{commit}"],
+                REMOVAL_LIMITS,
+            )
+            .await
+        {
+            Ok(output) => Some(String::from_utf8_lossy(&output).trim().to_string()),
+            Err(GuardError::Failed(Some(1))) => None,
+            Err(error) => return Err(error),
+        };
+        let index = std::fs::metadata(self.admin_dir.join("index"))
+            .ok()
+            .and_then(|metadata| Some((metadata.len(), metadata.modified().ok()?)));
+        Ok(ReviewState { head, index })
+    }
+
+    pub async fn review_folder(&self, folder: &[u8]) -> Result<Output, GuardError> {
+        self.query_partial(
+            [
+                OsString::from("status"),
+                "--porcelain=v2".into(),
+                "-z".into(),
+                "--untracked-files=normal".into(),
+                "--ignored=matching".into(),
+                "--ignore-submodules=all".into(),
+                "--".into(),
+                literal_pathspec(folder)?,
             ],
             REVIEW_STATUS_LIMITS,
         )
