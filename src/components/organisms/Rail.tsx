@@ -14,7 +14,7 @@ import { useI18n } from "../../i18n/I18nProvider";
 import { Logo } from "../atoms/Logo";
 import { NavItem } from "../molecules/NavItem";
 
-export type View = "teams" | "rooms" | "settings";
+export type View = "teams" | "rooms" | "providers" | "settings";
 
 const items: { key: string; icon: LucideIcon; view?: View }[] = [
   { key: "teams", icon: Users, view: "teams" },
@@ -22,7 +22,7 @@ const items: { key: string; icon: LucideIcon; view?: View }[] = [
   { key: "tasks", icon: ListChecks },
   { key: "activity", icon: Activity },
   { key: "integrations", icon: Plug },
-  { key: "apiKeys", icon: KeyRound },
+  { key: "providers", icon: KeyRound, view: "providers" },
   { key: "settings", icon: Settings, view: "settings" },
 ];
 

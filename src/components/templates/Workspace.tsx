@@ -14,6 +14,7 @@ import {
   transitionMs,
 } from "../molecules/TransitionOverlay";
 import { AgentCatalogPage } from "../organisms/AgentCatalogPage";
+import { ProvidersPage } from "../organisms/ProvidersPage";
 import { Rail, type View } from "../organisms/Rail";
 import { RoomsPage } from "../organisms/RoomsPage";
 import { SettingsPage } from "../organisms/SettingsPage";
@@ -150,6 +151,8 @@ export function Workspace({
                   onChangeUiScale={onChangeUiScale}
                   onChangeLoadingEnabled={onChangeLoadingEnabled}
                 />
+              ) : view === "providers" ? (
+                <ProvidersPage />
               ) : view === "rooms" ? (
                 <RoomsPage
                   key={props.currentId}

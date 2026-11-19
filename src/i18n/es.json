@@ -144,7 +144,7 @@
       "tasks": "Tareas",
       "activity": "Actividad",
       "integrations": "Integraciones",
-      "apiKeys": "Claves de IA",
+      "providers": "Proveedores IA",
       "settings": "Configuración"
     },
     "topbar": {
