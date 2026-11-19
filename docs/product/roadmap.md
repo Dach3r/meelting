@@ -119,10 +119,13 @@ flowchart LR
 
 ## Phase 4 — Tasks and worktrees (2 weeks)
 
-- Tasks with a repository and base branch; worktree creation and cleanup; orphan reconciliation; concurrency limit.
-- Task panel with a read-only diff.
+Specification: [tasks.md](tasks.md); decisions D27–D39.
 
-**Expected result:** two tasks in parallel on the same repo without interfering; discarding cleans up the worktree and branch.
+- **4A — Domain, repositories and tasks** (in progress): repository registration, tasks with status, priority, optional repository and base branch, several agents per task, creation from rooms.
+- **4B — Git environments:** worktree root setting, fixed local storage checks, explicit preparation from an exact commit, local file copies, technical states, per-repository serialization, recovery at startup, safe removal without `--force`.
+- **4C — Review and interface:** environment detail, Git status, read-only diff, drift warnings, recovery screens, E2E on Linux and Windows.
+
+**Expected result:** two tasks on the same repo get independent worktrees without touching the original working directory; completing a task keeps its worktree and branch, and only clean worktrees are removed.
 
 ## Phase 5 — Tools and approvals (3 weeks)
 
