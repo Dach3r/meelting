@@ -1,10 +1,12 @@
-#![allow(dead_code)]
+use crate::domain::file_copy::looks_secret;
+use serde::{Deserialize, Serialize};
 
 pub const MAX_ENTRIES: usize = 2_000;
 pub const MAX_DIFF_LINES: usize = 2_000;
 pub const MAX_LINE_CHARS: usize = 2_000;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
 pub enum ChangeCode {
     Added,
     Modified,
@@ -14,8 +16,10 @@ pub enum ChangeCode {
     TypeChanged,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
 pub enum EntryKind {
+    Committed,
     Changed,
     Conflicted,
     Untracked,
@@ -37,11 +41,92 @@ pub struct ReviewStatus {
     pub complete: bool,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum DiffSource {
     Unstaged,
     Staged,
     Branch,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum DriftState {
+    UpToDate,
+    Moved,
+    Rewritten,
+    Unavailable,
+}
+
+pub fn classify_drift(
+    base_commit: &str,
+    current: Option<&str>,
+    base_is_ancestor: Option<bool>,
+) -> DriftState {
+    match (current, base_is_ancestor) {
+        (None, _) => DriftState::Unavailable,
+        (Some(current), _) if current == base_commit => DriftState::UpToDate,
+        (Some(_), Some(true)) => DriftState::Moved,
+        (Some(_), Some(false)) => DriftState::Rewritten,
+        (Some(_), None) => DriftState::Unavailable,
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct Drift {
+    pub state: DriftState,
+    pub base_ref: String,
+    pub current_commit: Option<String>,
+}
+
+pub fn protected_path(path: &[u8]) -> bool {
+    String::from_utf8_lossy(path)
+        .split('/')
+        .filter(|component| !component.is_empty())
+        .any(looks_secret)
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct EntryView {
+    pub id: u32,
+    pub kind: EntryKind,
+    pub path: String,
+    pub original_path: Option<String>,
+    pub lossy_path: bool,
+    pub staged: Option<ChangeCode>,
+    pub unstaged: Option<ChangeCode>,
+    pub sources: Vec<DiffSource>,
+    pub protected: bool,
+    pub folder: bool,
+    pub added: Option<u64>,
+    pub deleted: Option<u64>,
+    pub binary: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct EnvironmentReview {
+    pub review_id: String,
+    pub branch: String,
+    pub base_commit_sha: String,
+    pub head_commit_sha: Option<String>,
+    pub commits_ahead: u32,
+    pub drift: Drift,
+    pub operation_in_progress: bool,
+    pub entries: Vec<EntryView>,
+    pub complete: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct FolderListing {
+    pub entries: Vec<EntryView>,
+    pub complete: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+pub struct DiffRequest {
+    pub review_id: String,
+    pub entry_id: u32,
+    pub source: DiffSource,
 }
 
 pub fn display_path(path: &[u8]) -> (String, bool) {
@@ -49,6 +134,34 @@ pub fn display_path(path: &[u8]) -> (String, bool) {
         Ok(text) => (text.to_string(), false),
         Err(_) => (String::from_utf8_lossy(path).into_owned(), true),
     }
+}
+
+pub fn immediate_children(folder: &[u8], entries: Vec<ReviewEntry>) -> Vec<ReviewEntry> {
+    let mut children: Vec<ReviewEntry> = Vec::new();
+    for entry in entries {
+        let Some(rest) = entry
+            .path
+            .strip_prefix(folder)
+            .filter(|rest| !rest.is_empty())
+        else {
+            continue;
+        };
+        let path = match rest.iter().position(|byte| *byte == b'/') {
+            Some(slash) => [folder, &rest[..=slash]].concat(),
+            None => entry.path.clone(),
+        };
+        if !children
+            .iter()
+            .any(|child| child.path == path && child.kind == entry.kind)
+        {
+            children.push(ReviewEntry {
+                path,
+                original_path: None,
+                ..entry
+            });
+        }
+    }
+    children
 }
 
 fn change_code(letter: u8) -> Option<Option<ChangeCode>> {
@@ -220,7 +333,8 @@ pub fn parse_numstat(output: &[u8], output_truncated: bool) -> Numstat {
     Numstat { entries, complete }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
 pub enum LineKind {
     Context,
     Added,
@@ -228,19 +342,19 @@ pub enum LineKind {
     NoNewline,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct DiffLine {
     pub kind: LineKind,
     pub text: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct Hunk {
     pub header: String,
     pub lines: Vec<DiffLine>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct FileDiff {
     pub binary: bool,
     pub hunks: Vec<Hunk>,
@@ -314,6 +428,69 @@ pub fn parse_patch(patch: &[u8], output_truncated: bool) -> FileDiff {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_folder_listing_keeps_only_its_immediate_children() {
+        let entry = |kind, path: &str| ReviewEntry {
+            kind,
+            path: path.as_bytes().to_vec(),
+            original_path: None,
+            staged: None,
+            unstaged: None,
+        };
+        let listing = vec![
+            entry(EntryKind::Untracked, "docs/a.md"),
+            entry(EntryKind::Untracked, "docs/deep/b.md"),
+            entry(EntryKind::Untracked, "docs/deep/c.md"),
+            entry(EntryKind::Ignored, "docs/deep/d.o"),
+            entry(EntryKind::Untracked, "docs/z.md"),
+            entry(EntryKind::Untracked, "elsewhere/x.md"),
+            entry(EntryKind::Untracked, "docs-other/y.md"),
+        ];
+
+        let children = immediate_children(b"docs/", listing);
+
+        let summary: Vec<(EntryKind, &[u8])> = children
+            .iter()
+            .map(|child| (child.kind, child.path.as_slice()))
+            .collect();
+        assert_eq!(
+            summary,
+            [
+                (EntryKind::Untracked, &b"docs/a.md"[..]),
+                (EntryKind::Untracked, b"docs/deep/"),
+                (EntryKind::Ignored, b"docs/deep/"),
+                (EntryKind::Untracked, b"docs/z.md"),
+            ]
+        );
+    }
+
+    #[test]
+    fn drift_is_classified_from_the_base_commit_and_the_current_branch() {
+        use DriftState::*;
+        assert_eq!(classify_drift("a", Some("a"), None), UpToDate);
+        assert_eq!(classify_drift("a", Some("b"), Some(true)), Moved);
+        assert_eq!(classify_drift("a", Some("b"), Some(false)), Rewritten);
+        assert_eq!(classify_drift("a", Some("b"), None), Unavailable);
+        assert_eq!(classify_drift("a", None, None), Unavailable);
+        assert_eq!(classify_drift("a", None, Some(true)), Unavailable);
+    }
+
+    #[test]
+    fn paths_with_a_secret_looking_component_are_protected() {
+        for path in [
+            ".env",
+            "config/.env.local",
+            "keys/server.pem",
+            "secrets/readme.txt",
+            "a/credentials.json",
+        ] {
+            assert!(protected_path(path.as_bytes()), "{path}");
+        }
+        for path in ["README.md", "src/main.rs", "docs/"] {
+            assert!(!protected_path(path.as_bytes()), "{path}");
+        }
+    }
 
     #[test]
     fn reads_every_kind_of_entry_keeping_staged_and_unstaged_apart() {

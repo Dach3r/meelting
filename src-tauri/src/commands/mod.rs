@@ -3,6 +3,7 @@ pub mod app_settings;
 pub mod dialog;
 pub mod provider_keys;
 pub mod repositories;
+pub mod review;
 pub mod rooms;
 pub mod session;
 pub mod tasks;

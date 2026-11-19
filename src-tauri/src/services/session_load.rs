@@ -93,6 +93,8 @@ pub enum SessionError {
     RepositoryMoved,
     #[error("git_too_old")]
     GitTooOld,
+    #[error("process_isolation_unavailable")]
+    ProcessIsolationUnavailable,
     #[error("filters_not_supported")]
     FiltersNotSupported,
     #[error("worktree_path_conflict")]
@@ -111,6 +113,20 @@ pub enum SessionError {
     EnvironmentRemoveRefused,
     #[error("environment_check_refused")]
     EnvironmentCheckRefused,
+    #[error("environment_filters_apply")]
+    EnvironmentFiltersApply,
+    #[error("environment_config_unsafe")]
+    EnvironmentConfigUnsafe,
+    #[error("review_timeout")]
+    ReviewTimeout,
+    #[error("review_stale")]
+    ReviewStale,
+    #[error("invalid_review_entry")]
+    InvalidReviewEntry,
+    #[error("protected_file")]
+    ProtectedFile,
+    #[error("diff_too_large")]
+    DiffTooLarge,
     #[error("environment_in_trash")]
     EnvironmentInTrash,
     #[error("environment_not_in_trash")]

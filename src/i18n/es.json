@@ -49,6 +49,7 @@
     "environment_still_exists": "La carpeta del entorno o su registro en Git siguen existiendo, así que no se descartó.",
     "repository_moved": "La carpeta del repositorio ya no contiene el repositorio registrado. Regístralo de nuevo.",
     "git_too_old": "Preparar entornos requiere Git 2.40 o posterior. Actualiza Git e inténtalo de nuevo.",
+    "process_isolation_unavailable": "Este sistema no puede garantizar que Git se ejecute sin iniciar otros programas (por ejemplo, si Meelting corre como administrador o root), así que no se leyó el entorno.",
     "filters_not_supported": "Este repositorio usa filtros de Git que ejecutan programas al hacer checkout (por ejemplo, Git LFS), y aún no son compatibles.",
     "worktree_path_conflict": "Ya existe algo donde se crearía el entorno. No se cambió nada.",
     "task_has_environment": "Elimina o descarta el entorno de la tarea antes de borrarla.",
@@ -66,7 +67,14 @@
     "environment_move_refused": "Git no pudo mover la carpeta del entorno. No se cambió nada.",
     "environment_branch_not_deleted": "El entorno se eliminó, pero Git no pudo borrar su rama.",
     "data_folder_unavailable": "Meelting no pudo abrir la carpeta de datos.",
-    "autostart_unavailable": "Meelting no pudo cambiar el inicio automático de este equipo."
+    "autostart_unavailable": "Meelting no pudo cambiar el inicio automático de este equipo.",
+    "environment_filters_apply": "Este repositorio usa filtros de Git que ejecutan programas (por ejemplo, Git LFS), así que sus cambios no se pueden revisar de forma segura. No se ejecutó nada.",
+    "environment_config_unsafe": "La configuración de Git de este repositorio incluye otros archivos, cambió durante la revisión o pidió a Git ejecutar un programa, así que se rechazó la revisión. No se ejecutó nada.",
+    "review_timeout": "Git tardó demasiado en responder, así que se detuvo la revisión. Inténtalo de nuevo.",
+    "review_stale": "El entorno cambió desde que se hizo esta revisión. Actualiza la revisión.",
+    "invalid_review_entry": "Ese archivo no forma parte de la revisión actual. Actualiza la revisión.",
+    "protected_file": "Este archivo puede contener secretos, así que no se muestra su contenido.",
+    "diff_too_large": "Los cambios de este archivo son demasiado grandes para mostrarlos."
   },
   "newWorkspace": {
     "title": "Crea tu workspace",
@@ -719,6 +727,96 @@
       "title": "¿Eliminar {count} definitivamente?",
       "body": "Se borran la carpeta, los cambios sin commitear, los archivos locales (como .env) y la rama con todos sus commits. No se puede deshacer.",
       "confirm": "Eliminar definitivamente"
+    }
+  },
+  "review": {
+    "title": "Cambios",
+    "refresh": "Actualizar",
+    "refreshing": "Actualizando…",
+    "loading": "Leyendo los cambios de este entorno…",
+    "empty": "Aún no hay cambios. El entorno no tiene commits, archivos en staging, modificados ni sin seguimiento más allá de su punto de partida.",
+    "unavailable": "El entorno no está listo, así que no se pueden mostrar sus cambios.",
+    "snapshotNote": "Esta vista muestra lo que Git informó en la última actualización. Otras herramientas pueden cambiar los archivos en cualquier momento, así que actualiza para ver el estado actual.",
+    "partial": "Esta lista está incompleta: la salida se cortó en un límite seguro. Algunos archivos no se muestran.",
+    "header": {
+      "branch": "Rama",
+      "base": "Base",
+      "head": "HEAD",
+      "ahead": "Commits adelantados",
+      "drift": "Rama base",
+      "operation": "Operación de Git",
+      "operationNone": "Ninguna",
+      "operationRunning": "En curso"
+    },
+    "operationNotice": "Hay una operación de Git (merge, rebase, cherry-pick, revert, bisect o un bloqueo) en curso en este entorno. La lista muestra lo que Git informa ahora.",
+    "groups": {
+      "conflicted": "Conflictos",
+      "staged": "En staging",
+      "unstaged": "Sin stage",
+      "untracked": "Sin seguimiento",
+      "committed": "Con commit",
+      "ignored": "Ignorados"
+    },
+    "change": {
+      "added": "Añadido",
+      "modified": "Modificado",
+      "deleted": "Eliminado",
+      "renamed": "Renombrado",
+      "copied": "Copiado",
+      "type_changed": "Cambio de tipo",
+      "conflicted": "Conflicto",
+      "untracked": "Sin seguimiento",
+      "ignored": "Ignorado"
+    },
+    "badges": {
+      "binary": "Binario",
+      "protected": "Protegido",
+      "lossyPath": "El nombre no es texto válido"
+    },
+    "renamedFrom": "desde {path}",
+    "counts": "{added} líneas añadidas, {deleted} eliminadas",
+    "conflictHint": "Los conflictos no se muestran como diff. Resuélvelos en el entorno.",
+    "folder": {
+      "expand": "Expandir la carpeta {path}",
+      "collapse": "Contraer la carpeta {path}",
+      "loading": "Leyendo la carpeta…",
+      "empty": "La carpeta no tiene archivos que mostrar.",
+      "incomplete": "El listado de la carpeta está incompleto."
+    },
+    "diff": {
+      "title": "Diff",
+      "select": "Elige un archivo para leer sus cambios.",
+      "loading": "Leyendo el diff…",
+      "binary": "Es un archivo binario, así que no se muestra su contenido.",
+      "noChanges": "Git no informa cambios de líneas en este archivo (por ejemplo, un renombrado o un cambio de modo).",
+      "partial": "El diff está incompleto: se cortó en un límite seguro.",
+      "lossy": "Algunos bytes no son texto válido y se reemplazaron.",
+      "protected": "Este archivo puede contener secretos, así que no se muestra su contenido.",
+      "region": "Cambios de {path}, {source}",
+      "noNewline": "Sin salto de línea al final del archivo",
+      "lines": {
+        "added": "Línea añadida",
+        "removed": "Línea eliminada",
+        "context": "Línea sin cambios"
+      },
+      "sources": {
+        "staged": "cambios en staging",
+        "unstaged": "cambios sin stage",
+        "branch": "cambios desde el commit base"
+      }
+    },
+    "retry": "Reintentar",
+    "drift": {
+      "up_to_date": "La rama base no se ha movido desde que se preparó este entorno.",
+      "moved": "La rama base se movió desde que se preparó este entorno. No se actualizó nada.",
+      "rewritten": "La rama base fue reescrita y ya no contiene el commit inicial de este entorno. No se actualizó nada.",
+      "unavailable": "La rama base no está disponible, así que no se pudo hacer la comparación."
+    },
+    "driftState": {
+      "up_to_date": "Al día",
+      "moved": "Movida",
+      "rewritten": "Reescrita",
+      "unavailable": "No disponible"
     }
   }
 }

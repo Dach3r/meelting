@@ -146,6 +146,22 @@ pub async fn branch_commit(dir: &Path, branch: &str) -> Result<Option<String>, G
         .then(|| String::from_utf8_lossy(&output.stdout).trim().to_string()))
 }
 
+pub async fn is_ancestor(
+    dir: &Path,
+    ancestor: &str,
+    descendant: &str,
+) -> Result<Option<bool>, GitError> {
+    let status = git(dir)
+        .args(["merge-base", "--is-ancestor", ancestor, descendant])
+        .status()
+        .await?;
+    Ok(match status.code() {
+        Some(0) => Some(true),
+        Some(1) => Some(false),
+        _ => None,
+    })
+}
+
 pub async fn branch_exists(dir: &Path, branch: &str) -> Result<bool, GitError> {
     succeeds(
         dir,

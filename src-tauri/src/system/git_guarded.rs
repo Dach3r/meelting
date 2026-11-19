@@ -37,6 +37,8 @@ pub enum GuardError {
     TimedOut,
     #[error("git output too large")]
     OutputTooLarge,
+    #[error("process isolation unavailable")]
+    IsolationUnavailable,
     #[error("git failed")]
     Failed(Option<i32>),
 }
@@ -52,13 +54,11 @@ pub const REMOVAL_LIMITS: Limits = Limits {
     max_stdout: 32 * 1024 * 1024,
 };
 
-#[allow(dead_code)]
 pub const REVIEW_STATUS_LIMITS: Limits = Limits {
     timeout: Duration::from_secs(20),
     max_stdout: 4 * 1024 * 1024,
 };
 
-#[allow(dead_code)]
 pub const REVIEW_DIFF_LIMITS: Limits = Limits {
     timeout: Duration::from_secs(20),
     max_stdout: 512 * 1024,
@@ -145,8 +145,10 @@ async fn windows_active_processes() -> Result<u32, GuardError> {
     for active in 1..=3 {
         let mut version = command(false);
         version.arg("version");
-        if run(version, REMOVAL_LIMITS, active).await.is_ok() {
-            return Ok(*LEARNED.get_or_init(|| active));
+        match run(version, REMOVAL_LIMITS, active).await {
+            Ok(_) => return Ok(*LEARNED.get_or_init(|| active)),
+            Err(GuardError::IsolationUnavailable) => return Err(GuardError::IsolationUnavailable),
+            Err(_) => {}
         }
     }
     Err(GuardError::Failed(None))
@@ -164,14 +166,16 @@ async fn run(
         .kill_on_drop(true);
     #[cfg(unix)]
     command.process_group(0);
+    #[cfg(unix)]
+    child_limit::ensure_effective().map_err(|_| GuardError::IsolationUnavailable)?;
     child_limit::prepare(&mut command);
     let mut child = command.spawn()?;
     #[cfg(windows)]
     let _job = match child_limit::confine(&child, active_processes) {
         Ok(job) => job,
-        Err(error) => {
+        Err(_) => {
             terminate(&mut child).await;
-            return Err(GuardError::Unavailable(error));
+            return Err(GuardError::IsolationUnavailable);
         }
     };
     let (Some(mut stdout), Some(mut stderr)) = (child.stdout.take(), child.stderr.take()) else {
@@ -383,6 +387,18 @@ fn fingerprint(common_dir: &Path, admin_dir: &Path) -> Result<Fingerprint, Guard
         worktree_config: read_bounded(&admin_dir.join("config.worktree"))?,
         info_attributes: read_info_attributes(common_dir)?,
     })
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct ReviewState {
+    head: Option<String>,
+    index: Option<(u64, std::time::SystemTime)>,
+}
+
+impl ReviewState {
+    pub fn head(&self) -> Option<&str> {
+        self.head.as_deref()
+    }
 }
 
 #[derive(Debug)]
@@ -626,7 +642,6 @@ impl Guard {
     }
 }
 
-#[allow(dead_code)]
 fn literal_pathspec(path: &[u8]) -> Result<OsString, GuardError> {
     let mut pathspec = OsString::from(":(literal)");
     #[cfg(unix)]
@@ -639,7 +654,6 @@ fn literal_pathspec(path: &[u8]) -> Result<OsString, GuardError> {
     Ok(pathspec)
 }
 
-#[allow(dead_code)]
 impl Guard {
     pub async fn review_status(&self) -> Result<Output, GuardError> {
         self.query_partial(
@@ -650,6 +664,41 @@ impl Guard {
                 "--untracked-files=normal",
                 "--ignored=matching",
                 "--ignore-submodules=all",
+            ],
+            REVIEW_STATUS_LIMITS,
+        )
+        .await
+    }
+
+    pub async fn review_state(&self) -> Result<ReviewState, GuardError> {
+        let head = match self
+            .query(
+                ["rev-parse", "--verify", "--quiet", "HEAD^{commit}"],
+                REMOVAL_LIMITS,
+            )
+            .await
+        {
+            Ok(output) => Some(String::from_utf8_lossy(&output).trim().to_string()),
+            Err(GuardError::Failed(Some(1))) => None,
+            Err(error) => return Err(error),
+        };
+        let index = std::fs::metadata(self.admin_dir.join("index"))
+            .ok()
+            .and_then(|metadata| Some((metadata.len(), metadata.modified().ok()?)));
+        Ok(ReviewState { head, index })
+    }
+
+    pub async fn review_folder(&self, folder: &[u8]) -> Result<Output, GuardError> {
+        self.query_partial(
+            [
+                OsString::from("status"),
+                "--porcelain=v2".into(),
+                "-z".into(),
+                "--untracked-files=all".into(),
+                "--ignored=matching".into(),
+                "--ignore-submodules=all".into(),
+                "--".into(),
+                literal_pathspec(folder)?,
             ],
             REVIEW_STATUS_LIMITS,
         )
