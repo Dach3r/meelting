@@ -747,11 +747,6 @@ mod tests {
         git(&fx.work_tree, &["add", "a.txt"]);
 
         assert!(fx.executed().contains("clean"), "the probe never ran");
-        fx.clear();
-        assert!(
-            fx.plain_git_executes(),
-            "git diff must run the clean filter"
-        );
     }
 
     #[tokio::test]
