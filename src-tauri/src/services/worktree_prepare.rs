@@ -248,7 +248,7 @@ pub mod tests {
         git(&repo, &["add", "README.md"]);
         git(&repo, &["commit", "-m", "readme"]);
         let root_dir = tempfile::tempdir().unwrap();
-        let root = std::fs::canonicalize(root_dir.path()).unwrap();
+        let root = simplified(std::fs::canonicalize(root_dir.path()).unwrap());
         profile::set_worktrees_root(&pool, &root.to_string_lossy())
             .await
             .unwrap();
