@@ -4,13 +4,16 @@ import { Alert } from "./Alert";
 
 const barHeights = ["h-[36%]", "h-[66%]", "h-full", "h-[66%]", "h-[36%]"];
 
+export const transitionMs = 600;
+
 type Props = {
-  workspaceName: string;
-  errorMessage: string | null;
-  onDismiss: () => void;
+  label: string;
+  name: string;
+  errorMessage?: string | null;
+  onDismiss?: () => void;
 };
 
-export function SwitchingOverlay({ workspaceName, errorMessage, onDismiss }: Props) {
+export function TransitionOverlay({ label, name, errorMessage = null, onDismiss }: Props) {
   const { t } = useI18n();
 
   return (
@@ -34,7 +37,7 @@ export function SwitchingOverlay({ workspaceName, errorMessage, onDismiss }: Pro
             ))}
           </div>
           <p className="text-sm text-muted">
-            {t("home.workspace.switching")} <b className="font-semibold text-ink">{workspaceName}</b>
+            {label} <b className="font-semibold text-ink">{name}</b>
           </p>
         </div>
       )}

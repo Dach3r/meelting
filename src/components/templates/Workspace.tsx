@@ -1,9 +1,10 @@
 import { useState } from "react";
+import { useI18n } from "../../i18n/I18nProvider";
 import type { Theme, UiScale } from "../../hooks/useSession";
 import type { Locale } from "../../i18n/translate";
 import type { AgentDetail, AgentDraft, AgentEdit, Team } from "../../hooks/useTeams";
 import type { WorkspaceSwitcherProps } from "../molecules/WorkspaceSwitcher";
-import { SwitchingOverlay } from "../molecules/SwitchingOverlay";
+import { TransitionOverlay, transitionMs } from "../molecules/TransitionOverlay";
 import { AgentCatalogPage } from "../organisms/AgentCatalogPage";
 import { Rail, type View } from "../organisms/Rail";
 import { RoomsPage } from "../organisms/RoomsPage";
@@ -12,7 +13,6 @@ import { TeamsPage } from "../organisms/TeamsPage";
 import { Topbar } from "../organisms/Topbar";
 
 const storageKey = "sidebar";
-const minSwitchMs = 600;
 
 function storedCollapsed() {
   try {
@@ -68,6 +68,7 @@ export function Workspace({
   onDismissError,
   ...props
 }: WorkspaceProps) {
+  const { t } = useI18n();
   const [collapsed, setCollapsed] = useState(storedCollapsed);
   const [animated, setAnimated] = useState(false);
   const [view, setView] = useState<View>("teams");
@@ -80,7 +81,7 @@ export function Workspace({
     setSwitching({ name: target?.name ?? "", failed: false });
     const [switched] = await Promise.all([
       props.onSwitch(workspaceId),
-      new Promise((resolve) => setTimeout(resolve, minSwitchMs)),
+      new Promise((resolve) => setTimeout(resolve, transitionMs)),
     ]);
     setSwitching(switched ? null : { name: target?.name ?? "", failed: true });
     return switched;
@@ -156,8 +157,9 @@ export function Workspace({
         </main>
       </div>
       {switching && (
-        <SwitchingOverlay
-          workspaceName={switching.name}
+        <TransitionOverlay
+          label={t("home.workspace.switching")}
+          name={switching.name}
           errorMessage={switching.failed ? errorMessage : null}
           onDismiss={() => {
             setSwitching(null);

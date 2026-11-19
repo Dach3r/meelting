@@ -194,6 +194,8 @@
     "new": "New room",
     "cancel": "Cancel",
     "back": "Rooms",
+    "entering": "Entering",
+    "leaving": "Leaving",
     "enter": "Enter room",
     "lastActivity": "Last activity",
     "finishedAt": "Finished",

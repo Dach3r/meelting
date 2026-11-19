@@ -194,6 +194,8 @@
     "new": "Nueva sala",
     "cancel": "Cancelar",
     "back": "Salas",
+    "entering": "Entrando a",
+    "leaving": "Saliendo de",
     "enter": "Entrar a la sala",
     "lastActivity": "Última actividad",
     "finishedAt": "Finalizada",

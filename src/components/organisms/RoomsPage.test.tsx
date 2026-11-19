@@ -208,6 +208,20 @@ describe("inside a room", () => {
     return user;
   }
 
+  it("shows a transition when entering and when leaving the room", async () => {
+    core({
+      list_rooms: () => ({ rooms: [daily], featured_messages: [] }),
+      get_room: () => ({ room: daily, former_agents: [], messages: [], runs: [], partials: [] }),
+    });
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(await screen.findByRole("button", { name: "Enter room" }));
+    expect(screen.getByRole("status")).toHaveTextContent("Entering Daily");
+    await user.click(await screen.findByRole("button", { name: "Rooms" }));
+    expect(screen.getByRole("status")).toHaveTextContent("Leaving Daily");
+    expect(await screen.findByRole("list", { name: "Rooms" })).toBeInTheDocument();
+  });
+
   it("shows you and the agents as participants and the conversation", async () => {
     await openDaily();
 

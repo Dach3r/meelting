@@ -9,13 +9,15 @@ import { Alert } from "../molecules/Alert";
 import { Modal } from "../molecules/Modal";
 import { RoomCard } from "../molecules/RoomCard";
 import { RoomForm } from "../molecules/RoomForm";
+import { TransitionOverlay, transitionMs } from "../molecules/TransitionOverlay";
 import { RoomView } from "./RoomView";
 
 export function RoomsPage({ agents }: { agents: Agent[] }) {
   const { t, locale } = useI18n();
   const { list, errorKey, actionErrorKey, busy, reload, createRoom, finishRoom, clearActionError } = useRooms();
   const [creating, setCreating] = useState(false);
-  const [openRoomId, setOpenRoomId] = useState<string | null>(null);
+  const [openRoom, setOpenRoom] = useState<{ id: string; name: string } | null>(null);
+  const [transition, setTransition] = useState<{ label: string; name: string } | null>(null);
   const actionErrorMessage = actionErrorKey ? translateError(locale, actionErrorKey) : null;
 
   function openForm() {
@@ -28,42 +30,61 @@ export function RoomsPage({ agents }: { agents: Agent[] }) {
     setCreating(false);
   }
 
+  async function withTransition(label: string, name: string, apply: () => void) {
+    setTransition({ label, name });
+    await new Promise((resolve) => setTimeout(resolve, transitionMs));
+    apply();
+    setTransition(null);
+  }
+
+  function enterRoom(room: { id: string; name: string }) {
+    return withTransition(t("rooms.entering"), room.name, () => setOpenRoom(room));
+  }
+
   async function create(name: string, agentIds: string[]) {
     const room = await createRoom(name, agentIds);
     if (!room) return;
     setCreating(false);
-    setOpenRoomId(room.id);
+    await enterRoom(room);
   }
 
-  function leaveRoom() {
-    clearActionError();
-    setOpenRoomId(null);
-    reload();
+  function leaveRoom(room: { id: string; name: string }) {
+    return withTransition(t("rooms.leaving"), room.name, () => setOpenRoom(null));
   }
 
-  async function endRoom(roomId: string) {
-    if (await finishRoom(roomId)) setOpenRoomId(null);
-  }
-
-  if (openRoomId) {
-    return (
-      <RoomView
-        key={openRoomId}
-        roomId={openRoomId}
-        agents={agents}
-        busy={busy}
-        finishErrorMessage={actionErrorMessage}
-        onBack={leaveRoom}
-        onFinish={() => endRoom(openRoomId)}
-        onClearFinishError={clearActionError}
-      />
-    );
+  async function endRoom(room: { id: string; name: string }) {
+    if (await finishRoom(room.id)) await leaveRoom(room);
   }
 
   const rooms = list?.rooms ?? [];
 
+  const overlay = transition && <TransitionOverlay label={transition.label} name={transition.name} />;
+
+  if (openRoom) {
+    return (
+      <>
+        <RoomView
+          key={openRoom.id}
+          roomId={openRoom.id}
+          agents={agents}
+          busy={busy}
+          finishErrorMessage={actionErrorMessage}
+          onBack={() => {
+            clearActionError();
+            reload();
+            return leaveRoom(openRoom);
+          }}
+          onFinish={() => endRoom(openRoom)}
+          onClearFinishError={clearActionError}
+        />
+        {overlay}
+      </>
+    );
+  }
+
   return (
     <div className="flex w-full flex-col gap-6">
+      {overlay}
       {creating && (
         <Modal title={t("rooms.form.title")} onClose={closeForm}>
           <RoomForm agents={agents} busy={busy} errorMessage={actionErrorMessage} onSubmit={create} onCancel={closeForm} />
@@ -86,7 +107,7 @@ export function RoomsPage({ agents }: { agents: Agent[] }) {
       {list && rooms.length > 0 && (
         <ul aria-label={t("rooms.title")} className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {rooms.map((room) => (
-            <RoomCard key={room.id} room={room} onOpen={() => setOpenRoomId(room.id)} />
+            <RoomCard key={room.id} room={room} onOpen={() => enterRoom(room)} />
           ))}
         </ul>
       )}
