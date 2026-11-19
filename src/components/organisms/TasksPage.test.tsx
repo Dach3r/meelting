@@ -43,6 +43,7 @@ function task(id: string, title: string, overrides: Partial<Task> = {}): Task {
     origin_room_name: null,
     origin_message_id: null,
     agent_ids: [],
+    worktree: null,
     completed_at: null,
     created_at: "2026-11-24T10:00:00.000Z",
     updated_at: "2026-11-24T10:00:00.000Z",
@@ -320,5 +321,135 @@ describe("repositories", () => {
 
     expect(within(dialog).getByText("my-app")).toBeInTheDocument();
     expect(within(dialog).queryByRole("alert")).not.toBeInTheDocument();
+  });
+});
+
+describe("task environment", () => {
+  const linked = task("t1", "Login", {
+    repository_id: "p1",
+    base_ref: "main",
+  });
+  const worktree = {
+    id: "w1",
+    path: "/Users/ana/Meelting/worktrees/my-app--aabbccddeeff/login-5c6d7e8f9a0b",
+    branch_name: "meelting/login-5c6d7e8f9a0b",
+    base_ref: "main",
+    base_commit_sha: "0123456789abcdef0123456789abcdef01234567",
+    status: "ready" as const,
+    error_code: null,
+    created_at: "2026-11-25T10:00:00.000Z",
+    updated_at: "2026-11-25T10:00:00.000Z",
+  };
+
+  it("prepares the environment explicitly and shows its branch and base commit", async () => {
+    const user = userEvent.setup();
+    const prepare = vi.fn(() => ({ ...linked, worktree }));
+    core({
+      list_tasks: () => [linked],
+      list_repositories: () => [app],
+      prepare_task_environment: prepare,
+    });
+    renderPage();
+
+    await user.click(await screen.findByRole("button", { name: /Login/ }));
+    const section = within(screen.getByRole("region", { name: "Environment" }));
+    expect(
+      section.getByText(/starts from the last commit of main/),
+    ).toBeInTheDocument();
+    await user.click(
+      section.getByRole("button", { name: "Prepare environment" }),
+    );
+
+    expect(prepare).toHaveBeenCalledWith({ taskId: "t1" });
+    expect(
+      await section.findByText("meelting/login-5c6d7e8f9a0b"),
+    ).toBeInTheDocument();
+    expect(section.getByText("main @ 0123456789ab")).toBeInTheDocument();
+    expect(section.getByText("Ready")).toBeInTheDocument();
+    expect(
+      section.queryByRole("button", { name: "Prepare environment" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows why preparing failed and reloads the task", async () => {
+    const user = userEvent.setup();
+    let loads = 0;
+    core({
+      list_tasks: () => {
+        loads += 1;
+        return loads === 1
+          ? [linked]
+          : [
+              {
+                ...linked,
+                worktree: {
+                  ...worktree,
+                  status: "failed",
+                  error_code: "checkout_failed",
+                },
+              },
+            ];
+      },
+      list_repositories: () => [app],
+      prepare_task_environment: () => {
+        throw "environment_failed";
+      },
+    });
+    renderPage();
+
+    await user.click(await screen.findByRole("button", { name: /Login/ }));
+    await user.click(
+      screen.getByRole("button", { name: "Prepare environment" }),
+    );
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "The environment could not be prepared.",
+    );
+    expect(
+      await screen.findByText(/Git could not create the worktree/),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Discard" })).toBeInTheDocument();
+  });
+
+  it("does not offer preparing for closed tasks or without a base branch", async () => {
+    const user = userEvent.setup();
+    core({
+      list_tasks: () => [
+        { ...linked, status: "completed", completed_at: linked.created_at },
+      ],
+      list_repositories: () => [app],
+    });
+    renderPage();
+
+    await user.click(await screen.findByRole("button", { name: /Login/ }));
+
+    expect(
+      screen.getByText("Reopen the task to prepare an environment."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Prepare environment" }),
+    ).toBeDisabled();
+  });
+
+  it("discards a missing environment", async () => {
+    const user = userEvent.setup();
+    const discard = vi.fn(() => linked);
+    core({
+      list_tasks: () => [
+        { ...linked, worktree: { ...worktree, status: "missing" } },
+      ],
+      list_repositories: () => [app],
+      discard_task_environment: discard,
+    });
+    renderPage();
+
+    await user.click(await screen.findByRole("button", { name: /Login/ }));
+    expect(screen.getByText(/no longer where Meelting created it/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Discard" }));
+
+    expect(discard).toHaveBeenCalledWith({ taskId: "t1" });
+    expect(
+      await screen.findByRole("button", { name: "Prepare environment" }),
+    ).toBeInTheDocument();
   });
 });

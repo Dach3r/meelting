@@ -140,9 +140,17 @@ Two entry points open the same task form: «Create task» in the room call contr
 
 The form selects any number of agents of the workspace, with search. Assigning or unassigning changes nothing else: no status change, no run, no permission. Deleting an agent (when the existing rules allow it) removes its assignments in cascade.
 
-### BR-05. Preparing the environment (4B)
+### BR-05. Preparing the environment (4B ✅)
 
-«Prepare environment» is available when the task has a valid repository, is neither completed nor canceled, has no active worktree, its base branch resolves to a commit and the destination is safe. Meelting resolves the exact SHA first and creates the worktree from it, with a unique branch (`meelting/task-<short id>-<slug>`) under the configured root (`<root>/<repo>--<short id>/task-<short id>-<slug>`). Uncommitted changes of the original repository are not copied; the UI explains that the environment starts from committed history. Hooks are disabled; repositories that need executable checkout filters (including Git LFS) are rejected with a diagnosis. Preparation is not a security sandbox.
+«Prepare environment» is an explicit action in the task detail, available when the task has a repository and a base branch, is neither completed nor canceled and has no active worktree. The procedure:
+
+1. **Checks before writing anything** (read-only Git, no transaction open): the repository folder still holds the registered repository (same `git_common_dir`, main working tree; otherwise `repository_moved`); the repository, its `git_common_dir` and the worktree root are on fixed local storage (BR-12); the base branch resolves to an exact commit (`rev-parse --verify --end-of-options refs/heads/<base>^{commit}`); Git is 2.40 or later; the base commit has no `.gitmodules`; and no file of the base commit has a `filter` attribute whose driver has `clean`, `smudge` or `process` configured, read with `git check-attr --source=<sha>` so repository, global and system configuration count (D45; Git LFS is rejected this way).
+2. **Folders:** the root is created if missing and canonicalized; it must not be inside or contain the repository or its `git_common_dir`. The repository folder `<root>/<repo slug>--<last 12 hex of the repository id>` is created if missing and must be a real folder, not a symbolic link. The worktree folder `<repo folder>/<title slug>-<last 12 hex of the worktree id>` must not exist. The branch is `meelting/<title slug>-<last 12 hex of the worktree id>` (D41).
+3. **Intent:** in one `BEGIN IMMEDIATE` transaction the task is read again (same repository and base branch, still open) and the `preparing` row is inserted with path, branch, base branch and commit. The partial unique index rejects a second active environment, so concurrent requests create one environment.
+4. **Git, under the repository lock:** if the folder or the branch already exists the row becomes `failed` (`checkout_failed`); otherwise `git worktree add --no-track -b <branch> <folder> <sha>` runs with hooks and fsmonitor disabled.
+5. **Verification:** the new worktree's top level is the folder, its `git_common_dir` is the repository's, `HEAD` is exactly the base commit and the branch is the expected one. Then the row becomes `ready`; otherwise `failed` (`verification_failed`), and nothing that Git created is deleted.
+
+Uncommitted changes of the original repository are never copied; the UI says that the environment starts from the last commit of the base branch. The original working directory, its index and its checked-out branch are not touched. Preparation is not a security sandbox. After preparation the branch may receive legitimate commits: `base_commit_sha` stays the fixed starting point while `HEAD` moves, and a moved `HEAD` never marks the environment as damaged.
 
 ### BR-06. Copying local files (4B)
 
@@ -180,13 +188,27 @@ Worktrees are only prepared on fixed local storage. The check runs on the reposi
 
 Every OS also rejects `~/Dropbox`, `~/Google Drive`, `~/OneDrive` and `~/iCloudDrive`. Recognizing synchronized folders is best effort: Meelting does not promise to detect every sync service.
 
-### BR-13. Concurrency (4B)
+### BR-13. Concurrency (4B ✅)
 
-Operations that change the shared metadata of the same Git repository (create, remove, repair) never run at the same time, coordinated by `git_common_dir` even across workspaces. The UI blocks duplicate requests; locks are released on success or failure.
+Operations that touch the worktrees of the same Git repository never run at the same time inside the app: preparing, discarding, recovering at startup and, from steps 5 and 6, removing and copying files take an in-memory lock keyed by `git_common_dir`, so the same repository registered in two workspaces is also serialized. The lock is released when the operation ends, whether it succeeds or fails. No Git command runs while a SQLite transaction is open. The single-instance plugin (D46) prevents a second copy of the app; the lock does not protect against external processes, which Git's own lock files handle. The UI disables an action while it is pending, and the core is the real guarantee (`BEGIN IMMEDIATE` plus the partial unique index).
 
-### BR-14. Recovery (4B)
+### BR-14. Recovery (4B ✅)
 
-Git and SQLite are not one atomic transaction: intent is persisted first (`preparing`, `removing`) and reconciled afterwards. At startup, transient worktrees are checked for interrupted preparations, missing environments, incomplete records, worktrees present in Git but not finished in SQLite and environments moved or changed externally. Unknown files or Git records are never deleted automatically; an operation that cannot be recovered safely is marked `failed` with a review action.
+Git and SQLite are not one atomic transaction: intent is persisted first (`preparing`, `removing`) and reconciled afterwards. At startup, before the window opens, every `preparing`, `ready`, `missing` and `removing` row is checked under its repository lock. An environment is **intact** when its folder exists, `git worktree list` of the repository registers it, and its top level and `git_common_dir` match. It is **gone** when its folder does not exist and Git no longer registers it (or the repository's Git directory no longer exists).
+
+| Stored state | Found | New state |
+|---|---|---|
+| `preparing` | Intact, on the expected branch and with `HEAD` at the base commit | `ready` |
+| `preparing` | Anything else | `failed` (`preparation_interrupted`) |
+| `removing` | Gone | `removed` |
+| `removing` | Still intact | `ready` |
+| `removing` | Anything else | `failed` (`removal_interrupted`) |
+| `ready` | Not intact | `missing` |
+| `missing` | Intact again | `ready` |
+
+A `ready` environment whose `HEAD` moved or whose branch was switched stays `ready`. Recovery never deletes files, branches, commits or Git registrations and never runs `git worktree prune` or `repair`.
+
+**Discard** (D43): a `failed` or `missing` environment can be discarded only when it is gone. The row becomes `removed` (keeping its error code as history) and a new environment can be prepared. If Git still lists the worktree, discarding is refused (`environment_still_exists`) and the UI explains that the folder must be restored or that the user can prune the registration themselves.
 
 ### BR-15. Isolation and security
 
@@ -197,11 +219,11 @@ All file operations run in Rust behind specific commands; the webview has no gen
 | Entity | Rule |
 |---|---|
 | Agent | Existing rules unchanged (blocked with messages or runs); when allowed, its `task_agents` rows go in cascade |
-| Task | Physical delete allowed only without an active worktree (`preparing`, `ready`, `failed`, `missing`, `removing` count as active); removed-worktree history goes with it. In 4A tasks have no worktrees yet |
+| Task | Physical delete allowed only without an active worktree (`preparing`, `ready`, `failed`, `missing`, `removing` count as active); removed-worktree history goes with it (✅ `task_has_environment` otherwise) |
 | Repository | Unregistering is allowed only while no task references it; the physical repository is never touched |
 | Workspace | There is no workspace deletion today. When it is built (overview §13 decision 10), it must be blocked while the workspace has active worktrees |
 
-A task can change its repository only while it has never had a worktree; once it has history, its repository is fixed (enforced in 4B, when `task_worktrees` exists).
+A task can change its repository only while it has never had a worktree; once it has history, its repository is fixed (✅ enforced by SQLite through `tasks (id, repository_id)`, and reported as `task_repository_locked`).
 
 ## 5. Interface
 
@@ -222,9 +244,9 @@ A task can change its repository only while it has never had a worktree; once it
 | `completed` | `in_progress` (explicit reopen) |
 | `canceled` | `pending` (explicit reopen) |
 
-### Worktrees (4B)
+### Worktrees (4B ✅ for preparation, discard and recovery)
 
-`preparing → ready | failed`; `ready → missing | removing`; `failed` → controlled recovery or new preparation once no conflicting resource remains; `missing` → recovery or manual review; `removing → removed` or a recoverable error. A second active environment is never created to fix an error without reconciling the previous one. A worktree state never changes the task status.
+`preparing → ready | failed`; `ready → missing | removing`; `missing → ready` (found again) or `removed` (discarded once gone); `failed → removed` (discarded once gone); `removing → removed`, `ready` (Git refused) or `failed` (interrupted). Every transition is a guarded update (`WHERE id = ? AND status = ?`). A second active environment is never created to fix an error without reconciling the previous one. A worktree state never changes the task status.
 
 ## 7. Acceptance criteria
 

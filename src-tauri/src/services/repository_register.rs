@@ -32,7 +32,7 @@ pub async fn run(
     if !git::has_commits(toplevel).await.map_err(inspection_error)? {
         return Err(SessionError::RepositoryWithoutCommits);
     }
-    if git::has_submodules(toplevel)
+    if git::has_submodules(toplevel, "HEAD")
         .await
         .map_err(inspection_error)?
     {

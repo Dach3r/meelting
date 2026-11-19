@@ -1159,6 +1159,7 @@ describe("creating tasks from the room", () => {
     origin_room_name: "Daily",
     origin_message_id: null,
     agent_ids: [],
+    worktree: null,
     completed_at: null,
     created_at: "2026-11-24T10:00:00.000Z",
     updated_at: "2026-11-24T10:00:00.000Z",

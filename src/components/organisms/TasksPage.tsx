@@ -26,6 +26,8 @@ export function TasksPage({ agents }: { agents: Agent[] }) {
     busy,
     replace,
     changeStatus,
+    prepareEnvironment,
+    discardEnvironment,
     deleteTask,
     clearActionError,
   } = useTasks();
@@ -107,6 +109,8 @@ export function TasksPage({ agents }: { agents: Agent[] }) {
           }}
           onEdit={() => setDialog("edit")}
           onChangeStatus={(status) => changeStatus(openTask.id, status)}
+          onPrepareEnvironment={() => prepareEnvironment(openTask.id)}
+          onDiscardEnvironment={() => discardEnvironment(openTask.id)}
           onDelete={async () => {
             if (await deleteTask(openTask.id)) setOpenId(null);
           }}

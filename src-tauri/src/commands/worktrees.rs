@@ -1,7 +1,11 @@
 use crate::commands::dialog;
+use crate::domain::task::Task;
 use crate::domain::worktree::WorktreesRoot;
+use crate::services::repository_locks::RepositoryLocks;
 use crate::services::session_load::SessionError;
-use crate::services::{worktrees_root_change, worktrees_root_get};
+use crate::services::{
+    worktree_discard, worktree_prepare, worktrees_root_change, worktrees_root_get,
+};
 use crate::system::storage;
 use sqlx::SqlitePool;
 use tauri::{State, WebviewWindow};
@@ -24,4 +28,22 @@ pub async fn change_worktrees_root(
     worktrees_root_change::run(&pool, &folder, storage::check)
         .await
         .map(Some)
+}
+
+#[tauri::command]
+pub async fn prepare_task_environment(
+    pool: State<'_, SqlitePool>,
+    locks: State<'_, RepositoryLocks>,
+    task_id: String,
+) -> Result<Task, SessionError> {
+    worktree_prepare::run(&pool, &locks, &task_id, storage::check).await
+}
+
+#[tauri::command]
+pub async fn discard_task_environment(
+    pool: State<'_, SqlitePool>,
+    locks: State<'_, RepositoryLocks>,
+    task_id: String,
+) -> Result<Task, SessionError> {
+    worktree_discard::run(&pool, &locks, &task_id).await
 }

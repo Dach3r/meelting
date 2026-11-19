@@ -77,6 +77,28 @@ pub enum SessionError {
     StorageUnknown,
     #[error("invalid_worktrees_root")]
     InvalidWorktreesRoot,
+    #[error("task_not_preparable")]
+    TaskNotPreparable,
+    #[error("environment_exists")]
+    EnvironmentExists,
+    #[error("environment_not_found")]
+    EnvironmentNotFound,
+    #[error("environment_failed")]
+    EnvironmentFailed,
+    #[error("environment_still_exists")]
+    EnvironmentStillExists,
+    #[error("repository_moved")]
+    RepositoryMoved,
+    #[error("git_too_old")]
+    GitTooOld,
+    #[error("filters_not_supported")]
+    FiltersNotSupported,
+    #[error("worktree_path_conflict")]
+    WorktreePathConflict,
+    #[error("task_has_environment")]
+    TaskHasEnvironment,
+    #[error("task_repository_locked")]
+    TaskRepositoryLocked,
     #[error("keychain_unavailable")]
     Keychain(#[from] crate::system::keychain::KeychainError),
 }

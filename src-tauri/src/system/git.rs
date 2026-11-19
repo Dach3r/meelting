@@ -16,18 +16,61 @@ pub struct Layout {
     pub common_dir: String,
 }
 
+const NO_HOOKS: &str = if cfg!(windows) {
+    "core.hooksPath=NUL"
+} else {
+    "core.hooksPath=/dev/null"
+};
+
 fn git(dir: &Path) -> Command {
     let mut command = Command::new("git");
     command
         .arg("-C")
         .arg(dir)
+        .args(["-c", NO_HOOKS, "-c", "core.fsmonitor=false"])
         .env_remove("GIT_DIR")
         .env_remove("GIT_WORK_TREE")
         .env_remove("GIT_COMMON_DIR")
-        .env_remove("GIT_INDEX_FILE");
+        .env_remove("GIT_INDEX_FILE")
+        .env_remove("GIT_OBJECT_DIRECTORY")
+        .env_remove("GIT_ALTERNATE_OBJECT_DIRECTORIES")
+        .env_remove("GIT_CONFIG_PARAMETERS")
+        .env_remove("GIT_CONFIG_COUNT")
+        .env("GIT_TERMINAL_PROMPT", "0")
+        .env("GIT_OPTIONAL_LOCKS", "0");
     #[cfg(windows)]
-    command.creation_flags(0x0800_0000);
     command
+        .args(["-c", "core.longpaths=true"])
+        .creation_flags(0x0800_0000);
+    command
+}
+
+async fn output(dir: &Path, args: &[&str], input: Option<Vec<u8>>) -> Result<Vec<u8>, GitError> {
+    use tokio::io::AsyncWriteExt;
+    let mut command = git(dir);
+    command
+        .args(args)
+        .stdin(if input.is_some() {
+            std::process::Stdio::piped()
+        } else {
+            std::process::Stdio::null()
+        })
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped());
+    let mut child = command.spawn()?;
+    if let (Some(input), Some(mut stdin)) = (input, child.stdin.take()) {
+        tokio::spawn(async move {
+            let _ = stdin.write_all(&input).await;
+        });
+    }
+    let output = child.wait_with_output().await?;
+    if output.status.success() {
+        Ok(output.stdout)
+    } else {
+        Err(GitError::Failed(
+            String::from_utf8_lossy(&output.stderr).trim().to_string(),
+        ))
+    }
 }
 
 async fn read(dir: &Path, args: &[&str]) -> Result<String, GitError> {
@@ -77,8 +120,106 @@ pub async fn has_commits(dir: &Path) -> Result<bool, GitError> {
     succeeds(dir, &["rev-parse", "--verify", "--quiet", "HEAD^{commit}"]).await
 }
 
-pub async fn has_submodules(dir: &Path) -> Result<bool, GitError> {
-    succeeds(dir, &["cat-file", "-e", "HEAD:.gitmodules"]).await
+pub async fn has_submodules(dir: &Path, revision: &str) -> Result<bool, GitError> {
+    succeeds(dir, &["cat-file", "-e", &format!("{revision}:.gitmodules")]).await
+}
+
+pub async fn version(dir: &Path) -> Result<String, GitError> {
+    read(dir, &["version"]).await
+}
+
+pub async fn branch_commit(dir: &Path, branch: &str) -> Result<Option<String>, GitError> {
+    let reference = format!("refs/heads/{branch}^{{commit}}");
+    let output = git(dir)
+        .args([
+            "rev-parse",
+            "--verify",
+            "--quiet",
+            "--end-of-options",
+            &reference,
+        ])
+        .output()
+        .await?;
+    Ok(output
+        .status
+        .success()
+        .then(|| String::from_utf8_lossy(&output.stdout).trim().to_string()))
+}
+
+pub async fn branch_exists(dir: &Path, branch: &str) -> Result<bool, GitError> {
+    succeeds(
+        dir,
+        &[
+            "show-ref",
+            "--verify",
+            "--quiet",
+            &format!("refs/heads/{branch}"),
+        ],
+    )
+    .await
+}
+
+pub async fn filters_at(dir: &Path, commit: &str) -> Result<Vec<String>, GitError> {
+    let paths = output(dir, &["ls-tree", "-r", "-z", "--name-only", commit], None).await?;
+    if paths.is_empty() {
+        return Ok(Vec::new());
+    }
+    let attributes = output(
+        dir,
+        &["check-attr", "--source", commit, "-z", "--stdin", "filter"],
+        Some(paths),
+    )
+    .await?;
+    let fields: Vec<&[u8]> = attributes.split(|byte| *byte == 0).collect();
+    let mut names: Vec<String> = fields
+        .chunks(3)
+        .filter_map(|triple| triple.get(2))
+        .map(|value| String::from_utf8_lossy(value).into_owned())
+        .filter(|value| !["unspecified", "unset", "set", ""].contains(&value.as_str()))
+        .collect();
+    names.sort();
+    names.dedup();
+    Ok(names)
+}
+
+pub async fn filter_is_executable(dir: &Path, name: &str) -> Result<bool, GitError> {
+    for kind in ["clean", "smudge", "process"] {
+        let output = git(dir)
+            .args(["config", "--get", &format!("filter.{name}.{kind}")])
+            .output()
+            .await?;
+        if output.status.success() && !output.stdout.trim_ascii().is_empty() {
+            return Ok(true);
+        }
+    }
+    Ok(false)
+}
+
+pub async fn add_worktree(
+    dir: &Path,
+    path: &Path,
+    branch: &str,
+    commit: &str,
+) -> Result<(), GitError> {
+    let path = path
+        .to_str()
+        .ok_or_else(|| GitError::Failed("path".into()))?;
+    output(
+        dir,
+        &["worktree", "add", "--no-track", "-b", branch, path, commit],
+        None,
+    )
+    .await
+    .map(|_| ())
+}
+
+pub async fn worktree_list(dir: &Path) -> Result<String, GitError> {
+    let output = output(dir, &["worktree", "list", "--porcelain", "-z"], None).await?;
+    Ok(String::from_utf8_lossy(&output).into_owned())
+}
+
+pub async fn head(dir: &Path) -> Result<String, GitError> {
+    read(dir, &["rev-parse", "--verify", "HEAD^{commit}"]).await
 }
 
 pub async fn local_branches(dir: &Path) -> Result<Vec<String>, GitError> {
@@ -179,13 +320,13 @@ mod tests {
 
         assert!(!has_commits(empty.path()).await.unwrap());
         assert!(has_commits(repo.path()).await.unwrap());
-        assert!(!has_submodules(repo.path()).await.unwrap());
+        assert!(!has_submodules(repo.path(), "HEAD").await.unwrap());
 
         std::fs::write(repo.path().join(".gitmodules"), "").unwrap();
         git(repo.path(), &["add", ".gitmodules"]).await;
         git(repo.path(), &["commit", "-m", "modules"]).await;
 
-        assert!(has_submodules(repo.path()).await.unwrap());
+        assert!(has_submodules(repo.path(), "HEAD").await.unwrap());
     }
 
     #[tokio::test]

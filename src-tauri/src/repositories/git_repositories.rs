@@ -1,4 +1,4 @@
-use crate::domain::repository::Repository;
+use crate::domain::repository::{Repository, RepositoryIdentity};
 use sqlx::SqliteExecutor;
 
 pub async fn list<'e>(
@@ -64,6 +64,25 @@ pub async fn delete<'e>(
         .execute(executor)
         .await?;
     Ok(result.rows_affected() > 0)
+}
+
+pub async fn identity<'e>(
+    executor: impl SqliteExecutor<'e>,
+    id: &str,
+) -> Result<Option<RepositoryIdentity>, sqlx::Error> {
+    let row: Option<(String, String, String, String)> =
+        sqlx::query_as("SELECT id, name, path, git_common_dir FROM repositories WHERE id = ?")
+            .bind(id)
+            .fetch_optional(executor)
+            .await?;
+    Ok(
+        row.map(|(id, name, path, git_common_dir)| RepositoryIdentity {
+            id,
+            name,
+            path,
+            git_common_dir,
+        }),
+    )
 }
 
 pub async fn all_locations<'e>(

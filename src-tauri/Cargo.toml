@@ -34,6 +34,7 @@ tauri-plugin-window-state = "2"
 serde_yaml_ng = "0.10.0"
 unicode-normalization = "0.1.26"
 tauri-plugin-dialog = "2"
+tauri-plugin-single-instance = "2"
 
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"

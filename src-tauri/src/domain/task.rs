@@ -88,6 +88,7 @@ pub struct Task {
     pub origin_room_name: Option<String>,
     pub origin_message_id: Option<String>,
     pub agent_ids: Vec<String>,
+    pub worktree: Option<crate::domain::worktree::Worktree>,
     pub completed_at: Option<String>,
     pub created_at: String,
     pub updated_at: String,

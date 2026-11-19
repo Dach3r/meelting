@@ -40,7 +40,18 @@
     "storage_removable": "Esa carpeta está en una unidad extraíble o externa. Usa almacenamiento local fijo.",
     "storage_synced": "Esa carpeta la sincroniza un servicio en la nube (iCloud Drive, OneDrive, Dropbox o Google Drive). Usa una carpeta fuera de ella.",
     "storage_unknown": "Meelting no pudo confirmar que la carpeta esté en almacenamiento local fijo.",
-    "invalid_worktrees_root": "Elige una carpeta existente fuera de tus repositorios registrados."
+    "invalid_worktrees_root": "Elige una carpeta existente fuera de tus repositorios registrados.",
+    "task_not_preparable": "La tarea necesita un repositorio, una rama base y un estado abierto para preparar un entorno.",
+    "environment_exists": "Esta tarea ya tiene un entorno.",
+    "environment_not_found": "Ese entorno ya no existe o no se puede descartar.",
+    "environment_failed": "No se pudo preparar el entorno. No se cambió nada en tu repositorio.",
+    "environment_still_exists": "La carpeta del entorno o su registro en Git siguen existiendo, así que no se descartó.",
+    "repository_moved": "La carpeta del repositorio ya no contiene el repositorio registrado. Regístralo de nuevo.",
+    "git_too_old": "Preparar entornos requiere Git 2.40 o posterior. Actualiza Git e inténtalo de nuevo.",
+    "filters_not_supported": "Este repositorio usa filtros de Git que ejecutan programas al hacer checkout (por ejemplo, Git LFS), y aún no son compatibles.",
+    "worktree_path_conflict": "Ya existe algo donde se crearía el entorno. No se cambió nada.",
+    "task_has_environment": "Elimina o descarta el entorno de la tarea antes de borrarla.",
+    "task_repository_locked": "Esta tarea ya tuvo un entorno, así que su repositorio ya no puede cambiar."
   },
   "newWorkspace": {
     "title": "Crea tu workspace",
@@ -498,6 +509,33 @@
       "remove": "Quitar {name}"
     },
     "fromRoom": "Crear tarea",
-    "fromMessage": "Convertir en tarea"
+    "fromMessage": "Convertir en tarea",
+    "environment": {
+      "title": "Entorno",
+      "notPrepared": "Aún no está preparado. El entorno parte del último commit de {branch}; los cambios sin commit de tu repositorio no se copian.",
+      "noBase": "Elige una rama base para preparar un entorno.",
+      "closed": "Reabre la tarea para preparar un entorno.",
+      "prepare": "Preparar entorno",
+      "discard": "Descartar",
+      "status": {
+        "preparing": "Preparando…",
+        "ready": "Listo",
+        "failed": "Falló",
+        "missing": "No encontrado",
+        "removing": "Eliminando…"
+      },
+      "branch": "Rama",
+      "base": "Base",
+      "path": "Carpeta",
+      "errors": {
+        "checkout_failed": "Git no pudo crear el worktree. No se cambió nada en tu repositorio.",
+        "verification_failed": "El worktree se creó, pero no coincidía con lo que Meelting esperaba, así que no se usa.",
+        "preparation_interrupted": "Meelting se cerró mientras preparaba este entorno.",
+        "removal_interrupted": "Meelting se cerró mientras eliminaba este entorno."
+      },
+      "missingHelp": "La carpeta de este entorno ya no está donde Meelting la creó. Restáurala o descarta el entorno cuando Git ya no lo liste (por ejemplo, después de ejecutar tú mismo git worktree prune en el repositorio).",
+      "failedHelp": "Descártalo para preparar uno nuevo. Meelting solo lo descarta cuando su carpeta y su registro en Git ya no existen, y nunca borra ramas ni commits."
+    },
+    "environmentReady": "Entorno listo"
   }
 }

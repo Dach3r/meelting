@@ -10,6 +10,14 @@ pub struct Repository {
     pub path: String,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RepositoryIdentity {
+    pub id: String,
+    pub name: String,
+    pub path: String,
+    pub git_common_dir: String,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct RepositoryBranches {
     pub branches: Vec<String>,

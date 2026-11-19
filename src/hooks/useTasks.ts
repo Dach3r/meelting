@@ -10,6 +10,25 @@ export type TaskStatus =
 
 export type TaskPriority = "low" | "medium" | "high";
 
+export type WorktreeStatus =
+  | "preparing"
+  | "ready"
+  | "failed"
+  | "missing"
+  | "removing";
+
+export type Worktree = {
+  id: string;
+  path: string;
+  branch_name: string;
+  base_ref: string;
+  base_commit_sha: string;
+  status: WorktreeStatus;
+  error_code: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export type Task = {
   id: string;
   title: string;
@@ -22,6 +41,7 @@ export type Task = {
   origin_room_name: string | null;
   origin_message_id: string | null;
   agent_ids: string[];
+  worktree: Worktree | null;
   completed_at: string | null;
   created_at: string;
   updated_at: string;
@@ -81,17 +101,27 @@ export function useTasks() {
     );
   }
 
-  async function changeStatus(taskId: string, status: TaskStatus) {
+  async function update(action: () => Promise<Task>) {
     setBusy(true);
     setActionErrorKey(null);
     try {
-      replace(await invoke<Task>("change_task_status", { taskId, status }));
+      replace(await action());
     } catch (error) {
       setActionErrorKey(String(error));
+      await reload();
     } finally {
       setBusy(false);
     }
   }
+
+  const changeStatus = (taskId: string, status: TaskStatus) =>
+    update(() => invoke<Task>("change_task_status", { taskId, status }));
+
+  const prepareEnvironment = (taskId: string) =>
+    update(() => invoke<Task>("prepare_task_environment", { taskId }));
+
+  const discardEnvironment = (taskId: string) =>
+    update(() => invoke<Task>("discard_task_environment", { taskId }));
 
   async function deleteTask(taskId: string) {
     setBusy(true);
@@ -114,6 +144,8 @@ export function useTasks() {
     busy,
     replace,
     changeStatus,
+    prepareEnvironment,
+    discardEnvironment,
     deleteTask,
     clearActionError: () => setActionErrorKey(null),
   };

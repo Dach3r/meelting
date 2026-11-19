@@ -14,6 +14,7 @@ import { Button } from "../atoms/Button";
 import { Alert } from "../molecules/Alert";
 import { Modal } from "../molecules/Modal";
 import { TaskBadges } from "../molecules/TaskBadges";
+import { TaskEnvironment } from "../molecules/TaskEnvironment";
 
 type Props = {
   task: Task;
@@ -24,6 +25,8 @@ type Props = {
   onBack: () => void;
   onEdit: () => void;
   onChangeStatus: (status: TaskStatus) => void;
+  onPrepareEnvironment: () => void;
+  onDiscardEnvironment: () => void;
   onDelete: () => Promise<void>;
   onClearError: () => void;
 };
@@ -37,6 +40,8 @@ export function TaskDetail({
   onBack,
   onEdit,
   onChangeStatus,
+  onPrepareEnvironment,
+  onDiscardEnvironment,
   onDelete,
   onClearError,
 }: Props) {
@@ -204,6 +209,14 @@ export function TaskDetail({
           )}
         </dl>
       </section>
+      {task.repository_id && (
+        <TaskEnvironment
+          task={task}
+          busy={busy}
+          onPrepare={onPrepareEnvironment}
+          onDiscard={onDiscardEnvironment}
+        />
+      )}
     </div>
   );
 }

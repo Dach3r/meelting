@@ -1,5 +1,7 @@
 use crate::domain::task::{Task, TaskDraft, TaskOrigin};
-use crate::repositories::{agents, git_repositories, messages, rooms, task_agents, tasks};
+use crate::repositories::{
+    agents, git_repositories, messages, rooms, task_agents, task_worktrees, tasks,
+};
 use crate::services::session_load::{self, SessionError};
 use crate::services::tasks_list;
 use crate::system::git::{self, GitError};
@@ -62,6 +64,11 @@ pub async fn update(
     }
     let mut transaction = pool.begin_with("BEGIN IMMEDIATE").await?;
     check_references(&mut transaction, &workspace_id, &draft).await?;
+    if current.repository_id != draft.repository_id
+        && task_worktrees::has_history(&mut *transaction, task_id).await?
+    {
+        return Err(SessionError::TaskRepositoryLocked);
+    }
     if !tasks::update(&mut *transaction, &workspace_id, task_id, &draft).await? {
         return Err(SessionError::TaskNotFound);
     }

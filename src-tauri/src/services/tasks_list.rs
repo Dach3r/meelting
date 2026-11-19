@@ -1,5 +1,5 @@
 use crate::domain::task::Task;
-use crate::repositories::{task_agents, tasks};
+use crate::repositories::{task_agents, task_worktrees, tasks};
 use crate::services::session_load::{self, SessionError};
 use sqlx::SqlitePool;
 
@@ -8,9 +8,17 @@ pub async fn run(pool: &SqlitePool) -> Result<Vec<Task>, SessionError> {
     let mut transaction = pool.begin().await?;
     let mut list = tasks::list(&mut *transaction, &workspace_id).await?;
     let assignments = task_agents::list(&mut *transaction, &workspace_id).await?;
+    let mut worktrees =
+        task_worktrees::active_in_workspace(&mut *transaction, &workspace_id).await?;
     transaction.commit().await?;
     for task in &mut list {
         with_agents(task, &assignments);
+        if let Some(index) = worktrees
+            .iter()
+            .position(|(task_id, _)| *task_id == task.id)
+        {
+            task.worktree = Some(worktrees.swap_remove(index).1);
+        }
     }
     Ok(list)
 }
@@ -21,6 +29,7 @@ pub async fn one(pool: &SqlitePool, workspace_id: &str, id: &str) -> Result<Task
         .await?
         .ok_or(SessionError::TaskNotFound)?;
     let assignments = task_agents::list(&mut *transaction, workspace_id).await?;
+    task.worktree = task_worktrees::active_for_task(&mut *transaction, workspace_id, id).await?;
     transaction.commit().await?;
     with_agents(&mut task, &assignments);
     Ok(task)

@@ -1,4 +1,4 @@
-import { FolderGit2 } from "lucide-react";
+import { FolderCheck, FolderGit2 } from "lucide-react";
 import { useI18n } from "../../i18n/I18nProvider";
 import type { Repository } from "../../hooks/useRepositories";
 import type { Task } from "../../hooks/useTasks";
@@ -33,7 +33,14 @@ export function TaskCard({ task, repository, agents, onOpen }: Props) {
         </h3>
         <div className="flex min-h-8 items-center justify-between gap-3 text-xs text-muted">
           <span className="flex min-w-0 items-center gap-1.5">
-            <FolderGit2 aria-hidden className="size-4 shrink-0" />
+            {task.worktree?.status === "ready" ? (
+              <FolderCheck
+                aria-label={t("tasks.environmentReady")}
+                className="size-4 shrink-0 text-ink"
+              />
+            ) : (
+              <FolderGit2 aria-hidden className="size-4 shrink-0" />
+            )}
             <span className="truncate">
               {repository?.name ?? t("tasks.detail.noRepository")}
             </span>

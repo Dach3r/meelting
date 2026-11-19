@@ -9,11 +9,19 @@ use crate::catalogs::llm;
 use crate::domain::agent_run::Limits;
 use crate::services::agent_run_engine::Engine;
 use crate::services::agent_runs_expire;
+use crate::services::repository_locks::RepositoryLocks;
+use crate::services::worktrees_reconcile;
 use tauri::Manager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.unminimize();
+                let _ = window.set_focus();
+            }
+        }))
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
@@ -23,6 +31,9 @@ pub fn run() {
                 &data_dir.join("meelting.db"),
             ))?;
             tauri::async_runtime::block_on(agent_runs_expire::run(&pool))?;
+            let locks = RepositoryLocks::default();
+            tauri::async_runtime::block_on(worktrees_reconcile::run(&pool, &locks))?;
+            app.manage(locks);
             let emit = commands::agent_runs::emitter(app.handle().clone());
             app.manage(Engine::new(
                 pool.clone(),
@@ -74,6 +85,8 @@ pub fn run() {
             commands::repositories::list_repository_branches,
             commands::worktrees::get_worktrees_root,
             commands::worktrees::change_worktrees_root,
+            commands::worktrees::prepare_task_environment,
+            commands::worktrees::discard_task_environment,
             commands::tasks::list_tasks,
             commands::tasks::create_task,
             commands::tasks::update_task,

@@ -40,7 +40,18 @@
     "storage_removable": "That folder is on a removable or external drive. Use fixed local storage.",
     "storage_synced": "That folder is synchronized by a cloud service (iCloud Drive, OneDrive, Dropbox or Google Drive). Use a folder outside it.",
     "storage_unknown": "Meelting could not confirm that the folder is on fixed local storage.",
-    "invalid_worktrees_root": "Pick an existing folder outside your registered repositories."
+    "invalid_worktrees_root": "Pick an existing folder outside your registered repositories.",
+    "task_not_preparable": "The task needs a repository, a base branch and an open status to prepare an environment.",
+    "environment_exists": "This task already has an environment.",
+    "environment_not_found": "That environment no longer exists or cannot be discarded.",
+    "environment_failed": "The environment could not be prepared. Nothing in your repository was changed.",
+    "environment_still_exists": "The environment's folder or its Git registration still exists, so it was not discarded.",
+    "repository_moved": "The repository folder no longer holds the registered repository. Register it again.",
+    "git_too_old": "Preparing environments needs Git 2.40 or later. Update Git and try again.",
+    "filters_not_supported": "This repository uses Git filters that run programs on checkout (for example Git LFS), which are not supported yet.",
+    "worktree_path_conflict": "Something already exists where the environment would be created. Nothing was changed.",
+    "task_has_environment": "Remove or discard the task's environment before deleting it.",
+    "task_repository_locked": "This task already had an environment, so its repository can no longer change."
   },
   "newWorkspace": {
     "title": "Create your workspace",
@@ -498,6 +509,33 @@
       "remove": "Unregister {name}"
     },
     "fromRoom": "Create task",
-    "fromMessage": "Turn into task"
+    "fromMessage": "Turn into task",
+    "environment": {
+      "title": "Environment",
+      "notPrepared": "Not prepared yet. The environment starts from the last commit of {branch}; uncommitted changes in your repository are not copied.",
+      "noBase": "Choose a base branch to prepare an environment.",
+      "closed": "Reopen the task to prepare an environment.",
+      "prepare": "Prepare environment",
+      "discard": "Discard",
+      "status": {
+        "preparing": "Preparing…",
+        "ready": "Ready",
+        "failed": "Failed",
+        "missing": "Missing",
+        "removing": "Removing…"
+      },
+      "branch": "Branch",
+      "base": "Base",
+      "path": "Folder",
+      "errors": {
+        "checkout_failed": "Git could not create the worktree. Nothing in your repository was changed.",
+        "verification_failed": "The worktree was created but did not match what Meelting expected, so it is not used.",
+        "preparation_interrupted": "Meelting closed while preparing this environment.",
+        "removal_interrupted": "Meelting closed while removing this environment."
+      },
+      "missingHelp": "The folder of this environment is no longer where Meelting created it. Restore it, or discard the environment once Git no longer lists it (for example after running git worktree prune in the repository yourself).",
+      "failedHelp": "Discard it to prepare a new one. Meelting only discards it when its folder and its Git registration are gone, and never deletes branches or commits."
+    },
+    "environmentReady": "Environment ready"
   }
 }
