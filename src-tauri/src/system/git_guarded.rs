@@ -1,8 +1,8 @@
 use crate::domain::repository::RepositoryIdentity;
 use crate::domain::review::DiffSource;
 use crate::domain::worktree::{
-    git_supports_attribute_source, info_attributes_allowed, parse_executable_filters,
-    parse_gitlinks,
+    git_supports_attribute_source, has_config_includes, info_attributes_allowed,
+    parse_executable_filters, parse_gitlinks,
 };
 use crate::system::git::{self, GitError};
 use std::collections::BTreeSet;
@@ -26,6 +26,8 @@ pub enum GuardError {
     InfoAttributesUnsafe,
     #[error("an executable filter applies to the repository")]
     FiltersApply(Vec<String>),
+    #[error("the git configuration includes other files")]
+    ConfigIncludes,
     #[error("the git configuration changed during the query")]
     ConfigChanged,
     #[error("git timed out")]
@@ -267,6 +269,7 @@ pub struct Guard {
     base_commit: String,
     conversions: Vec<(&'static str, String)>,
     filters: BTreeSet<String>,
+    neutralized: BTreeSet<String>,
     fingerprint: Fingerprint,
 }
 
@@ -296,22 +299,24 @@ impl Guard {
             base_commit: base_commit.to_string(),
             conversions: Vec::new(),
             filters: BTreeSet::new(),
+            neutralized: BTreeSet::new(),
             fingerprint,
         };
+        guard.reject_config_includes().await?;
         guard.conversions = guard.effective_conversions().await?;
         guard.filters = guard.executable_filters().await?;
-        if !guard.filters.is_empty() {
-            let used = git::filters_at(Path::new(&repository.path), base_commit)
-                .await
-                .map_err(from_git_error)?;
-            let applying: Vec<String> = used
-                .into_iter()
-                .filter(|name| guard.filters.contains(name))
-                .collect();
-            if !applying.is_empty() {
-                return Err(GuardError::FiltersApply(applying));
-            }
+        let used = git::filters_at(Path::new(&repository.path), base_commit)
+            .await
+            .map_err(from_git_error)?;
+        let applying: Vec<String> = used
+            .iter()
+            .filter(|name| guard.filters.contains(*name))
+            .cloned()
+            .collect();
+        if !applying.is_empty() {
+            return Err(GuardError::FiltersApply(applying));
         }
+        guard.neutralized = guard.filters.iter().cloned().chain(used).collect();
         Ok(guard)
     }
 
@@ -363,6 +368,16 @@ impl Guard {
         }
     }
 
+    async fn reject_config_includes(&self) -> Result<(), GuardError> {
+        let mut read = self.located(true);
+        read.args(["config", "--null", "--list"]);
+        let output = execute(read, REMOVAL_LIMITS).await?;
+        if has_config_includes(&output.stdout) {
+            return Err(GuardError::ConfigIncludes);
+        }
+        Ok(())
+    }
+
     fn unchanged(&self) -> Result<(), GuardError> {
         if fingerprint(&self.common_dir, &self.admin_dir)? == self.fingerprint {
             Ok(())
@@ -383,6 +398,19 @@ impl Guard {
             .arg(format!("core.attributesFile={NULL_DEVICE}"));
         for (key, value) in &self.conversions {
             command.arg("-c").arg(format!("{key}={value}"));
+        }
+        let keys = self.neutralized.iter().flat_map(|name| {
+            ["clean", "smudge", "process"].map(|kind| format!("filter.{name}.{kind}"))
+        });
+        let mut count = 0;
+        for key in keys {
+            command
+                .env(format!("GIT_CONFIG_KEY_{count}"), key)
+                .env(format!("GIT_CONFIG_VALUE_{count}"), "");
+            count += 1;
+        }
+        if count > 0 {
+            command.env("GIT_CONFIG_COUNT", count.to_string());
         }
         command
     }
@@ -777,10 +805,12 @@ mod tests {
 
             let result = fx.guard().await;
 
-            assert!(
-                matches!(&result, Err(GuardError::FiltersApply(names)) if names == &["probe"]),
-                "{label}: {result:?}"
-            );
+            let expected = if label.starts_with("include") {
+                matches!(&result, Err(GuardError::ConfigIncludes))
+            } else {
+                matches!(&result, Err(GuardError::FiltersApply(names)) if names == &["probe"])
+            };
+            assert!(expected, "{label}: {result:?}");
             assert_eq!(fx.executed(), "", "{label}");
         }
     }
@@ -895,6 +925,109 @@ mod tests {
             guard.finish().await,
             Err(GuardError::ConfigChanged)
         ));
+    }
+
+    #[tokio::test]
+    async fn a_filter_defined_after_the_check_for_a_name_the_base_attributes_use_never_runs() {
+        let fx = fixture(&[(".gitattributes", "*.txt filter=probe\n")]);
+        fx.dirty();
+        let guard = fx.guard().await.unwrap();
+        fx.config("filter.probe.clean", &fx.probe("clean"));
+        assert!(
+            fx.plain_git_executes(),
+            "the setup must be able to run the filter"
+        );
+
+        let status = guard.status_exhaustive().await;
+        let diff = guard.query(DIFF, REMOVAL_LIMITS).await;
+
+        assert_eq!(fx.executed(), "", "no unauthorized program may run");
+        assert!(matches!(status, Err(GuardError::ConfigChanged)));
+        assert!(matches!(diff, Err(GuardError::ConfigChanged)));
+    }
+
+    #[tokio::test]
+    async fn an_included_configuration_file_is_refused_before_any_query() {
+        let fx = fixture(&[(".gitattributes", "*.txt filter=probe\n")]);
+        fx.dirty();
+        let included = fx.root.join("included.cfg");
+        std::fs::write(
+            &included,
+            format!("[filter \"probe\"]\n\tclean = {}\n", fx.probe("clean")),
+        )
+        .unwrap();
+        fx.config("include.path", &slashed(&included));
+        assert!(
+            fx.plain_git_executes(),
+            "the setup must be able to run the filter"
+        );
+
+        let result = fx.guard().await;
+
+        assert!(matches!(result, Err(GuardError::ConfigIncludes)));
+        assert_eq!(fx.executed(), "");
+    }
+
+    #[tokio::test]
+    async fn a_conditional_include_is_refused_even_when_its_condition_does_not_match() {
+        let fx = fixture(&[]);
+        let included = fx.root.join("included.cfg");
+        std::fs::write(&included, "[user]\n\tname = other\n").unwrap();
+        fx.config("includeIf.gitdir:/nowhere/.path", &slashed(&included));
+
+        assert!(matches!(
+            fx.guard().await,
+            Err(GuardError::ConfigIncludes)
+        ));
+    }
+
+    #[tokio::test]
+    async fn an_include_added_after_the_check_cannot_define_a_filter_the_base_uses() {
+        let fx = fixture(&[(".gitattributes", "*.txt filter=probe\n")]);
+        fx.dirty();
+        let guard = fx.guard().await.unwrap();
+        let included = fx.root.join("included.cfg");
+        std::fs::write(
+            &included,
+            format!("[filter \"probe\"]\n\tclean = {}\n", fx.probe("clean")),
+        )
+        .unwrap();
+        fx.config("include.path", &slashed(&included));
+        assert!(
+            fx.plain_git_executes(),
+            "the setup must be able to run the filter"
+        );
+
+        let status = guard.status_exhaustive().await;
+        let diff = guard.query(DIFF, REMOVAL_LIMITS).await;
+
+        assert_eq!(fx.executed(), "", "no unauthorized program may run");
+        assert!(matches!(status, Err(GuardError::ConfigChanged)));
+        assert!(matches!(diff, Err(GuardError::ConfigChanged)));
+    }
+
+    #[tokio::test]
+    async fn info_attributes_added_after_the_check_cannot_select_a_defined_filter() {
+        let fx = fixture(&[]);
+        fx.config("filter.probe.clean", &fx.probe("clean"));
+        fx.dirty();
+        let guard = fx.guard().await.unwrap();
+        std::fs::write(
+            fx.repo.join(".git").join("info").join("attributes"),
+            "*.txt filter=probe\n",
+        )
+        .unwrap();
+        assert!(
+            fx.plain_git_executes(),
+            "the setup must be able to run the filter"
+        );
+
+        let status = guard.status_exhaustive().await;
+        let diff = guard.query(DIFF, REMOVAL_LIMITS).await;
+
+        assert_eq!(fx.executed(), "", "no unauthorized program may run");
+        assert!(matches!(status, Err(GuardError::InfoAttributesUnsafe)));
+        assert!(matches!(diff, Err(GuardError::InfoAttributesUnsafe)));
     }
 
     #[tokio::test]

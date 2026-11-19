@@ -293,6 +293,16 @@ pub fn parse_executable_filters(config_null: &[u8]) -> std::collections::BTreeSe
         .collect()
 }
 
+pub fn has_config_includes(config_null: &[u8]) -> bool {
+    String::from_utf8_lossy(config_null)
+        .split('\0')
+        .map(|record| record.split_once('\n').map_or(record, |(key, _)| key))
+        .map(str::to_ascii_lowercase)
+        .any(|key| {
+            key == "include.path" || (key.starts_with("includeif.") && key.ends_with(".path"))
+        })
+}
+
 pub fn parse_gitlinks(stage_listing: &[u8]) -> Vec<String> {
     String::from_utf8_lossy(stage_listing)
         .split('\0')
@@ -480,6 +490,17 @@ mod tests {
 
         assert_eq!(names, ["a.b", "lfs", "x"]);
         assert!(parse_executable_filters(b"").is_empty());
+    }
+
+    #[test]
+    fn detects_every_form_of_configuration_include() {
+        assert!(has_config_includes(b"core.bare\nfalse\0include.path\n/x.cfg\0"));
+        assert!(has_config_includes(b"INCLUDE.PATH\n/x.cfg\0"));
+        assert!(has_config_includes(
+            b"includeif.gitdir:/a/.path\n/x.cfg\0includeif.onbranch:main.path\ny\0"
+        ));
+        assert!(!has_config_includes(b"core.bare\nfalse\0user.name\nincludeif.path\0"));
+        assert!(!has_config_includes(b""));
     }
 
     #[test]
