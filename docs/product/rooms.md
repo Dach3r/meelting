@@ -1,74 +1,74 @@
-# Salas de trabajo
+# Work rooms
 
-> **Estado:** construido (Fase 3): salas, participantes, historial, envío de mensajes del usuario y, con `AgentRun`, el selector «Pedir a», las respuestas de los agentes en streaming y el estado «Pensando…» de cada agente ([agent-execution.md](agent-execution.md)). Los agentes pueden entrar y salir de una sala ya creada (D24). Pendiente: el panel de pantalla compartida. Comportamiento portado del producto Rails.
+> **Status:** built (Phase 3): rooms, participants, history, sending user messages and, with `AgentRun`, the "Ask" selector, streaming agent responses and each agent's "Thinking…" state ([agent-execution.md](agent-execution.md)). Agents can join and leave an existing room (D24). Pending: the screen sharing panel. Behavior ported from the Rails product.
 
-**Problema:** el usuario tiene agentes, pero no existe un lugar donde reunirlos.
-**Objetivo:** que el usuario cree salas, asigne agentes y converse en un historial persistente. La sala es la unidad de contexto de trabajo: los equipos organizan agentes; las salas los reúnen para trabajar juntos. Los agentes asignados responden cuando el usuario les dirige una instrucción ([agent-execution.md](agent-execution.md)).
-**Historia de usuario:** Como responsable de un workspace, quiero crear una sala, asignarle agentes y conversar en ella, para dejar listo el contexto de trabajo antes de que los agentes ejecuten.
+**Problem:** the user has agents, but there is no place to bring them together.
+**Goal:** let the user create rooms, assign agents and converse in a persistent history. The room is the unit of working context: teams organize agents; rooms bring them together to work. Assigned agents respond when the user directs an instruction at them ([agent-execution.md](agent-execution.md)).
+**User story:** As the owner of a workspace, I want to create a room, assign agents to it and converse in it, so the working context is ready before the agents run.
 
-## Alcance y exclusiones
+## Scope and exclusions
 
-**Incluye**
-- Tabla `rooms` perteneciente a `workspaces`, con nombre obligatorio.
-- Participación de agentes (`room_agents`): un agente puede estar en varias salas y una sala puede tener varios agentes, de cualquier equipo del mismo workspace.
-- Crear, ver y finalizar salas (colgar la llamada). Los participantes se eligen al crear con un buscador por nombre o rol; los elegidos quedan como fichas que se quitan con su cruz o con Retroceso (con el buscador vacío); Intro añade la primera coincidencia. El nombre de una sala creada no se edita, pero sus agentes sí cambian: entran y salen como en una reunión real (D24). Si llegan agentes repetidos, el núcleo los deduplica conservando el orden de la primera aparición, sin error.
-- Se permite una sala sin agentes.
-- Invitar y quitar agentes de una sala existente. «Invitar agentes» abre el mismo buscador con los agentes del workspace que no están presentes; al elegir agentes y pulsar «Invitar» se pide confirmación con los nombres, y la cruz de cada mosaico abre un diálogo de confirmación antes de quitar (se puede volver a invitar). Quien sale deja de ser participante, pero su historial se conserva con su nombre; si estaba respondiendo, su ejecución se cancela.
-- Mensajes (`messages`) del usuario y de agentes, con historial persistente por sala. La entrega en vivo usa **eventos Tauri** emitidos por el núcleo. Los mensajes son inmutables: sin edición ni eliminación individual.
-- Pantalla de la sala como videollamada, a pantalla completa (cubre el riel y la barra superior; «Salas» vuelve al listado): un mosaico por participante (el usuario y cada agente con su rol), la conversación como transcripción en un panel lateral con el compositor (Intro envía, Mayús+Intro salta de línea), el número de agentes en la cabecera y una barra de controles flotante con «Invitar agentes», «Comprobar disponibilidad» y «Colgar» (icono de teléfono colgado). Mientras un agente tiene una ejecución activa en la sala, su mosaico muestra «Pensando…» y un anillo.
-- Lobby de participantes: listado de salas como cuadrícula de tarjetas del tema Grafito, cada una con nombre, fecha de actividad, avatares solapados de hasta tres agentes con contador del resto y botón para entrar a todo el ancho.
-- Compositor con menciones `@`, selector «Pedir a» («Según el mensaje», «Nadie» o un agente) y destinatario propuesto ([conversation-engine.md](../architecture/conversation-engine.md#r1-implementado)). Bajo la instrucción aparece el agente con su estado (en cola, pensando, escribiendo o reintentando), el texto en vivo y «Cancelar», o el error traducido. La respuesta guardada muestra proveedor, modelo y tokens solo en su pie.
-- Cada mensaje muestra la hora, y al pasar el cursor, la fecha completa. Si el rol de un agente coincide con su nombre, no se repite.
+**Includes**
+- `rooms` table belonging to `workspaces`, with a required name.
+- Agent participation (`room_agents`): an agent can be in several rooms and a room can have several agents, from any team in the same workspace.
+- Create, view and finish rooms (hang up the call). Participants are chosen at creation with a search by name or role; chosen ones become chips removed with their cross or with Backspace (when the search is empty); Enter adds the first match. A created room's name is not editable, but its agents do change: they join and leave like in a real meeting (D24). If duplicate agents arrive, the core deduplicates them keeping the order of first appearance, without error.
+- A room without agents is allowed.
+- Invite and remove agents from an existing room. "Invite agents" opens the same search with the workspace agents not present; after choosing agents and pressing "Invite", a confirmation with the names is requested, and each tile's cross opens a confirmation dialog before removing (they can be invited again). Whoever leaves stops being a participant, but their history is kept under their name; if they were responding, their run is cancelled.
+- User and agent messages (`messages`), with persistent history per room. Live delivery uses **Tauri events** emitted by the core. Messages are immutable: no editing or individual deletion.
+- Room screen as a video call, full screen (covers the rail and the top bar; "Rooms" goes back to the list): one tile per participant (the user and each agent with their role), the conversation as a transcript in a side panel with the composer (Enter sends, Shift+Enter inserts a line break), the number of agents in the header and a floating control bar with "Invite agents", "Check availability" and "Hang up" (hung-up phone icon). While an agent has an active run in the room, its tile shows "Thinking…" and a ring.
+- Participant lobby: room list as a grid of Grafito theme cards, each with name, activity date, overlapping avatars of up to three agents with a counter for the rest and a full-width button to enter.
+- Composer with `@` mentions, "Ask" selector ("Based on the message", "Nobody" or an agent) and proposed recipient ([conversation-engine.md](../architecture/conversation-engine.md#r1-built)). Below the instruction appear the agent with its status (queued, thinking, writing or retrying), the live text and "Cancel", or the translated error. The saved response shows provider, model and tokens only in its footer.
+- Each message shows the time, and on hover, the full date. If an agent's role matches its name, it is not repeated.
 
-**Excluye**
-- Archivado y cambio de nombre de salas, edición o borrado de mensajes, paginación del historial (se cargan los últimos 100).
-- Miembros humanos adicionales.
+**Excludes**
+- Archiving and renaming rooms, editing or deleting messages, history pagination (the last 100 are loaded).
+- Additional human members.
 
-## Flujo funcional
-1. El usuario abre **Salas** y ve sus salas o un estado vacío. El listado va ordenado por actividad reciente (`rooms.updated_at`, que es la creación y se actualiza con cada mensaje; desempate por `id`): la primera se destaca como una mesa de reunión (una tarjeta por participante, el usuario incluido, y la vista previa de sus últimos 3 mensajes) y el resto aparece sobre un plano punteado como salas con sus agentes sentados (hasta 3, con «+N» para el resto) y su última actividad, más un hueco discontinuo «Nueva sala».
-2. Crea una sala: nombre y, opcionalmente, agentes.
-3. Al crearla entra directamente; ve a los participantes como mosaicos y la conversación (últimos 100 mensajes) a un costado.
-4. Escribe un mensaje: el núcleo lo guarda y actualiza la actividad de la sala en una transacción, lo devuelve y, tras el commit, emite `message:created`. La UI lo añade desde el resultado o el evento sin duplicarlo (por `id`).
-5. Invita agentes desde el control «Invitar agentes» o quita uno con la cruz de su mosaico; ambas acciones piden confirmación (`add_room_agents`, `remove_room_agent`; ambos devuelven los presentes y los que salieron).
-6. Cuelga con confirmación: la sala queda finalizada (`rooms.finished_at`), se cancelan sus ejecuciones activas y el listado la muestra al final, en gris y desactivada, con la fecha de finalización. No se puede volver a entrar ni se borra nada.
+## Functional flow
+1. The user opens **Rooms** and sees their rooms or an empty state. The list is sorted by recent activity (`rooms.updated_at`, which is the creation time and is updated with each message; ties broken by `id`): the first one is highlighted as a meeting table (one card per participant, the user included, and a preview of its last 3 messages) and the rest appear on a dotted floor plan as rooms with their agents seated (up to 3, with "+N" for the rest) and their last activity, plus a dashed "New room" slot.
+2. Creates a room: name and, optionally, agents.
+3. On creation they enter directly; they see the participants as tiles and the conversation (last 100 messages) to one side.
+4. Writes a message: the core saves it and updates the room's activity in a transaction, returns it and, after the commit, emits `message:created`. The UI adds it from the result or the event without duplicating it (by `id`).
+5. Invites agents from the "Invite agents" control or removes one with its tile's cross; both actions ask for confirmation (`add_room_agents`, `remove_room_agent`; both return those present and those who left).
+6. Hangs up with confirmation: the room becomes finished (`rooms.finished_at`), its active runs are cancelled and the list shows it at the end, grey and disabled, with the finish date. It cannot be entered again and nothing is deleted.
 
-## Criterios de aceptación
-- [x] Crear y finalizar salas del workspace actual.
-- [x] Asignar agentes de cualquier equipo al crear la sala; un agente no se duplica en una sala.
-- [x] Invitar agentes a una sala existente y quitarlos; quien sale conserva su historial con su nombre, no recibe instrucciones y su ejecución activa se cancela; volver a invitarlo lo reincorpora.
-- [x] Un agente de otro workspace no puede asignarse, ni manipulando los argumentos del comando.
-- [x] Una sala de otro workspace no se puede leer ni escribir (error `room_not_found` del núcleo).
-- [x] El autor de un mensaje del usuario lo fija el núcleo, nunca el argumento del comando.
-- [x] Los mensajes persisten y se emiten a la UI mediante `message:created`.
-- [x] Estados vacíos, errores y confirmaciones, en `es` y `en`.
+## Acceptance criteria
+- [x] Create and finish rooms in the current workspace.
+- [x] Assign agents from any team when creating the room; an agent is not duplicated in a room.
+- [x] Invite agents to an existing room and remove them; whoever leaves keeps their history under their name, receives no instructions and their active run is cancelled; inviting them again brings them back.
+- [x] An agent from another workspace cannot be assigned, even by tampering with the command arguments.
+- [x] A room from another workspace cannot be read or written (core error `room_not_found`).
+- [x] The author of a user message is set by the core, never by the command argument.
+- [x] Messages persist and are emitted to the UI through `message:created`.
+- [x] Empty states, errors and confirmations, in `es` and `en`.
 
-## Reglas de negocio
-- `name` obligatorio, máximo 80 caracteres.
-- `body` del mensaje obligatorio (el núcleo recorta los espacios de los extremos). Máximo 4000 caracteres solo para los mensajes del usuario; las respuestas de agentes no tienen límite de caracteres ni se truncan: las acotan los tokens de salida del modelo (decisión aprobada D10, [agent-execution.md](agent-execution.md)). La UI, el núcleo y SQLite cuentan igual: puntos de código Unicode (`Array.from` en la UI, `chars()` en Rust, `length()` en SQLite) sobre el texto recortado; un emoji simple cuenta 1 y uno compuesto con ZWJ cuenta cada punto de código. Si el mensaje pasa de 4000, el compositor desactiva el envío y muestra el aviso, sin cortar el texto.
-- Sala y agente de una participación deben pertenecer al mismo workspace; se valida en el servicio y lo refuerzan claves foráneas compuestas con `workspace_id`.
-- Un agente solo puede tener mensajes en salas donde participa (clave foránea `messages (room_id, agent_id) → room_agents`).
-- Quitar un agente marca `room_agents.left_at` (no borra la fila) y cancela su ejecución activa en la sala en la misma transacción. Solo los participantes sin `left_at` aparecen en la sala, el listado, la disponibilidad y la resolución del destinatario; los que salieron se usan para nombrar sus mensajes en la UI y en el historial del prompt. Quitar a quien no está presente falla con `agent_not_found`; invitar a quien ya está no cambia nada.
-- Finalizar una sala no borra mensajes, participaciones ni ejecuciones; las ejecuciones activas se cancelan (`cancelled`) y toda acción posterior sobre la sala devuelve `room_not_found`. Eliminar un agente elimina sus participaciones, salvo que tenga mensajes o ejecuciones: entonces no se puede eliminar. El núcleo devuelve el error propio `agent_has_activity`.
-- Todas las consultas parten del workspace actual.
-- Un `agent_ids` con agentes de otro workspace (o inexistentes) falla y no cambia ninguna participación: la asignación es atómica (una transacción SQLite).
+## Business rules
+- `name` required, 80 characters max.
+- Message `body` required (the core trims leading and trailing whitespace). 4000 characters max for user messages only; agent responses have no character limit and are not truncated: they are bounded by the model's output tokens (approved decision D10, [agent-execution.md](agent-execution.md)). The UI, the core and SQLite count the same way: Unicode code points (`Array.from` in the UI, `chars()` in Rust, `length()` in SQLite) over the trimmed text; a simple emoji counts 1 and one composed with ZWJ counts each code point. If the message exceeds 4000, the composer disables sending and shows the warning, without cutting the text.
+- The room and agent of a participation must belong to the same workspace; this is validated in the service and reinforced by composite foreign keys with `workspace_id`.
+- An agent can only have messages in rooms where it participates (foreign key `messages (room_id, agent_id) → room_agents`).
+- Removing an agent sets `room_agents.left_at` (does not delete the row) and cancels its active run in the room in the same transaction. Only participants without `left_at` appear in the room, the list, availability and recipient resolution; those who left are used to name their messages in the UI and in the prompt history. Removing someone not present fails with `agent_not_found`; inviting someone already present changes nothing.
+- Finishing a room does not delete messages, participations or runs; active runs are cancelled (`cancelled`) and any later action on the room returns `room_not_found`. Deleting an agent deletes its participations, unless it has messages or runs: then it cannot be deleted. The core returns its own error `agent_has_activity`.
+- All queries start from the current workspace.
+- An `agent_ids` with agents from another workspace (or nonexistent ones) fails and changes no participation: assignment is atomic (one SQLite transaction).
 
-## Dependencias
-- Agentes y equipos ([agent-catalog.md](agent-catalog.md)).
-- SQLite y eventos Tauri.
+## Dependencies
+- Agents and teams ([agent-catalog.md](agent-catalog.md)).
+- SQLite and Tauri events.
 
-## Evolución prevista
+## Planned evolution
 
-✅ Con R1, `send_intervention` sustituye a `send_message` y a `send_instruction`: un mensaje sin destinatario se guarda igual que antes (mismas validaciones, `rooms.updated_at` y `message:created`), y uno dirigido a un agente crea además su `AgentRun`. El núcleo resuelve el destinatario ([conversation-engine.md](../architecture/conversation-engine.md#r1-implementado)). `list_rooms`, `create_room`, `get_room` y `message:created` no cambian; `delete_room` se sustituyó por `finish_room`.
+✅ With R1, `send_intervention` replaces `send_message` and `send_instruction`: a message without a recipient is saved as before (same validations, `rooms.updated_at` and `message:created`), and one directed at an agent also creates its `AgentRun`. The core resolves the recipient ([conversation-engine.md](../architecture/conversation-engine.md#r1-built)). `list_rooms`, `create_room`, `get_room` and `message:created` do not change; `delete_room` was replaced by `finish_room`.
 
-| Nivel | Estado | Qué añade | Documento |
+| Level | Status | What it adds | Document |
 |---|---|---|---|
-| Sala actual | ✅ implementado | Sala, participantes, historial, mensajes del usuario | Este documento |
-| Conversación con `AgentRun` | ✅ Construido (Fase 3) | Respuestas de un agente elegido en «Pedir a», con streaming y cancelación | [agent-execution.md](agent-execution.md) |
-| Conversación dirigida y multiagente | Propuesto (R1–R2) | Menciones, destinatario por intervención, «Equipo», discusiones acotadas, sesión de reunión en memoria | [voice-meetings.md](voice-meetings.md) |
-| Voz | Propuesto (R3–R5) | Voz por agente, push-to-talk, subtítulos | [voice-meetings.md](voice-meetings.md), [voice-engine.md](../architecture/voice-engine.md) |
-| Trabajo real | Planificado (Fases 4–5, R6) | Tareas con worktree vinculadas a la sala (`tasks.room_id`), pantalla compartida con terminal y diff reales. Los mensajes siguen siendo solo conversación | [agent-execution.md](agent-execution.md#herramientas-y-aprobaciones) |
+| Current room | ✅ implemented | Room, participants, history, user messages | This document |
+| Conversation with `AgentRun` | ✅ Built (Phase 3) | Responses from an agent chosen in "Ask", with streaming and cancellation | [agent-execution.md](agent-execution.md) |
+| Directed and multi-agent conversation | Proposed (R1–R2) | Mentions, recipient per intervention, "Team", bounded discussions, in-memory meeting session | [voice-meetings.md](voice-meetings.md) |
+| Voice | Proposed (R3–R5) | Per-agent voice, push-to-talk, subtitles | [voice-meetings.md](voice-meetings.md), [voice-engine.md](../architecture/voice-engine.md) |
+| Real work | Planned (Phases 4–5, R6) | Worktree tasks linked to the room (`tasks.room_id`), screen sharing with real terminal and diff. Messages remain conversation only | [agent-execution.md](agent-execution.md#tools-and-approvals) |
 
-**Decisiones relacionadas:** los agentes entran y salen con salida suave (D24); la sala no tiene columna de objetivo y el prompt usa su nombre (D11); las respuestas de agentes no tienen el límite de 4000 caracteres (D10). Ver [decisions.md](decisions.md).
+**Related decisions:** agents join and leave with a soft exit (D24); the room has no goal column and the prompt uses its name (D11); agent responses do not have the 4000-character limit (D10). See [decisions.md](decisions.md).
 
-**Prioridad:** Must Have
-**Métrica de éxito:** porcentaje de workspaces que crean una sala con al menos un agente y envían un mensaje.
+**Priority:** Must Have
+**Success metric:** percentage of workspaces that create a room with at least one agent and send a message.
