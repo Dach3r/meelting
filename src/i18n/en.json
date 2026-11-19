@@ -56,6 +56,7 @@
     "environment_has_changes": "The environment has files that would be lost, so it was kept.",
     "environment_operation_in_progress": "A Git operation is in progress in the environment, so it was kept.",
     "environment_remove_refused": "Git refused to remove the environment, so it was kept.",
+    "environment_check_refused": "The environment could not be checked completely and safely, so it was kept. Nothing was changed.",
     "copy_too_large": "The selected files add up to more than 50 MiB. Pick fewer files.",
     "copy_selection_expired": "That selection is no longer valid. Pick the files again.",
     "secrets_not_confirmed": "Confirm that you want to copy files that may hold secrets.",

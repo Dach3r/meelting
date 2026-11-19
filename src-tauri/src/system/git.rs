@@ -218,38 +218,6 @@ pub async fn worktree_list(dir: &Path) -> Result<String, GitError> {
     Ok(String::from_utf8_lossy(&output).into_owned())
 }
 
-pub async fn status(dir: &Path) -> Result<Vec<u8>, GitError> {
-    output(
-        dir,
-        &[
-            "status",
-            "--porcelain=v2",
-            "-z",
-            "--untracked-files=all",
-            "--ignored=matching",
-        ],
-        None,
-    )
-    .await
-}
-
-pub async fn git_path(dir: &Path, name: &str) -> Result<String, GitError> {
-    read(
-        dir,
-        &["rev-parse", "--path-format=absolute", "--git-path", name],
-    )
-    .await
-}
-
-pub async fn commits_ahead(dir: &Path, base: &str, branch: &str) -> Result<u32, GitError> {
-    let range = format!("{base}..refs/heads/{branch}");
-    read(dir, &["rev-list", "--count", "--end-of-options", &range])
-        .await?
-        .trim()
-        .parse()
-        .map_err(|_| GitError::Failed("count".into()))
-}
-
 pub async fn remove_worktree(dir: &Path, path: &Path) -> Result<(), GitError> {
     let path = path
         .to_str()

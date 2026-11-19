@@ -107,6 +107,8 @@ pub enum SessionError {
     EnvironmentOperationInProgress,
     #[error("environment_remove_refused")]
     EnvironmentRemoveRefused,
+    #[error("environment_check_refused")]
+    EnvironmentCheckRefused,
     #[error("environment_in_trash")]
     EnvironmentInTrash,
     #[error("environment_not_in_trash")]
