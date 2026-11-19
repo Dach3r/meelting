@@ -15,9 +15,13 @@ Phases 0–3, 4A and 4B complete; Track R stage R1 (text-directed conversation) 
 
 Phase 4C stage 3B (no UI) built: `review_task_environment` (Git status, committed files, commits ahead, drift `up_to_date`/`moved`/`rewritten`/`unavailable`), `read_task_environment_diff` and `list_task_environment_folder` over opaque, expiring review ids; the guarded Git executor now refuses to run when process isolation cannot be guaranteed (BR-17).
 
-**Next:** the rest of Phase 4C (Changes interface, recovery screens with `recheck_task_environment`, E2E on Linux and Windows), once authorized. Track R stage R2 stays pending (decisions in `docs/product/decisions.md`).
+Phase 4C stage 3C built: the **Changes** section of the task detail (grouped files, untracked folder expansion, read-only diff viewer, base branch notice, stale and error states) over those commands, with `useEnvironmentReview`, `ChangesList`, `DiffViewer`, `DriftNotice` and `TaskChanges`.
 
-**Documented, not built:** multi-agent coordination and the rest of Track R (R2+) and voice (STT, TTS, agent voices); the 4C interface and recovery, tools, approvals, Docker, integrations, daily limits. Do not add them unless asked. Approved and pending decisions live in `docs/product/decisions.md`.
+**Pending security closure:** Job Object behavior with launchers and descendants on Windows, `NtResumeProcess` compatibility, no atomic review snapshot, limited secret-name detection, no direct tests of the Tauri command layer, and isolation tests with elevated privileges (BR-17).
+
+**Next:** the rest of Phase 4C (recovery screens with `recheck_task_environment`, E2E on Linux and Windows), once authorized. Track R stage R2 stays pending (decisions in `docs/product/decisions.md`).
+
+**Documented, not built:** multi-agent coordination and the rest of Track R (R2+) and voice (STT, TTS, agent voices); 4C recovery and E2E, tools, approvals, Docker, integrations, daily limits. Do not add them unless asked. Approved and pending decisions live in `docs/product/decisions.md`.
 
 **Hybrid online/offline:** local and cloud providers are user-configurable and can be mixed; local works offline, cloud reports when unavailable, and nothing ever switches provider or model silently.
 

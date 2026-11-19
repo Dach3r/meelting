@@ -1,6 +1,6 @@
 # Tasks and worktrees (Phase 4)
 
-> **Status:** product decisions approved (D27–D48 in [decisions.md](decisions.md)). Phase 4A (repositories, tasks, agent assignment, creation from rooms) is built and verified. Phase 4B (Git environments) is **implemented and verified within the scope tested** on macOS, Ubuntu and Windows (Rust tests), with limits recorded in [§7.1](#71-verification-evidence): no E2E, no real-storage check on runners, no real process-kill test, and a pipeline that is not fully green. 4C is approved in scope: stage 3B (review services and commands, no UI) is built; the interface, recovery screens and E2E are not. Platforms: macOS, Windows and Linux.
+> **Status:** product decisions approved (D27–D48 in [decisions.md](decisions.md)). Phase 4A (repositories, tasks, agent assignment, creation from rooms) is built and verified. Phase 4B (Git environments) is **implemented and verified within the scope tested** on macOS, Ubuntu and Windows (Rust tests), with limits recorded in [§7.1](#71-verification-evidence): no E2E, no real-storage check on runners, no real process-kill test, and a pipeline that is not fully green. 4C is approved in scope: stage 3B (review services and commands) and stage 3C (the Changes interface) are built; recovery screens (`recheck_task_environment`) and E2E are not. Platforms: macOS, Windows and Linux.
 >
 > In this document ✅ means *implemented*. What has been *verified*, and on which platform, is recorded only in §7.1.
 
@@ -329,6 +329,19 @@ Reading a worktree with Git can run programs chosen by configuration: clean and 
 
 Residual risks: P5d is not a sandbox: it does not limit what Git reads or writes, and on Unix it cannot be enforced for root or with `CAP_SYS_RESOURCE`, so the executor refuses to run there (Meelting as root cannot review); a Git that needs to start helper processes for a legitimate reason (none is known for `status`, `diff`, `rev-parse`, `config`, `symbolic-ref` and `ls-files`) would fail instead of running them; disabling the parallel index preload makes very large worktrees slower; on Windows the limit is learned from the installed Git and is untested for Git builds other than the one on the CI runner; Git settings that are not listed here and run programs; on Windows the job now ends its processes when it closes, but nested-job behavior and Git builds other than the CI runner's are untested, and `NtResumeProcess` is undocumented; Git for Windows and Linux behavior is checked by the tests in CI, not assumed.
 
+### BR-18. Changes interface (4C stage 3C ✅)
+
+The **Changes** section sits below **Environment** in the task detail and exists while the task has an environment. It reads the environment only when it is `ready` and not in the trash (`TaskChanges`, `useEnvironmentReview`); otherwise it says the environment is not ready and calls nothing. It is read-only: there is no edit, stage, commit, reset, restore, discard, merge, rebase or sync.
+
+- **Header:** environment branch, base branch and commit, HEAD, commits ahead, base branch state, Git operation (none or in progress) and **Refresh**. No review time is shown because the core provides none.
+- **Groups:** Conflicts, Staged, Unstaged, Untracked, Committed (since the base commit) and Ignored, each with a counter; empty groups are hidden. A file that is staged and unstaged appears in both groups with its own change label (Added, Modified, Deleted, Renamed with its original path, Copied, Type changed). Conflict, binary and protected are text labels, never color alone. Line counts appear only for committed files, where the core computes them. Conflicts, untracked and ignored entries have no diff.
+- **Untracked and ignored folders** expand one level at a time through `list_task_environment_folder`, each with its own loading, error and incomplete state. The webview only sends the review and entry ids it received.
+- **Diff viewer:** unified table with old and new line numbers (from the hunk header), `+`/`−` marks, a screen-reader label per line besides the tint, hunk headers, and notices for binary files, no line changes, a cut diff (`complete: false`) and text decoded with loss. Names and contents are rendered as text nodes. A protected entry shows its notice without asking the core for contents; the core refuses it anyway.
+- **Base branch state** (BR-07) is an informational notice for `moved`, `rewritten` and `unavailable` and nothing for `up_to_date`. It offers no action and is kept apart from identity errors.
+- **States:** loading, empty, partial list, operation in progress, stale, error and environment not ready. Backend errors (`environment_identity_mismatch`, `process_isolation_unavailable`, `environment_filters_apply`, `environment_config_unsafe`, `review_timeout`…) are shown with their locale copy and a **Retry**; the UI never works around them. `review_stale` from a diff or a folder read discards the whole review (list, selection, diff, folders), so an old diff is never shown as current, and offers **Refresh**. A refresh also clears the selection.
+- **Concurrency:** answers that arrive after a refresh, a task change or unmounting are dropped, and of two diff requests only the newest is shown.
+- **Consistency:** a note says the view shows what Git reported at the last refresh and that other tools can change files at any time. The core's check (HEAD, index and file size and time) is not an atomic snapshot and the UI does not claim one.
+
 ### Deletion rules (D30–D33)
 
 | Entity | Rule |
@@ -344,7 +357,7 @@ A task can change its repository only while it has never had a worktree; once it
 
 - **Tasks** (rail): list with filters by status, repository and agent; priority; environment indicator (4B); «New task». Repositories are managed from the same screen.
 - **Task form** (shared by Tasks and rooms): title, description, priority, optional repository, base branch when there is one, multi-agent picker.
-- **Task detail:** information (description, status, priority, agents, origin) with the allowed status actions, edit and delete; **Environment** (4B) and **Changes** (4C).
+- **Task detail:** information (description, status, priority, agents, origin) with the allowed status actions, edit and delete; **Environment** (4B) and **Changes** (4C stage 3C ✅, below).
 - **Files** and **Trash** (rail; Trash above «Collapse»): see BR-16.
 - **Settings › Environments** (4B): configured folder, native picker, validation state, effect on new worktrees only.
 
@@ -377,12 +390,12 @@ A task can change its repository only while it has never had a worktree; once it
 | AC07 | Create a task from a room message | Task and origin saved | 4A ✅ |
 | AC08 | Create a task with a repository | No worktree created | 4A ✅ |
 | AC09–AC13 | Prepare, isolation, two tasks of the same repo, duplicate requests, alternative base | See BR-05 | 4B ✅ |
-| AC14 | Base branch drift | Warning without rebasing, merging or resetting (BR-07) | 4C (service built, warning UI not built) |
+| AC14 | Base branch drift | Warning without rebasing, merging or resetting (BR-07) | 4C (built: notice in Changes) |
 | AC15–AC17 | File copies, escaping paths, no overwrite | See BR-06 | 4B ✅ |
 | AC18 | Complete a task with a worktree | Environment and branch kept | 4B ✅ |
 | AC19–AC21 | Remove with local changes, with an ignored `.env`, clean | Blocked, blocked, removed keeping the branch | 4B ✅ |
 | AC22–AC24, AC26–AC28 | Root change, restart during preparation, external move or delete (detected at startup only, BR-14), shared repository across workspaces, unsafe path, executable checkout | See BR-11 to BR-15 | 4B ✅ |
-| AC25 | Review code changes | Read-only diff | 4C (commands built, UI not built) |
+| AC25 | Review code changes | Read-only diff | 4C (built: Changes diff viewer) |
 | AC29 | macOS, Windows and Linux | Main flows and recovery validated: E2E on Linux and Windows, automated Rust and frontend tests plus a reproducible manual checklist on macOS (`tauri-driver` has no macOS driver) | 4C |
 | AC30 | Multi-agent assignment | No assignment starts an `AgentRun` | 4A ✅ |
 
@@ -427,7 +440,7 @@ The pipeline as a whole is therefore **not green**: the Windows test job and the
 - End-to-end flows on Linux and Windows (no E2E harness exists) and the macOS manual checklist (AC29).
 - The real fixed-storage check (BR-12) on CI runners: the Rust tests inject a permissive checker.
 - Interrupted operations on a real process kill: recovery is only simulated.
-- The 4C interface, recovery screens and E2E, which are not built (the review services and commands are).
+- 4C recovery screens (`recheck_task_environment`) and E2E, which are not built (the review services, commands and Changes interface are).
 
 ## 8. Delivery
 
