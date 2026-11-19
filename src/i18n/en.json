@@ -730,11 +730,93 @@
     }
   },
   "review": {
+    "title": "Changes",
+    "refresh": "Refresh",
+    "refreshing": "Refreshing…",
+    "loading": "Reading the changes of this environment…",
+    "empty": "No changes yet. The environment has no commits, staged, unstaged or untracked files beyond its starting point.",
+    "unavailable": "The environment is not ready, so its changes cannot be shown.",
+    "snapshotNote": "This view shows what Git reported when it was last refreshed. Other tools can change the files at any time, so refresh to see the current state.",
+    "partial": "This list is incomplete: the output was cut at a safe limit. Some files are not shown.",
+    "header": {
+      "branch": "Branch",
+      "base": "Base",
+      "head": "HEAD",
+      "ahead": "Commits ahead",
+      "drift": "Base branch",
+      "operation": "Git operation",
+      "operationNone": "None",
+      "operationRunning": "In progress"
+    },
+    "operationNotice": "A Git operation (merge, rebase, cherry-pick, revert, bisect or a lock) is in progress in this environment. The list shows what Git reports now.",
+    "groups": {
+      "conflicted": "Conflicts",
+      "staged": "Staged",
+      "unstaged": "Unstaged",
+      "untracked": "Untracked",
+      "committed": "Committed",
+      "ignored": "Ignored"
+    },
+    "change": {
+      "added": "Added",
+      "modified": "Modified",
+      "deleted": "Deleted",
+      "renamed": "Renamed",
+      "copied": "Copied",
+      "type_changed": "Type changed",
+      "conflicted": "Conflict",
+      "untracked": "Untracked",
+      "ignored": "Ignored"
+    },
+    "badges": {
+      "binary": "Binary",
+      "protected": "Protected",
+      "lossyPath": "Name is not valid text"
+    },
+    "renamedFrom": "from {path}",
+    "counts": "{added} added, {deleted} deleted lines",
+    "conflictHint": "Conflicts are not shown as a diff. Resolve them in the environment.",
+    "folder": {
+      "expand": "Expand folder {path}",
+      "collapse": "Collapse folder {path}",
+      "loading": "Reading the folder…",
+      "empty": "The folder has no files to show.",
+      "incomplete": "The folder listing is incomplete."
+    },
+    "diff": {
+      "title": "Diff",
+      "select": "Select a file to read its changes.",
+      "loading": "Reading the diff…",
+      "binary": "This is a binary file, so its contents are not shown.",
+      "noChanges": "Git reports no line changes for this file (for example a rename or a mode change).",
+      "partial": "The diff is incomplete: it was cut at a safe limit.",
+      "lossy": "Some bytes are not valid text and were replaced.",
+      "protected": "This file may hold secrets, so its contents are not shown.",
+      "region": "Changes of {path}, {source}",
+      "noNewline": "No newline at end of file",
+      "lines": {
+        "added": "Added line",
+        "removed": "Removed line",
+        "context": "Unchanged line"
+      },
+      "sources": {
+        "staged": "staged changes",
+        "unstaged": "unstaged changes",
+        "branch": "changes since the base commit"
+      }
+    },
+    "retry": "Retry",
     "drift": {
       "up_to_date": "The base branch has not moved since this environment was prepared.",
       "moved": "The base branch has moved since this environment was prepared. Nothing was updated.",
       "rewritten": "The base branch was rewritten and no longer contains this environment's starting commit. Nothing was updated.",
       "unavailable": "The base branch is not available, so the comparison could not be made."
+    },
+    "driftState": {
+      "up_to_date": "Up to date",
+      "moved": "Moved",
+      "rewritten": "Rewritten",
+      "unavailable": "Unavailable"
     }
   }
 }

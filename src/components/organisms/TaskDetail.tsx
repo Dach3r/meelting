@@ -18,6 +18,7 @@ import { Alert } from "../molecules/Alert";
 import { Modal } from "../molecules/Modal";
 import { TaskBadges } from "../molecules/TaskBadges";
 import { TaskEnvironment } from "../molecules/TaskEnvironment";
+import { TaskChanges } from "./TaskChanges";
 
 type Props = {
   task: Task;
@@ -234,6 +235,9 @@ export function TaskDetail({
           onPickFiles={onPickFiles}
           onCopyFiles={onCopyFiles}
         />
+      )}
+      {task.repository_id && task.worktree && (
+        <TaskChanges key={`${task.id}:${task.worktree.id}`} task={task} />
       )}
     </div>
   );
