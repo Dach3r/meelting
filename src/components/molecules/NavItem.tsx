@@ -32,20 +32,44 @@ function Flyout({
         <filter
           id={filterId}
           x="-20%"
-          y="-50%"
-          width="600%"
-          height="200%"
+          y="-60%"
+          width="1000%"
+          height="220%"
           colorInterpolationFilters="sRGB"
         >
           <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="blur" />
           <feColorMatrix
             in="blur"
             values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 -9"
+            result="shape"
+          />
+          <feMorphology
+            in="shape"
+            operator="dilate"
+            radius="1"
+            result="grown"
+          />
+          <feFlood
+            className="[flood-color:color-mix(in_srgb,var(--color-ink)_22%,var(--color-rail))]"
+            result="line"
+          />
+          <feComposite in="line" in2="grown" operator="in" result="ring" />
+          <feMerge result="outlined">
+            <feMergeNode in="ring" />
+            <feMergeNode in="shape" />
+          </feMerge>
+          <feDropShadow
+            in="outlined"
+            dx="0"
+            dy="8"
+            stdDeviation="10"
+            floodColor="#000"
+            floodOpacity="0.55"
           />
         </filter>
       </svg>
       <div
-        className="pointer-events-none fixed"
+        className="pointer-events-none fixed z-30"
         style={{ ...box, filter: `url(#${filterId})` }}
         aria-hidden="true"
       >
@@ -55,7 +79,7 @@ function Flyout({
         </div>
       </div>
       <div
-        className="pointer-events-none fixed z-10"
+        className="pointer-events-none fixed z-30"
         style={box}
         aria-hidden="true"
       >
@@ -88,7 +112,10 @@ export function NavItem({
     "flex h-14 items-center gap-4 rounded-2xl px-4 text-base font-semibold group-data-collapsed/rail:justify-center group-data-collapsed/rail:px-0";
   const content = (
     <>
-      <Icon className="size-6 shrink-0 group-data-collapsed/rail:relative group-data-collapsed/rail:z-20" aria-hidden="true" />
+      <Icon
+        className="size-6 shrink-0 group-data-collapsed/rail:relative group-data-collapsed/rail:z-40"
+        aria-hidden="true"
+      />
       <span className="whitespace-nowrap group-data-collapsed/rail:sr-only">
         {label}
       </span>
