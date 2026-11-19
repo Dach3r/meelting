@@ -9,10 +9,10 @@ use crate::repositories::{git_repositories, task_worktrees};
 use crate::services::repository_locks::RepositoryLocks;
 use crate::services::session_load::{self, SessionError};
 use crate::services::tasks_list;
-use crate::services::worktree_prepare::{check_repository, git_error};
+use crate::services::worktree_prepare::check_repository;
 use crate::services::worktrees_reconcile::{gone, intact};
 use crate::system::git;
-use crate::system::git_guarded::{Guard, GuardError};
+use crate::system::git_guarded::{self, Guard, GuardError};
 use sqlx::SqlitePool;
 use std::path::Path;
 
@@ -49,7 +49,11 @@ pub async fn verify_identity(
     let entry = intact(repository, worktree)
         .await
         .ok_or(SessionError::EnvironmentIdentityMismatch)?;
-    let on_branch = git::symbolic_ref(path, "HEAD").await.map_err(git_error)?;
+    let admin = git_guarded::verified_admin_dir(Path::new(&repository.git_common_dir), path)
+        .map_err(|_| SessionError::EnvironmentIdentityMismatch)?;
+    let on_branch = git_guarded::head_reference_of(&admin, path)
+        .await
+        .map_err(guard_error)?;
     if entry.branch.as_deref() != Some(worktree.branch_name.as_str())
         || on_branch != Some(format!("refs/heads/{}", worktree.branch_name))
     {
@@ -312,6 +316,126 @@ mod tests {
         ));
         assert!(busy_path.exists() && switched_path.exists());
         std::fs::remove_file(lock).unwrap();
+    }
+
+    async fn identity_case(
+        label: &str,
+        tamper: impl FnOnce(&Path, &mut RepositoryIdentity, &Path),
+    ) -> Result<(), SessionError> {
+        let fixture = fixture().await;
+        let task = task(&fixture, label, "main").await;
+        prepare(&fixture, &task).await;
+        let (worktree, mut repository) =
+            crate::services::worktree_trash::environment(&fixture.pool, &task.id)
+                .await
+                .unwrap();
+        let other = fixture.root.join("other-repo");
+        std::fs::create_dir(&other).unwrap();
+        git(&other, &["init", "-q", "--initial-branch=main"]);
+        tamper(Path::new(&worktree.path), &mut repository, &other);
+        verify_identity(&repository, &worktree, &local).await
+    }
+
+    #[tokio::test]
+    async fn the_identity_of_an_untouched_environment_verifies() {
+        identity_case("Intact", |_, _, _| {}).await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn a_git_file_pointing_at_another_repository_fails_the_identity_check() {
+        let result = identity_case("Redirected", |path, _, other| {
+            let target = other.join(".git").to_string_lossy().replace('\\', "/");
+            std::fs::write(path.join(".git"), format!("gitdir: {target}\n")).unwrap();
+        })
+        .await;
+        assert!(matches!(
+            result,
+            Err(SessionError::EnvironmentIdentityMismatch)
+        ));
+    }
+
+    #[tokio::test]
+    async fn a_git_file_pointing_at_a_sibling_worktree_fails_the_identity_check() {
+        let result = identity_case("Sibling", |path, repository, _| {
+            let common = Path::new(&repository.git_common_dir);
+            let sibling = common.join("worktrees").join("sibling");
+            std::fs::create_dir_all(&sibling).unwrap();
+            let target = sibling.to_string_lossy().replace('\\', "/");
+            std::fs::write(path.join(".git"), format!("gitdir: {target}\n")).unwrap();
+        })
+        .await;
+        assert!(matches!(
+            result,
+            Err(SessionError::EnvironmentIdentityMismatch)
+        ));
+    }
+
+    #[tokio::test]
+    async fn a_git_directory_replacing_the_git_file_fails_the_identity_check() {
+        let result = identity_case("Nested", |path, _, _| {
+            std::fs::remove_file(path.join(".git")).unwrap();
+            git(path, &["init", "-q", "--initial-branch=main"]);
+        })
+        .await;
+        assert!(matches!(
+            result,
+            Err(SessionError::EnvironmentIdentityMismatch)
+        ));
+    }
+
+    #[tokio::test]
+    async fn a_missing_git_file_fails_the_identity_check() {
+        let result = identity_case("NoGitFile", |path, _, _| {
+            std::fs::remove_file(path.join(".git")).unwrap();
+        })
+        .await;
+        assert!(matches!(
+            result,
+            Err(SessionError::EnvironmentIdentityMismatch)
+        ));
+    }
+
+    #[tokio::test]
+    async fn a_missing_administrative_directory_fails_the_identity_check() {
+        let result = identity_case("NoAdmin", |_, repository, _| {
+            let common = Path::new(&repository.git_common_dir);
+            std::fs::remove_dir_all(common.join("worktrees")).unwrap();
+        })
+        .await;
+        assert!(matches!(
+            result,
+            Err(SessionError::EnvironmentIdentityMismatch)
+        ));
+    }
+
+    #[tokio::test]
+    async fn an_inconsistent_common_dir_fails_the_identity_check() {
+        let result = identity_case("Common", |_, repository, other| {
+            repository.git_common_dir = other.join(".git").to_string_lossy().into_owned();
+        })
+        .await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn a_vanished_folder_fails_the_identity_check() {
+        let result = identity_case("Vanished", |path, _, _| {
+            std::fs::remove_dir_all(path).unwrap();
+        })
+        .await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn another_branch_fails_the_identity_check() {
+        let result = identity_case("Branch", |path, _, _| {
+            git(path, &["checkout", "-q", "-b", "elsewhere"]);
+        })
+        .await;
+        assert!(matches!(
+            result,
+            Err(SessionError::EnvironmentIdentityMismatch)
+        ));
     }
 
     #[tokio::test]

@@ -246,6 +246,62 @@ pub fn admin_dir(common_dir: &Path, work_tree: &Path) -> Result<PathBuf, GuardEr
     found.ok_or(GuardError::GitDirNotFound)
 }
 
+fn resolved(work_tree: &Path, pointer: &str) -> Option<PathBuf> {
+    let pointer = PathBuf::from(pointer);
+    let pointer = if pointer.is_relative() {
+        work_tree.join(pointer)
+    } else {
+        pointer
+    };
+    std::fs::canonicalize(pointer).ok()
+}
+
+pub fn verified_admin_dir(common_dir: &Path, work_tree: &Path) -> Result<PathBuf, GuardError> {
+    let admin = admin_dir(common_dir, work_tree)?;
+    let pointer_file = work_tree.join(".git");
+    match std::fs::symlink_metadata(&pointer_file) {
+        Ok(metadata) if metadata.is_file() => {}
+        _ => return Err(GuardError::GitDirNotFound),
+    }
+    let content = read_bounded(&pointer_file)?.ok_or(GuardError::GitDirNotFound)?;
+    let content = String::from_utf8_lossy(&content);
+    let points_back = content
+        .lines()
+        .next()
+        .and_then(|line| line.strip_prefix("gitdir:"))
+        .and_then(|pointer| resolved(work_tree, pointer.trim()))
+        .is_some_and(|target| std::fs::canonicalize(&admin).is_ok_and(|admin| admin == target));
+    if points_back {
+        Ok(admin)
+    } else {
+        Err(GuardError::GitDirNotFound)
+    }
+}
+
+fn located(isolated: bool, admin_dir: &Path, work_tree: &Path) -> Command {
+    let mut command = command(isolated);
+    command
+        .current_dir(work_tree)
+        .arg(flag("--git-dir=", admin_dir))
+        .arg(flag("--work-tree=", work_tree));
+    command
+}
+
+pub async fn head_reference_of(
+    admin_dir: &Path,
+    work_tree: &Path,
+) -> Result<Option<String>, GuardError> {
+    let mut read = located(true, admin_dir, work_tree);
+    read.args(["symbolic-ref", "--quiet", "HEAD"]);
+    match execute(read, REMOVAL_LIMITS).await {
+        Ok(output) => Ok(Some(
+            String::from_utf8_lossy(&output.stdout).trim().to_string(),
+        )),
+        Err(GuardError::Failed(Some(1))) => Ok(None),
+        Err(error) => Err(error),
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct Fingerprint {
     common_config: Option<Vec<u8>>,
@@ -321,12 +377,7 @@ impl Guard {
     }
 
     fn located(&self, isolated: bool) -> Command {
-        let mut command = command(isolated);
-        command
-            .current_dir(&self.work_tree)
-            .arg(flag("--git-dir=", &self.admin_dir))
-            .arg(flag("--work-tree=", &self.work_tree));
-        command
+        located(isolated, &self.admin_dir, &self.work_tree)
     }
 
     async fn effective_conversions(&self) -> Result<Vec<(&'static str, String)>, GuardError> {
@@ -734,6 +785,36 @@ mod tests {
         "--ignore-submodules=all",
     ];
 
+    #[test]
+    fn the_git_file_may_point_to_the_admin_dir_with_a_relative_or_prefixed_path() {
+        let fx = fixture(&[]);
+        let common = PathBuf::from(&fx.identity.git_common_dir);
+        let admin = fx.admin();
+        let git_file = fx.work_tree.join(".git");
+        let name = admin.file_name().unwrap().to_string_lossy().into_owned();
+        let prefixed = cfg!(windows).then(|| {
+            let canonical = std::fs::canonicalize(&admin).unwrap();
+            let plain = canonical.to_string_lossy();
+            format!("gitdir: \\\\?\\{}\n", plain.trim_start_matches(r"\\?\"))
+        });
+        let forms = [
+            Some(format!("gitdir: ../repo/.git/worktrees/{name}\n")),
+            prefixed,
+        ];
+        for form in forms.into_iter().flatten() {
+            std::fs::write(&git_file, &form).unwrap();
+            assert_eq!(
+                std::fs::canonicalize(verified_admin_dir(&common, &fx.work_tree).unwrap()).unwrap(),
+                std::fs::canonicalize(&admin).unwrap(),
+                "{form}"
+            );
+        }
+        std::fs::write(&git_file, "gitdir: ../repo/.git\n").unwrap();
+        assert!(verified_admin_dir(&common, &fx.work_tree).is_err());
+        std::fs::write(&git_file, "not a pointer\n").unwrap();
+        assert!(verified_admin_dir(&common, &fx.work_tree).is_err());
+    }
+
     #[tokio::test]
     async fn a_redirected_git_file_cannot_change_which_repository_is_queried() {
         let fx = fixture(&[(".gitattributes", "*.txt filter=probe\n")]);
@@ -975,10 +1056,7 @@ mod tests {
         std::fs::write(&included, "[user]\n\tname = other\n").unwrap();
         fx.config("includeIf.gitdir:/nowhere/.path", &slashed(&included));
 
-        assert!(matches!(
-            fx.guard().await,
-            Err(GuardError::ConfigIncludes)
-        ));
+        assert!(matches!(fx.guard().await, Err(GuardError::ConfigIncludes)));
     }
 
     #[tokio::test]

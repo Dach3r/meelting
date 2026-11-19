@@ -494,12 +494,16 @@ mod tests {
 
     #[test]
     fn detects_every_form_of_configuration_include() {
-        assert!(has_config_includes(b"core.bare\nfalse\0include.path\n/x.cfg\0"));
+        assert!(has_config_includes(
+            b"core.bare\nfalse\0include.path\n/x.cfg\0"
+        ));
         assert!(has_config_includes(b"INCLUDE.PATH\n/x.cfg\0"));
         assert!(has_config_includes(
             b"includeif.gitdir:/a/.path\n/x.cfg\0includeif.onbranch:main.path\ny\0"
         ));
-        assert!(!has_config_includes(b"core.bare\nfalse\0user.name\nincludeif.path\0"));
+        assert!(!has_config_includes(
+            b"core.bare\nfalse\0user.name\nincludeif.path\0"
+        ));
         assert!(!has_config_includes(b""));
     }
 
