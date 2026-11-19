@@ -189,6 +189,8 @@ Intended behavior: if the base branch moves, the environment is not updated and 
 
 Working branch, base branch and commit, Git status, files added/modified/deleted, commits since the base commit, staged and unstaged changes, untracked files and ignored files relevant for preservation, and a read-only textual diff with size and rendering limits. Binary files are shown as metadata.
 
+**Stage 2 (infrastructure, no command yet):** the review reads the worktree only through the guarded executor (BR-17), so `.gitattributes` changes made after the base commit are not reflected, a worktree whose base-commit attributes use an executable filter is refused, and every list or patch carries an explicit `complete` flag: a cut or malformed Git output is never shown as complete. The review status uses `--untracked-files=normal` (an untracked folder is one entry that can be expanded later); the removal check keeps `--untracked-files=all`.
+
 ### BR-09. Completing a task (4A ✅)
 
 Completing sets `completed` and `completed_at`. It never commits, merges, pushes, deletes branches or worktrees, finishes rooms or starts agents. Tasks without a repository can be completed. Reopening is explicit and leaves any worktree untouched.
