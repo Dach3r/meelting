@@ -1,6 +1,6 @@
 # Tasks and worktrees (Phase 4)
 
-> **Status:** product decisions approved (D27–D39 in [decisions.md](decisions.md)). Phase 4A (repositories, tasks, agent assignment, creation from rooms) is built; 4B (worktrees) and 4C (review and E2E) are approved in scope but not started. Platforms: macOS, Windows and Linux.
+> **Status:** product decisions approved (D27–D48 in [decisions.md](decisions.md)). Phase 4A (repositories, tasks, agent assignment, creation from rooms) and Phase 4B (Git environments) are built; 4C (review and E2E) is approved in scope but not started. Platforms: macOS, Windows and Linux.
 
 ## 1. Goal
 
@@ -152,9 +152,28 @@ The form selects any number of agents of the workspace, with search. Assigning o
 
 Uncommitted changes of the original repository are never copied; the UI says that the environment starts from the last commit of the base branch. The original working directory, its index and its checked-out branch are not touched. Preparation is not a security sandbox. After preparation the branch may receive legitimate commits: `base_commit_sha` stays the fixed starting point while `HEAD` moves, and a moved `HEAD` never marks the environment as damaged.
 
-### BR-06. Copying local files (4B)
+### BR-06. Copying local files (4B ✅)
 
-After preparing, the user can pick individual ignored or untracked files of the original repository (hidden files such as `.env` allowed, with a warning). Not allowed: folders, symbolic links, Git internals, paths outside the repository, silent overwrites. Limits: 10 MiB per file and 50 MiB per operation (constants). A preview with names, paths, sizes and warnings requires explicit confirmation; per-file results are shown and a failure never removes the worktree. Copying does not authorize any agent or provider to read the contents.
+**Purpose.** Some files a project needs are not in Git (`.env`, local settings, certificates for development). The user can copy them from the original repository into a `ready` environment, whatever the task status (D48). `task_worktree_file_copies` records which files were copied, their size and when, so the environment detail can list them; contents are never stored.
+
+**Selection.** «Copy local files» opens the native multiple-file dialog from Rust, starting in the repository folder. The webview never sends a path: Rust keeps the selection in memory under a single-use identifier tied to the task, and confirming sends only that identifier and whether the user accepted the secret warning.
+
+**Rules for each file** (checked in the preview and again when copying):
+
+- It is a regular file, not a folder and not a symbolic link (hidden files such as `.env` are allowed).
+- Its real path is inside the repository (the parent folder is canonicalized, so a folder link pointing outside is rejected) and no segment is `.git` in any letter case.
+- It is ignored or untracked: a file tracked by Git is rejected (`git ls-files --cached -- ':(literal)<path>'`), because it already comes with the commit.
+- Its name has no `\` or `:` and the path fits 1,024 characters.
+- At most 10 MiB per file and 50 MiB per operation (constants in Rust, not settings).
+- Nothing in the environment is ever overwritten: a file that already exists there is skipped.
+
+**Preview and confirmation.** The dialog lists every selected file with its relative path, size and, when it cannot be copied, the reason. Files whose name suggests secrets (`.env*`, `id_*`, `*.pem`, `*.key`, `*.p12`, `*.pfx`, `*secret*`, `*credential*`, `*token*`, `.npmrc`, `.netrc`…) are marked. If any of them would be copied, the dialog explains that a copied file is an ordinary file in the environment folder, that Meelting does not hide it and that future agents with tools could read it, and the copy button stays disabled until the user ticks the confirmation. The core also refuses the copy without that confirmation (`secrets_not_confirmed`).
+
+**Copying, under the repository lock (BR-13):** the repository identity, the storage of the repository and the worktree, and the worktree identity are checked again, and so is every file. On macOS and Linux each file is opened with `openat` from a descriptor of the repository folder, one path segment at a time, with `O_NOFOLLOW` at every step, and the opened handle must be a regular file; the destination is created the same way from the worktree folder, creating missing folders with `mkdirat` and the file with `O_CREAT | O_EXCL | O_NOFOLLOW` and the source permissions. A symbolic link swapped in between the check and the copy is refused on the handle itself. On Windows every folder is checked for reparse points and the file is opened with `FILE_FLAG_OPEN_REPARSE_POINT`, refusing a handle that is a reparse point, and the destination is created with `create_new`. At most 10 MiB are read (more fails the copy), the destination is flushed, and a partial file that Meelting created is deleted. Each file gets its own result: copied, skipped (with its reason) or failed. A failure never removes the worktree.
+
+**Secrets and agents.** Copying does not authorize any agent or provider to read the contents, but Meelting does not prevent it either: read isolation for agents belongs to the tool execution of Phase 5, which must treat copied files (at least the ones marked as secrets) as protected. Secret contents never reach the UI, events, logs or errors: only paths, sizes and dates leave Rust.
+
+**Cleanup.** Copied files stay in the environment. Because they are ignored or untracked, they block its removal (BR-10) until the user deletes them; the removal dialog lists them (D44).
 
 ### BR-07. Base branch drift (4B)
 
@@ -222,9 +241,14 @@ A `ready` environment whose `HEAD` moved or whose branch was switched stays `rea
 
 **Discard** (D43): a `failed` or `missing` environment can be discarded only when it is gone. The row becomes `removed` (keeping its error code as history) and a new environment can be prepared. If Git still lists the worktree, discarding is refused (`environment_still_exists`) and the UI explains that the folder must be restored or that the user can prune the registration themselves.
 
-### BR-15. Isolation and security
+### BR-15. Isolation and security (4B ✅)
 
-All file operations run in Rust behind specific commands; the webview has no general command interface. Paths are validated against their real identity (symbolic links, normalization, changes between check and use). Git runs as a child process without a shell. No project script, dependency or tool runs in Phase 4.
+- **No shell from the webview:** the Phase 0 `run_in_worktree` spike was removed. No command takes a command line or an arbitrary path; folders and files are chosen with native dialogs opened from Rust, and every worktree command takes only a task id (plus a selection id for copies).
+- **Git:** always a child process with structured arguments and no shell; hooks disabled (`core.hooksPath` to `/dev/null` or `NUL`), fsmonitor disabled, `GIT_TERMINAL_PROMPT=0`, `GIT_OPTIONAL_LOCKS=0`, inherited `GIT_DIR`-style and config variables removed, references always fully qualified after `--end-of-options`, pathspecs `:(literal)`, long paths on Windows. Repositories with executable checkout filters or submodules are rejected.
+- **Paths:** compared after canonicalization (with the Windows verbatim prefix removed for drive paths), worktree folders never created through symbolic links, identity always checked with Git rather than trusted from the stored path, file copies opened through handles that refuse symbolic links (BR-06).
+- **Storage:** fixed local storage only (BR-12).
+- **Not a sandbox:** a worktree shares the repository's object store and configuration. No project script, dependency or tool runs in Phase 4.
+- **Tauri commands:** the main window can invoke every registered command (Tauri 2 default without an app manifest). An explicit allow-list was evaluated and is recommended as a separate hardening change (see [overview.md](../architecture/overview.md) §7).
 
 ### Deletion rules (D30–D33)
 
@@ -264,28 +288,28 @@ A task can change its repository only while it has never had a worktree; once it
 
 | ID | Scenario | Expected | Stage |
 |---|---|---|---|
-| AC01 | Register a valid repository | Linked to the workspace | 4A |
-| AC02 | Register the same repository twice | Duplicate avoided | 4A |
-| AC03 | Register an invalid path or unsupported drive | Clear error, nothing persisted | 4A (drive: 4B) |
-| AC04 | Task without a repository | Saved and can be completed | 4A |
-| AC05 | Assign three agents | Three links kept | 4A |
-| AC06 | Assign an agent of another workspace | Rejected | 4A |
-| AC07 | Create a task from a room message | Task and origin saved | 4A |
-| AC08 | Create a task with a repository | No worktree created | 4A |
-| AC09–AC17 | Prepare, isolation, two tasks of the same repo, duplicate requests, alternative base, drift, file copies, escaping paths, no overwrite | See BR-05 to BR-07 | 4B |
-| AC18 | Complete a task with a worktree | Environment and branch kept | 4B |
-| AC19–AC21 | Remove with local changes, with an ignored `.env`, clean | Blocked, blocked, removed keeping the branch | 4B |
-| AC22–AC24, AC26–AC28 | Root change, restart during preparation, external move or delete, shared repository across workspaces, unsafe path, executable checkout | See BR-11 to BR-15 | 4B |
+| AC01 | Register a valid repository | Linked to the workspace | 4A ✅ |
+| AC02 | Register the same repository twice | Duplicate avoided | 4A ✅ |
+| AC03 | Register an invalid path or unsupported drive | Clear error, nothing persisted | 4A ✅ (drive: 4B ✅) |
+| AC04 | Task without a repository | Saved and can be completed | 4A ✅ |
+| AC05 | Assign three agents | Three links kept | 4A ✅ |
+| AC06 | Assign an agent of another workspace | Rejected | 4A ✅ |
+| AC07 | Create a task from a room message | Task and origin saved | 4A ✅ |
+| AC08 | Create a task with a repository | No worktree created | 4A ✅ |
+| AC09–AC17 | Prepare, isolation, two tasks of the same repo, duplicate requests, alternative base, drift, file copies, escaping paths, no overwrite | See BR-05 to BR-07 | 4B ✅ |
+| AC18 | Complete a task with a worktree | Environment and branch kept | 4B ✅ |
+| AC19–AC21 | Remove with local changes, with an ignored `.env`, clean | Blocked, blocked, removed keeping the branch | 4B ✅ |
+| AC22–AC24, AC26–AC28 | Root change, restart during preparation, external move or delete, shared repository across workspaces, unsafe path, executable checkout | See BR-11 to BR-15 | 4B ✅ |
 | AC25 | Review code changes | Read-only diff | 4C |
 | AC29 | macOS, Windows and Linux | Main flows and recovery validated: E2E on Linux and Windows, automated Rust and frontend tests plus a reproducible manual checklist on macOS (`tauri-driver` has no macOS driver) | 4C |
-| AC30 | Multi-agent assignment | No assignment starts an `AgentRun` | 4A |
+| AC30 | Multi-agent assignment | No assignment starts an `AgentRun` | 4A ✅ |
 
 File and Git operations are tested with real temporary repositories, including unusual names, spaces, Unicode, symbolic links, existing branches and concurrent operations.
 
 ## 8. Delivery
 
 - **4A — Domain, repositories and tasks:** migrations `repositories`, `tasks`, `task_agents`; repository registration; task CRUD with statuses, priorities and several agents; creation from rooms; tests.
-- **4B — Git environments:** root setting, storage checks, preparation, base commit, file copies, technical states, concurrency, recovery, safe removal. Step 1 removed the Phase 0 `run_in_worktree` spike (arbitrary shell command in a PTY), `terminal.rs` and `portable-pty` (D27).
+- **4B — Git environments ✅:** root setting, storage checks, preparation, base commit, file copies, technical states, concurrency, recovery, safe removal. Step 1 removed the Phase 0 `run_in_worktree` spike (arbitrary shell command in a PTY), `terminal.rs` and `portable-pty` (D27).
 - **4C — Review and interface:** environment detail, Git status, read-only diff, drift warnings, error and recovery screens, E2E on Linux and Windows.
 
 ## 9. Out of scope

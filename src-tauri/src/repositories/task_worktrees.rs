@@ -37,6 +37,7 @@ fn to_worktree(row: Row) -> Result<(String, Worktree), sqlx::Error> {
         branch_name: row.branch_name,
         base_ref: row.base_ref,
         base_commit_sha: row.base_commit_sha,
+        copies: Vec::new(),
         created_at: row.created_at,
         updated_at: row.updated_at,
     };

@@ -55,7 +55,10 @@
     "environment_identity_mismatch": "The environment's folder, Git registration or branch no longer match what Meelting created, so it was kept.",
     "environment_has_changes": "The environment has files that would be lost, so it was kept.",
     "environment_operation_in_progress": "A Git operation is in progress in the environment, so it was kept.",
-    "environment_remove_refused": "Git refused to remove the environment, so it was kept."
+    "environment_remove_refused": "Git refused to remove the environment, so it was kept.",
+    "copy_too_large": "The selected files add up to more than 50 MiB. Pick fewer files.",
+    "copy_selection_expired": "That selection is no longer valid. Pick the files again.",
+    "secrets_not_confirmed": "Confirm that you want to copy files that may hold secrets."
   },
   "newWorkspace": {
     "title": "Create your workspace",
@@ -556,6 +559,35 @@
           "untracked": "Not tracked",
           "ignored": "Ignored"
         }
+      },
+      "copy": {
+        "action": "Copy local files",
+        "title": "Copy local files into the environment",
+        "body": "Only individual files that Git ignores or does not track are copied, keeping their path. Nothing is overwritten. Up to 10 MiB per file and 50 MiB in total.",
+        "total": "{count} files, {size} in total",
+        "secret": "May hold secrets",
+        "secretWarning": "Some files look like they hold secrets (keys, tokens, .env). Once copied they are ordinary files in the environment folder: Meelting does not hide them, and future agents with tools could read them. Read isolation for agents will arrive with tool execution.",
+        "secretConfirm": "I understand and want to copy these files",
+        "submit": "Copy files",
+        "none": "None of the selected files can be copied.",
+        "done": "Done",
+        "results": {
+          "copied": "Copied",
+          "skipped": "Skipped",
+          "failed": "Failed"
+        },
+        "problems": {
+          "outside_repository": "Outside the repository",
+          "git_internal": "Inside .git",
+          "symbolic_link": "Symbolic link",
+          "not_a_file": "Not a regular file",
+          "tracked": "Tracked by Git: it is already in the environment",
+          "too_large": "Larger than 10 MiB",
+          "unsupported_name": "Unsupported name",
+          "already_in_environment": "Already exists in the environment; it is not overwritten"
+        },
+        "copied": "Copied files",
+        "copiedHint": "These files stay in the environment and block its removal until you delete them."
       }
     },
     "environmentReady": "Environment ready"

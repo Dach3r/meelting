@@ -259,6 +259,15 @@ pub async fn remove_worktree(dir: &Path, path: &Path) -> Result<(), GitError> {
         .map(|_| ())
 }
 
+pub async fn is_tracked(dir: &Path, relative_path: &str) -> Result<bool, GitError> {
+    let pathspec = format!(":(literal){relative_path}");
+    Ok(
+        !output(dir, &["ls-files", "-z", "--cached", "--", &pathspec], None)
+            .await?
+            .is_empty(),
+    )
+}
+
 pub async fn head(dir: &Path) -> Result<String, GitError> {
     read(dir, &["rev-parse", "--verify", "HEAD^{commit}"]).await
 }

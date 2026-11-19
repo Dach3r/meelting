@@ -107,6 +107,12 @@ pub enum SessionError {
     EnvironmentOperationInProgress,
     #[error("environment_remove_refused")]
     EnvironmentRemoveRefused,
+    #[error("copy_too_large")]
+    CopyTooLarge,
+    #[error("copy_selection_expired")]
+    CopySelectionExpired,
+    #[error("secrets_not_confirmed")]
+    SecretsNotConfirmed,
     #[error("keychain_unavailable")]
     Keychain(#[from] crate::system::keychain::KeychainError),
 }

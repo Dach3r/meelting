@@ -30,6 +30,8 @@ export function TasksPage({ agents }: { agents: Agent[] }) {
     discardEnvironment,
     removeEnvironment,
     checkRemoval,
+    pickFiles,
+    copyFiles,
     deleteTask,
     clearActionError,
   } = useTasks();
@@ -115,6 +117,10 @@ export function TasksPage({ agents }: { agents: Agent[] }) {
           onDiscardEnvironment={() => discardEnvironment(openTask.id)}
           onCheckRemoval={() => checkRemoval(openTask.id)}
           onRemoveEnvironment={() => removeEnvironment(openTask.id)}
+          onPickFiles={() => pickFiles(openTask.id)}
+          onCopyFiles={(selectionId, acceptSecrets) =>
+            copyFiles(openTask.id, selectionId, acceptSecrets)
+          }
           onDelete={async () => {
             if (await deleteTask(openTask.id)) setOpenId(null);
           }}

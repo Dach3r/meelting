@@ -1,4 +1,5 @@
 pub mod agent_run;
+pub mod file_copy;
 pub mod local_provider;
 pub mod locale;
 pub mod profile;

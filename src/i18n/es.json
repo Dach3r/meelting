@@ -55,7 +55,10 @@
     "environment_identity_mismatch": "La carpeta, el registro en Git o la rama del entorno ya no coinciden con lo que creó Meelting, así que se conservó.",
     "environment_has_changes": "El entorno tiene archivos que se perderían, así que se conservó.",
     "environment_operation_in_progress": "Hay una operación de Git en curso en el entorno, así que se conservó.",
-    "environment_remove_refused": "Git se negó a eliminar el entorno, así que se conservó."
+    "environment_remove_refused": "Git se negó a eliminar el entorno, así que se conservó.",
+    "copy_too_large": "Los archivos seleccionados suman más de 50 MiB. Elige menos archivos.",
+    "copy_selection_expired": "Esa selección ya no es válida. Vuelve a elegir los archivos.",
+    "secrets_not_confirmed": "Confirma que quieres copiar archivos que pueden contener secretos."
   },
   "newWorkspace": {
     "title": "Crea tu workspace",
@@ -556,6 +559,35 @@
           "untracked": "Sin versionar",
           "ignored": "Ignorado"
         }
+      },
+      "copy": {
+        "action": "Copiar archivos locales",
+        "title": "Copiar archivos locales al entorno",
+        "body": "Solo se copian archivos individuales que Git ignora o no versiona, conservando su ruta. No se sobrescribe nada. Hasta 10 MiB por archivo y 50 MiB en total.",
+        "total": "{count} archivos, {size} en total",
+        "secret": "Puede contener secretos",
+        "secretWarning": "Algunos archivos parecen contener secretos (claves, tokens, .env). Una vez copiados son archivos normales en la carpeta del entorno: Meelting no los oculta y futuros agentes con herramientas podrían leerlos. El aislamiento de lectura para agentes llegará con la ejecución de herramientas.",
+        "secretConfirm": "Lo entiendo y quiero copiar estos archivos",
+        "submit": "Copiar archivos",
+        "none": "Ninguno de los archivos seleccionados se puede copiar.",
+        "done": "Listo",
+        "results": {
+          "copied": "Copiado",
+          "skipped": "Omitido",
+          "failed": "Falló"
+        },
+        "problems": {
+          "outside_repository": "Fuera del repositorio",
+          "git_internal": "Dentro de .git",
+          "symbolic_link": "Enlace simbólico",
+          "not_a_file": "No es un archivo normal",
+          "tracked": "Versionado por Git: ya está en el entorno",
+          "too_large": "Mayor de 10 MiB",
+          "unsupported_name": "Nombre no admitido",
+          "already_in_environment": "Ya existe en el entorno; no se sobrescribe"
+        },
+        "copied": "Archivos copiados",
+        "copiedHint": "Estos archivos se quedan en el entorno y bloquean su eliminación hasta que los borres."
       }
     },
     "environmentReady": "Entorno listo"

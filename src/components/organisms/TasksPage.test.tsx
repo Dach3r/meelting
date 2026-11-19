@@ -337,6 +337,7 @@ describe("task environment", () => {
     base_commit_sha: "0123456789abcdef0123456789abcdef01234567",
     status: "ready" as const,
     error_code: null,
+    copies: [],
     created_at: "2026-11-25T10:00:00.000Z",
     updated_at: "2026-11-25T10:00:00.000Z",
   };
@@ -466,6 +467,7 @@ describe("removing an environment", () => {
       base_commit_sha: "0123456789abcdef0123456789abcdef01234567",
       status: "ready",
       error_code: null,
+      copies: [],
       created_at: "2026-11-25T10:00:00.000Z",
       updated_at: "2026-11-25T10:00:00.000Z",
     },
@@ -542,5 +544,109 @@ describe("removing an environment", () => {
     expect(
       await screen.findByRole("button", { name: "Prepare environment" }),
     ).toBeInTheDocument();
+  });
+});
+
+describe("copying local files", () => {
+  const ready = task("t1", "Login", {
+    repository_id: "p1",
+    base_ref: "main",
+    worktree: {
+      id: "w1",
+      path: "/w/login",
+      branch_name: "meelting/login-5c6d7e8f9a0b",
+      base_ref: "main",
+      base_commit_sha: "0123456789abcdef0123456789abcdef01234567",
+      status: "ready",
+      error_code: null,
+      copies: [],
+      created_at: "2026-11-25T10:00:00.000Z",
+      updated_at: "2026-11-25T10:00:00.000Z",
+    },
+  });
+  const preview = {
+    id: "s1",
+    total_bytes: 2048,
+    files: [
+      { relative_path: ".env", size_bytes: 2048, secret: true, problem: null },
+      {
+        relative_path: "README.md",
+        size_bytes: 10,
+        secret: false,
+        problem: "tracked",
+      },
+    ],
+  };
+
+  it("requires confirming secrets before copying and shows each result", async () => {
+    const user = userEvent.setup();
+    const copy = vi.fn(() => ({
+      results: [{ relative_path: ".env", outcome: "copied", problem: null }],
+      task: {
+        ...ready,
+        worktree: {
+          ...ready.worktree!,
+          copies: [
+            {
+              relative_path: ".env",
+              size_bytes: 2048,
+              copied_at: "2026-11-25T11:00:00.000Z",
+            },
+          ],
+        },
+      },
+    }));
+    core({
+      list_tasks: () => [ready],
+      list_repositories: () => [app],
+      pick_task_environment_files: () => preview,
+      copy_task_environment_files: copy,
+    });
+    renderPage();
+
+    await user.click(await screen.findByRole("button", { name: /Login/ }));
+    await user.click(screen.getByRole("button", { name: "Copy local files" }));
+    const dialog = within(
+      await screen.findByRole("dialog", {
+        name: "Copy local files into the environment",
+      }),
+    );
+    expect(dialog.getByText("May hold secrets")).toBeInTheDocument();
+    expect(
+      dialog.getByText("Tracked by Git: it is already in the environment"),
+    ).toBeInTheDocument();
+    const submit = dialog.getByRole("button", { name: "Copy files" });
+    expect(submit).toBeDisabled();
+
+    await user.click(
+      dialog.getByRole("checkbox", {
+        name: "I understand and want to copy these files",
+      }),
+    );
+    await user.click(submit);
+
+    expect(copy).toHaveBeenCalledWith({
+      taskId: "t1",
+      selectionId: "s1",
+      acceptSecrets: true,
+    });
+    expect(await dialog.findByText("Copied")).toBeInTheDocument();
+    await user.click(dialog.getByRole("button", { name: "Done" }));
+    expect(screen.getByText("Copied files")).toBeInTheDocument();
+  });
+
+  it("does nothing when the file picker is cancelled", async () => {
+    const user = userEvent.setup();
+    core({
+      list_tasks: () => [ready],
+      list_repositories: () => [app],
+      pick_task_environment_files: () => null,
+    });
+    renderPage();
+
+    await user.click(await screen.findByRole("button", { name: /Login/ }));
+    await user.click(screen.getByRole("button", { name: "Copy local files" }));
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 });

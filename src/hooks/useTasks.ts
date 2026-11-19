@@ -25,8 +25,28 @@ export type Worktree = {
   base_commit_sha: string;
   status: WorktreeStatus;
   error_code: string | null;
+  copies: { relative_path: string; size_bytes: number; copied_at: string }[];
   created_at: string;
   updated_at: string;
+};
+
+export type FileToCopy = {
+  relative_path: string;
+  size_bytes: number;
+  secret: boolean;
+  problem: string | null;
+};
+
+export type CopyPreview = {
+  id: string;
+  files: FileToCopy[];
+  total_bytes: number;
+};
+
+export type CopyResult = {
+  relative_path: string;
+  outcome: "copied" | "skipped" | "failed";
+  problem: string | null;
 };
 
 export type Task = {
@@ -110,18 +130,22 @@ export function useTasks() {
     );
   }
 
-  async function update(action: () => Promise<Task>) {
+  async function attempt<T>(action: () => Promise<T>) {
     setBusy(true);
     setActionErrorKey(null);
     try {
-      replace(await action());
+      return await action();
     } catch (error) {
       setActionErrorKey(String(error));
       await reload();
+      return null;
     } finally {
       setBusy(false);
     }
   }
+
+  const update = (action: () => Promise<Task>) =>
+    attempt(async () => replace(await action()));
 
   const changeStatus = (taskId: string, status: TaskStatus) =>
     update(() => invoke<Task>("change_task_status", { taskId, status }));
@@ -135,21 +159,29 @@ export function useTasks() {
   const removeEnvironment = (taskId: string) =>
     update(() => invoke<Task>("remove_task_environment", { taskId }));
 
-  async function checkRemoval(taskId: string) {
-    setBusy(true);
-    setActionErrorKey(null);
-    try {
-      return await invoke<RemovalCheck>("check_task_environment_removal", {
-        taskId,
-      });
-    } catch (error) {
-      setActionErrorKey(String(error));
-      await reload();
-      return null;
-    } finally {
-      setBusy(false);
-    }
-  }
+  const pickFiles = (taskId: string) =>
+    attempt(() =>
+      invoke<CopyPreview | null>("pick_task_environment_files", { taskId }),
+    );
+
+  const copyFiles = (
+    taskId: string,
+    selectionId: string,
+    acceptSecrets: boolean,
+  ) =>
+    attempt(async () => {
+      const report = await invoke<{ results: CopyResult[]; task: Task }>(
+        "copy_task_environment_files",
+        { taskId, selectionId, acceptSecrets },
+      );
+      replace(report.task);
+      return report.results;
+    });
+
+  const checkRemoval = (taskId: string) =>
+    attempt(() =>
+      invoke<RemovalCheck>("check_task_environment_removal", { taskId }),
+    );
 
   async function deleteTask(taskId: string) {
     setBusy(true);
@@ -176,6 +208,8 @@ export function useTasks() {
     discardEnvironment,
     removeEnvironment,
     checkRemoval,
+    pickFiles,
+    copyFiles,
     deleteTask,
     clearActionError: () => setActionErrorKey(null),
   };

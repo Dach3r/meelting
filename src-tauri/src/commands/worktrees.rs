@@ -1,6 +1,8 @@
 use crate::commands::dialog;
+use crate::domain::file_copy::CopyPreview;
 use crate::domain::task::Task;
 use crate::domain::worktree::{RemovalCheck, WorktreesRoot};
+use crate::services::file_copy::{self, CopyReport, CopySelections};
 use crate::services::repository_locks::RepositoryLocks;
 use crate::services::session_load::SessionError;
 use crate::services::{
@@ -64,4 +66,38 @@ pub async fn remove_task_environment(
     task_id: String,
 ) -> Result<Task, SessionError> {
     worktree_remove::run(&pool, &locks, &task_id, storage::check).await
+}
+
+#[tauri::command]
+pub async fn pick_task_environment_files(
+    window: WebviewWindow,
+    pool: State<'_, SqlitePool>,
+    selections: State<'_, CopySelections>,
+    task_id: String,
+) -> Result<Option<CopyPreview>, SessionError> {
+    file_copy::preview(&pool, &selections, &task_id, async |folder| {
+        dialog::pick_files(&window, folder).await
+    })
+    .await
+}
+
+#[tauri::command]
+pub async fn copy_task_environment_files(
+    pool: State<'_, SqlitePool>,
+    locks: State<'_, RepositoryLocks>,
+    selections: State<'_, CopySelections>,
+    task_id: String,
+    selection_id: String,
+    accept_secrets: bool,
+) -> Result<CopyReport, SessionError> {
+    file_copy::run(
+        &pool,
+        &locks,
+        &selections,
+        &task_id,
+        &selection_id,
+        accept_secrets,
+        storage::check,
+    )
+    .await
 }

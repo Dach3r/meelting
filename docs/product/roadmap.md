@@ -122,7 +122,7 @@ flowchart LR
 Specification: [tasks.md](tasks.md); decisions D27–D39.
 
 - **4A — Domain, repositories and tasks** ✅: repository registration, tasks with status, priority, optional repository and base branch, several agents per task, creation from rooms.
-- **4B — Git environments:** worktree root setting, fixed local storage checks, explicit preparation from an exact commit, local file copies, technical states, per-repository serialization, recovery at startup, safe removal without `--force`.
+- **4B — Git environments** ✅: worktree root setting, fixed local storage checks, explicit preparation from an exact commit, local file copies, technical states, per-repository serialization, recovery at startup, safe removal without `--force`.
 - **4C — Review and interface:** environment detail, Git status, read-only diff, drift warnings, recovery screens, E2E on Linux and Windows.
 
 **Expected result:** two tasks on the same repo get independent worktrees without touching the original working directory; completing a task keeps its worktree and branch, and only clean worktrees are removed.

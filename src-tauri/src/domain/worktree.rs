@@ -96,6 +96,7 @@ pub struct Worktree {
     pub base_commit_sha: String,
     pub status: WorktreeStatus,
     pub error_code: Option<WorktreeErrorCode>,
+    pub copies: Vec<crate::domain::file_copy::FileCopy>,
     pub created_at: String,
     pub updated_at: String,
 }

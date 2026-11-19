@@ -70,3 +70,17 @@ export function translateRunError(
     provider,
   });
 }
+
+export function formatBytes(locale: Locale, bytes: number): string {
+  const units = ["byte", "kilobyte", "megabyte"] as const;
+  const index = Math.min(
+    units.length - 1,
+    Math.floor(Math.log(Math.max(bytes, 1)) / Math.log(1024)),
+  );
+  return new Intl.NumberFormat(locale, {
+    style: "unit",
+    unit: units[index],
+    unitDisplay: "short",
+    maximumFractionDigits: 1,
+  }).format(bytes / 1024 ** index);
+}

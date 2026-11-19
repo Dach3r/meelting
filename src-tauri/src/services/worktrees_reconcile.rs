@@ -107,6 +107,7 @@ mod tests {
             base_commit_sha: "abc".into(),
             status,
             error_code: None,
+            copies: Vec::new(),
             created_at: "x".into(),
             updated_at: "x".into(),
         }

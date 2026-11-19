@@ -1,9 +1,19 @@
 import { FolderGit2 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
-import { formatDateTime, translateWith } from "../../i18n/translate";
-import type { RemovalCheck, Task } from "../../hooks/useTasks";
+import {
+  formatBytes,
+  formatDateTime,
+  translateWith,
+} from "../../i18n/translate";
+import type {
+  CopyPreview,
+  CopyResult,
+  RemovalCheck,
+  Task,
+} from "../../hooks/useTasks";
 import { Button } from "../atoms/Button";
+import { FileCopyDialog } from "./FileCopyDialog";
 import { Modal } from "./Modal";
 
 type Props = {
@@ -12,7 +22,12 @@ type Props = {
   onPrepare: () => void;
   onDiscard: () => void;
   onCheckRemoval: () => Promise<RemovalCheck | null>;
-  onRemove: () => Promise<void>;
+  onRemove: () => Promise<unknown>;
+  onPickFiles: () => Promise<CopyPreview | null>;
+  onCopyFiles: (
+    selectionId: string,
+    acceptSecrets: boolean,
+  ) => Promise<CopyResult[] | null>;
 };
 
 export function TaskEnvironment({
@@ -22,9 +37,12 @@ export function TaskEnvironment({
   onDiscard,
   onCheckRemoval,
   onRemove,
+  onPickFiles,
+  onCopyFiles,
 }: Props) {
   const { t, locale } = useI18n();
   const [removal, setRemoval] = useState<RemovalCheck | null>(null);
+  const [preview, setPreview] = useState<CopyPreview | null>(null);
   const worktree = task.worktree;
 
   async function askRemoval() {
@@ -96,17 +114,57 @@ export function TaskEnvironment({
           </Detail>
         </dl>
       )}
+      {worktree?.status === "ready" && worktree.copies.length > 0 && (
+        <div className="grid gap-2">
+          <h3 className="text-xs font-medium text-muted">
+            {t("tasks.environment.copy.copied")}
+          </h3>
+          <ul className="grid gap-1 text-sm">
+            {worktree.copies.map((copy) => (
+              <li key={copy.relative_path} className="flex min-w-0 gap-3">
+                <code className="min-w-0 truncate">{copy.relative_path}</code>
+                <span className="shrink-0 text-xs text-muted">
+                  {formatBytes(locale, copy.size_bytes)} ·{" "}
+                  {formatDateTime(locale, copy.copied_at)}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <p className="text-xs text-muted">
+            {t("tasks.environment.copy.copiedHint")}
+          </p>
+        </div>
+      )}
       {worktree?.status === "ready" && (
-        <Button
-          type="button"
-          variant="danger"
-          size="pill"
-          className="justify-self-start"
-          disabled={busy}
-          onClick={askRemoval}
-        >
-          {t("tasks.environment.remove")}
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            variant="ghost"
+            size="pill"
+            className="border-line"
+            disabled={busy}
+            onClick={async () => setPreview(await onPickFiles())}
+          >
+            {t("tasks.environment.copy.action")}
+          </Button>
+          <Button
+            type="button"
+            variant="danger"
+            size="pill"
+            disabled={busy}
+            onClick={askRemoval}
+          >
+            {t("tasks.environment.remove")}
+          </Button>
+        </div>
+      )}
+      {preview && (
+        <FileCopyDialog
+          preview={preview}
+          busy={busy}
+          onCopy={(acceptSecrets) => onCopyFiles(preview.id, acceptSecrets)}
+          onClose={() => setPreview(null)}
+        />
       )}
       {worktree && removal && (
         <RemovalDialog

@@ -9,6 +9,7 @@ use crate::catalogs::llm;
 use crate::domain::agent_run::Limits;
 use crate::services::agent_run_engine::Engine;
 use crate::services::agent_runs_expire;
+use crate::services::file_copy::CopySelections;
 use crate::services::repository_locks::RepositoryLocks;
 use crate::services::worktrees_reconcile;
 use tauri::Manager;
@@ -34,6 +35,7 @@ pub fn run() {
             let locks = RepositoryLocks::default();
             tauri::async_runtime::block_on(worktrees_reconcile::run(&pool, &locks))?;
             app.manage(locks);
+            app.manage(CopySelections::default());
             let emit = commands::agent_runs::emitter(app.handle().clone());
             app.manage(Engine::new(
                 pool.clone(),
@@ -89,6 +91,8 @@ pub fn run() {
             commands::worktrees::discard_task_environment,
             commands::worktrees::check_task_environment_removal,
             commands::worktrees::remove_task_environment,
+            commands::worktrees::pick_task_environment_files,
+            commands::worktrees::copy_task_environment_files,
             commands::tasks::list_tasks,
             commands::tasks::create_task,
             commands::tasks::update_task,

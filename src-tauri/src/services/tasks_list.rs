@@ -1,5 +1,7 @@
+use crate::domain::file_copy::FileCopy;
 use crate::domain::task::Task;
-use crate::repositories::{task_agents, task_worktrees, tasks};
+use crate::domain::worktree::Worktree;
+use crate::repositories::{task_agents, task_worktree_file_copies, task_worktrees, tasks};
 use crate::services::session_load::{self, SessionError};
 use sqlx::SqlitePool;
 
@@ -30,9 +32,22 @@ pub async fn one(pool: &SqlitePool, workspace_id: &str, id: &str) -> Result<Task
         .ok_or(SessionError::TaskNotFound)?;
     let assignments = task_agents::list(&mut *transaction, workspace_id).await?;
     task.worktree = task_worktrees::active_for_task(&mut *transaction, workspace_id, id).await?;
+    let copies =
+        task_worktree_file_copies::active_in_workspace(&mut *transaction, workspace_id).await?;
     transaction.commit().await?;
+    if let Some(worktree) = task.worktree.as_mut() {
+        with_copies(worktree, &copies);
+    }
     with_agents(&mut task, &assignments);
     Ok(task)
+}
+
+fn with_copies(worktree: &mut Worktree, copies: &[(String, FileCopy)]) {
+    worktree.copies = copies
+        .iter()
+        .filter(|(worktree_id, _)| *worktree_id == worktree.id)
+        .map(|(_, copy)| copy.clone())
+        .collect();
 }
 
 fn with_agents(task: &mut Task, assignments: &[(String, String)]) {

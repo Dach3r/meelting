@@ -14,7 +14,7 @@ use crate::system::git;
 use sqlx::SqlitePool;
 use std::path::Path;
 
-async fn ready_environment(
+pub async fn ready_environment(
     pool: &SqlitePool,
     task_id: &str,
 ) -> Result<(String, Worktree, RepositoryIdentity), SessionError> {

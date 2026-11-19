@@ -8,6 +8,7 @@ pub mod profile;
 pub mod room_agents;
 pub mod rooms;
 pub mod task_agents;
+pub mod task_worktree_file_copies;
 pub mod task_worktrees;
 pub mod tasks;
 pub mod teams;

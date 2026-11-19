@@ -5,6 +5,8 @@ import { formatDateTime, translateWith } from "../../i18n/translate";
 import type { Repository } from "../../hooks/useRepositories";
 import {
   nextStatuses,
+  type CopyPreview,
+  type CopyResult,
   type RemovalCheck,
   type Task,
   type TaskStatus,
@@ -29,7 +31,12 @@ type Props = {
   onPrepareEnvironment: () => void;
   onDiscardEnvironment: () => void;
   onCheckRemoval: () => Promise<RemovalCheck | null>;
-  onRemoveEnvironment: () => Promise<void>;
+  onRemoveEnvironment: () => Promise<unknown>;
+  onPickFiles: () => Promise<CopyPreview | null>;
+  onCopyFiles: (
+    selectionId: string,
+    acceptSecrets: boolean,
+  ) => Promise<CopyResult[] | null>;
   onDelete: () => Promise<void>;
   onClearError: () => void;
 };
@@ -47,6 +54,8 @@ export function TaskDetail({
   onDiscardEnvironment,
   onCheckRemoval,
   onRemoveEnvironment,
+  onPickFiles,
+  onCopyFiles,
   onDelete,
   onClearError,
 }: Props) {
@@ -222,6 +231,8 @@ export function TaskDetail({
           onDiscard={onDiscardEnvironment}
           onCheckRemoval={onCheckRemoval}
           onRemove={onRemoveEnvironment}
+          onPickFiles={onPickFiles}
+          onCopyFiles={onCopyFiles}
         />
       )}
     </div>
