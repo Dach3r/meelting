@@ -694,7 +694,7 @@ impl Guard {
                 OsString::from("status"),
                 "--porcelain=v2".into(),
                 "-z".into(),
-                "--untracked-files=normal".into(),
+                "--untracked-files=all".into(),
                 "--ignored=matching".into(),
                 "--ignore-submodules=all".into(),
                 "--".into(),

@@ -136,6 +136,34 @@ pub fn display_path(path: &[u8]) -> (String, bool) {
     }
 }
 
+pub fn immediate_children(folder: &[u8], entries: Vec<ReviewEntry>) -> Vec<ReviewEntry> {
+    let mut children: Vec<ReviewEntry> = Vec::new();
+    for entry in entries {
+        let Some(rest) = entry
+            .path
+            .strip_prefix(folder)
+            .filter(|rest| !rest.is_empty())
+        else {
+            continue;
+        };
+        let path = match rest.iter().position(|byte| *byte == b'/') {
+            Some(slash) => [folder, &rest[..=slash]].concat(),
+            None => entry.path.clone(),
+        };
+        if !children
+            .iter()
+            .any(|child| child.path == path && child.kind == entry.kind)
+        {
+            children.push(ReviewEntry {
+                path,
+                original_path: None,
+                ..entry
+            });
+        }
+    }
+    children
+}
+
 fn change_code(letter: u8) -> Option<Option<ChangeCode>> {
     Some(match letter {
         b'.' => None,
@@ -400,6 +428,69 @@ pub fn parse_patch(patch: &[u8], output_truncated: bool) -> FileDiff {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_folder_listing_keeps_only_its_immediate_children() {
+        let entry = |kind, path: &str| ReviewEntry {
+            kind,
+            path: path.as_bytes().to_vec(),
+            original_path: None,
+            staged: None,
+            unstaged: None,
+        };
+        let listing = vec![
+            entry(EntryKind::Untracked, "docs/a.md"),
+            entry(EntryKind::Untracked, "docs/deep/b.md"),
+            entry(EntryKind::Untracked, "docs/deep/c.md"),
+            entry(EntryKind::Ignored, "docs/deep/d.o"),
+            entry(EntryKind::Untracked, "docs/z.md"),
+            entry(EntryKind::Untracked, "elsewhere/x.md"),
+            entry(EntryKind::Untracked, "docs-other/y.md"),
+        ];
+
+        let children = immediate_children(b"docs/", listing);
+
+        let summary: Vec<(EntryKind, &[u8])> = children
+            .iter()
+            .map(|child| (child.kind, child.path.as_slice()))
+            .collect();
+        assert_eq!(
+            summary,
+            [
+                (EntryKind::Untracked, &b"docs/a.md"[..]),
+                (EntryKind::Untracked, b"docs/deep/"),
+                (EntryKind::Ignored, b"docs/deep/"),
+                (EntryKind::Untracked, b"docs/z.md"),
+            ]
+        );
+    }
+
+    #[test]
+    fn drift_is_classified_from_the_base_commit_and_the_current_branch() {
+        use DriftState::*;
+        assert_eq!(classify_drift("a", Some("a"), None), UpToDate);
+        assert_eq!(classify_drift("a", Some("b"), Some(true)), Moved);
+        assert_eq!(classify_drift("a", Some("b"), Some(false)), Rewritten);
+        assert_eq!(classify_drift("a", Some("b"), None), Unavailable);
+        assert_eq!(classify_drift("a", None, None), Unavailable);
+        assert_eq!(classify_drift("a", None, Some(true)), Unavailable);
+    }
+
+    #[test]
+    fn paths_with_a_secret_looking_component_are_protected() {
+        for path in [
+            ".env",
+            "config/.env.local",
+            "keys/server.pem",
+            "secrets/readme.txt",
+            "a/credentials.json",
+        ] {
+            assert!(protected_path(path.as_bytes()), "{path}");
+        }
+        for path in ["README.md", "src/main.rs", "docs/"] {
+            assert!(!protected_path(path.as_bytes()), "{path}");
+        }
+    }
 
     #[test]
     fn reads_every_kind_of_entry_keeping_staged_and_unstaged_apart() {

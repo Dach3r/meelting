@@ -1,6 +1,6 @@
 # Tasks and worktrees (Phase 4)
 
-> **Status:** product decisions approved (D27–D48 in [decisions.md](decisions.md)). Phase 4A (repositories, tasks, agent assignment, creation from rooms) is built and verified. Phase 4B (Git environments) is **implemented and verified within the scope tested** on macOS, Ubuntu and Windows (Rust tests), with limits recorded in [§7.1](#71-verification-evidence): no E2E, no real-storage check on runners, no real process-kill test, and a pipeline that is not fully green. 4C (review, drift warnings and E2E) is approved in scope but not started. Platforms: macOS, Windows and Linux.
+> **Status:** product decisions approved (D27–D48 in [decisions.md](decisions.md)). Phase 4A (repositories, tasks, agent assignment, creation from rooms) is built and verified. Phase 4B (Git environments) is **implemented and verified within the scope tested** on macOS, Ubuntu and Windows (Rust tests), with limits recorded in [§7.1](#71-verification-evidence): no E2E, no real-storage check on runners, no real process-kill test, and a pipeline that is not fully green. 4C is approved in scope: stage 3B (review services and commands, no UI) is built; the interface, recovery screens and E2E are not. Platforms: macOS, Windows and Linux.
 >
 > In this document ✅ means *implemented*. What has been *verified*, and on which platform, is recorded only in §7.1.
 
@@ -179,17 +179,42 @@ Uncommitted changes of the original repository are never copied; the UI says tha
 
 **Cleanup.** Copied files stay in the environment. Because they are ignored or untracked, they block its removal (BR-10) until the user deletes them; the removal dialog lists them (D44).
 
-### BR-07. Base branch drift (4C, not built)
+### BR-07. Base branch drift (4C stage 3B ✅, no UI yet)
 
-`base_commit_sha` is immutable and is stored by 4B, but **nothing compares it with the current base branch yet**: no code reads the base branch after preparation and the UI shows no warning. Reporting the drift is part of 4C (D35).
+`base_commit_sha` is immutable and is stored by 4B. `review_task_environment` compares it with the current commit of the base branch (`base_ref`) and returns one of four states, without writing anything:
 
-Intended behavior: if the base branch moves, the environment is not updated and the UI warns («main has moved since this environment was prepared»). No rebase, merge or reset. If the base branch is deleted, the worktree keeps its identity and the comparison is reported as unavailable.
+| State | Meaning |
+|---|---|
+| `up_to_date` | The base branch still points at `base_commit_sha` |
+| `moved` | The base branch points elsewhere and `base_commit_sha` is an ancestor of it |
+| `rewritten` | The base branch points elsewhere and `base_commit_sha` is not an ancestor of it |
+| `unavailable` | The base branch no longer exists, or Git could not answer the ancestry question |
+
+The environment is never updated: no rebase, merge or reset (D35). The warning copy («main has moved since this environment was prepared») is in the `review.drift` locale keys; showing it is part of the interface stage. Drift reads the registered repository with the read-only Git helper; it does not enter the worktree.
 
 ### BR-08. Reviewing changes (4C)
 
 Working branch, base branch and commit, Git status, files added/modified/deleted, commits since the base commit, staged and unstaged changes, untracked files and ignored files relevant for preservation, and a read-only textual diff with size and rendering limits. Binary files are shown as metadata.
 
-**Stage 2 (infrastructure, no command yet):** the review reads the worktree only through the guarded executor (BR-17), so `.gitattributes` changes made after the base commit are not reflected, a worktree whose base-commit attributes use an executable filter is refused, and every list or patch carries an explicit `complete` flag: a cut or malformed Git output is never shown as complete. The review status uses `--untracked-files=normal` (an untracked folder is one entry that can be expanded later); the removal check keeps `--untracked-files=all`.
+**Guarded reads.** The review reads the worktree only through the guarded executor (BR-17), so `.gitattributes` changes made after the base commit are not reflected, a worktree whose base-commit attributes use an executable filter is refused, and every list or patch carries an explicit `complete` flag: a cut or malformed Git output is never shown as complete. The review status uses `--untracked-files=normal`; an untracked or ignored folder is one entry that is expanded one level at a time (`list_task_environment_folder`). The removal check keeps `--untracked-files=all`.
+
+**Commands (stage 3B).** All three need a `ready` environment of the current workspace that is not in the trash and hold the repository lock; the webview never sends a path.
+
+| Command | Input | Output |
+|---|---|---|
+| `review_task_environment` | `task_id` | `review_id`, `branch`, `base_commit_sha`, `head_commit_sha`, `commits_ahead`, `drift`, `operation_in_progress`, `complete` and `entries` |
+| `read_task_environment_diff` | `task_id`, `{ review_id, entry_id, source }` with `source` one of `staged`, `unstaged`, `branch` | `{ binary, hunks, complete, lossy }`; binary files have no hunks |
+| `list_task_environment_folder` | `task_id`, `review_id`, `entry_id` | `{ entries, complete }` with the immediate children of an untracked or ignored folder, with new entry ids |
+
+Each entry has `id`, `kind` (`committed`, `changed`, `conflicted`, `untracked`, `ignored`), `path`, `original_path`, `lossy_path`, `staged` and `unstaged` change codes, the `sources` its diff can be read from, `protected`, `folder` and, for committed files, `added`, `deleted` and `binary`. Conflicted, untracked and ignored entries have no diff. Entry ids are only meaningful inside their review.
+
+**Protected files.** A path with any component that looks like a secret (the copy heuristic of BR-06: `.env*`, `id_*`, `*.pem`, `*.key`, `*secret*`, `*credential*`, `*token*`…) is listed with `protected: true` and its diff is refused (`protected_file`) before Git is asked for it.
+
+**Limits.** Status and numstat: 20 s and 4 MiB; at most 2 000 entries. Diff: 20 s and 512 KiB of Git output (beyond that `diff_too_large`, nothing is shown), 2 000 lines and 2 000 characters per line (beyond that the diff is returned with `complete: false`).
+
+**Stale reviews.** A review is an opaque id kept in memory, bound to its task and worktree, replaced when the same task is reviewed again and expiring after 15 minutes. It records `HEAD`, the size and modification time of the index and, per entry, the size and modification time of the working-tree file. Before and after every diff or folder read the core compares `HEAD` and the index with the recorded values, and before an unstaged diff it compares the file; any difference, an unknown or expired id, an id of another task or worktree, or a change while the review itself was being built returns `review_stale` and the UI must refresh. An id that does not allow the requested source or entry returns `invalid_review_entry`. A review is a point-in-time view, not a snapshot: other tools can change files while Git reads them, and the checks only detect changes of `HEAD`, the index and the reviewed file, so a stale-looking answer is refused and a fresh one is never guaranteed to be atomic. No query writes to Git or SQLite.
+
+**Typed errors.** `environment_identity_mismatch`, `git_too_old`, `environment_filters_apply` (executable filters, including Git LFS, are refused and never described as supported), `environment_config_unsafe`, `process_isolation_unavailable`, `review_timeout`, `diff_too_large`, `review_stale`, `invalid_review_entry`, `protected_file`; drift unavailability is a state, not an error. Messages avoid paths and secrets.
 
 ### BR-09. Completing a task (4A ✅)
 
@@ -279,7 +304,15 @@ Reading a worktree with Git can run programs chosen by configuration: clean and 
 - **Configuration origins (P5b):** a repository or worktree configuration that contains `include.path` or any `includeIf.*.path` is refused with `config_includes`, even when the condition does not match, because the included file is outside the compared files and its condition can change. Repositories without includes are unaffected.
 - **Executable filters (P5):** the `filter.*.{clean,smudge,process}` definitions visible to the query are listed; the query is refused (`filters_apply`) when one of them is used by the base commit's attributes. Definitions that are not used do not block anything. Files that need an executable filter (for example Git LFS) are therefore not reviewable; the removal and preservation paths of 4B are unchanged.
 - **Neutralization (P5c):** every query also passes `filter.<name>.clean`, `.smudge` and `.process` as empty command-line configuration (`GIT_CONFIG_COUNT`) for every filter name that is defined or selected by the base commit's attributes. Command-line configuration outranks every file, so a definition or an included file added after the guard opened cannot run a program for those names. It is an additional defense and never authorizes running a filter. It cannot cover a filter name that appears only after the guard opened; that case is closed by P5d.
-- **No child processes (P5d):** every guarded Git process runs with an operating system limit that forbids it from creating processes, so a filter (clean, smudge or process) that becomes defined and selected after the guard opened has nothing to run. Unix: `RLIMIT_NPROC` set to 0 between `fork` and `exec` (`system/child_limit.rs`). Windows: the process starts suspended, joins a job object with an active-process limit and is then resumed; the limit is learned once with `git version` (1 for a plain `git.exe`, 2 when the Git for Windows launcher starts the real one). Git threads are disabled (`core.preloadIndex=false`, `index.threads=false`) because on Linux a thread counts as a process. When Git reports that it could not start a program, the result is refused (`filter_blocked`) even if the configuration looks unchanged afterwards.
+- **No child processes (P5d):** every guarded Git process runs with an operating system limit that forbids it from creating processes, so a filter (clean, smudge or process) that becomes defined and selected after the guard opened has nothing to run. When the limit cannot be guaranteed the query is refused (`process_isolation_unavailable`) before Git starts. Git threads are disabled (`core.preloadIndex=false`, `index.threads=false`) because on Linux a thread counts as a process. When Git reports that it could not start a program, the result is refused (`filter_blocked`) even if the configuration looks unchanged afterwards.
+
+  | Platform | Mechanism | What is demonstrated | Fail closed when |
+  |---|---|---|---|
+  | macOS, Linux | `RLIMIT_NPROC` 0 set between `fork` and `exec` and read back with `getrlimit` (`system/child_limit.rs`) | Marker tests: a filter defined and selected after the guard opened does not run, as an unprivileged user (CI: macOS and Ubuntu runners) | The user or effective user is root; on Linux, `CapEff` holds `CAP_SYS_RESOURCE` or `CAP_SYS_ADMIN` or cannot be read; `setrlimit` or the read-back fails |
+  | Windows | The process starts suspended (`CREATE_SUSPENDED`), joins a job object with an active-process limit and kill-on-close, the limits are read back, and only then it is resumed with `NtResumeProcess`; the limit is learned once with `git version` (1 for a plain `git.exe`, 2 when the Git for Windows launcher starts the real one) | The same marker test passes on the Windows runner; the job is closed (and its processes ended) when the call ends, including timeouts and errors | Creating the job, setting or reading back the limits or assigning the process fails (for example a parent job that forbids nesting); a failed resume ends the process |
+
+  `NtResumeProcess` is not a documented Win32 API. The documented route (`ResumeThread` on the primary thread) needs the thread handle, which the process spawner used here does not return, so using it would mean enumerating threads of the new process or replacing the spawner with a hand-written `CreateProcessW` call. That was judged more error-prone than the stable `ntdll` call and was not done; it is a recorded residual risk.
+
 - **Concurrent changes (P6):** the repository and worktree configuration files and `info/attributes` are compared after each call, and the filter definitions again at the end. A difference discards the result (`ConfigChanged`, or `info_attributes_unsafe` when the new `info/attributes` has rules). This detects a change; it cannot undo a program that already ran, so it is an additional measure, not the prevention. Prevention is P5b and P5c.
 - **Conversions (P7):** `core.autocrlf` (`true`, `false`, `input`) and `core.eol` (`lf`, `crlf`, `native`) are read from the effective configuration and passed with `-c` only when they match that list.
 
@@ -294,7 +327,7 @@ Reading a worktree with Git can run programs chosen by configuration: clean and 
 | Legitimate concurrent edits | Not an attack; they can only make a result stale |
 | Operating system | Only process separation, no sandbox: a stronger guarantee for the last row needs an OS sandbox or a private copy of the shared Git directory, which is a pending architecture decision |
 
-Residual risks: P5d is not a sandbox: it does not limit what Git reads or writes, and it does not apply on Linux to a process with `CAP_SYS_RESOURCE` (for example a container running as root), where `RLIMIT_NPROC` is not enforced; a Git that needs to start helper processes for a legitimate reason (none is known for `status`, `diff`, `rev-parse`, `config`, `symbolic-ref` and `ls-files`) would fail instead of running them; disabling the parallel index preload makes very large worktrees slower; on Windows the limit is learned from the installed Git and is untested for Git builds other than the one on the CI runner; Git settings that are not listed here and run programs; on Windows a killed `git.exe` does not end its descendants, although the controlled process starts none; Git for Windows and Linux behavior is checked by the tests in CI, not assumed.
+Residual risks: P5d is not a sandbox: it does not limit what Git reads or writes, and on Unix it cannot be enforced for root or with `CAP_SYS_RESOURCE`, so the executor refuses to run there (Meelting as root cannot review); a Git that needs to start helper processes for a legitimate reason (none is known for `status`, `diff`, `rev-parse`, `config`, `symbolic-ref` and `ls-files`) would fail instead of running them; disabling the parallel index preload makes very large worktrees slower; on Windows the limit is learned from the installed Git and is untested for Git builds other than the one on the CI runner; Git settings that are not listed here and run programs; on Windows the job now ends its processes when it closes, but nested-job behavior and Git builds other than the CI runner's are untested, and `NtResumeProcess` is undocumented; Git for Windows and Linux behavior is checked by the tests in CI, not assumed.
 
 ### Deletion rules (D30–D33)
 
@@ -344,12 +377,12 @@ A task can change its repository only while it has never had a worktree; once it
 | AC07 | Create a task from a room message | Task and origin saved | 4A ✅ |
 | AC08 | Create a task with a repository | No worktree created | 4A ✅ |
 | AC09–AC13 | Prepare, isolation, two tasks of the same repo, duplicate requests, alternative base | See BR-05 | 4B ✅ |
-| AC14 | Base branch drift | Warning without rebasing, merging or resetting (BR-07) | 4C (not built) |
+| AC14 | Base branch drift | Warning without rebasing, merging or resetting (BR-07) | 4C (service built, warning UI not built) |
 | AC15–AC17 | File copies, escaping paths, no overwrite | See BR-06 | 4B ✅ |
 | AC18 | Complete a task with a worktree | Environment and branch kept | 4B ✅ |
 | AC19–AC21 | Remove with local changes, with an ignored `.env`, clean | Blocked, blocked, removed keeping the branch | 4B ✅ |
 | AC22–AC24, AC26–AC28 | Root change, restart during preparation, external move or delete (detected at startup only, BR-14), shared repository across workspaces, unsafe path, executable checkout | See BR-11 to BR-15 | 4B ✅ |
-| AC25 | Review code changes | Read-only diff | 4C |
+| AC25 | Review code changes | Read-only diff | 4C (commands built, UI not built) |
 | AC29 | macOS, Windows and Linux | Main flows and recovery validated: E2E on Linux and Windows, automated Rust and frontend tests plus a reproducible manual checklist on macOS (`tauri-driver` has no macOS driver) | 4C |
 | AC30 | Multi-agent assignment | No assignment starts an `AgentRun` | 4A ✅ |
 
@@ -394,7 +427,7 @@ The pipeline as a whole is therefore **not green**: the Windows test job and the
 - End-to-end flows on Linux and Windows (no E2E harness exists) and the macOS manual checklist (AC29).
 - The real fixed-storage check (BR-12) on CI runners: the Rust tests inject a permissive checker.
 - Interrupted operations on a real process kill: recovery is only simulated.
-- Base branch drift (BR-07, AC14) and every 4C capability, which are not built.
+- The 4C interface, recovery screens and E2E, which are not built (the review services and commands are).
 
 ## 8. Delivery
 
