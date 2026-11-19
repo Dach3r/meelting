@@ -7,6 +7,7 @@ use crate::repositories::{git_repositories, task_worktrees};
 use crate::services::repository_locks::RepositoryLocks;
 use crate::services::session_load::SessionError;
 use crate::system::git::{self, GitError};
+use crate::system::git_guarded;
 use sqlx::SqlitePool;
 use std::path::Path;
 
@@ -38,10 +39,8 @@ pub async fn intact(
     let entry = registration(Path::new(&repository.path), worktree.location())
         .await
         .ok()??;
-    let layout = git::layout(path).await.ok()?;
-    let same_folder =
-        std::fs::canonicalize(&layout.toplevel).ok() == std::fs::canonicalize(path).ok();
-    (same_folder && layout.common_dir == repository.git_common_dir).then_some(entry)
+    git_guarded::verified_admin_dir(Path::new(&repository.git_common_dir), path).ok()?;
+    Some(entry)
 }
 
 fn next(

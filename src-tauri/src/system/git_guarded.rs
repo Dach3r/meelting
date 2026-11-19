@@ -1,9 +1,10 @@
 use crate::domain::repository::RepositoryIdentity;
 use crate::domain::review::DiffSource;
 use crate::domain::worktree::{
-    git_supports_attribute_source, info_attributes_allowed, parse_executable_filters,
-    parse_gitlinks,
+    git_supports_attribute_source, has_config_includes, info_attributes_allowed,
+    parse_executable_filters, parse_gitlinks,
 };
+use crate::system::child_limit;
 use crate::system::git::{self, GitError};
 use std::collections::BTreeSet;
 use std::ffi::{OsStr, OsString};
@@ -26,8 +27,12 @@ pub enum GuardError {
     InfoAttributesUnsafe,
     #[error("an executable filter applies to the repository")]
     FiltersApply(Vec<String>),
+    #[error("the git configuration includes other files")]
+    ConfigIncludes,
     #[error("the git configuration changed during the query")]
     ConfigChanged,
+    #[error("git tried to run a program")]
+    FilterBlocked,
     #[error("git timed out")]
     TimedOut,
     #[error("git output too large")]
@@ -100,6 +105,15 @@ fn command(isolated: bool) -> Command {
     command
 }
 
+const DIAGNOSTICS_BYTES: u64 = 8 * 1024;
+
+fn tried_to_run_a_program(diagnostics: &[u8]) -> bool {
+    let text = String::from_utf8_lossy(diagnostics);
+    ["external filter", "cannot fork", "cannot spawn"]
+        .iter()
+        .any(|marker| text.contains(marker))
+}
+
 async fn terminate(child: &mut Child) {
     #[cfg(unix)]
     if let Some(pid) = child.id() {
@@ -110,7 +124,39 @@ async fn terminate(child: &mut Child) {
     let _ = child.kill().await;
 }
 
-async fn execute(mut command: Command, limits: Limits) -> Result<Output, GuardError> {
+async fn execute(command: Command, limits: Limits) -> Result<Output, GuardError> {
+    #[cfg(windows)]
+    let active_processes = windows_active_processes().await?;
+    run(
+        command,
+        limits,
+        #[cfg(windows)]
+        active_processes,
+    )
+    .await
+}
+
+#[cfg(windows)]
+async fn windows_active_processes() -> Result<u32, GuardError> {
+    static LEARNED: std::sync::OnceLock<u32> = std::sync::OnceLock::new();
+    if let Some(known) = LEARNED.get() {
+        return Ok(*known);
+    }
+    for active in 1..=3 {
+        let mut version = command(false);
+        version.arg("version");
+        if run(version, REMOVAL_LIMITS, active).await.is_ok() {
+            return Ok(*LEARNED.get_or_init(|| active));
+        }
+    }
+    Err(GuardError::Failed(None))
+}
+
+async fn run(
+    mut command: Command,
+    limits: Limits,
+    #[cfg(windows)] active_processes: u32,
+) -> Result<Output, GuardError> {
     command
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
@@ -118,13 +164,28 @@ async fn execute(mut command: Command, limits: Limits) -> Result<Output, GuardEr
         .kill_on_drop(true);
     #[cfg(unix)]
     command.process_group(0);
+    child_limit::prepare(&mut command);
     let mut child = command.spawn()?;
+    #[cfg(windows)]
+    let _job = match child_limit::confine(&child, active_processes) {
+        Ok(job) => job,
+        Err(error) => {
+            terminate(&mut child).await;
+            return Err(GuardError::Unavailable(error));
+        }
+    };
     let (Some(mut stdout), Some(mut stderr)) = (child.stdout.take(), child.stderr.take()) else {
         terminate(&mut child).await;
         return Err(GuardError::Failed(None));
     };
-    tokio::spawn(async move {
+    let diagnostics = tokio::spawn(async move {
+        let mut head = Vec::new();
+        let _ = (&mut stderr)
+            .take(DIAGNOSTICS_BYTES)
+            .read_to_end(&mut head)
+            .await;
         let _ = tokio::io::copy(&mut stderr, &mut tokio::io::sink()).await;
+        head
     });
     let deadline = Instant::now() + limits.timeout;
     let mut buffer = Vec::new();
@@ -158,10 +219,19 @@ async fn execute(mut command: Command, limits: Limits) -> Result<Output, GuardEr
             Err(GuardError::TimedOut)
         }
         Ok(Err(error)) => Err(GuardError::Unavailable(error)),
-        Ok(Ok(status)) if status.success() => Ok(Output {
-            stdout: buffer,
-            truncated: false,
-        }),
+        Ok(Ok(status)) if status.success() => {
+            let head = timeout_at(deadline, diagnostics)
+                .await
+                .map_err(|_| GuardError::TimedOut)?
+                .unwrap_or_default();
+            if tried_to_run_a_program(&head) {
+                return Err(GuardError::FilterBlocked);
+            }
+            Ok(Output {
+                stdout: buffer,
+                truncated: false,
+            })
+        }
         Ok(Ok(status)) => Err(GuardError::Failed(status.code())),
     }
 }
@@ -244,6 +314,62 @@ pub fn admin_dir(common_dir: &Path, work_tree: &Path) -> Result<PathBuf, GuardEr
     found.ok_or(GuardError::GitDirNotFound)
 }
 
+fn resolved(work_tree: &Path, pointer: &str) -> Option<PathBuf> {
+    let pointer = PathBuf::from(pointer);
+    let pointer = if pointer.is_relative() {
+        work_tree.join(pointer)
+    } else {
+        pointer
+    };
+    std::fs::canonicalize(pointer).ok()
+}
+
+pub fn verified_admin_dir(common_dir: &Path, work_tree: &Path) -> Result<PathBuf, GuardError> {
+    let admin = admin_dir(common_dir, work_tree)?;
+    let pointer_file = work_tree.join(".git");
+    match std::fs::symlink_metadata(&pointer_file) {
+        Ok(metadata) if metadata.is_file() => {}
+        _ => return Err(GuardError::GitDirNotFound),
+    }
+    let content = read_bounded(&pointer_file)?.ok_or(GuardError::GitDirNotFound)?;
+    let content = String::from_utf8_lossy(&content);
+    let points_back = content
+        .lines()
+        .next()
+        .and_then(|line| line.strip_prefix("gitdir:"))
+        .and_then(|pointer| resolved(work_tree, pointer.trim()))
+        .is_some_and(|target| std::fs::canonicalize(&admin).is_ok_and(|admin| admin == target));
+    if points_back {
+        Ok(admin)
+    } else {
+        Err(GuardError::GitDirNotFound)
+    }
+}
+
+fn located(isolated: bool, admin_dir: &Path, work_tree: &Path) -> Command {
+    let mut command = command(isolated);
+    command
+        .current_dir(work_tree)
+        .arg(flag("--git-dir=", admin_dir))
+        .arg(flag("--work-tree=", work_tree));
+    command
+}
+
+pub async fn head_reference_of(
+    admin_dir: &Path,
+    work_tree: &Path,
+) -> Result<Option<String>, GuardError> {
+    let mut read = located(true, admin_dir, work_tree);
+    read.args(["symbolic-ref", "--quiet", "HEAD"]);
+    match execute(read, REMOVAL_LIMITS).await {
+        Ok(output) => Ok(Some(
+            String::from_utf8_lossy(&output.stdout).trim().to_string(),
+        )),
+        Err(GuardError::Failed(Some(1))) => Ok(None),
+        Err(error) => Err(error),
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct Fingerprint {
     common_config: Option<Vec<u8>>,
@@ -267,6 +393,7 @@ pub struct Guard {
     base_commit: String,
     conversions: Vec<(&'static str, String)>,
     filters: BTreeSet<String>,
+    neutralized: BTreeSet<String>,
     fingerprint: Fingerprint,
 }
 
@@ -296,32 +423,29 @@ impl Guard {
             base_commit: base_commit.to_string(),
             conversions: Vec::new(),
             filters: BTreeSet::new(),
+            neutralized: BTreeSet::new(),
             fingerprint,
         };
+        guard.reject_config_includes().await?;
         guard.conversions = guard.effective_conversions().await?;
         guard.filters = guard.executable_filters().await?;
-        if !guard.filters.is_empty() {
-            let used = git::filters_at(Path::new(&repository.path), base_commit)
-                .await
-                .map_err(from_git_error)?;
-            let applying: Vec<String> = used
-                .into_iter()
-                .filter(|name| guard.filters.contains(name))
-                .collect();
-            if !applying.is_empty() {
-                return Err(GuardError::FiltersApply(applying));
-            }
+        let used = git::filters_at(Path::new(&repository.path), base_commit)
+            .await
+            .map_err(from_git_error)?;
+        let applying: Vec<String> = used
+            .iter()
+            .filter(|name| guard.filters.contains(*name))
+            .cloned()
+            .collect();
+        if !applying.is_empty() {
+            return Err(GuardError::FiltersApply(applying));
         }
+        guard.neutralized = guard.filters.iter().cloned().chain(used).collect();
         Ok(guard)
     }
 
     fn located(&self, isolated: bool) -> Command {
-        let mut command = command(isolated);
-        command
-            .current_dir(&self.work_tree)
-            .arg(flag("--git-dir=", &self.admin_dir))
-            .arg(flag("--work-tree=", &self.work_tree));
-        command
+        located(isolated, &self.admin_dir, &self.work_tree)
     }
 
     async fn effective_conversions(&self) -> Result<Vec<(&'static str, String)>, GuardError> {
@@ -363,6 +487,16 @@ impl Guard {
         }
     }
 
+    async fn reject_config_includes(&self) -> Result<(), GuardError> {
+        let mut read = self.located(true);
+        read.args(["config", "--null", "--list"]);
+        let output = execute(read, REMOVAL_LIMITS).await?;
+        if has_config_includes(&output.stdout) {
+            return Err(GuardError::ConfigIncludes);
+        }
+        Ok(())
+    }
+
     fn unchanged(&self) -> Result<(), GuardError> {
         if fingerprint(&self.common_dir, &self.admin_dir)? == self.fingerprint {
             Ok(())
@@ -377,12 +511,27 @@ impl Guard {
             .arg(flag("--attr-source=", Path::new(&self.base_commit)))
             .args(["-c", "core.fsmonitor=false"])
             .args(["-c", "diff.autoRefreshIndex=false"])
+            .args(["-c", "core.preloadIndex=false"])
+            .args(["-c", "index.threads=false"])
             .arg("-c")
             .arg(format!("core.hooksPath={NULL_DEVICE}"))
             .arg("-c")
             .arg(format!("core.attributesFile={NULL_DEVICE}"));
         for (key, value) in &self.conversions {
             command.arg("-c").arg(format!("{key}={value}"));
+        }
+        let keys = self.neutralized.iter().flat_map(|name| {
+            ["clean", "smudge", "process"].map(|kind| format!("filter.{name}.{kind}"))
+        });
+        let mut count = 0;
+        for key in keys {
+            command
+                .env(format!("GIT_CONFIG_KEY_{count}"), key)
+                .env(format!("GIT_CONFIG_VALUE_{count}"), "");
+            count += 1;
+        }
+        if count > 0 {
+            command.env("GIT_CONFIG_COUNT", count.to_string());
         }
         command
     }
@@ -706,6 +855,36 @@ mod tests {
         "--ignore-submodules=all",
     ];
 
+    #[test]
+    fn the_git_file_may_point_to_the_admin_dir_with_a_relative_or_prefixed_path() {
+        let fx = fixture(&[]);
+        let common = PathBuf::from(&fx.identity.git_common_dir);
+        let admin = fx.admin();
+        let git_file = fx.work_tree.join(".git");
+        let name = admin.file_name().unwrap().to_string_lossy().into_owned();
+        let prefixed = cfg!(windows).then(|| {
+            let canonical = std::fs::canonicalize(&admin).unwrap();
+            let plain = canonical.to_string_lossy();
+            format!("gitdir: \\\\?\\{}\n", plain.trim_start_matches(r"\\?\"))
+        });
+        let forms = [
+            Some(format!("gitdir: ../repo/.git/worktrees/{name}\n")),
+            prefixed,
+        ];
+        for form in forms.into_iter().flatten() {
+            std::fs::write(&git_file, &form).unwrap();
+            assert_eq!(
+                std::fs::canonicalize(verified_admin_dir(&common, &fx.work_tree).unwrap()).unwrap(),
+                std::fs::canonicalize(&admin).unwrap(),
+                "{form}"
+            );
+        }
+        std::fs::write(&git_file, "gitdir: ../repo/.git\n").unwrap();
+        assert!(verified_admin_dir(&common, &fx.work_tree).is_err());
+        std::fs::write(&git_file, "not a pointer\n").unwrap();
+        assert!(verified_admin_dir(&common, &fx.work_tree).is_err());
+    }
+
     #[tokio::test]
     async fn a_redirected_git_file_cannot_change_which_repository_is_queried() {
         let fx = fixture(&[(".gitattributes", "*.txt filter=probe\n")]);
@@ -777,10 +956,12 @@ mod tests {
 
             let result = fx.guard().await;
 
-            assert!(
-                matches!(&result, Err(GuardError::FiltersApply(names)) if names == &["probe"]),
-                "{label}: {result:?}"
-            );
+            let expected = if label.starts_with("include") {
+                matches!(&result, Err(GuardError::ConfigIncludes))
+            } else {
+                matches!(&result, Err(GuardError::FiltersApply(names)) if names == &["probe"])
+            };
+            assert!(expected, "{label}: {result:?}");
             assert_eq!(fx.executed(), "", "{label}");
         }
     }
@@ -895,6 +1076,129 @@ mod tests {
             guard.finish().await,
             Err(GuardError::ConfigChanged)
         ));
+    }
+
+    #[tokio::test]
+    async fn a_filter_defined_after_the_check_for_a_name_the_base_attributes_use_never_runs() {
+        let fx = fixture(&[(".gitattributes", "*.txt filter=probe\n")]);
+        fx.dirty();
+        let guard = fx.guard().await.unwrap();
+        fx.config("filter.probe.clean", &fx.probe("clean"));
+        assert!(
+            fx.plain_git_executes(),
+            "the setup must be able to run the filter"
+        );
+
+        let status = guard.status_exhaustive().await;
+        let diff = guard.query(DIFF, REMOVAL_LIMITS).await;
+
+        assert_eq!(fx.executed(), "", "no unauthorized program may run");
+        assert!(matches!(status, Err(GuardError::ConfigChanged)));
+        assert!(matches!(diff, Err(GuardError::ConfigChanged)));
+    }
+
+    #[tokio::test]
+    async fn an_included_configuration_file_is_refused_before_any_query() {
+        let fx = fixture(&[(".gitattributes", "*.txt filter=probe\n")]);
+        fx.dirty();
+        let included = fx.root.join("included.cfg");
+        std::fs::write(
+            &included,
+            format!("[filter \"probe\"]\n\tclean = {}\n", fx.probe("clean")),
+        )
+        .unwrap();
+        fx.config("include.path", &slashed(&included));
+        assert!(
+            fx.plain_git_executes(),
+            "the setup must be able to run the filter"
+        );
+
+        let result = fx.guard().await;
+
+        assert!(matches!(result, Err(GuardError::ConfigIncludes)));
+        assert_eq!(fx.executed(), "");
+    }
+
+    #[tokio::test]
+    async fn a_conditional_include_is_refused_even_when_its_condition_does_not_match() {
+        let fx = fixture(&[]);
+        let included = fx.root.join("included.cfg");
+        std::fs::write(&included, "[user]\n\tname = other\n").unwrap();
+        fx.config("includeIf.gitdir:/nowhere/.path", &slashed(&included));
+
+        assert!(matches!(fx.guard().await, Err(GuardError::ConfigIncludes)));
+    }
+
+    #[tokio::test]
+    async fn an_include_added_after_the_check_cannot_define_a_filter_the_base_uses() {
+        let fx = fixture(&[(".gitattributes", "*.txt filter=probe\n")]);
+        fx.dirty();
+        let guard = fx.guard().await.unwrap();
+        let included = fx.root.join("included.cfg");
+        std::fs::write(
+            &included,
+            format!("[filter \"probe\"]\n\tclean = {}\n", fx.probe("clean")),
+        )
+        .unwrap();
+        fx.config("include.path", &slashed(&included));
+        assert!(
+            fx.plain_git_executes(),
+            "the setup must be able to run the filter"
+        );
+
+        let status = guard.status_exhaustive().await;
+        let diff = guard.query(DIFF, REMOVAL_LIMITS).await;
+
+        assert_eq!(fx.executed(), "", "no unauthorized program may run");
+        assert!(matches!(status, Err(GuardError::ConfigChanged)));
+        assert!(matches!(diff, Err(GuardError::ConfigChanged)));
+    }
+
+    #[tokio::test]
+    async fn info_attributes_added_after_the_check_cannot_select_a_defined_filter() {
+        let fx = fixture(&[]);
+        fx.config("filter.probe.clean", &fx.probe("clean"));
+        fx.dirty();
+        let guard = fx.guard().await.unwrap();
+        std::fs::write(
+            fx.repo.join(".git").join("info").join("attributes"),
+            "*.txt filter=probe\n",
+        )
+        .unwrap();
+        assert!(
+            fx.plain_git_executes(),
+            "the setup must be able to run the filter"
+        );
+
+        let status = guard.status_exhaustive().await;
+        let diff = guard.query(DIFF, REMOVAL_LIMITS).await;
+
+        assert_eq!(fx.executed(), "", "no unauthorized program may run");
+        assert!(matches!(status, Err(GuardError::InfoAttributesUnsafe)));
+        assert!(matches!(diff, Err(GuardError::InfoAttributesUnsafe)));
+    }
+
+    #[tokio::test]
+    async fn a_new_filter_name_defined_and_selected_after_the_check_never_runs() {
+        let fx = fixture(&[]);
+        fx.dirty();
+        let guard = fx.guard().await.unwrap();
+        fx.config("filter.fresh.clean", &fx.probe("clean"));
+        std::fs::write(
+            fx.repo.join(".git").join("info").join("attributes"),
+            "*.txt filter=fresh\n",
+        )
+        .unwrap();
+        assert!(
+            fx.plain_git_executes(),
+            "the setup must be able to run the filter"
+        );
+
+        let status = guard.status_exhaustive().await;
+        let diff = guard.query(DIFF, REMOVAL_LIMITS).await;
+
+        assert_eq!(fx.executed(), "", "no unauthorized program may run");
+        assert!(status.is_err() && diff.is_err());
     }
 
     #[tokio::test]
@@ -1082,8 +1386,15 @@ mod tests {
 
     #[tokio::test]
     async fn a_slow_git_is_stopped_at_the_timeout() {
-        let mut slow = command(true);
-        slow.args(["-c", "alias.slow=!sleep 20", "slow"]);
+        let slow = if cfg!(windows) {
+            let mut ping = Command::new("ping");
+            ping.args(["-n", "20", "127.0.0.1"]);
+            ping
+        } else {
+            let mut sleep = Command::new("sleep");
+            sleep.arg("20");
+            sleep
+        };
         let started = std::time::Instant::now();
 
         let result = execute(
@@ -1097,6 +1408,17 @@ mod tests {
 
         assert!(matches!(result, Err(GuardError::TimedOut)));
         assert!(started.elapsed() < Duration::from_secs(10));
+    }
+
+    #[test]
+    fn diagnostics_about_a_blocked_program_are_recognised() {
+        assert!(tried_to_run_a_program(
+            b"error: cannot fork to run external filter 'x'\n"
+        ));
+        assert!(tried_to_run_a_program(b"error: cannot spawn sh: denied\n"));
+        assert!(!tried_to_run_a_program(
+            b"warning: in the working copy of 'a', LF will be replaced by CRLF\n"
+        ));
     }
 
     #[test]
