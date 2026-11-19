@@ -204,7 +204,7 @@ mod tests {
                 env.write("README.md", "edited again with a different size\n");
             }),
             ("the index rewritten by an external tool", |env| {
-                env.git(&["rm", "--cached", "-q", "README.md"]);
+                env.git(&["add", "README.md"]);
             }),
         ];
         for (name, change) in changes {
@@ -217,10 +217,9 @@ mod tests {
 
             assert!(matches!(outcome, Err(SessionError::ReviewStale)), "{name}");
             let refreshed = env.review().await.unwrap();
+            let source = entry(&refreshed, "README.md").sources[0];
             assert!(
-                env.diff(&refreshed, "README.md", DiffSource::Unstaged)
-                    .await
-                    .is_ok(),
+                env.diff(&refreshed, "README.md", source).await.is_ok(),
                 "{name}"
             );
         }
