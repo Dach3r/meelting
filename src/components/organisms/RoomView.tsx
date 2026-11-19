@@ -1,5 +1,5 @@
 import { ArrowLeft, RefreshCw, Trash2, UserPlus } from "lucide-react";
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
 import { type Locale, formatAgentCount, translateError, translateRunError, translateWith } from "../../i18n/translate";
 import { type AgentRun, isActive, isFinal } from "../../hooks/agentRunState";
@@ -85,7 +85,7 @@ export function RoomView({ roomId, agents, busy, deleteErrorMessage, onBack, onD
   }
 
   return (
-    <div className="flex min-h-[44rem] w-full flex-1 flex-col gap-5 lg:min-h-[34rem]">
+    <div className="fixed inset-0 z-40 flex flex-col gap-3 bg-shell p-3 lg:flex-row">
       {confirming && (
         <Modal title={t("rooms.delete.title")} onClose={closeConfirm}>
           <div className="grid gap-5 p-6">
@@ -113,17 +113,18 @@ export function RoomView({ roomId, agents, busy, deleteErrorMessage, onBack, onD
           />
         </Modal>
       )}
-      <header className="flex flex-col gap-2">
-        {back}
-        <h1 className="truncate text-2xl font-bold text-ink">{room.name}</h1>
-      </header>
-      <div className="grid min-h-0 flex-1 grid-rows-[minmax(0,12rem)_minmax(0,1fr)] gap-5 lg:grid-cols-[minmax(0,1fr)_24rem] lg:grid-rows-1">
-        <section
-          aria-label={t("rooms.participants")}
-          tabIndex={0}
-          className="min-h-0 overflow-y-auto rounded-2xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
-        >
-          <ul className="grid grid-cols-[repeat(auto-fill,minmax(10rem,1fr))] gap-4">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
+        <header className="flex items-center gap-3">
+          {back}
+          <h1 className="min-w-0 flex-1 truncate text-xl font-bold text-ink">{room.name}</h1>
+          <p className="shrink-0 rounded-full border border-line bg-surface px-3 py-1 text-sm text-muted">{formatAgentCount(locale, room.agents.length)}</p>
+        </header>
+        <section aria-label={t("rooms.participants")} className="relative flex min-h-0 flex-1 flex-col gap-3">
+          {rosterErrorKey && !inviting && <Alert message={translateError(locale, rosterErrorKey)} />}
+          <ul
+            tabIndex={0}
+            className={`grid min-h-0 flex-1 auto-rows-[minmax(10rem,1fr)] gap-3 overflow-y-auto rounded-2xl pb-20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${columns(room.agents.length + 1)}`}
+          >
             <ParticipantTile name={t("rooms.you")} role={t("rooms.supervisor")} />
             {room.agents.map((agent) => (
               <ParticipantTile
@@ -138,23 +139,23 @@ export function RoomView({ roomId, agents, busy, deleteErrorMessage, onBack, onD
                 }}
               />
             ))}
-            <li>
-              <button
-                type="button"
-                onClick={openInvite}
-                className="flex h-full min-h-40 w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-line p-5 text-sm text-muted transition-colors hover:bg-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
-              >
-                <UserPlus aria-hidden className="size-5" />
-                {t("rooms.invite.action")}
-              </button>
-            </li>
           </ul>
-          {rosterErrorKey && !inviting && (
-            <div className="mt-4">
-              <Alert message={translateError(locale, rosterErrorKey)} />
-            </div>
-          )}
+          <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-2xl border border-line bg-shell/80 p-2 backdrop-blur">
+            <ControlButton label={t("rooms.invite.action")} onClick={openInvite}>
+              <UserPlus aria-hidden className="size-5" />
+            </ControlButton>
+            {room.agents.length > 0 && (
+              <ControlButton label={t("rooms.availability.recheck")} disabled={checking} onClick={recheck}>
+                <RefreshCw aria-hidden className={`size-5 ${checking ? "animate-spin" : ""}`} />
+              </ControlButton>
+            )}
+            <ControlButton label={t("rooms.delete.action")} danger onClick={() => setConfirming(true)}>
+              <Trash2 aria-hidden className="size-5" />
+            </ControlButton>
+          </div>
         </section>
+      </div>
+      <div className="grid h-80 min-h-0 shrink-0 lg:h-auto lg:w-96">
         <RoomChat
           room={room}
           formerAgents={formerAgents}
@@ -168,22 +169,29 @@ export function RoomView({ roomId, agents, busy, deleteErrorMessage, onBack, onD
           onCancel={cancelRun}
         />
       </div>
-      <footer className="flex items-center justify-between gap-4 rounded-2xl border border-line bg-surface px-5 py-3">
-        <div className="flex items-center gap-3">
-          <p className="text-sm text-muted">{formatAgentCount(locale, room.agents.length)}</p>
-          {room.agents.length > 0 && (
-            <Button type="button" variant="ghost" size="compact" disabled={checking} onClick={recheck}>
-              <RefreshCw aria-hidden className={`size-4 ${checking ? "animate-spin" : ""}`} />
-              {t("rooms.availability.recheck")}
-            </Button>
-          )}
-        </div>
-        <Button type="button" variant="danger" size="compact" onClick={() => setConfirming(true)}>
-          <Trash2 aria-hidden className="size-4" />
-          {t("rooms.delete.action")}
-        </Button>
-      </footer>
     </div>
+  );
+}
+
+function columns(participants: number) {
+  if (participants === 1) return "grid-cols-1";
+  return participants <= 4 ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1 sm:grid-cols-2 xl:grid-cols-3";
+}
+
+type ControlProps = { label: string; danger?: boolean; disabled?: boolean; onClick: () => void; children: ReactNode };
+
+function ControlButton({ label, danger = false, disabled, onClick, children }: ControlProps) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      disabled={disabled}
+      onClick={onClick}
+      className={`grid size-12 cursor-pointer place-items-center rounded-xl border transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:cursor-not-allowed disabled:opacity-60 ${danger ? "border-error bg-error text-surface hover:bg-error/85" : "border-line bg-raised text-ink hover:bg-hi"}`}
+    >
+      {children}
+    </button>
   );
 }
 
