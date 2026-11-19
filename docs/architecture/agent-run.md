@@ -481,7 +481,7 @@ No temporary flow is added. The credential mechanism the core already has is use
 
 - **CI:** always `wiremock`; never real keys or APIs.
 - **Optional real tests:** `#[ignore]` tests that read the key from an environment variable (`MEELTING_ANTHROPIC_API_KEY`, `MEELTING_OPENAI_API_KEY`, `MEELTING_GROQ_API_KEY`) and call the adapter directly. They do not touch the keychain or the app.
-- **Manual test in the app:** save the key in Settings › AI providers with `pnpm tauri dev`; it is verified with a minimal request before it is stored ([agent-execution.md](../product/agent-execution.md#api-keys)).
+- **Manual test in the app:** save the key in the AI providers screen (sidebar rail) with `pnpm tauri dev`; it is verified with a minimal request before it is stored ([agent-execution.md](../product/agent-execution.md#api-keys)).
 - **Nothing in the core logs the key**: no logs, events or errors (§11).
 - Without a key, a cloud agent fails with `provider_not_configured` and local ones work the same.
 

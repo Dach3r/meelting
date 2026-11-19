@@ -10,14 +10,14 @@ type Props = {
 export function LocalProviderRow({ name, detecting, models }: Props) {
   const { locale, t } = useI18n();
   const label = detecting
-    ? t("settings.providers.local.detecting")
+    ? t("providers.local.detecting")
     : models === null
-      ? t("settings.providers.local.stopped")
+      ? t("providers.local.stopped")
       : models.length === 0
-        ? t("settings.providers.local.noModels")
+        ? t("providers.local.noModels")
         : models.length === 1
-          ? t("settings.providers.local.runningOne")
-          : translateWith(locale, "settings.providers.local.running", {
+          ? t("providers.local.runningOne")
+          : translateWith(locale, "providers.local.running", {
               count: models.length,
             });
   return (

@@ -20,7 +20,7 @@ Early development, **Phase 3** in progress. Working today:
 - Rooms with participants and a persistent chat. Agents join and leave a room like in a real meeting, and hanging up finishes it while keeping the history.
 - Agent runs: «Ask» in the room composer streams an agent's answer live, with retries, cancellation and per-provider concurrency slots. Adapters for Anthropic Messages, OpenAI Responses and Chat Completions (Groq, Ollama, LM Studio).
 - Text-directed conversation: the recipient is resolved from the selection, `@` mentions or a leading vocative, and ambiguity asks you before anything is saved.
-- AI providers in Settings: API keys for Anthropic, OpenAI and Groq are verified before they are saved in the OS keychain, separately per workspace; Ollama and LM Studio are detected on this computer.
+- AI providers screen in the sidebar: API keys for Anthropic, OpenAI and Groq are verified before they are saved in the OS keychain, separately per workspace; Ollama and LM Studio are detected on this computer.
 - Spike: a command in a fresh `git worktree` with live PTY output.
 - CI on macOS, Windows and Linux.
 

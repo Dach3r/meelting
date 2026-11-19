@@ -176,10 +176,6 @@
       "appearance": {
         "title": "Appearance",
         "description": "How Meelting looks."
-      },
-      "providers": {
-        "title": "AI providers",
-        "description": "Connect the models your agents use in the cloud and on this computer."
       }
     },
     "language": {
@@ -202,59 +198,61 @@
       "description": "Show a brief animation when entering or leaving a room and when switching workspaces.",
       "on": "On",
       "off": "Off"
+    }
+  },
+  "providers": {
+    "title": "AI providers",
+    "description": "Connect the models your agents use in the cloud and on this computer.",
+    "cloud": {
+      "title": "In the cloud",
+      "description": "Each key is verified before it is saved and is stored in the system keychain, for this workspace only.",
+      "summary": "{count} of {total} configured"
     },
-    "providers": {
-      "cloud": {
-        "title": "In the cloud",
-        "description": "Each key is verified before it is saved and is stored in the system keychain, for this workspace only.",
-        "summary": "{count} of {total} configured"
-      },
-      "local": {
-        "title": "On this computer",
-        "description": "Ollama and LM Studio need no key: Meelting looks for them at their usual address and they work offline.",
-        "detectAgain": "Detect again",
-        "detecting": "Detecting…",
-        "stopped": "Not running",
-        "noModels": "Running, no models installed",
-        "runningOne": "Running · 1 model",
-        "running": "Running · {count} models"
-      },
-      "status": {
-        "notConfigured": "Not configured",
-        "configured": "Configured · ····{lastFour}",
-        "connected": "Connected · ····{lastFour}",
-        "offline": "No internet connection",
-        "busy": "{provider} is not responding",
-        "rejected": "Key rejected"
-      },
-      "actions": {
-        "add": "Add key",
-        "replace": "Replace",
-        "check": "Check connection",
-        "checking": "Checking…",
-        "delete": "Delete",
-        "cancel": "Cancel",
-        "save": "Verify and save",
-        "verifying": "Verifying…"
-      },
-      "keyLabel": "{provider} API key",
-      "keptPrevious": "The previous key (····{lastFour}) is kept.",
-      "outcome": {
-        "offline": "Could not verify because {provider} could not be reached. Check your internet connection. The key was not saved.",
-        "provider_busy": "Could not verify because {provider} is not responding right now. The key was not saved; try again in a moment."
-      },
-      "rejected": {
-        "provider_auth_failed": "{provider} rejected the key. Check that it is complete and active.",
-        "provider_billing": "{provider} accepted the key, but the account has no balance or quota left.",
-        "model_unavailable": "The key has no access to the {provider} models Meelting uses.",
-        "provider_rejected": "{provider} rejected the verification request.",
-        "default": "{provider} did not accept the key."
-      },
-      "deleteDialog": {
-        "title": "Delete the {provider} key?",
-        "body": "Agents that use {provider} will stop replying in this workspace until you add another key. Their provider and model do not change.",
-        "confirm": "Delete key"
-      }
+    "local": {
+      "title": "On this computer",
+      "description": "Ollama and LM Studio need no key: Meelting looks for them at their usual address and they work offline.",
+      "detectAgain": "Detect again",
+      "detecting": "Detecting…",
+      "stopped": "Not running",
+      "noModels": "Running, no models installed",
+      "runningOne": "Running · 1 model",
+      "running": "Running · {count} models"
+    },
+    "status": {
+      "notConfigured": "Not configured",
+      "configured": "Configured · ····{lastFour}",
+      "connected": "Connected · ····{lastFour}",
+      "offline": "No internet connection",
+      "busy": "{provider} is not responding",
+      "rejected": "Key rejected"
+    },
+    "actions": {
+      "add": "Add key",
+      "replace": "Replace",
+      "check": "Check connection",
+      "checking": "Checking…",
+      "delete": "Delete",
+      "cancel": "Cancel",
+      "save": "Verify and save",
+      "verifying": "Verifying…"
+    },
+    "keyLabel": "{provider} API key",
+    "keptPrevious": "The previous key (····{lastFour}) is kept.",
+    "outcome": {
+      "offline": "Could not verify because {provider} could not be reached. Check your internet connection. The key was not saved.",
+      "provider_busy": "Could not verify because {provider} is not responding right now. The key was not saved; try again in a moment."
+    },
+    "rejected": {
+      "provider_auth_failed": "{provider} rejected the key. Check that it is complete and active.",
+      "provider_billing": "{provider} accepted the key, but the account has no balance or quota left.",
+      "model_unavailable": "The key has no access to the {provider} models Meelting uses.",
+      "provider_rejected": "{provider} rejected the verification request.",
+      "default": "{provider} did not accept the key."
+    },
+    "deleteDialog": {
+      "title": "Delete the {provider} key?",
+      "body": "Agents that use {provider} will stop replying in this workspace until you add another key. Their provider and model do not change.",
+      "confirm": "Delete key"
     }
   },
   "rooms": {

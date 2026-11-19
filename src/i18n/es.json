@@ -176,10 +176,6 @@
       "appearance": {
         "title": "Apariencia",
         "description": "Cómo se ve Meelting."
-      },
-      "providers": {
-        "title": "Proveedores de IA",
-        "description": "Conecta los modelos que usan tus agentes en la nube y en este equipo."
       }
     },
     "language": {
@@ -202,59 +198,61 @@
       "description": "Muestra una breve animación al entrar o salir de una sala y al cambiar de espacio de trabajo.",
       "on": "Activado",
       "off": "Desactivado"
+    }
+  },
+  "providers": {
+    "title": "Proveedores de IA",
+    "description": "Conecta los modelos que usan tus agentes en la nube y en este equipo.",
+    "cloud": {
+      "title": "En la nube",
+      "description": "Cada clave se verifica antes de guardarse y se guarda en el llavero del sistema, solo para este workspace.",
+      "summary": "{count} de {total} configurados"
     },
-    "providers": {
-      "cloud": {
-        "title": "En la nube",
-        "description": "Cada clave se verifica antes de guardarse y se guarda en el llavero del sistema, solo para este workspace.",
-        "summary": "{count} de {total} configurados"
-      },
-      "local": {
-        "title": "En este equipo",
-        "description": "Ollama y LM Studio no necesitan clave: Meelting los busca en su dirección habitual y funcionan sin internet.",
-        "detectAgain": "Volver a detectar",
-        "detecting": "Detectando…",
-        "stopped": "No está en ejecución",
-        "noModels": "En ejecución, sin modelos instalados",
-        "runningOne": "En ejecución · 1 modelo",
-        "running": "En ejecución · {count} modelos"
-      },
-      "status": {
-        "notConfigured": "Sin configurar",
-        "configured": "Configurada · ····{lastFour}",
-        "connected": "Conectado · ····{lastFour}",
-        "offline": "Sin conexión a internet",
-        "busy": "{provider} no responde",
-        "rejected": "Clave rechazada"
-      },
-      "actions": {
-        "add": "Añadir clave",
-        "replace": "Reemplazar",
-        "check": "Comprobar conexión",
-        "checking": "Comprobando…",
-        "delete": "Eliminar",
-        "cancel": "Cancelar",
-        "save": "Verificar y guardar",
-        "verifying": "Verificando…"
-      },
-      "keyLabel": "Clave de API de {provider}",
-      "keptPrevious": "Se mantiene la clave anterior (····{lastFour}).",
-      "outcome": {
-        "offline": "No se pudo verificar porque no hay conexión con {provider}. Revisa tu conexión a internet. La clave no se guardó.",
-        "provider_busy": "No se pudo verificar porque {provider} no responde ahora mismo. La clave no se guardó; inténtalo en un momento."
-      },
-      "rejected": {
-        "provider_auth_failed": "{provider} rechazó la clave. Revisa que esté completa y activa.",
-        "provider_billing": "{provider} aceptó la clave, pero la cuenta no tiene saldo o cuota disponible.",
-        "model_unavailable": "La clave no tiene acceso a los modelos de {provider} que usa Meelting.",
-        "provider_rejected": "{provider} rechazó la solicitud de verificación.",
-        "default": "{provider} no aceptó la clave."
-      },
-      "deleteDialog": {
-        "title": "¿Eliminar la clave de {provider}?",
-        "body": "Los agentes que usan {provider} dejarán de responder en este workspace hasta que añadas otra clave. Su proveedor y su modelo no cambian.",
-        "confirm": "Eliminar clave"
-      }
+    "local": {
+      "title": "En este equipo",
+      "description": "Ollama y LM Studio no necesitan clave: Meelting los busca en su dirección habitual y funcionan sin internet.",
+      "detectAgain": "Volver a detectar",
+      "detecting": "Detectando…",
+      "stopped": "No está en ejecución",
+      "noModels": "En ejecución, sin modelos instalados",
+      "runningOne": "En ejecución · 1 modelo",
+      "running": "En ejecución · {count} modelos"
+    },
+    "status": {
+      "notConfigured": "Sin configurar",
+      "configured": "Configurada · ····{lastFour}",
+      "connected": "Conectado · ····{lastFour}",
+      "offline": "Sin conexión a internet",
+      "busy": "{provider} no responde",
+      "rejected": "Clave rechazada"
+    },
+    "actions": {
+      "add": "Añadir clave",
+      "replace": "Reemplazar",
+      "check": "Comprobar conexión",
+      "checking": "Comprobando…",
+      "delete": "Eliminar",
+      "cancel": "Cancelar",
+      "save": "Verificar y guardar",
+      "verifying": "Verificando…"
+    },
+    "keyLabel": "Clave de API de {provider}",
+    "keptPrevious": "Se mantiene la clave anterior (····{lastFour}).",
+    "outcome": {
+      "offline": "No se pudo verificar porque no hay conexión con {provider}. Revisa tu conexión a internet. La clave no se guardó.",
+      "provider_busy": "No se pudo verificar porque {provider} no responde ahora mismo. La clave no se guardó; inténtalo en un momento."
+    },
+    "rejected": {
+      "provider_auth_failed": "{provider} rechazó la clave. Revisa que esté completa y activa.",
+      "provider_billing": "{provider} aceptó la clave, pero la cuenta no tiene saldo o cuota disponible.",
+      "model_unavailable": "La clave no tiene acceso a los modelos de {provider} que usa Meelting.",
+      "provider_rejected": "{provider} rechazó la solicitud de verificación.",
+      "default": "{provider} no aceptó la clave."
+    },
+    "deleteDialog": {
+      "title": "¿Eliminar la clave de {provider}?",
+      "body": "Los agentes que usan {provider} dejarán de responder en este workspace hasta que añadas otra clave. Su proveedor y su modelo no cambian.",
+      "confirm": "Eliminar clave"
     }
   },
   "rooms": {

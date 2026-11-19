@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ProviderKeyStatus } from "../../hooks/useProviderKeys";
 import { I18nProvider } from "../../i18n/I18nProvider";
-import { ProvidersSettings } from "./ProvidersSettings";
+import { ProvidersPage } from "./ProvidersPage";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 
@@ -44,10 +44,10 @@ function mockCore(handlers: Handlers = {}) {
   });
 }
 
-function renderSettings() {
+function renderPage() {
   return render(
     <I18nProvider locale="en">
-      <ProvidersSettings />
+      <ProvidersPage />
     </I18nProvider>,
   );
 }
@@ -59,9 +59,7 @@ function row(name: string) {
 async function typeKey(name: string, key: string) {
   const user = userEvent.setup();
   const scope = within(row(name) as HTMLElement);
-  await user.click(
-    scope.getByRole("button", { name: /add key|replace/i }),
-  );
+  await user.click(scope.getByRole("button", { name: /add key|replace/i }));
   const field = scope.getByLabelText(`${name} API key`);
   await user.type(field, key);
   await user.click(scope.getByRole("button", { name: "Verify and save" }));
@@ -81,14 +79,18 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe("ProvidersSettings", () => {
+describe("ProvidersPage", () => {
   it("shows configured, missing and offline cloud keys and the local runtimes", async () => {
     mockCore();
-    renderSettings();
+    renderPage();
 
     expect(await screen.findByText("2 of 3 configured")).toBeInTheDocument();
-    expect(within(row("Anthropic") as HTMLElement).getByText("Not configured"))
-      .toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { level: 1, name: "AI providers" }),
+    ).toBeInTheDocument();
+    expect(
+      within(row("Anthropic") as HTMLElement).getByText("Not configured"),
+    ).toBeInTheDocument();
     expect(screen.getByText("Configured · ····abcd")).toBeInTheDocument();
     expect(screen.getByText("No internet connection")).toBeInTheDocument();
     expect(await screen.findByText("Running · 2 models")).toBeInTheDocument();
@@ -101,19 +103,21 @@ describe("ProvidersSettings", () => {
       return { verification: { status: "verified" }, last_four: "4321" };
     });
     mockCore({ save_provider_key: saved });
-    renderSettings();
+    renderPage();
     await screen.findByText("2 of 3 configured");
 
     await typeKey("Anthropic", SECRET);
 
     expect(saved).toHaveBeenCalledWith({ provider: "anthropic", key: SECRET });
     expect(await screen.findByText("Connected · ····4321")).toBeInTheDocument();
-    expect(screen.queryByLabelText("Anthropic API key")).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText("Anthropic API key"),
+    ).not.toBeInTheDocument();
   });
 
   it("uses a password field that the browser does not remember or correct", async () => {
     mockCore();
-    renderSettings();
+    renderPage();
     await screen.findByText("2 of 3 configured");
     const user = userEvent.setup();
 
@@ -137,7 +141,7 @@ describe("ProvidersSettings", () => {
       }),
     });
     const setItem = vi.spyOn(Storage.prototype, "setItem");
-    renderSettings();
+    renderPage();
     await screen.findByText("2 of 3 configured");
 
     const { field } = await typeKey("OpenAI", SECRET);
@@ -162,7 +166,7 @@ describe("ProvidersSettings", () => {
         last_four: null,
       }),
     });
-    renderSettings();
+    renderPage();
     await screen.findByText("2 of 3 configured");
 
     const { user, scope } = await typeKey("Anthropic", SECRET);
@@ -188,7 +192,7 @@ describe("ProvidersSettings", () => {
         throw "keychain_unavailable";
       },
     });
-    renderSettings();
+    renderPage();
     await screen.findByText("2 of 3 configured");
 
     await typeKey("Anthropic", SECRET);
@@ -207,7 +211,7 @@ describe("ProvidersSettings", () => {
       last_four: "abcd",
     }));
     mockCore({ check_provider_key: check });
-    renderSettings();
+    renderPage();
     await screen.findByText("2 of 3 configured");
     const user = userEvent.setup();
 
@@ -234,7 +238,7 @@ describe("ProvidersSettings", () => {
       ),
     );
     mockCore({ delete_provider_key: deleted });
-    renderSettings();
+    renderPage();
     await screen.findByText("2 of 3 configured");
     const user = userEvent.setup();
 

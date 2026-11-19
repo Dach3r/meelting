@@ -82,7 +82,7 @@
 ## API keys
 
 - Stored in the OS keychain under the service `meelting` and the name `<workspace_id>/<provider>`, so each workspace has its own keys. There is no table: whether a provider is configured is read from the keychain (D26).
-- Managed in **Settings › AI providers** («Proveedores de IA»):
+- Managed in the **AI providers** screen («Proveedores de IA»), its own item in the sidebar rail:
   - **In the cloud** (Anthropic, OpenAI, Groq): summary "N of 3 configured" and one row per provider with "Add key", or, once configured, "Check connection", "Replace" and "Delete". Adding or replacing expands a password field (no autocomplete or spell check) with "Verify and save"; the field is emptied after every attempt.
   - **On this computer** (Ollama, LM Studio): read only. They need no key; the row shows whether the runtime is running at the catalog address and how many models it has, with "Detect again". Their URL is not editable.
 - **Verification before saving:** a minimal request (fixed instruction, first model of the provider in the catalog, `max_output_tokens: 16`) to the catalog's `base_url`, through the same adapter the engine uses. The UI cannot choose the URL. Result:

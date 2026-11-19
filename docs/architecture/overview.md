@@ -213,7 +213,7 @@ The Linux webview is the least predictable: it is tested in CI from Phase 0.
 | `agent_picker`, `agent_wizard`, `llm_model` | `AgentPicker`, hiring wizard, `ModelSelect` |
 | `confirm`, `modal`, `drawer`, `disclosure`, `sidebar`, `toast`, `password_visibility` | Equivalent components |
 
-Screens: teams (org chart), hire and edit agents, catalog, rooms (list, detail, new), settings (AI providers built) (profile, language, workspace, Docker, shell, local provider), tasks and task detail with terminal and diff. Rules: empty states, errors and confirmations always present; never show what is not built as available.
+Screens: teams (org chart), hire and edit agents, catalog, rooms (list, detail, new), AI providers (built), settings (profile, language, workspace, Docker, shell, local provider), tasks and task detail with terminal and diff. Rules: empty states, errors and confirmations always present; never show what is not built as available.
 
 ## 9. Internationalization
 

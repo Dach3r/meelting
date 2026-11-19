@@ -171,7 +171,7 @@ src/
 └── components/            Atomic design (overview.md §8)
     ├── atoms/             Avatar, Button, CardSelect, Field, Icons, Logo
     ├── molecules/         AgentPicker, AgentRunStatus, AgentTemplateDetail, Alert, ChatMessage, EnginePicker, InviteAgentsForm, IslandMenu, LocalProviderRow, LocaleSwitcher, MentionSuggestions, MessageComposer, Modal, NavItem, OrgAgentCard, OrgCard, OrgDrawer, OrgNode, ParticipantTile, ProviderKeyRow, RoomCard, RoomForm, SegmentedControl, SettingsRow, TransitionOverlay, TeamForm, TeamPicker, ThemeSwitcher, UiScaleSwitcher, WorkspaceSwitcher, ZoomControls; agentLabel.ts omits the role when it repeats the name; mentionDraft.ts detects the mention in progress, filters agents by name or role and inserts the chosen one
-    ├── organisms/         AgentCatalogPage, AgentEditForm, AgentForm, NewWorkspacePage, OrgChart, ProvidersPage, ProvidersSettings, Rail, RoomChat, RoomView, RoomsPage, SettingsPage, TeamsPage, Topbar; authorName.ts resolves a message's author among present agents and those who left
+    ├── organisms/         AgentCatalogPage, AgentEditForm, AgentForm, NewWorkspacePage, OrgChart, ProvidersPage, Rail, RoomChat, RoomView, RoomsPage, SettingsPage, TeamsPage, Topbar; authorName.ts resolves a message's author among present agents and those who left
     └── templates/         Workspace (rail + topbar + content)
 ```
 
@@ -181,7 +181,7 @@ src/
 | `hooks/` | The only place that calls `invoke` or `listen`. One hook per use case, named `use<Verb><Object>` |
 | `App.tsx` | Composes organisms or templates; no logic |
 
-Vitest tests live next to the code (`App.test.tsx`, `translate.test.ts`, `RoomsPage.test.tsx`, `RoomView.test.tsx`, `ProvidersSettings.test.tsx`, `agentRunState.test.ts`). The `run_in_worktree` spike keeps its command and service in the core with no screen; its interface arrives with Phase 4. The `stream_completion` spike was removed when the `AgentRun` adapters arrived.
+Vitest tests live next to the code (`App.test.tsx`, `translate.test.ts`, `RoomsPage.test.tsx`, `RoomView.test.tsx`, `ProvidersPage.test.tsx`, `agentRunState.test.ts`). The `run_in_worktree` spike keeps its command and service in the core with no screen; its interface arrives with Phase 4. The `stream_completion` spike was removed when the `AgentRun` adapters arrived.
 
 ## Where to put new things
 

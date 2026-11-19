@@ -41,41 +41,41 @@ export function ProviderKeyRow({
 
   function describe(verification: Verification) {
     if (verification.status === "rejected") {
-      const key = `settings.providers.rejected.${verification.reason}`;
+      const key = `providers.rejected.${verification.reason}`;
       const known = translateWith(locale, key, values) !== key;
       return translateWith(
         locale,
-        known ? key : "settings.providers.rejected.default",
+        known ? key : "providers.rejected.default",
         values,
       );
     }
     return translateWith(
       locale,
-      `settings.providers.outcome.${verification.status}`,
+      `providers.outcome.${verification.status}`,
       values,
     );
   }
 
   function presentation(): [Tone, string] {
     if (status.last_four === null)
-      return ["neutral", t("settings.providers.status.notConfigured")];
+      return ["neutral", t("providers.status.notConfigured")];
     if (check?.status === "verified")
       return [
         "ok",
-        translateWith(locale, "settings.providers.status.connected", values),
+        translateWith(locale, "providers.status.connected", values),
       ];
     if (check?.status === "rejected")
-      return ["problem", t("settings.providers.status.rejected")];
+      return ["problem", t("providers.status.rejected")];
     if (check?.status === "offline" || status.offline)
-      return ["problem", t("settings.providers.status.offline")];
+      return ["problem", t("providers.status.offline")];
     if (check?.status === "provider_busy")
       return [
         "problem",
-        translateWith(locale, "settings.providers.status.busy", values),
+        translateWith(locale, "providers.status.busy", values),
       ];
     return [
       "neutral",
-      translateWith(locale, "settings.providers.status.configured", values),
+      translateWith(locale, "providers.status.configured", values),
     ];
   }
 
@@ -99,7 +99,7 @@ export function ProviderKeyRow({
       close();
     } else {
       const kept = result.last_four
-        ? ` ${translateWith(locale, "settings.providers.keptPrevious", { lastFour: result.last_four })}`
+        ? ` ${translateWith(locale, "providers.keptPrevious", { lastFour: result.last_four })}`
         : "";
       setMessage(`${describe(result.verification)}${kept}`);
     }
@@ -142,8 +142,8 @@ export function ProviderKeyRow({
                   onClick={runCheck}
                 >
                   {pending === "check"
-                    ? t("settings.providers.actions.checking")
-                    : t("settings.providers.actions.check")}
+                    ? t("providers.actions.checking")
+                    : t("providers.actions.check")}
                 </Button>
                 <Button
                   variant="ghost"
@@ -151,7 +151,7 @@ export function ProviderKeyRow({
                   disabled={pending !== null}
                   onClick={() => setEditing(true)}
                 >
-                  {t("settings.providers.actions.replace")}
+                  {t("providers.actions.replace")}
                 </Button>
                 <Button
                   variant="danger"
@@ -159,12 +159,12 @@ export function ProviderKeyRow({
                   disabled={pending !== null}
                   onClick={onDelete}
                 >
-                  {t("settings.providers.actions.delete")}
+                  {t("providers.actions.delete")}
                 </Button>
               </>
             ) : (
               <Button size="compact" onClick={() => setEditing(true)}>
-                {t("settings.providers.actions.add")}
+                {t("providers.actions.add")}
               </Button>
             )}
           </div>
@@ -174,7 +174,7 @@ export function ProviderKeyRow({
       {editing && (
         <form onSubmit={submit} className="flex flex-col gap-3">
           <Field
-            label={translateWith(locale, "settings.providers.keyLabel", values)}
+            label={translateWith(locale, "providers.keyLabel", values)}
             value={draft}
             onChange={setDraft}
             type="password"
@@ -195,7 +195,7 @@ export function ProviderKeyRow({
               disabled={pending !== null}
               onClick={close}
             >
-              {t("settings.providers.actions.cancel")}
+              {t("providers.actions.cancel")}
             </Button>
             <Button
               type="submit"
@@ -203,8 +203,8 @@ export function ProviderKeyRow({
               disabled={pending !== null || draft.trim() === ""}
             >
               {pending === "save"
-                ? t("settings.providers.actions.verifying")
-                : t("settings.providers.actions.save")}
+                ? t("providers.actions.verifying")
+                : t("providers.actions.save")}
             </Button>
           </div>
         </form>
