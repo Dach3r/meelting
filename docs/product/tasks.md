@@ -1,6 +1,6 @@
 # Tasks and worktrees (Phase 4)
 
-> **Status:** product decisions approved (D27–D48 in [decisions.md](decisions.md)). Phase 4A (repositories, tasks, agent assignment, creation from rooms) is built and verified. Phase 4B (Git environments) is **implemented** and verified on macOS and Ubuntu, but **not yet verified on Windows** (see [§7.1](#71-verification-evidence)). 4C (review, drift warnings and E2E) is approved in scope but not started. Platforms: macOS, Windows and Linux.
+> **Status:** product decisions approved (D27–D48 in [decisions.md](decisions.md)). Phase 4A (repositories, tasks, agent assignment, creation from rooms) is built and verified. Phase 4B (Git environments) is **implemented and verified within the scope tested** on macOS, Ubuntu and Windows (Rust tests), with limits recorded in [§7.1](#71-verification-evidence): no E2E, no real-storage check on runners, no real process-kill test, and a pipeline that is not fully green. 4C (review, drift warnings and E2E) is approved in scope but not started. Platforms: macOS, Windows and Linux.
 >
 > In this document ✅ means *implemented*. What has been *verified*, and on which platform, is recorded only in §7.1.
 
@@ -327,38 +327,47 @@ File and Git operations are tested with real temporary repositories, including u
 
 Implemented (✅ above) is not the same as verified. Evidence is dated and tied to a commit.
 
-**Rust tests of 4B.** Last CI run of the repository, on `a55329d` (2026-11-19):
+**Phase 4B is verified within the scope tested below.** The scope is the Rust tests of 4B on macOS, Ubuntu and Windows plus the frontend checks. It does not cover the points listed under *Not verified*.
+
+**Rust tests.** CI run `44577671082` (2026-11-19, manual dispatch on branch `fix/4b-windows-verification`, commit `76cb3a3`):
 
 | Platform | Result | 4B tests |
 |---|---|---|
 | macOS | 504 passed, 0 failed, 4 ignored | all pass |
 | Ubuntu | 504 passed, 0 failed, 4 ignored | all pass |
-| Windows | 496 passed, **5 failed**, 4 ignored | **3 fail** (below) |
+| Windows | 499 passed, **2 failed**, 4 ignored | all pass; the 2 failures are outside 4B (below) |
 
-The same three 4B tests fail on Windows in the earlier runs on `4e3401b` and `3d56dbd`.
+Lint passes (`pnpm build`, frontend tests with 12 files and 200 tests, `cargo fmt --check` and `cargo clippy --all-targets -- -D warnings`). Bundles for Ubuntu and Windows pass; the macOS bundle fails (below).
 
-| Windows failure (4B) | Diagnosis |
-|---|---|
-| `worktree_prepare::tests::interrupted_preparations_are_recovered_or_marked_failed_without_deleting` | The fixture root was not stripped of the `\\?\` prefix that `canonicalize` adds on Windows, and Git rejects it: `could not create leading directories of '//?/C:/…'` |
-| `worktree_prepare::tests::prepares_a_worktree_from_the_exact_commit_without_touching_the_repository` | Same fixture root: `worktree.path` is stripped by the implementation and the fixture is not, so `starts_with` fails. The assertions before it passed; the later ones (`HEAD`, original repository untouched) did not run |
-| `system::safe_file::tests::opens_regular_files_below_the_root` | Opening a folder on Windows fails with access denied and surfaces as an I/O error instead of «not a regular file». The outcome of a copy is the same (the file is refused) |
+**Windows failures of 4B that are now fixed.** On the previous run (`a55329d`: 496 passed, 5 failed) three 4B tests failed. Commit `76cb3a3` fixes them and they pass in run `44577671082`, together with the other worktree, trash, purge, removal, recovery and file-copy tests on Windows:
 
-Windows preparation and recovery therefore have **no passing evidence yet**. These failures are open until a CI run on Windows passes them.
+| Test | Cause | Fix |
+|---|---|---|
+| `worktree_prepare::tests::interrupted_preparations_are_recovered_or_marked_failed_without_deleting` | The test fixture root kept the `\\?\` prefix that `canonicalize` adds on Windows, and Git rejects it | The fixture root removes the prefix like the implementation does |
+| `worktree_prepare::tests::prepares_a_worktree_from_the_exact_commit_without_touching_the_repository` | Same fixture root: `worktree.path` is stripped by the implementation, the fixture was not | Same fixture change; the later assertions now run and pass |
+| `system::safe_file::tests::opens_regular_files_below_the_root` | Opening a folder on Windows fails with access denied and surfaced as an I/O error | `safe_file` classifies a folder refused by the OS as «not a regular file». It runs only after the open was refused, so the checks on the opened handle are unchanged |
 
-**Other failures, outside 4B and not addressed here:**
+**Failures outside 4B, still open and not addressed here:**
 
-- Windows and (once, on `4e3401b`) macOS: `intervention_send::tests::failed_or_cancelled_replies_do_not_change_the_proposal` (`ProviderAuthFailed` instead of `Cancelled`).
+- Windows (and once, on `4e3401b`, macOS): `intervention_send::tests::failed_or_cancelled_replies_do_not_change_the_proposal` (`ProviderAuthFailed` instead of `Cancelled`).
 - Windows: `llm_stream::tests::a_refused_connection_is_an_unreachable_provider` (`Timeout` instead of `ProviderUnavailable`).
-- Bundle (macOS): `failed to run actool … Icon.icon`. Bundles for Ubuntu and Windows pass.
+- Bundle (macOS): `failed to run actool … Icon.icon`.
 
-**Frontend.** `pnpm test` and `pnpm build` ran locally with an x64 Node 26.3.0 matching the installed native bindings (the default Node on that machine is arm64 and cannot load them): 12 files and 200 tests passed, the build passed. One earlier run of the same suite failed `RoomsPage.test.tsx` once (`scrolls to the new message…`), so that test is flaky. CI uses Node 22: the local and CI Node versions differ and the environments are not claimed to be equivalent. CI runs the frontend checks on Ubuntu only.
+The pipeline as a whole is therefore **not green**: the Windows test job and the macOS bundle still fail.
 
-**Not verified at all:** Linux and Windows end-to-end flows (no E2E harness exists), the real fixed-storage check (BR-12) on CI runners (the Rust tests inject a permissive checker), and interrupted operations on a real process kill (only simulated).
+**Frontend.** CI (Node 22, Ubuntu): 12 files and 200 tests pass and the build passes. Locally the same commands ran with an x64 Node 26.3.0 matching the installed native bindings (the default Node on that machine is arm64 and cannot load them) with the same results; the versions differ, so the environments are not claimed to be equivalent. `RoomsPage.test.tsx` (`scrolls to the new message…`) failed once in one local run, so it is flaky. CI runs the frontend checks on Ubuntu only.
+
+**Not verified:**
+
+- End-to-end flows on Linux and Windows (no E2E harness exists) and the macOS manual checklist (AC29).
+- The real fixed-storage check (BR-12) on CI runners: the Rust tests inject a permissive checker.
+- Interrupted operations on a real process kill: recovery is only simulated.
+- Base branch drift (BR-07, AC14) and every 4C capability, which are not built.
 
 ## 8. Delivery
 
 - **4A — Domain, repositories and tasks:** migrations `repositories`, `tasks`, `task_agents`; repository registration; task CRUD with statuses, priorities and several agents; creation from rooms; tests.
-- **4B — Git environments ✅ (implemented; Windows verification pending, §7.1):** root setting, storage checks, preparation, base commit, file copies, technical states, concurrency, recovery, safe removal. Step 1 removed the Phase 0 `run_in_worktree` spike (arbitrary shell command in a PTY), `terminal.rs` and `portable-pty` (D27).
+- **4B — Git environments ✅ (implemented; verified within the scope tested, §7.1):** root setting, storage checks, preparation, base commit, file copies, technical states, concurrency, recovery, safe removal. Step 1 removed the Phase 0 `run_in_worktree` spike (arbitrary shell command in a PTY), `terminal.rs` and `portable-pty` (D27).
 - **4C — Review and interface:** environment detail, Git status, read-only diff, drift warnings (BR-07, AC14), error and recovery screens, E2E on Linux and Windows.
 
 ## 9. Out of scope
