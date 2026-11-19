@@ -211,9 +211,8 @@ export function useEnvironmentReview(taskId: string, enabled: boolean) {
       return;
     }
     setExpanded((current) => [...current, entry.id]);
-    if (!review || folders[entry.id]?.phase) {
-      if (folders[entry.id]?.phase !== "error") return;
-    }
+    const known = folders[entry.id]?.phase;
+    if (!review || known === "ready" || known === "loading") return;
     const id = session.current;
     setFolders((current) => ({ ...current, [entry.id]: { phase: "loading" } }));
     invoke<FolderListing>("list_task_environment_folder", {
