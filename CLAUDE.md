@@ -47,7 +47,7 @@ Check the real code before assuming a feature exists.
 - **Migrations** (when built): `sqlx migrate`, one `create_table` per file, named `create_<table>`; other changes get their own `add_<column>_to_<table>` file. Never edit a committed migration.
 - **Code comments**: do not write them. Keep code self-explanatory.
 - **Secrets**: never commit `.env` or keys (use `.env.example` for new variables).
-- **Docs**: a behavior change updates its document in `docs/` in the same commit. Docs are in Spanish; this file is in English.
+- **Docs**: a behavior change updates its document in `docs/` in the same commit. **Every file in `docs/` is written in English**, like this file; when you touch a doc still in Spanish, translate it to English in the same change. Spanish appears only as quoted UI copy or locale examples.
 
 ## Tests
 

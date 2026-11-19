@@ -67,7 +67,7 @@ pnpm build          # type-checks and builds the frontend
 ```
 src/         React frontend: components (atomic design) and hooks that talk to the core
 src-tauri/   Rust core: commands → services → system (OS integration)
-docs/        Product and architecture documentation (in Spanish)
+docs/        Product and architecture documentation (in English)
 ```
 
 Details and rules for placing new code are in [project structure](docs/architecture/project-structure.md). The wider design is in the [architecture overview](docs/architecture/overview.md) and the [product docs](docs/product/README.md).
