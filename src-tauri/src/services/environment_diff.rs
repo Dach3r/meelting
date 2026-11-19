@@ -204,7 +204,7 @@ mod tests {
                 env.write("README.md", "edited again with a different size\n");
             }),
             ("the index rewritten by an external tool", |env| {
-                env.git(&["update-index", "--chmod=+x", "README.md"]);
+                env.git(&["rm", "--cached", "-q", "README.md"]);
             }),
         ];
         for (name, change) in changes {

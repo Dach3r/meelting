@@ -694,12 +694,19 @@ pub mod tests {
     #[tokio::test]
     async fn an_executable_filter_used_by_the_base_commit_refuses_the_review() {
         let fixture = fixture().await;
-        std::fs::write(fixture.repo.join(".gitattributes"), "*.md filter=lfs\n").unwrap();
+        std::fs::write(
+            fixture.repo.join(".gitattributes"),
+            "*.md filter=meeltingprobe\n",
+        )
+        .unwrap();
         git(&fixture.repo, &["add", ".gitattributes"]);
         git(&fixture.repo, &["commit", "-m", "attributes"]);
         let task = task(&fixture, "Filtered", "main").await;
         prepare(&fixture, &task).await;
-        git(&fixture.repo, &["config", "filter.lfs.clean", "cat"]);
+        git(
+            &fixture.repo,
+            &["config", "filter.meeltingprobe.clean", "cat"],
+        );
         let registry = ReviewRegistry::default();
 
         let outcome = run(&fixture.pool, &fixture.locks, &registry, &task.id, local).await;
