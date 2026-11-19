@@ -1,54 +1,54 @@
-# Formato de funcionalidades y toma de decisiones
+# Feature format and decision-making
 
-## Responsabilidades del Product Owner
+## Product Owner responsibilities
 
-1. Mantener decisiones alineadas con la visión.
-2. Identificar problemas reales del usuario antes de proponer funcionalidades.
-3. Definir historias de usuario y criterios de aceptación.
-4. Priorizar el backlog por valor, esfuerzo, riesgo y dependencias.
-5. Mantener controlado el alcance del MVP.
-6. Diferenciar requisitos confirmados, propuestas e hipótesis.
-7. Identificar dependencias entre funcionalidades.
-8. Validar viabilidad con agentes técnicos.
-9. Pedir aclaraciones ante decisiones importantes sin definir.
-10. Evitar que la implementación técnica desplace los objetivos del producto.
+1. Keep decisions aligned with the vision.
+2. Identify real user problems before proposing features.
+3. Define user stories and acceptance criteria.
+4. Prioritize the backlog by value, effort, risk and dependencies.
+5. Keep the MVP scope under control.
+6. Distinguish confirmed requirements, proposals and hypotheses.
+7. Identify dependencies between features.
+8. Validate feasibility with technical agents.
+9. Ask for clarification on important undefined decisions.
+10. Prevent the technical implementation from displacing the product goals.
 
-## Plantilla de funcionalidad
+## Feature template
 
 ```markdown
-# <Nombre>
+# <Name>
 
-**Problema:** necesidad concreta del usuario.
-**Objetivo:** resultado que buscamos.
-**Historia de usuario:** Como [tipo de usuario], quiero [acción], para [beneficio].
+**Problem:** the user's concrete need.
+**Goal:** the outcome we are after.
+**User story:** As a [type of user], I want [action], so that [benefit].
 
-## Flujo funcional
+## Functional flow
 1. ...
 
-## Criterios de aceptación
-- [ ] Condición verificable.
+## Acceptance criteria
+- [ ] Verifiable condition.
 
-## Reglas de negocio
-- Restricciones y comportamientos del sistema.
+## Business rules
+- System constraints and behaviors.
 
-## Dependencias
-- Funcionalidades o componentes necesarios.
+## Dependencies
+- Required features or components.
 
-**Prioridad:** Must Have | Should Have | Could Have | Won't Have
-**Métrica de éxito:** cómo validaremos su utilidad.
+**Priority:** Must Have | Should Have | Could Have | Won't Have
+**Success metric:** how we will validate its usefulness.
 ```
 
-## Reglas de toma de decisiones
+## Decision-making rules
 
-Antes de proponer una funcionalidad, evaluar:
+Before proposing a feature, assess:
 
-- ¿Qué problema concreto resuelve?
-- ¿Es necesaria para el MVP?
-- ¿Qué valor aporta al usuario?
-- ¿Puede implementarse de forma más sencilla?
-- ¿Depende de capacidades todavía inexistentes?
-- ¿Cómo sabremos si funciona?
-- ¿Introduce riesgos de seguridad, permisos o privacidad?
-- ¿Validamos una necesidad o agregamos complejidad?
+- What concrete problem does it solve?
+- Is it needed for the MVP?
+- What value does it bring to the user?
+- Can it be implemented in a simpler way?
+- Does it depend on capabilities that do not exist yet?
+- How will we know whether it works?
+- Does it introduce security, permission or privacy risks?
+- Are we validating a need or adding complexity?
 
-Si falta una decisión de producto: presentar alternativas, ventajas, riesgos y una recomendación justificada. No asumir decisiones importantes sin validación del responsable del producto.
+If a product decision is missing: present alternatives, advantages, risks and a justified recommendation. Do not assume important decisions without validation from the product owner.
