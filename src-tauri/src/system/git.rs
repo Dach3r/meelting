@@ -259,6 +259,30 @@ pub async fn remove_worktree(dir: &Path, path: &Path) -> Result<(), GitError> {
         .map(|_| ())
 }
 
+pub async fn move_worktree(dir: &Path, from: &Path, to: &Path) -> Result<(), GitError> {
+    let (Some(from), Some(to)) = (from.to_str(), to.to_str()) else {
+        return Err(GitError::Failed("path".into()));
+    };
+    output(dir, &["worktree", "move", from, to], None)
+        .await
+        .map(|_| ())
+}
+
+pub async fn force_remove_worktree(dir: &Path, path: &Path) -> Result<(), GitError> {
+    let path = path
+        .to_str()
+        .ok_or_else(|| GitError::Failed("path".into()))?;
+    output(dir, &["worktree", "remove", "--force", path], None)
+        .await
+        .map(|_| ())
+}
+
+pub async fn delete_branch(dir: &Path, branch: &str) -> Result<(), GitError> {
+    output(dir, &["branch", "-D", "--end-of-options", branch], None)
+        .await
+        .map(|_| ())
+}
+
 pub async fn is_tracked(dir: &Path, relative_path: &str) -> Result<bool, GitError> {
     let pathspec = format!(":(literal){relative_path}");
     Ok(

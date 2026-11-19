@@ -11,7 +11,10 @@ use crate::services::agent_run_engine::Engine;
 use crate::services::agent_runs_expire;
 use crate::services::file_copy::CopySelections;
 use crate::services::repository_locks::RepositoryLocks;
-use crate::services::worktrees_reconcile;
+use crate::services::{worktree_purge, worktrees_reconcile};
+use crate::system::storage;
+use sqlx::SqlitePool;
+use std::time::Duration;
 use tauri::Manager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -44,6 +47,15 @@ pub fn run() {
                 emit,
             ));
             app.manage(pool);
+            let handle = app.handle().clone();
+            tauri::async_runtime::spawn(async move {
+                loop {
+                    let pool = handle.state::<SqlitePool>();
+                    let locks = handle.state::<RepositoryLocks>();
+                    let _ = worktree_purge::expired(&pool, &locks, storage::check).await;
+                    tokio::time::sleep(Duration::from_secs(3600)).await;
+                }
+            });
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -93,6 +105,10 @@ pub fn run() {
             commands::worktrees::remove_task_environment,
             commands::worktrees::pick_task_environment_files,
             commands::worktrees::copy_task_environment_files,
+            commands::worktrees::list_task_environments,
+            commands::worktrees::trash_task_environments,
+            commands::worktrees::restore_task_environments,
+            commands::worktrees::purge_task_environments,
             commands::tasks::list_tasks,
             commands::tasks::create_task,
             commands::tasks::update_task,

@@ -107,6 +107,14 @@ pub enum SessionError {
     EnvironmentOperationInProgress,
     #[error("environment_remove_refused")]
     EnvironmentRemoveRefused,
+    #[error("environment_in_trash")]
+    EnvironmentInTrash,
+    #[error("environment_not_in_trash")]
+    EnvironmentNotInTrash,
+    #[error("environment_move_refused")]
+    EnvironmentMoveRefused,
+    #[error("environment_branch_not_deleted")]
+    EnvironmentBranchNotDeleted,
     #[error("copy_too_large")]
     CopyTooLarge,
     #[error("copy_selection_expired")]

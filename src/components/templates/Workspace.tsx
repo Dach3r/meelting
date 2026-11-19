@@ -14,6 +14,7 @@ import {
   transitionMs,
 } from "../molecules/TransitionOverlay";
 import { AgentCatalogPage } from "../organisms/AgentCatalogPage";
+import { EnvironmentsPage } from "../organisms/EnvironmentsPage";
 import { ProvidersPage } from "../organisms/ProvidersPage";
 import { Rail, type View } from "../organisms/Rail";
 import { RoomsPage } from "../organisms/RoomsPage";
@@ -151,6 +152,11 @@ export function Workspace({
                   onChangeTheme={onChangeTheme}
                   onChangeUiScale={onChangeUiScale}
                   onChangeLoadingEnabled={onChangeLoadingEnabled}
+                />
+              ) : view === "files" || view === "trash" ? (
+                <EnvironmentsPage
+                  key={`${props.currentId}:${view}`}
+                  mode={view}
                 />
               ) : view === "providers" ? (
                 <ProvidersPage />

@@ -44,6 +44,7 @@ export function TaskEnvironment({
   const [removal, setRemoval] = useState<RemovalCheck | null>(null);
   const [preview, setPreview] = useState<CopyPreview | null>(null);
   const worktree = task.worktree;
+  const usable = worktree?.status === "ready" && !worktree.trashed_at;
 
   async function askRemoval() {
     setRemoval(await onCheckRemoval());
@@ -68,7 +69,9 @@ export function TaskEnvironment({
           <span
             className={`rounded-full border px-2.5 py-0.5 text-xs font-semibold ${worktree.status === "ready" ? "border-ink text-ink" : worktree.status === "failed" || worktree.status === "missing" ? "border-error text-error" : "border-line text-muted"}`}
           >
-            {t(`tasks.environment.status.${worktree.status}`)}
+            {worktree.trashed_at
+              ? t("tasks.environment.inTrash")
+              : t(`tasks.environment.status.${worktree.status}`)}
           </span>
         )}
       </header>
@@ -114,7 +117,12 @@ export function TaskEnvironment({
           </Detail>
         </dl>
       )}
-      {worktree?.status === "ready" && worktree.copies.length > 0 && (
+      {worktree?.trashed_at && (
+        <p className="text-sm text-muted">
+          {t("tasks.environment.inTrashHelp")}
+        </p>
+      )}
+      {usable && worktree && worktree.copies.length > 0 && (
         <div className="grid gap-2">
           <h3 className="text-xs font-medium text-muted">
             {t("tasks.environment.copy.copied")}
@@ -135,7 +143,7 @@ export function TaskEnvironment({
           </p>
         </div>
       )}
-      {worktree?.status === "ready" && (
+      {usable && (
         <div className="flex flex-wrap gap-2">
           <Button
             type="button"
@@ -253,7 +261,9 @@ function RemovalDialog({
                       className="flex min-w-0 items-center gap-3 border-b border-line/60 px-4 py-2 text-sm last:border-b-0"
                     >
                       <span className="shrink-0 text-xs font-semibold text-muted">
-                        {t(`tasks.environment.removeDialog.kinds.${change.kind}`)}
+                        {t(
+                          `tasks.environment.removeDialog.kinds.${change.kind}`,
+                        )}
                       </span>
                       <code className="min-w-0 truncate" title={change.path}>
                         {change.path}

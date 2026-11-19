@@ -134,7 +134,9 @@ describe("creating tasks", () => {
     const options = within(dialog).getByRole("listbox");
     await user.click(within(options).getByText("Ana"));
     await user.click(within(options).getByText("Bob"));
-    await user.click(within(dialog).getByRole("button", { name: "Create task" }));
+    await user.click(
+      within(dialog).getByRole("button", { name: "Create task" }),
+    );
 
     expect(create).toHaveBeenCalledWith({
       draft: {
@@ -176,7 +178,9 @@ describe("creating tasks", () => {
     const base = within(dialog).getByLabelText("Base branch");
     await waitFor(() => expect(base).toHaveValue("main"));
     await user.selectOptions(base, "develop");
-    await user.click(within(dialog).getByRole("button", { name: "Create task" }));
+    await user.click(
+      within(dialog).getByRole("button", { name: "Create task" }),
+    );
 
     expect(create).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -202,7 +206,9 @@ describe("creating tasks", () => {
     await user.click(await screen.findByRole("button", { name: "New task" }));
     const dialog = await screen.findByRole("dialog", { name: "New task" });
     await user.type(within(dialog).getByLabelText("Title"), "Plan");
-    await user.click(within(dialog).getByRole("button", { name: "Create task" }));
+    await user.click(
+      within(dialog).getByRole("button", { name: "Create task" }),
+    );
 
     expect(await within(dialog).findByRole("alert")).toHaveTextContent(
       "That agent no longer exists.",
@@ -234,9 +240,7 @@ describe("task detail", () => {
     renderPage();
 
     await user.click(await screen.findByRole("button", { name: /Plan/ }));
-    expect(
-      screen.getByText("A message in room «Daily»"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("A message in room «Daily»")).toBeInTheDocument();
     const actions = screen.getByRole("navigation", { name: "Change status" });
     expect(
       within(actions)
@@ -445,7 +449,9 @@ describe("task environment", () => {
     renderPage();
 
     await user.click(await screen.findByRole("button", { name: /Login/ }));
-    expect(screen.getByText(/no longer where Meelting created it/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/no longer where Meelting created it/),
+    ).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Discard" }));
 
     expect(discard).toHaveBeenCalledWith({ taskId: "t1" });
@@ -468,9 +474,36 @@ describe("removing an environment", () => {
       status: "ready",
       error_code: null,
       copies: [],
+      trash_path: null,
+      trashed_at: null,
       created_at: "2026-11-25T10:00:00.000Z",
       updated_at: "2026-11-25T10:00:00.000Z",
     },
+  });
+
+  it("shows a trashed environment without its actions", async () => {
+    const user = userEvent.setup();
+    core({
+      list_tasks: () => [
+        {
+          ...ready,
+          worktree: {
+            ...ready.worktree!,
+            trash_path: "/w/.trash/login",
+            trashed_at: "2026-11-26T10:00:00.000Z",
+          },
+        },
+      ],
+      list_repositories: () => [app],
+    });
+    renderPage();
+
+    await user.click(await screen.findByRole("button", { name: /Login/ }));
+
+    expect(screen.getByText("In the trash")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Remove environment" }),
+    ).not.toBeInTheDocument();
   });
 
   it("lists the files that would be lost and keeps the environment", async () => {
@@ -560,6 +593,8 @@ describe("copying local files", () => {
       status: "ready",
       error_code: null,
       copies: [],
+      trash_path: null,
+      trashed_at: null,
       created_at: "2026-11-25T10:00:00.000Z",
       updated_at: "2026-11-25T10:00:00.000Z",
     },

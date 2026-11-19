@@ -26,6 +26,8 @@ export type Worktree = {
   status: WorktreeStatus;
   error_code: string | null;
   copies: { relative_path: string; size_bytes: number; copied_at: string }[];
+  trash_path: string | null;
+  trashed_at: string | null;
   created_at: string;
   updated_at: string;
 };

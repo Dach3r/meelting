@@ -97,8 +97,30 @@ pub struct Worktree {
     pub status: WorktreeStatus,
     pub error_code: Option<WorktreeErrorCode>,
     pub copies: Vec<crate::domain::file_copy::FileCopy>,
+    pub trash_path: Option<String>,
+    pub trashed_at: Option<String>,
     pub created_at: String,
     pub updated_at: String,
+}
+
+impl Worktree {
+    pub fn location(&self) -> &str {
+        self.trash_path.as_deref().unwrap_or(&self.path)
+    }
+}
+
+pub const TRASH_DAYS: u32 = 30;
+
+pub fn trash_folder(path: &Path) -> Option<PathBuf> {
+    Some(path.parent()?.join(".trash").join(path.file_name()?))
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct Environment {
+    pub task_id: String,
+    pub task_title: String,
+    pub repository_name: String,
+    pub worktree: Worktree,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -273,6 +295,17 @@ mod tests {
             simplified(PathBuf::from("/Users/ana")),
             PathBuf::from("/Users/ana")
         );
+    }
+
+    #[test]
+    fn trashes_into_a_hidden_sibling_folder_on_the_same_volume() {
+        assert_eq!(
+            trash_folder(Path::new("/w/my-app--aabbccddeeff/fix-login-5c6d7e8f9a0b")),
+            Some(PathBuf::from(
+                "/w/my-app--aabbccddeeff/.trash/fix-login-5c6d7e8f9a0b"
+            ))
+        );
+        assert_eq!(trash_folder(Path::new("/")), None);
     }
 
     #[test]

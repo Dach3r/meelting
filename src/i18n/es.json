@@ -58,7 +58,11 @@
     "environment_remove_refused": "Git se negó a eliminar el entorno, así que se conservó.",
     "copy_too_large": "Los archivos seleccionados suman más de 50 MiB. Elige menos archivos.",
     "copy_selection_expired": "Esa selección ya no es válida. Vuelve a elegir los archivos.",
-    "secrets_not_confirmed": "Confirma que quieres copiar archivos que pueden contener secretos."
+    "secrets_not_confirmed": "Confirma que quieres copiar archivos que pueden contener secretos.",
+    "environment_in_trash": "Este entorno está en la papelera. Restáuralo desde la Papelera para usarlo.",
+    "environment_not_in_trash": "Este entorno no está en la papelera.",
+    "environment_move_refused": "Git no pudo mover la carpeta del entorno. No se cambió nada.",
+    "environment_branch_not_deleted": "El entorno se eliminó, pero Git no pudo borrar su rama."
   },
   "newWorkspace": {
     "title": "Crea tu workspace",
@@ -183,7 +187,9 @@
       "activity": "Actividad",
       "integrations": "Integraciones",
       "providers": "Proveedores IA",
-      "settings": "Configuración"
+      "settings": "Configuración",
+      "files": "Archivos",
+      "trash": "Papelera"
     },
     "topbar": {
       "search": "Buscar en el workspace"
@@ -588,8 +594,39 @@
         },
         "copied": "Archivos copiados",
         "copiedHint": "Estos archivos se quedan en el entorno y bloquean su eliminación hasta que los borres."
-      }
+      },
+      "inTrash": "En la papelera",
+      "inTrashHelp": "Este entorno está en la papelera. Restáuralo desde la Papelera para seguir trabajando con él."
     },
     "environmentReady": "Entorno listo"
+  },
+  "files": {
+    "title": "Archivos",
+    "description": "Entornos de trabajo (worktrees) de las tareas de este workspace. Los que mandes a la papelera se eliminan por completo a los 30 días.",
+    "empty": "Todavía no hay entornos. Prepara uno desde una tarea.",
+    "selectAll": "Seleccionar todo",
+    "trash": "Mover a la papelera ({count})",
+    "trashAll": "Vaciar todo",
+    "cancel": "Cancelar",
+    "failed": "No se pudieron procesar {count}:",
+    "trashDialog": {
+      "title": "¿Mover {count} a la papelera?",
+      "body": "Las carpetas, con sus cambios y archivos locales, se mueven a la papelera. Puedes restaurarlas durante 30 días; después se eliminan por completo junto con su rama.",
+      "confirm": "Mover a la papelera"
+    }
+  },
+  "trash": {
+    "title": "Papelera",
+    "description": "Los entornos se eliminan por completo 30 días después de entrar a la papelera.",
+    "empty": "La papelera está vacía.",
+    "restore": "Restaurar ({count})",
+    "purge": "Eliminar definitivamente ({count})",
+    "emptyTrash": "Vaciar papelera",
+    "daysLeft": "Se elimina en {days} días",
+    "purgeDialog": {
+      "title": "¿Eliminar {count} definitivamente?",
+      "body": "Se borran la carpeta, los cambios sin commitear, los archivos locales (como .env) y la rama con todos sus commits. No se puede deshacer.",
+      "confirm": "Eliminar definitivamente"
+    }
   }
 }

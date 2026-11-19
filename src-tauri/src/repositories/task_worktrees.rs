@@ -1,8 +1,8 @@
-use crate::domain::worktree::{Worktree, WorktreeErrorCode, WorktreeStatus};
+use crate::domain::worktree::{Environment, Worktree, WorktreeErrorCode, WorktreeStatus};
 use sqlx::SqliteExecutor;
 
-const COLUMNS: &str =
-    "id, path, branch_name, base_ref, base_commit_sha, status, error_code, created_at, updated_at";
+const COLUMNS: &str = "id, path, branch_name, base_ref, base_commit_sha, status, error_code, \
+     trash_path, trashed_at, created_at, updated_at";
 const NOW: &str = "strftime('%Y-%m-%dT%H:%M:%fZ', 'now')";
 
 #[derive(sqlx::FromRow)]
@@ -15,6 +15,8 @@ struct Row {
     base_commit_sha: String,
     status: String,
     error_code: Option<String>,
+    trash_path: Option<String>,
+    trashed_at: Option<String>,
     created_at: String,
     updated_at: String,
 }
@@ -38,6 +40,8 @@ fn to_worktree(row: Row) -> Result<(String, Worktree), sqlx::Error> {
         base_ref: row.base_ref,
         base_commit_sha: row.base_commit_sha,
         copies: Vec::new(),
+        trash_path: row.trash_path,
+        trashed_at: row.trashed_at,
         created_at: row.created_at,
         updated_at: row.updated_at,
     };
@@ -86,6 +90,71 @@ pub async fn transient<'e>(
     .fetch_all(executor)
     .await?;
     rows.into_iter().map(to_worktree).collect()
+}
+
+pub async fn environments_in_workspace<'e>(
+    executor: impl SqliteExecutor<'e>,
+    workspace_id: &str,
+) -> Result<Vec<Environment>, sqlx::Error> {
+    #[derive(sqlx::FromRow)]
+    struct Named {
+        #[sqlx(flatten)]
+        row: Row,
+        task_title: String,
+        repository_name: String,
+    }
+    let rows: Vec<Named> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
+        "SELECT {COLUMNS}, task_id AS owner_id, \
+         (SELECT title FROM tasks WHERE tasks.id = task_worktrees.task_id) AS task_title, \
+         (SELECT name FROM repositories WHERE repositories.id = task_worktrees.repository_id) AS repository_name \
+         FROM task_worktrees WHERE workspace_id = ? AND status <> 'removed' ORDER BY created_at DESC, id DESC"
+    )))
+    .bind(workspace_id)
+    .fetch_all(executor)
+    .await?;
+    rows.into_iter()
+        .map(|named| {
+            let (task_id, worktree) = to_worktree(named.row)?;
+            Ok(Environment {
+                task_id,
+                task_title: named.task_title,
+                repository_name: named.repository_name,
+                worktree,
+            })
+        })
+        .collect()
+}
+
+pub async fn expired_trash<'e>(
+    executor: impl SqliteExecutor<'e>,
+    days: u32,
+) -> Result<Vec<(String, Worktree)>, sqlx::Error> {
+    let rows: Vec<Row> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
+        "SELECT {COLUMNS}, repository_id AS owner_id FROM task_worktrees \
+         WHERE status <> 'removed' AND trashed_at IS NOT NULL \
+         AND trashed_at <= strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-' || ? || ' days')"
+    )))
+    .bind(days)
+    .fetch_all(executor)
+    .await?;
+    rows.into_iter().map(to_worktree).collect()
+}
+
+pub async fn set_trash<'e>(
+    executor: impl SqliteExecutor<'e>,
+    id: &str,
+    trash_path: Option<&str>,
+) -> Result<bool, sqlx::Error> {
+    let result = sqlx::query(sqlx::AssertSqlSafe(format!(
+        "UPDATE task_worktrees SET trash_path = ?1, \
+         trashed_at = CASE WHEN ?1 IS NULL THEN NULL ELSE {NOW} END, updated_at = {NOW} \
+         WHERE id = ?2 AND status = 'ready'"
+    )))
+    .bind(trash_path)
+    .bind(id)
+    .execute(executor)
+    .await?;
+    Ok(result.rows_affected() > 0)
 }
 
 pub async fn has_history<'e>(

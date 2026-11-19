@@ -89,6 +89,8 @@ Migrations `add_id_repository_id_index_to_tasks` (unique `tasks (id, repository_
 | `error_code` | `TEXT` | Nullable; 1–64 characters of `a-z` and `_`; required when `failed`, allowed only when `failed` or `removed` (a discarded failure keeps its reason); the list of codes is a Rust enum |
 | `created_at`, `updated_at` | `TEXT` | `NOT NULL`; `updated_at >= created_at` |
 | `removed_at` | `TEXT` | Set if and only if `removed`; `>= created_at` |
+| `trashed_at` | `TEXT` | Nullable; when the environment entered the trash (migration `add_trashed_at_to_task_worktrees`) |
+| `trash_path` | `TEXT` | Nullable, unique when set (index `task_worktrees_trash_path`); current folder inside `.trash/`; set if and only if `trashed_at` is (migration `add_trash_path_to_task_worktrees`) |
 
 Indexes: unique partial `task_worktrees_active_task_id (task_id) WHERE status <> 'removed'` (at most one active environment per task), `(task_id, repository_id)` and `(repository_id, workspace_id)` for the foreign keys.
 
@@ -250,6 +252,14 @@ A `ready` environment whose `HEAD` moved or whose branch was switched stays `rea
 - **Not a sandbox:** a worktree shares the repository's object store and configuration. No project script, dependency or tool runs in Phase 4.
 - **Tauri commands:** the main window can invoke every registered command (Tauri 2 default without an app manifest). An explicit allow-list was evaluated and is recommended as a separate hardening change (see [overview.md](../architecture/overview.md) §7).
 
+### BR-16. Files view and trash (D49)
+
+**Files** (rail) lists the active environments of the workspace with their task, repository, branch, folder and status. Several `ready` environments can be selected, or all at once («Empty all»), and moved to the **Trash** after confirming. Moving checks identity and storage like removal (BR-10 steps 1–2) under the repository lock and runs `git worktree move` into `<repository folder>/.trash/<folder>`; uncommitted changes, ignored and copied files go with it. The row stays `ready` with `trash_path` and `trashed_at` set, cannot be used (copies and removal answer `environment_in_trash`) and still counts as the task's active environment.
+
+**Trash** (rail, above «Collapse») lists the trashed environments with the days left. **Restore** moves the folder back to its original path (`worktree_path_conflict` if something is there). **Delete permanently** and **Empty trash** ask for confirmation and then run `git worktree remove --force` and `git branch -D` of the `meelting/…` branch: uncommitted changes, local files and commits only in that branch are lost. The same deletion runs on its own 30 days after `trashed_at`, at startup and every hour while the app is open, in every workspace. A `failed` or `missing` trashed environment is only marked `removed` once it is gone. Batch actions go on after a failure and report each failed task with its error code.
+
+Recovery (BR-14) follows a move that Git did but SQLite did not record: a `ready` or `missing` row that is not intact where it is stored but is intact on the other side of the trash is updated to its real location.
+
 ### Deletion rules (D30–D33)
 
 | Entity | Rule |
@@ -266,6 +276,7 @@ A task can change its repository only while it has never had a worktree; once it
 - **Tasks** (rail): list with filters by status, repository and agent; priority; environment indicator (4B); «New task». Repositories are managed from the same screen.
 - **Task form** (shared by Tasks and rooms): title, description, priority, optional repository, base branch when there is one, multi-agent picker.
 - **Task detail:** information (description, status, priority, agents, origin) with the allowed status actions, edit and delete; **Environment** (4B) and **Changes** (4C).
+- **Files** and **Trash** (rail; Trash above «Collapse»): see BR-16.
 - **Settings › Environments** (4B): configured folder, native picker, validation state, effect on new worktrees only.
 
 ## 6. State machines
@@ -282,7 +293,7 @@ A task can change its repository only while it has never had a worktree; once it
 
 ### Worktrees (4B ✅)
 
-`preparing → ready | failed`; `ready → missing | removing`; `missing → ready` (found again) or `removed` (discarded once gone); `failed → removed` (discarded once gone); `removing → removed`, `ready` (Git refused) or `failed` (interrupted). Every transition is a guarded update (`WHERE id = ? AND status = ?`). A second active environment is never created to fix an error without reconciling the previous one. A worktree state never changes the task status.
+`preparing → ready | failed`; `ready → missing | removing`; `ready` (in the trash, BR-16) `→ removing` on purge; `missing → ready` (found again) or `removed` (discarded once gone); `failed → removed` (discarded once gone); `removing → removed`, `ready` (Git refused) or `failed` (interrupted). Every transition is a guarded update (`WHERE id = ? AND status = ?`). A second active environment is never created to fix an error without reconciling the previous one. A worktree state never changes the task status.
 
 ## 7. Acceptance criteria
 
@@ -314,4 +325,4 @@ File and Git operations are tested with real temporary repositories, including u
 
 ## 9. Out of scope
 
-Autonomous tool execution, R2 coordination, cloning remote repositories, automatic commits, merges, pushes or rebases, installing dependencies, setup scripts, Docker or process sandboxes, several active worktrees per task, moving environments between folders, automatic copy or reuse of local files, forced removal of worktrees or branches, advanced Git LFS and submodule support.
+Autonomous tool execution, R2 coordination, cloning remote repositories, automatic commits, merges, pushes or rebases, installing dependencies, setup scripts, Docker or process sandboxes, several active worktrees per task, moving environments between folders, automatic copy or reuse of local files, forced removal of worktrees or branches outside the trash (BR-16), advanced Git LFS and submodule support.

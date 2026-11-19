@@ -24,6 +24,9 @@ pub async fn ready_environment(
         .worktree
         .filter(|worktree| worktree.status == WorktreeStatus::Ready)
         .ok_or(SessionError::EnvironmentNotFound)?;
+    if worktree.trashed_at.is_some() {
+        return Err(SessionError::EnvironmentInTrash);
+    }
     let repository_id = task
         .repository_id
         .ok_or(SessionError::EnvironmentNotFound)?;
@@ -33,13 +36,13 @@ pub async fn ready_environment(
     Ok((workspace_id, worktree, repository))
 }
 
-async fn inspect(
+pub async fn verify_identity(
     repository: &RepositoryIdentity,
     worktree: &Worktree,
     check_storage: &impl AsyncFn(&Path) -> Result<(), StorageIssue>,
-) -> Result<RemovalCheck, SessionError> {
+) -> Result<(), SessionError> {
     check_repository(repository, check_storage).await?;
-    let path = Path::new(&worktree.path);
+    let path = Path::new(worktree.location());
     check_storage(path).await?;
     let entry = intact(repository, worktree)
         .await
@@ -50,6 +53,16 @@ async fn inspect(
     {
         return Err(SessionError::EnvironmentIdentityMismatch);
     }
+    Ok(())
+}
+
+async fn inspect(
+    repository: &RepositoryIdentity,
+    worktree: &Worktree,
+    check_storage: &impl AsyncFn(&Path) -> Result<(), StorageIssue>,
+) -> Result<RemovalCheck, SessionError> {
+    verify_identity(repository, worktree, check_storage).await?;
+    let path = Path::new(&worktree.path);
     let changes = parse_status(&git::status(path).await.map_err(git_error)?);
     let mut operation_in_progress = false;
     for marker in IN_PROGRESS_MARKERS {

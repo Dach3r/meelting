@@ -1,12 +1,14 @@
 use crate::commands::dialog;
 use crate::domain::file_copy::CopyPreview;
 use crate::domain::task::Task;
-use crate::domain::worktree::{RemovalCheck, WorktreesRoot};
+use crate::domain::worktree::{Environment, RemovalCheck, WorktreesRoot};
 use crate::services::file_copy::{self, CopyReport, CopySelections};
 use crate::services::repository_locks::RepositoryLocks;
 use crate::services::session_load::SessionError;
+use crate::services::worktree_trash::{self, EnvironmentFailure};
 use crate::services::{
-    worktree_discard, worktree_prepare, worktree_remove, worktrees_root_change, worktrees_root_get,
+    environments_list, worktree_discard, worktree_prepare, worktree_purge, worktree_remove,
+    worktrees_root_change, worktrees_root_get,
 };
 use crate::system::storage;
 use sqlx::SqlitePool;
@@ -100,4 +102,38 @@ pub async fn copy_task_environment_files(
         storage::check,
     )
     .await
+}
+
+#[tauri::command]
+pub async fn list_task_environments(
+    pool: State<'_, SqlitePool>,
+) -> Result<Vec<Environment>, SessionError> {
+    environments_list::run(&pool).await
+}
+
+#[tauri::command]
+pub async fn trash_task_environments(
+    pool: State<'_, SqlitePool>,
+    locks: State<'_, RepositoryLocks>,
+    task_ids: Vec<String>,
+) -> Result<Vec<EnvironmentFailure>, SessionError> {
+    Ok(worktree_trash::trash(&pool, &locks, &task_ids, storage::check).await)
+}
+
+#[tauri::command]
+pub async fn restore_task_environments(
+    pool: State<'_, SqlitePool>,
+    locks: State<'_, RepositoryLocks>,
+    task_ids: Vec<String>,
+) -> Result<Vec<EnvironmentFailure>, SessionError> {
+    Ok(worktree_trash::restore(&pool, &locks, &task_ids, storage::check).await)
+}
+
+#[tauri::command]
+pub async fn purge_task_environments(
+    pool: State<'_, SqlitePool>,
+    locks: State<'_, RepositoryLocks>,
+    task_ids: Vec<String>,
+) -> Result<Vec<EnvironmentFailure>, SessionError> {
+    Ok(worktree_purge::run(&pool, &locks, &task_ids, storage::check).await)
 }

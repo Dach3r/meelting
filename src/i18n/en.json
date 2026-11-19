@@ -58,7 +58,11 @@
     "environment_remove_refused": "Git refused to remove the environment, so it was kept.",
     "copy_too_large": "The selected files add up to more than 50 MiB. Pick fewer files.",
     "copy_selection_expired": "That selection is no longer valid. Pick the files again.",
-    "secrets_not_confirmed": "Confirm that you want to copy files that may hold secrets."
+    "secrets_not_confirmed": "Confirm that you want to copy files that may hold secrets.",
+    "environment_in_trash": "This environment is in the trash. Restore it from the Trash to use it.",
+    "environment_not_in_trash": "This environment is not in the trash.",
+    "environment_move_refused": "Git could not move the environment folder. Nothing was changed.",
+    "environment_branch_not_deleted": "The environment was deleted, but Git could not delete its branch."
   },
   "newWorkspace": {
     "title": "Create your workspace",
@@ -183,7 +187,9 @@
       "activity": "Activity",
       "integrations": "Integrations",
       "providers": "AI providers",
-      "settings": "Settings"
+      "settings": "Settings",
+      "files": "Files",
+      "trash": "Trash"
     },
     "topbar": {
       "search": "Search the workspace"
@@ -588,8 +594,39 @@
         },
         "copied": "Copied files",
         "copiedHint": "These files stay in the environment and block its removal until you delete them."
-      }
+      },
+      "inTrash": "In the trash",
+      "inTrashHelp": "This environment is in the trash. Restore it from the Trash to keep working with it."
     },
     "environmentReady": "Environment ready"
+  },
+  "files": {
+    "title": "Files",
+    "description": "Working environments (worktrees) of this workspace's tasks. Environments sent to the trash are deleted completely after 30 days.",
+    "empty": "There are no environments yet. Prepare one from a task.",
+    "selectAll": "Select all",
+    "trash": "Move to trash ({count})",
+    "trashAll": "Empty all",
+    "cancel": "Cancel",
+    "failed": "{count} could not be processed:",
+    "trashDialog": {
+      "title": "Move {count} to the trash?",
+      "body": "The folders, with their changes and local files, are moved to the trash. You can restore them for 30 days; after that they are deleted completely together with their branch.",
+      "confirm": "Move to trash"
+    }
+  },
+  "trash": {
+    "title": "Trash",
+    "description": "Environments are deleted completely 30 days after entering the trash.",
+    "empty": "The trash is empty.",
+    "restore": "Restore ({count})",
+    "purge": "Delete permanently ({count})",
+    "emptyTrash": "Empty trash",
+    "daysLeft": "Deleted in {days} days",
+    "purgeDialog": {
+      "title": "Delete {count} permanently?",
+      "body": "This deletes the folder, uncommitted changes, local files (such as .env) and the branch with all its commits. It cannot be undone.",
+      "confirm": "Delete permanently"
+    }
   }
 }
