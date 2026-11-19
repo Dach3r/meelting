@@ -419,9 +419,17 @@ describe("inside a room", () => {
     await user.click(screen.getByLabelText("Message"));
     await user.tab({ shift: true });
     expect(screen.getByRole("combobox", { name: "Ask" })).toHaveFocus();
+    const list = screen.getByRole("list", { name: "Messages" });
+    const taskButtons = within(list).getAllByRole("button", {
+      name: "Turn into task",
+    });
+    for (const button of [...taskButtons].reverse()) {
+      await user.tab({ shift: true });
+      expect(button).toHaveFocus();
+    }
     await user.tab({ shift: true });
 
-    expect(screen.getByRole("list", { name: "Messages" })).toHaveFocus();
+    expect(list).toHaveFocus();
   });
 
   it("adds messages of this room that arrive as events and ignores other rooms", async () => {

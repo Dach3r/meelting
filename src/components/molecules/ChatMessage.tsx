@@ -1,3 +1,4 @@
+import { ListPlus } from "lucide-react";
 import { useI18n } from "../../i18n/I18nProvider";
 import { formatDateTime, formatTime } from "../../i18n/translate";
 import type { Message } from "../../hooks/useRooms";
@@ -7,14 +8,16 @@ export function ChatMessage({
   message,
   author,
   footer,
+  onCreateTask,
 }: {
   message: Message;
   author: string;
   footer?: string;
+  onCreateTask: () => void;
 }) {
-  const { locale } = useI18n();
+  const { t, locale } = useI18n();
   return (
-    <li className="flex min-w-0 gap-3">
+    <li className="group/message flex min-w-0 gap-3">
       <Avatar
         seed={author}
         label={author}
@@ -32,6 +35,15 @@ export function ChatMessage({
           >
             {formatTime(locale, message.created_at)}
           </time>
+          <button
+            type="button"
+            aria-label={t("tasks.fromMessage")}
+            title={t("tasks.fromMessage")}
+            onClick={onCreateTask}
+            className="ml-auto grid size-6 shrink-0 cursor-pointer place-items-center rounded-md text-muted opacity-0 transition-opacity group-hover/message:opacity-100 hover:bg-hi hover:text-ink focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-ink"
+          >
+            <ListPlus aria-hidden className="size-4" />
+          </button>
         </p>
         <p className="text-sm whitespace-pre-wrap break-words text-ink select-text">
           {message.body}

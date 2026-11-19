@@ -27,6 +27,7 @@ type Props = {
   errorMessage: string | null;
   onSend: (draft: Draft) => Promise<SendResult>;
   onCancel: (runId: string) => void;
+  onCreateTask: (message: Message) => void;
 };
 
 export function RoomChat({
@@ -40,6 +41,7 @@ export function RoomChat({
   errorMessage,
   onSend,
   onCancel,
+  onCreateTask,
 }: Props) {
   const { t, locale } = useI18n();
   const end = useRef<HTMLLIElement>(null);
@@ -100,6 +102,7 @@ export function RoomChat({
                   message={message}
                   author={authorName(t, knownAgents, message)}
                   footer={footer(message)}
+                  onCreateTask={() => onCreateTask(message)}
                 />
                 {run && (
                   <AgentRunStatus

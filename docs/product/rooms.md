@@ -66,7 +66,8 @@
 | Conversation with `AgentRun` | ✅ Built (Phase 3) | Responses from an agent chosen in "Ask", with streaming and cancellation | [agent-execution.md](agent-execution.md) |
 | Directed and multi-agent conversation | Proposed (R1–R2) | Mentions, recipient per intervention, "Team", bounded discussions, in-memory meeting session | [voice-meetings.md](voice-meetings.md) |
 | Voice | Proposed (R3–R5) | Per-agent voice, push-to-talk, subtitles | [voice-meetings.md](voice-meetings.md), [voice-engine.md](../architecture/voice-engine.md) |
-| Real work | Planned (Phases 4–5, R6) | Worktree tasks linked to the room (`tasks.room_id`), screen sharing with real terminal and diff. Messages remain conversation only | [agent-execution.md](agent-execution.md#tools-and-approvals) |
+| Tasks from the room | ✅ Built (Phase 4A) | «Create task» in the call controls and «Turn into task» on a message open the task form; the task keeps the room and message as its origin (`tasks.origin_room_id`, `tasks.origin_message_id`). Agents may suggest tasks but only the user creates them | [tasks.md](tasks.md) |
+| Real work | Planned (Phases 4B–5, R6) | Worktrees for those tasks, screen sharing with real terminal and diff. Messages remain conversation only | [agent-execution.md](agent-execution.md#tools-and-approvals) |
 
 **Related decisions:** agents join and leave with a soft exit (D24); the room has no goal column and the prompt uses its name (D11); agent responses do not have the 4000-character limit (D10). See [decisions.md](decisions.md).
 

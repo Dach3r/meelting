@@ -1,6 +1,6 @@
 # Project structure
 
-> **Status:** Phases 0–3 complete; Phase 4A (repositories, tasks with several agents) built. Only the modules listed here as "✅" exist. Whatever is marked "pending" is the **planned** location; the folder is not created until there is code that uses it (no dead code).
+> **Status:** Phases 0–3 complete; Phase 4A (repositories, tasks with several agents, creation from rooms) built. Only the modules listed here as "✅" exist. Whatever is marked "pending" is the **planned** location; the folder is not created until there is code that uses it (no dead code).
 
 Layer rules and conventions: [overview.md](overview.md) §3 and §5.
 
@@ -189,7 +189,7 @@ src/
 └── components/            Atomic design (overview.md §8)
     ├── atoms/             Avatar, Button, CardSelect, Field, Icons, Logo, Select (native select with label), SelectField
     ├── molecules/         AgentPicker, AgentRunStatus, AgentTemplateDetail, Alert, ChatMessage, EnginePicker, InviteAgentsForm, IslandMenu, LocalProviderRow, LocaleSwitcher, MentionSuggestions, MessageComposer, Modal, NavItem, OrgAgentCard, OrgCard, OrgDrawer, OrgNode, ParticipantTile, ProviderKeyRow, RepositoryList, RoomCard, RoomForm, TaskBadges, TaskCard, TaskForm, SegmentedControl, SettingsRow, TransitionOverlay, TeamForm, TeamPicker, ThemeSwitcher, UiScaleSwitcher, WorkspaceSwitcher, ZoomControls; agentLabel.ts omits the role when it repeats the name; mentionDraft.ts detects the mention in progress, filters agents by name or role and inserts the chosen one
-    ├── organisms/         AgentCatalogPage, AgentEditForm, AgentForm, NewWorkspacePage, OrgChart, ProvidersPage, Rail, RoomChat, RoomView, RoomsPage, SettingsPage, TaskDetail, TaskDialog (shared task form with repositories and saving), TasksPage, TeamsPage, Topbar; authorName.ts resolves a message's author among present agents and those who left
+    ├── organisms/         AgentCatalogPage, AgentEditForm, AgentForm, NewWorkspacePage, OrgChart, ProvidersPage, Rail, RoomChat, RoomView, RoomsPage, SettingsPage, TaskDetail, TaskDialog (task form with repositories and saving, shared by TasksPage and RoomView, which opens it from «Create task» and from «Turn into task» in ChatMessage), TasksPage, TeamsPage, Topbar; authorName.ts resolves a message's author among present agents and those who left
     └── templates/         Workspace (rail + topbar + content)
 ```
 

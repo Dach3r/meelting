@@ -1,6 +1,6 @@
 # Tasks and worktrees (Phase 4)
 
-> **Status:** product decisions approved (D27–D39 in [decisions.md](decisions.md)). Phase 4A (repositories, tasks, agent assignment, creation from rooms) is authorized and in progress (repositories and tasks built); 4B (worktrees) and 4C (review and E2E) are approved in scope but not started. Platforms: macOS, Windows and Linux.
+> **Status:** product decisions approved (D27–D39 in [decisions.md](decisions.md)). Phase 4A (repositories, tasks, agent assignment, creation from rooms) is built; 4B (worktrees) and 4C (review and E2E) are approved in scope but not started. Platforms: macOS, Windows and Linux.
 
 ## 1. Goal
 
@@ -98,9 +98,9 @@ Registering never runs `clone`, `init`, `pull` or writes any file. The check of 
 
 A task can be created without a repository and without agents. With a repository, the user picks the base branch among its local branches; the default branch (`origin/HEAD` when it points to an existing local branch, otherwise the current branch of the main working tree) is suggested. A task is saved as `pending`, and saving never prepares an environment.
 
-### BR-03. Creating from rooms (4A)
+### BR-03. Creating from rooms (4A ✅)
 
-Two entry points open the same task form: «Create task» in the room bar (origin: the room) and «Turn into task» on a message (origin: the room and the message, with the message prefilled as the description). Agents may suggest tasks in their replies, but only the user creates them. There is no automatic interpretation of messages.
+Two entry points open the same task form: «Create task» in the room call controls (origin: the room) and «Turn into task» on a message (origin: the room and the message, with the message prefilled as the description). Agents may suggest tasks in their replies, but only the user creates them. There is no automatic interpretation of messages.
 
 ### BR-04. Several agents (4A ✅)
 

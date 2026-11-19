@@ -1145,3 +1145,82 @@ describe("people joining and leaving", () => {
     expect(participants().getByText("Bob")).toBeInTheDocument();
   });
 });
+
+describe("creating tasks from the room", () => {
+  const created = {
+    id: "t1",
+    title: "Fix login",
+    description: "",
+    status: "pending",
+    priority: "medium",
+    repository_id: null,
+    base_ref: null,
+    origin_room_id: "r1",
+    origin_room_name: "Daily",
+    origin_message_id: null,
+    agent_ids: [],
+    completed_at: null,
+    created_at: "2026-11-24T10:00:00.000Z",
+    updated_at: "2026-11-24T10:00:00.000Z",
+  };
+
+  it("creates a task that keeps the room as its origin", async () => {
+    const create = vi.fn(() => created);
+    core({
+      get_room: () => detail(),
+      list_repositories: () => [],
+      create_task: create,
+    });
+    const user = userEvent.setup();
+    await renderRoom();
+
+    await user.click(screen.getByRole("button", { name: "Create task" }));
+    const dialog = within(screen.getByRole("dialog", { name: "New task" }));
+    await user.type(await dialog.findByLabelText("Title"), "Fix login");
+    await user.click(dialog.getByRole("button", { name: "Create task" }));
+
+    expect(create).toHaveBeenCalledWith({
+      draft: expect.objectContaining({ title: "Fix login", agent_ids: [] }),
+      origin: { room_id: "r1", message_id: null },
+    });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(invokeMock).not.toHaveBeenCalledWith(
+      "send_intervention",
+      expect.anything(),
+    );
+  });
+
+  it("turns a message into a task with its text as the description", async () => {
+    const create = vi.fn(() => ({ ...created, origin_message_id: "m1" }));
+    core({
+      get_room: () =>
+        detail({
+          messages: [
+            message("m1", "We should fix the login timeout", {
+              agent_id: "a1",
+            }),
+          ],
+        }),
+      list_repositories: () => [],
+      create_task: create,
+    });
+    const user = userEvent.setup();
+    await renderRoom();
+
+    await user.click(screen.getByRole("button", { name: "Turn into task" }));
+    const dialog = within(screen.getByRole("dialog", { name: "New task" }));
+    expect(await dialog.findByLabelText("Description")).toHaveValue(
+      "We should fix the login timeout",
+    );
+    await user.type(dialog.getByLabelText("Title"), "Fix login");
+    await user.click(dialog.getByRole("button", { name: "Create task" }));
+
+    expect(create).toHaveBeenCalledWith({
+      draft: expect.objectContaining({
+        title: "Fix login",
+        description: "We should fix the login timeout",
+      }),
+      origin: { room_id: "r1", message_id: "m1" },
+    });
+  });
+});

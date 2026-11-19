@@ -1,4 +1,10 @@
-import { ArrowLeft, PhoneOff, RefreshCw, UserPlus } from "lucide-react";
+import {
+  ArrowLeft,
+  ListPlus,
+  PhoneOff,
+  RefreshCw,
+  UserPlus,
+} from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
 import {
@@ -16,7 +22,7 @@ import {
 import type { LlmProvider } from "../../hooks/useLlmProviders";
 import { useLlmProviders } from "../../hooks/useLlmProviders";
 import { useRoom } from "../../hooks/useRoom";
-import type { Participant } from "../../hooks/useRooms";
+import type { Message, Participant } from "../../hooks/useRooms";
 import type { Agent } from "../../hooks/useTeams";
 import { Button } from "../atoms/Button";
 import { Alert } from "../molecules/Alert";
@@ -27,6 +33,7 @@ import {
   ParticipantTile,
 } from "../molecules/ParticipantTile";
 import { RoomChat } from "./RoomChat";
+import { TaskDialog } from "./TaskDialog";
 
 type Props = {
   roomId: string;
@@ -73,6 +80,9 @@ export function RoomView({
   const [inviting, setInviting] = useState(false);
   const [pendingInvite, setPendingInvite] = useState<string[] | null>(null);
   const [leaving, setLeaving] = useState<Participant | null>(null);
+  const [taskSource, setTaskSource] = useState<{
+    message: Message | null;
+  } | null>(null);
 
   function closeConfirm() {
     onClearFinishError();
@@ -214,6 +224,18 @@ export function RoomView({
           </div>
         </Modal>
       )}
+      {taskSource && (
+        <TaskDialog
+          agents={agents}
+          origin={{
+            room_id: roomId,
+            message_id: taskSource.message?.id ?? null,
+          }}
+          description={taskSource.message?.body}
+          onSaved={() => setTaskSource(null)}
+          onClose={() => setTaskSource(null)}
+        />
+      )}
       {leaving && (
         <Modal
           title={translateWith(locale, "rooms.leaveDialog.title", {
@@ -303,6 +325,12 @@ export function RoomView({
             >
               <UserPlus aria-hidden className="size-5" />
             </ControlButton>
+            <ControlButton
+              label={t("tasks.fromRoom")}
+              onClick={() => setTaskSource({ message: null })}
+            >
+              <ListPlus aria-hidden className="size-5" />
+            </ControlButton>
             {room.agents.length > 0 && (
               <ControlButton
                 label={t("rooms.availability.recheck")}
@@ -339,6 +367,7 @@ export function RoomView({
           }
           onSend={sendIntervention}
           onCancel={cancelRun}
+          onCreateTask={(message) => setTaskSource({ message })}
         />
       </div>
     </div>

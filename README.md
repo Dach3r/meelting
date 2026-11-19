@@ -12,7 +12,7 @@ Meelting is a local-first desktop app for macOS, Windows and Linux. You assemble
 
 ## Status
 
-Early development, **Phase 3** in progress. Working today:
+Early development, **Phase 4** in progress (4A done). Working today:
 
 - Tauri 2 app shell with a React frontend, in Spanish and English.
 - Local SQLite storage, first launch, workspaces and settings (language, theme, interface size and the room transition effect).
@@ -21,10 +21,11 @@ Early development, **Phase 3** in progress. Working today:
 - Agent runs: «Ask» in the room composer streams an agent's answer live, with retries, cancellation and per-provider concurrency slots. Adapters for Anthropic Messages, OpenAI Responses and Chat Completions (Groq, DeepSeek, Ollama, LM Studio).
 - Text-directed conversation: the recipient is resolved from the selection, `@` mentions or a leading vocative, and ambiguity asks you before anything is saved.
 - AI providers screen in the sidebar: API keys for Anthropic, OpenAI and Groq are verified before they are saved in the OS keychain, separately per workspace; Ollama and LM Studio are detected on this computer.
+- Tasks: register local Git repositories (read-only checks, never modified), create tasks from the Tasks screen or from a room message, with status, priority, base branch and several assigned agents.
 - Spike: a command in a fresh `git worktree` with live PTY output.
 - CI on macOS, Windows and Linux.
 
-Multi-agent coordination, voice, tasks, tools, approvals and Docker are planned and not built yet. See the [roadmap](docs/product/roadmap.md).
+Worktrees for tasks, multi-agent coordination, voice, tools, approvals and Docker are planned and not built yet. See the [roadmap](docs/product/roadmap.md).
 
 ## Tech stack
 
