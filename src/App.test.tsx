@@ -839,6 +839,7 @@ describe("workspace shell", () => {
 
     await user.click(await screen.findByRole("button", { name: "New team" }));
     await user.type(screen.getByLabelText("Team name"), "Main Website");
+    expect(screen.getByLabelText("Team name")).toHaveValue("main-website");
     await user.click(screen.getByRole("button", { name: "Create team" }));
 
     expect(invokeMock).toHaveBeenCalledWith("create_team", {

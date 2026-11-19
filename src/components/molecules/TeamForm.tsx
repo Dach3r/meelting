@@ -14,6 +14,13 @@ export function slugifyTeamName(raw: string) {
     .join("-");
 }
 
+function typedTeamName(raw: string) {
+  return raw
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, "-")
+    .replace(/^-/, "");
+}
+
 type Props = {
   busy: boolean;
   errorMessage: string | null;
@@ -72,7 +79,7 @@ export function TeamForm({ busy, errorMessage, onSubmit, onCancel }: Props) {
           <Field
             label={t("teams.teamName")}
             value={name}
-            onChange={setName}
+            onChange={(value) => setName(typedTeamName(value))}
             maxLength={80}
             icon={Users}
             autoFocus
