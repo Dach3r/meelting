@@ -1,45 +1,45 @@
-# Usuarios y experiencia principal
+# Users and core experience
 
-## Usuarios objetivo
+## Target users
 
-**Público inicial:** desarrolladores de software, freelancers técnicos y equipos pequeños que usan varias herramientas digitales y quieren que la IA trabaje sobre su código decidiendo ellos si se envía a un servicio de terceros.
+**Initial audience:** software developers, technical freelancers and small teams who use several digital tools and want AI to work on their code while they decide whether it is sent to a third-party service.
 
-**Público futuro:** startups, Product Managers, equipos de desarrollo, agencias digitales.
+**Future audience:** startups, Product Managers, development teams, digital agencies.
 
-**Usuario principal del MVP:** desarrollador o fundador técnico que quiere delegar tareas de código a agentes de IA, mantener control de su máquina y supervisar resultados desde una única interfaz, incluso sin conexión.
+**Main MVP user:** a developer or technical founder who wants to delegate code tasks to AI agents, keep control of their machine and supervise results from a single interface, even offline.
 
-## Experiencia principal
+## Core experience
 
-### 1. Primer arranque (planificado)
+### 1. First launch (planned)
 
-No hay registro, login ni cuenta. Al abrir la app por primera vez:
+There is no sign-up, login or account. When the app is opened for the first time:
 
-1. Elegir idioma (`es` / `en`).
-2. Crear el primer workspace: nombre obligatorio, máximo 80 caracteres; los nombres pueden repetirse. El perfil y el workspace se guardan juntos al terminar.
-3. La app abre **Equipos**: organigrama con "Tú" en la raíz y el equipo "General".
+1. Choose the language (`es` / `en`).
+2. Create the first workspace: name required, maximum 80 characters; names can repeat. The profile and the workspace are saved together at the end.
+3. The app opens **Teams**: org chart with "You" at the root and the "General" team.
 
-Criterio de completitud: el primer arranque termina cuando `profile.current_workspace_id` apunta a un workspace existente. Si el usuario cierra la app a mitad del flujo, no se guarda nada y lo retoma desde el principio al volver a abrirla.
+Completion criterion: the first launch ends when `profile.current_workspace_id` points to an existing workspace. If the user closes the app midway through the flow, nothing is saved and they start over from the beginning when they reopen it.
 
-Reglas:
+Rules:
 
-- Un perfil local puede tener varios workspaces y cambiar entre ellos desde el riel.
-- El botón se deshabilita mientras se procesa, para evitar duplicados.
-- Quedan fuera: cuentas, invitaciones, miembros adicionales, sincronización e integraciones.
+- A local profile can have several workspaces and switch between them from the rail.
+- The button is disabled while processing, to avoid duplicates.
+- Out of scope: accounts, invitations, additional members, sync and integrations.
 
-Debe ser rápido y evitar configuraciones innecesarias.
+It must be fast and avoid unnecessary configuration.
 
-### 2. Ajustes
+### 2. Settings
 
-Una página con las categorías a la izquierda y los ajustes de la categoría elegida a la derecha, cada uno como una fila con su control. Hoy: **General** (idioma `es` / `en`) y **Apariencia** (tema). Cada ajuste nuevo es una fila más dentro de su categoría; una categoría nueva se suma a la lista lateral. Más adelante, **workspace** (renombrar; mismas reglas que al crearlo). Docker, shell y proveedor local se añaden con sus fases. Exportar y borrar los datos locales vive aquí (Fase 7). Eliminar un workspace es una decisión abierta (ver [../architecture/overview.md](../architecture/overview.md#13-decisiones-abiertas)).
+A page with the categories on the left and the settings of the chosen category on the right, each as a row with its control. Today: **General** (language `es` / `en`) and **Appearance** (theme). Each new setting is one more row within its category; a new category is added to the side list. Later, **workspace** (rename; same rules as when creating it). Docker, shell and local provider are added with their phases. Exporting and deleting local data lives here (Phase 7). Deleting a workspace is an open decision (see [../architecture/overview.md](../architecture/overview.md#13-open-decisions)).
 
-### 3. Dashboard principal
+### 3. Main dashboard
 
-Ver [virtual-office.md](virtual-office.md#dashboard).
+See [virtual-office.md](virtual-office.md#dashboard).
 
-### 4. Sala de trabajo con agentes
+### 4. Work room with agents
 
-Experiencia central y diferencial. El usuario selecciona o inicia una sala e interactúa con agentes especializados. Ver [virtual-office.md](virtual-office.md).
+The central, differentiating experience. The user selects or starts a room and interacts with specialized agents. See [virtual-office.md](virtual-office.md).
 
-### 5. Tarea sobre un repositorio (planificado, Fase 4–5)
+### 5. Task on a repository (planned, Phase 4–5)
 
-Desde una sala, el usuario crea una tarea eligiendo agente, carpeta de repositorio y rama base. El agente trabaja en un `git worktree` aislado; el usuario aprueba los comandos que requieren permiso y revisa el diff al terminar.
+From a room, the user creates a task by choosing an agent, a repository folder and a base branch. The agent works in an isolated `git worktree`; the user approves the commands that require permission and reviews the diff at the end.
