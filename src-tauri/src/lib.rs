@@ -11,6 +11,7 @@ use crate::services::agent_run_engine::Engine;
 use crate::services::agent_runs_expire;
 use crate::services::file_copy::CopySelections;
 use crate::services::repository_locks::RepositoryLocks;
+use crate::services::review_registry::ReviewRegistry;
 use crate::services::{worktree_purge, worktrees_reconcile};
 use crate::system::storage;
 use sqlx::SqlitePool;
@@ -45,6 +46,7 @@ pub fn run() {
             tauri::async_runtime::block_on(worktrees_reconcile::run(&pool, &locks))?;
             app.manage(locks);
             app.manage(CopySelections::default());
+            app.manage(ReviewRegistry::default());
             let emit = commands::agent_runs::emitter(app.handle().clone());
             app.manage(Engine::new(
                 pool.clone(),
@@ -119,6 +121,9 @@ pub fn run() {
             commands::worktrees::pick_task_environment_files,
             commands::worktrees::copy_task_environment_files,
             commands::worktrees::list_task_environments,
+            commands::review::review_task_environment,
+            commands::review::read_task_environment_diff,
+            commands::review::list_task_environment_folder,
             commands::worktrees::trash_task_environments,
             commands::worktrees::restore_task_environments,
             commands::worktrees::purge_task_environments,

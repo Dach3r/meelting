@@ -67,7 +67,14 @@
     "environment_move_refused": "Git no pudo mover la carpeta del entorno. No se cambió nada.",
     "environment_branch_not_deleted": "El entorno se eliminó, pero Git no pudo borrar su rama.",
     "data_folder_unavailable": "Meelting no pudo abrir la carpeta de datos.",
-    "autostart_unavailable": "Meelting no pudo cambiar el inicio automático de este equipo."
+    "autostart_unavailable": "Meelting no pudo cambiar el inicio automático de este equipo.",
+    "environment_filters_apply": "Este repositorio usa filtros de Git que ejecutan programas (por ejemplo, Git LFS), así que sus cambios no se pueden revisar de forma segura. No se ejecutó nada.",
+    "environment_config_unsafe": "La configuración de Git de este repositorio incluye otros archivos, cambió durante la revisión o pidió a Git ejecutar un programa, así que se rechazó la revisión. No se ejecutó nada.",
+    "review_timeout": "Git tardó demasiado en responder, así que se detuvo la revisión. Inténtalo de nuevo.",
+    "review_stale": "El entorno cambió desde que se hizo esta revisión. Actualiza la revisión.",
+    "invalid_review_entry": "Ese archivo no forma parte de la revisión actual. Actualiza la revisión.",
+    "protected_file": "Este archivo puede contener secretos, así que no se muestra su contenido.",
+    "diff_too_large": "Los cambios de este archivo son demasiado grandes para mostrarlos."
   },
   "newWorkspace": {
     "title": "Crea tu workspace",
@@ -720,6 +727,14 @@
       "title": "¿Eliminar {count} definitivamente?",
       "body": "Se borran la carpeta, los cambios sin commitear, los archivos locales (como .env) y la rama con todos sus commits. No se puede deshacer.",
       "confirm": "Eliminar definitivamente"
+    }
+  },
+  "review": {
+    "drift": {
+      "up_to_date": "La rama base no se ha movido desde que se preparó este entorno.",
+      "moved": "La rama base se movió desde que se preparó este entorno. No se actualizó nada.",
+      "rewritten": "La rama base fue reescrita y ya no contiene el commit inicial de este entorno. No se actualizó nada.",
+      "unavailable": "La rama base no está disponible, así que no se pudo hacer la comparación."
     }
   }
 }

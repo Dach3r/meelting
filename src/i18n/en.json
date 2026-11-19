@@ -67,7 +67,14 @@
     "environment_move_refused": "Git could not move the environment folder. Nothing was changed.",
     "environment_branch_not_deleted": "The environment was deleted, but Git could not delete its branch.",
     "data_folder_unavailable": "Meelting could not open the data folder.",
-    "autostart_unavailable": "Meelting could not change the login item of this computer."
+    "autostart_unavailable": "Meelting could not change the login item of this computer.",
+    "environment_filters_apply": "This repository uses Git filters that run programs (for example Git LFS), so its changes cannot be reviewed safely. Nothing was run.",
+    "environment_config_unsafe": "The Git configuration of this repository includes other files, changed during the review or asked Git to run a program, so the review was refused. Nothing was run.",
+    "review_timeout": "Git took too long to answer, so the review was stopped. Try again.",
+    "review_stale": "The environment changed since this review was made. Refresh the review.",
+    "invalid_review_entry": "That file is not part of the current review. Refresh the review.",
+    "protected_file": "This file may hold secrets, so its contents are not shown.",
+    "diff_too_large": "The changes in this file are too large to show."
   },
   "newWorkspace": {
     "title": "Create your workspace",
@@ -720,6 +727,14 @@
       "title": "Delete {count} permanently?",
       "body": "This deletes the folder, uncommitted changes, local files (such as .env) and the branch with all its commits. It cannot be undone.",
       "confirm": "Delete permanently"
+    }
+  },
+  "review": {
+    "drift": {
+      "up_to_date": "The base branch has not moved since this environment was prepared.",
+      "moved": "The base branch has moved since this environment was prepared. Nothing was updated.",
+      "rewritten": "The base branch was rewritten and no longer contains this environment's starting commit. Nothing was updated.",
+      "unavailable": "The base branch is not available, so the comparison could not be made."
     }
   }
 }
