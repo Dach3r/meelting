@@ -52,8 +52,8 @@
 | Secrets | crate `keyring` 3 (Keychain, Credential Manager, Secret Service) | ✅ spike |
 | Data | SQLite with `sqlx`, WAL mode, `sqlx migrate` migrations | ✅ `profile`, `workspaces`, `teams`, `agents`, `canvas_positions`, `rooms`, `room_agents` and `messages`; the rest of the tables with their phase |
 | HTTP/streaming | `reqwest` + SSE (`eventsource-stream`) | ✅ adapters for the three protocols |
-| Terminal | `portable-pty` (ConPTY on Windows) | ✅ spike |
-| Git | `git` CLI via `tokio::process` | ✅ spike |
+| Terminal | `portable-pty` (ConPTY on Windows) | Planned (Phase 5); the Phase 0 spike was removed in 4B (D27) |
+| Git | `git` CLI via `tokio::process`, structured arguments, no shell | ✅ read-only queries (4A); worktrees (4B) |
 | Docker | `docker` CLI via `tokio::process` (or `bollard`); optional | pending |
 | Tests | `cargo test`, Vitest, WebDriver (`tauri-driver`) | `cargo test` and Vitest ✅; WebDriver pending |
 
@@ -180,7 +180,7 @@ Rules: several tasks from the same repo get independent worktrees; operations th
 - **Sanitized environment:** the child process does not inherit `*_API_KEY`, tokens or `SSH_AUTH_SOCK`.
 - **Timeout and output limit** per command; the process tree is killed.
 - **Optional Docker** as strong isolation (worktree mounted, no network, non-root user); without Docker the app warns that execution is not isolated.
-- Minimal Tauri capabilities.
+- Minimal Tauri capabilities. No command runs a shell or takes a command line or an arbitrary path from the webview: folders and files are always picked with native dialogs opened from Rust. Tauri 2 lets the main window invoke every registered app command unless an app manifest restricts them; an explicit allow-list (`tauri_build::Attributes::app_manifest` plus one `allow-<command>` permission per command in the capability) was evaluated in 4B and is recommended as a separate hardening change, because a command missing from the list only fails at runtime.
 
 Live output is emitted as `tool_call:output` with a size limit and shown in a panel per task.
 

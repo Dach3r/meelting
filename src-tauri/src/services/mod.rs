@@ -46,4 +46,3 @@ pub mod theme_change;
 pub mod ui_scale_change;
 pub mod workspace_create;
 pub mod workspace_switch;
-pub mod worktree_run;

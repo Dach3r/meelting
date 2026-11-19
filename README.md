@@ -22,7 +22,6 @@ Early development, **Phase 4** in progress (4A done). Working today:
 - Text-directed conversation: the recipient is resolved from the selection, `@` mentions or a leading vocative, and ambiguity asks you before anything is saved.
 - AI providers screen in the sidebar: API keys for Anthropic, OpenAI and Groq are verified before they are saved in the OS keychain, separately per workspace; Ollama and LM Studio are detected on this computer.
 - Tasks: register local Git repositories (read-only checks, never modified), create tasks from the Tasks screen or from a room message, with status, priority, base branch and several assigned agents.
-- Spike: a command in a fresh `git worktree` with live PTY output.
 - CI on macOS, Windows and Linux.
 
 Worktrees for tasks, multi-agent coordination, voice, tools, approvals and Docker are planned and not built yet. See the [roadmap](docs/product/roadmap.md).
@@ -35,7 +34,6 @@ Worktrees for tasks, multi-agent coordination, voice, tools, approvals and Docke
 | Core | Rust (edition 2024) |
 | UI | React 19, TypeScript, Vite, Tailwind v4 |
 | Storage | SQLite (`sqlx`) |
-| Terminal | `portable-pty` (ConPTY on Windows) |
 | Git | `git` CLI via `tokio::process` |
 | Secrets | `keyring` (Keychain, Credential Manager, Secret Service) |
 | Package manager | pnpm |

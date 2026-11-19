@@ -34,7 +34,6 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
-            commands::worktree::run_in_worktree,
             commands::session::load_session,
             commands::session::complete_first_launch,
             commands::session::create_workspace,

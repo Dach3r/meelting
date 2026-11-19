@@ -31,14 +31,12 @@ src-tauri/src/
 ├── lib.rs                 Tauri builder, window state plugin, run expiry at startup, execution engine as state and command registration
 ├── commands/              Layer 1: Tauri commands (thin)
 │   ├── provider_keys.rs   ✅ list_provider_keys, save_provider_key, check_provider_key, delete_provider_key (take only the provider; the core resolves the workspace)
-│   ├── worktree.rs        ✅ run_in_worktree
 │   ├── agent_runs.rs      ✅ send_intervention, resolve_recipient, check_agent_availability, cancel_agent_run and the engine's event emitter (agent_run:status, agent_run:token, message:created)
 │   ├── repositories.rs    ✅ list_repositories, register_repository (opens the native folder dialog from Rust; `None` if cancelled), unregister_repository, list_repository_branches
 │   ├── tasks.rs           ✅ list_tasks, create_task, update_task, change_task_status, delete_task
 │   ├── rooms.rs           ✅ list_rooms, create_room, get_room (with runs, snapshots and agents who left), finish_room, add_room_agents, remove_room_agent
 │   └── session.rs         ✅ load_session, complete_first_launch, create_workspace, switch_workspace, list_teams, create_team, create_agent, get_agent, update_agent, delete_agent, save_canvas_positions, reset_canvas_positions, list_agent_templates, list_agent_roles, list_llm_providers, detect_local_models, change_locale, change_theme, change_ui_scale, change_loading_enabled
 ├── services/              Layer 2: business actions (verbs)
-│   ├── worktree_run.rs    ✅ creates a worktree and runs a command in it (Phase 0 spike, removed in 4B, D27)
 │   ├── session_load.rs    ✅ loads the profile and the workspaces; defines SessionError
 │   ├── engine_check.rs    ✅ validates a provider/model pair: cloud against `llm.yml`, local against the models installed in the running runtime (localhost); used by creating and editing agents
 │   ├── first_launch.rs    ✅ creates the profile and the first workspace in one transaction
@@ -88,8 +86,7 @@ src-tauri/src/
 │   ├── llm_providers_list.rs ✅ catalog providers and models
 │   └── local_models_detect.rs ✅ queries the catalog's local providers and returns whether they are running and their models
 ├── system/                Layer 3: OS integration, no business rules
-│   ├── git.rs             ✅ git via tokio::process without a shell and without inherited `GIT_DIR`-style variables: read-only queries (bare, layout with `--path-format=absolute`, commits, submodules, local branches, symbolic refs) and the spike's worktree add
-│   ├── terminal.rs        ✅ portable PTY and output reading
+│   ├── git.rs             ✅ git via tokio::process without a shell and without inherited `GIT_DIR`-style variables: read-only queries (bare, layout with `--path-format=absolute`, commits, submodules, local branches, symbolic refs). No other module spawns processes: the Phase 0 `run_in_worktree` spike (shell command in a PTY) was removed in 4B (D27)
 │   ├── llm_stream.rs      ✅ HTTP + SSE shared by the adapters: connection (marks unreachable if it could not connect), inactivity, HTTP errors by status and code, retry-after
 │   ├── anthropic_messages.rs ✅ Anthropic Messages API adapter
 │   ├── openai_responses.rs ✅ OpenAI Responses API adapter
@@ -154,11 +151,11 @@ src-tauri/src/
 - **Errors to the UI as codes:** `SessionError` is serialized as a stable code (`invalid_name`, `invalid_agent`, `invalid_message`, `workspace_not_found`, `team_not_found`, `agent_not_found`, `room_not_found`, `agent_has_activity`, `invalid_client_request_id`, `agent_busy`, `client_request_conflict`, `not_set_up`, `invalid_provider`, `invalid_api_key`, `provider_not_configured`, `git_unavailable`, `not_a_repository`, `repository_bare`, `repository_is_worktree`, `repository_without_commits`, `repository_with_submodules`, `repository_already_registered`, `repository_not_found`, `repository_in_use`, `repository_unavailable`, `invalid_base_ref`, `invalid_task`, `task_not_found`, `invalid_task_transition`, `message_not_found`, `keychain_unavailable`, `database`); the UI translates it. A run's failures are not command errors: they travel as `error_kind` in the run. Database details do not travel.
 - **Database:** the pool is opened in `setup` (`app_data_dir()/meelting.db`) and registered as Tauri state; commands receive it with `State<SqlitePool>`. Repositories accept any `SqliteExecutor` so they can be used inside transactions. Writes that read and then write (create room, send message) open the transaction with `pool.begin_with("BEGIN IMMEDIATE")` on a new pool connection (never nested): they take the write lock at the start and wait up to sqlx's `busy_timeout` (5 s); if it runs out, the error arrives as `database`. Multi-table reads use a normal transaction to read a consistent snapshot.
 - **Services without Tauri:** they receive `impl Fn` for output and completion, so they are tested without a window or `AppHandle`.
-- **Events to the UI:** emitted by the commands layer. Current names: `terminal-output` (text), `terminal-exit` (exit code), `message:created` (full message with its `room_id`, after the commit), `agent_run:status` (the full run, after the commit of each transition) and `agent_run:token` (`run_id`, `room_id`, `attempt`, `seq`, `text`). The execution engine receives a *callback* (`Emit`) that `commands/agent_runs.rs` translates into Tauri events, so services still know nothing about Tauri.
+- **Events to the UI:** emitted by the commands layer. Current names: `message:created` (full message with its `room_id`, after the commit), `agent_run:status` (the full run, after the commit of each transition) and `agent_run:token` (`run_id`, `room_id`, `attempt`, `seq`, `text`). The execution engine receives a *callback* (`Emit`) that `commands/agent_runs.rs` translates into Tauri events, so services still know nothing about Tauri.
 - **Keys:** the run task reads them from the keychain (`<workspace_id>/<provider>`) right before each attempt, and the provider key services read them only to verify or show their last 4 characters; they never travel to the UI, events or errors. Provider errors are reduced to an `error_kind`; their text never leaves the adapter.
 - **Providers without names in the code:** the adapter is chosen with a `match` on the catalog's `protocol` (`system/llm_call.rs`) and receives `base_url`, `model` and the output cap; no model is named in production code.
 - **Tests next to the code** (`#[cfg(test)] mod tests`), with real temporary git repositories (`tempfile`) and no external APIs.
-- File names in `snake_case`; a service is named after the action (`worktree_run`), not the resource.
+- File names in `snake_case`; a service is named after the action (`room_create`), not the resource.
 
 ## Frontend (`src`)
 
@@ -199,7 +196,7 @@ src/
 | `hooks/` | The only place that calls `invoke` or `listen`. One hook per use case, named `use<Verb><Object>` |
 | `App.tsx` | Composes organisms or templates; no logic |
 
-Vitest tests live next to the code (`App.test.tsx`, `translate.test.ts`, `RoomsPage.test.tsx`, `RoomView.test.tsx`, `ProvidersPage.test.tsx`, `TasksPage.test.tsx`, `agentRunState.test.ts`). The `run_in_worktree` spike keeps its command and service in the core with no screen; its interface arrives with Phase 4. The `stream_completion` spike was removed when the `AgentRun` adapters arrived.
+Vitest tests live next to the code (`App.test.tsx`, `translate.test.ts`, `RoomsPage.test.tsx`, `RoomView.test.tsx`, `ProvidersPage.test.tsx`, `TasksPage.test.tsx`, `agentRunState.test.ts`). The Phase 0 spikes are gone: `stream_completion` was replaced by the `AgentRun` adapters and `run_in_worktree` was removed in 4B.
 
 ## Where to put new things
 

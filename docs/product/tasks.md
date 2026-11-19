@@ -209,7 +209,7 @@ File and Git operations are tested with real temporary repositories, including u
 ## 8. Delivery
 
 - **4A — Domain, repositories and tasks:** migrations `repositories`, `tasks`, `task_agents`; repository registration; task CRUD with statuses, priorities and several agents; creation from rooms; tests.
-- **4B — Git environments:** root setting, storage checks, preparation, base commit, file copies, technical states, concurrency, recovery, safe removal; replaces the Phase 0 `run_in_worktree` spike (D27).
+- **4B — Git environments:** root setting, storage checks, preparation, base commit, file copies, technical states, concurrency, recovery, safe removal. Step 1 removed the Phase 0 `run_in_worktree` spike (arbitrary shell command in a PTY), `terminal.rs` and `portable-pty` (D27).
 - **4C — Review and interface:** environment detail, Git status, read-only diff, drift warnings, error and recovery screens, E2E on Linux and Windows.
 
 ## 9. Out of scope

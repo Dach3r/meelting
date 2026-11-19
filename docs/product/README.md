@@ -39,7 +39,7 @@ Each document distinguishes between:
 - **Hypothesis:** to be validated.
 - **Proposal:** documented design, pending approval for implementation (e.g. [voice-meetings.md](voice-meetings.md)).
 
-**Implemented today:** Tauri 2 scaffold (React + TypeScript + Vite) with three spikes (OS keychain, `git worktree` + PTY with live output, and Chat Completions-compatible SSE streaming); SQLite, first launch, shell, workspaces, language and theme settings; teams, agents, org chart, template catalog and provider and model picker with local model detection; rooms, participants and user messages. Agent runs, conversational meetings and voice are planned or proposed.
+**Implemented today:** Tauri 2 scaffold (React + TypeScript + Vite) (the Phase 0 spikes were replaced by the real features or removed); SQLite, first launch, shell, workspaces, language and theme settings; teams, agents, org chart, template catalog and provider and model picker with local model detection; rooms, participants and user messages. Agent runs, conversational meetings and voice are planned or proposed.
 
 ## Core principle
 
