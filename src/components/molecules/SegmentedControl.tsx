@@ -14,17 +14,19 @@ export function SegmentedControl<T extends string>({
   value,
   onChange,
   disabled = false,
+  fullWidth = false,
 }: {
   label: string;
   options: SegmentedOption<T>[];
   value: T;
   onChange: (value: T) => void;
   disabled?: boolean;
+  fullWidth?: boolean;
 }) {
   return (
     <nav
       aria-label={label}
-      className="flex w-fit items-center gap-1 rounded-full border border-line bg-pill p-1 text-sm"
+      className={`flex items-center gap-1 rounded-full border border-line bg-pill p-1 text-sm ${fullWidth ? "w-full" : "w-fit"}`}
     >
       {options.map(({ icon: Icon, ...option }) => (
         <button
@@ -34,7 +36,7 @@ export function SegmentedControl<T extends string>({
           disabled={disabled}
           aria-current={option.value === value ? "true" : undefined}
           onClick={() => onChange(option.value)}
-          className={`inline-flex cursor-pointer items-center gap-2 rounded-full px-3 py-1 tracking-wider disabled:cursor-not-allowed ${option.value === value ? "bg-ink font-semibold text-surface" : "font-bold text-muted enabled:hover:text-ink"}`}
+          className={`inline-flex cursor-pointer items-center gap-2 rounded-full px-3 py-1 tracking-wider ${fullWidth ? "flex-1 justify-center" : ""} disabled:cursor-not-allowed ${option.value === value ? "bg-ink font-semibold text-surface" : "font-bold text-muted enabled:hover:text-ink"}`}
         >
           {Icon && <Icon aria-hidden className="size-4" />}
           {option.label}

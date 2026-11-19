@@ -94,6 +94,7 @@ export function RoomChat({
         label={t("rooms.chat.tabs")}
         value={tab}
         onChange={setTab}
+        fullWidth
         options={[
           { value: "chat", label: t("rooms.chat.tabChat") },
           { value: "tasks", label: t("rooms.chat.tabTasks") },
