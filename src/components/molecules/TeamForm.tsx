@@ -59,7 +59,7 @@ export function TeamForm({ busy, errorMessage, onSubmit, onCancel }: Props) {
               className="size-8 rounded-full text-sm"
             />
             <span className={`truncate ${slug ? "" : "text-muted"}`}>
-              {slug || t("teams.newTeam")}
+              {slug || slugifyTeamName(t("teams.newTeam"))}
             </span>
           </span>
           <span className="h-4 w-0.5 bg-line" />

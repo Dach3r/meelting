@@ -861,10 +861,13 @@ describe("workspace shell", () => {
     expect(
       within(dialog).getByText("This is how it will look in your office"),
     ).toBeInTheDocument();
+    expect(
+      within(dialog).getByText("new-team", { selector: "span" }),
+    ).toBeInTheDocument();
     await user.type(screen.getByLabelText("Team name"), "Design");
 
     expect(
-      within(dialog).getAllByText("Design", { selector: "span" }).length,
+      within(dialog).getAllByText("design", { selector: "span" }).length,
     ).toBeGreaterThan(0);
   });
 
