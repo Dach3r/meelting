@@ -654,12 +654,12 @@ mod tests {
         }
 
         fn dirty(&self) {
-            std::fs::write(self.work_tree.join("a.txt"), "two\n").unwrap();
+            std::fs::write(self.work_tree.join("a.txt"), "two changed\n").unwrap();
         }
 
-        fn plain_status_executes(&self) -> bool {
+        fn plain_git_executes(&self) -> bool {
             self.clear();
-            git(&self.work_tree, &["status", "--porcelain"]);
+            git(&self.work_tree, &["diff"]);
             let executed = !self.executed().is_empty();
             self.clear();
             executed
@@ -733,8 +733,24 @@ mod tests {
         assert!(String::from_utf8_lossy(&status).contains("a.txt"));
         assert_eq!(fx.executed(), "");
         assert!(
-            fx.plain_status_executes(),
+            fx.plain_git_executes(),
             "the setup must be able to run the filter"
+        );
+    }
+
+    #[test]
+    fn the_probe_really_writes_its_marker_when_git_hashes_a_filtered_file() {
+        let fx = fixture(&[(".gitattributes", "*.txt filter=probe\n")]);
+        fx.config("filter.probe.clean", &fx.probe("clean"));
+        fx.dirty();
+
+        git(&fx.work_tree, &["add", "a.txt"]);
+
+        assert!(fx.executed().contains("clean"), "the probe never ran");
+        fx.clear();
+        assert!(
+            fx.plain_git_executes(),
+            "git diff must run the clean filter"
         );
     }
 
@@ -826,7 +842,7 @@ mod tests {
 
         assert_eq!(fx.executed(), "");
         assert!(
-            fx.plain_status_executes(),
+            fx.plain_git_executes(),
             "the setup must be able to run the filter"
         );
     }
