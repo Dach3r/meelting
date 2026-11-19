@@ -298,7 +298,7 @@ export function SettingsPage({
     <div className="grid min-h-0 flex-1 grid-cols-[16rem_minmax(0,1fr)]">
       <nav
         aria-label={t("settings.categories.label")}
-        className="flex flex-col border-r border-line"
+        className="flex flex-col gap-1 border-r border-line p-3"
       >
         {sectionOrder.map((item) => {
           const Icon = sectionIcons[item];
@@ -309,7 +309,7 @@ export function SettingsPage({
               type="button"
               aria-current={active ? "true" : undefined}
               onClick={() => setSection(item)}
-              className={`flex cursor-pointer items-center gap-3 border-b border-ink/15 px-6 py-4 text-left text-sm focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ink ${active ? "bg-hi font-semibold text-ink" : "font-medium text-muted hover:bg-pill-hover hover:text-ink"}`}
+              className={`flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 text-left text-sm focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ink ${active ? "border-line bg-hi font-semibold text-ink" : "border-transparent font-medium text-muted hover:bg-pill-hover hover:text-ink"}`}
             >
               <Icon className="size-5 shrink-0" aria-hidden />
               {t(`settings.categories.${item}.title`)}
@@ -317,7 +317,7 @@ export function SettingsPage({
           );
         })}
       </nav>
-      <div className="grid min-h-0 w-full content-start gap-6 overflow-y-auto p-8 pl-10">
+      <div className="grid min-h-0 w-full content-start gap-8 overflow-y-auto p-8">
         {errorMessage && <Alert message={errorMessage} />}
         <div>
           <h2 className="text-xl font-bold text-ink">

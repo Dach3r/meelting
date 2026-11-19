@@ -24,7 +24,7 @@ export function SegmentedControl<T extends string>({
   return (
     <nav
       aria-label={label}
-      className="flex w-fit items-center gap-1 rounded-full bg-pill p-1 text-sm"
+      className="flex w-fit items-center gap-1 rounded-full border border-line bg-pill p-1 text-sm"
     >
       {options.map(({ icon: Icon, ...option }) => (
         <button

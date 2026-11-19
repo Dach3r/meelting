@@ -8,11 +8,13 @@ export function SettingsGroup({
   children: ReactNode;
 }) {
   return (
-    <section className="grid gap-2">
+    <section className="grid gap-3">
       <p className="px-1 text-xs font-bold tracking-wider text-muted uppercase">
         {title}
       </p>
-      <div className="rounded-2xl bg-pill-hover">{children}</div>
+      <div className="divide-y divide-line/50 overflow-hidden rounded-2xl border border-line bg-hi/30">
+        {children}
+      </div>
     </section>
   );
 }
