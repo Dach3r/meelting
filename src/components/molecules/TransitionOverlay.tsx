@@ -4,7 +4,7 @@ import { Alert } from "./Alert";
 
 const barHeights = ["h-[36%]", "h-[66%]", "h-full", "h-[66%]", "h-[36%]"];
 
-export const transitionMs = 600;
+export const transitionMs = 800;
 
 type Props = {
   label: string;
