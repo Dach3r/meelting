@@ -51,6 +51,12 @@ export type CopyResult = {
   problem: string | null;
 };
 
+export type TaskRoomLink = {
+  room_id: string;
+  room_name: string;
+  message_id: string | null;
+};
+
 export type Task = {
   id: string;
   title: string;
@@ -62,6 +68,7 @@ export type Task = {
   origin_room_id: string | null;
   origin_room_name: string | null;
   origin_message_id: string | null;
+  linked_rooms: TaskRoomLink[];
   agent_ids: string[];
   worktree: Worktree | null;
   completed_at: string | null;

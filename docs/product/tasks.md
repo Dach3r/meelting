@@ -140,6 +140,12 @@ A task can be created without a repository and without agents. With a repository
 
 Two entry points open the same task form: «Create task» in the room call controls (origin: the room) and «Turn into task» on a message (origin: the room and the message, with the message prefilled as the description). Agents may suggest tasks in their replies, but only the user creates them. There is no automatic interpretation of messages.
 
+The same dialog also offers «Link existing»: the user picks a task already in the workspace and it is linked to the room (or to the message) instead of creating a duplicate. Nothing is created, no field of the task changes and its origin is kept. A task can be linked from several rooms and messages; the same room and message pair is linked once, and the task's own origin is never repeated as a link. Links are listed in the task detail under «Linked from». Tasks already linked to that room or message are not offered.
+
+#### `task_room_links`
+
+Migration `create_task_room_links`: `id`, `task_id`, `room_id`, `message_id` (nullable), `workspace_id`, `created_at`. Composite FKs to `tasks` (`ON DELETE CASCADE`), `rooms` and `messages` (`NO ACTION`, like the origin). `UNIQUE (task_id, room_id, message_id)` plus a partial unique index on `(task_id, room_id)` where `message_id IS NULL`, because `NULL`s are distinct in a plain unique constraint.
+
 ### BR-04. Several agents (4A ✅)
 
 The form selects any number of agents of the workspace, with search. Assigning or unassigning changes nothing else: no status change, no run, no permission. Deleting an agent (when the existing rules allow it) removes its assignments in cascade.
@@ -388,6 +394,7 @@ A task can change its repository only while it has never had a worktree; once it
 | AC05 | Assign three agents | Three links kept | 4A ✅ |
 | AC06 | Assign an agent of another workspace | Rejected | 4A ✅ |
 | AC07 | Create a task from a room message | Task and origin saved | 4A ✅ |
+| AC07b | Link an existing task from a room or message | Linked once, nothing created, origin intact | ✅ |
 | AC08 | Create a task with a repository | No worktree created | 4A ✅ |
 | AC09–AC13 | Prepare, isolation, two tasks of the same repo, duplicate requests, alternative base | See BR-05 | 4B ✅ |
 | AC14 | Base branch drift | Warning without rebasing, merging or resetting (BR-07) | 4C (built: notice in Changes) |

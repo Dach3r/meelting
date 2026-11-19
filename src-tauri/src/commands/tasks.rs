@@ -1,6 +1,6 @@
 use crate::domain::task::{Task, TaskDraft, TaskOrigin, TaskStatus};
 use crate::services::session_load::SessionError;
-use crate::services::{task_delete, task_save, task_status_change, tasks_list};
+use crate::services::{task_delete, task_room_link, task_save, task_status_change, tasks_list};
 use sqlx::SqlitePool;
 use tauri::State;
 
@@ -25,6 +25,15 @@ pub async fn update_task(
     draft: TaskDraft,
 ) -> Result<Task, SessionError> {
     task_save::update(&pool, &task_id, draft).await
+}
+
+#[tauri::command]
+pub async fn link_task_to_room(
+    pool: State<'_, SqlitePool>,
+    task_id: String,
+    origin: TaskOrigin,
+) -> Result<Task, SessionError> {
+    task_room_link::run(&pool, &task_id, origin).await
 }
 
 #[tauri::command]

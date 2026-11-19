@@ -582,7 +582,10 @@
       "originMessage": "A message in room «{name}»",
       "created": "Created",
       "completed": "Completed",
-      "noDescription": "No description."
+      "noDescription": "No description.",
+      "linked": "Linked from",
+      "linkedRoom": "Room «{name}»",
+      "linkedMessage": "A message in room «{name}»"
     },
     "deleteDialog": {
       "title": "Delete the task?",
@@ -674,7 +677,16 @@
       "inTrash": "In the trash",
       "inTrashHelp": "This environment is in the trash. Restore it from the Trash to keep working with it."
     },
-    "environmentReady": "Environment ready"
+    "environmentReady": "Environment ready",
+    "link": {
+      "mode": "Task",
+      "create": "Create new",
+      "link": "Link existing",
+      "search": "Search tasks by title",
+      "available": "Available tasks",
+      "none": "No tasks to link.",
+      "linkHint": "Links this existing task to the room or message. Nothing is created."
+    }
   },
   "files": {
     "title": "Files",

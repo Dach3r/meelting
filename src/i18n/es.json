@@ -582,7 +582,10 @@
       "originMessage": "Un mensaje de la sala «{name}»",
       "created": "Creada",
       "completed": "Completada",
-      "noDescription": "Sin descripción."
+      "noDescription": "Sin descripción.",
+      "linked": "Asociada desde",
+      "linkedRoom": "Sala «{name}»",
+      "linkedMessage": "Un mensaje de la sala «{name}»"
     },
     "deleteDialog": {
       "title": "¿Eliminar la tarea?",
@@ -674,7 +677,16 @@
       "inTrash": "En la papelera",
       "inTrashHelp": "Este entorno está en la papelera. Restáuralo desde la Papelera para seguir trabajando con él."
     },
-    "environmentReady": "Entorno listo"
+    "environmentReady": "Entorno listo",
+    "link": {
+      "mode": "Tarea",
+      "create": "Crear nueva",
+      "link": "Asociar existente",
+      "search": "Buscar tareas por título",
+      "available": "Tareas disponibles",
+      "none": "No hay tareas para asociar.",
+      "linkHint": "Asocia esta tarea existente a la sala o al mensaje. No se crea nada."
+    }
   },
   "files": {
     "title": "Archivos",

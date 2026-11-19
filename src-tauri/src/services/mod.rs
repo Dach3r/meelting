@@ -46,6 +46,7 @@ pub mod rooms_list;
 pub mod run_notice;
 pub mod session_load;
 pub mod task_delete;
+pub mod task_room_link;
 pub mod task_save;
 pub mod task_status_change;
 pub mod tasks_list;

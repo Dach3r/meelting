@@ -42,6 +42,7 @@ function task(id: string, title: string, overrides: Partial<Task> = {}): Task {
     origin_room_id: null,
     origin_room_name: null,
     origin_message_id: null,
+    linked_rooms: [],
     agent_ids: [],
     worktree: null,
     completed_at: null,
@@ -254,6 +255,27 @@ describe("task detail", () => {
     expect(
       await within(actions).findByRole("button", { name: "Reopen" }),
     ).toBeInTheDocument();
+  });
+
+  it("lists the rooms and messages a task was linked from", async () => {
+    const user = userEvent.setup();
+    core({
+      list_tasks: () => [
+        task("t1", "Plan", {
+          linked_rooms: [
+            { room_id: "r1", room_name: "Daily", message_id: null },
+            { room_id: "r2", room_name: "Retro", message_id: "m9" },
+          ],
+        }),
+      ],
+      list_repositories: () => [],
+    });
+    renderPage();
+
+    await user.click(await screen.findByRole("button", { name: /Plan/ }));
+
+    expect(screen.getByText("Room «Daily»")).toBeInTheDocument();
+    expect(screen.getByText("A message in room «Retro»")).toBeInTheDocument();
   });
 
   it("deletes the task after confirming", async () => {

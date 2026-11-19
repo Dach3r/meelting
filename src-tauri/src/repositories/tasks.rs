@@ -41,6 +41,7 @@ impl TryFrom<Row> for Task {
             origin_room_id: row.origin_room_id,
             origin_room_name: row.origin_room_name,
             origin_message_id: row.origin_message_id,
+            linked_rooms: Vec::new(),
             agent_ids: Vec::new(),
             worktree: None,
             completed_at: row.completed_at,

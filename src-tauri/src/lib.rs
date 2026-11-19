@@ -130,6 +130,7 @@ pub fn run() {
             commands::tasks::list_tasks,
             commands::tasks::create_task,
             commands::tasks::update_task,
+            commands::tasks::link_task_to_room,
             commands::tasks::change_task_status,
             commands::tasks::delete_task
         ])

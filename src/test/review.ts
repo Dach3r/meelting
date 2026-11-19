@@ -96,6 +96,7 @@ export function task(id = "t1", wt: Worktree | null = worktree()): Task {
     origin_room_id: null,
     origin_room_name: null,
     origin_message_id: null,
+    linked_rooms: [],
     agent_ids: [],
     worktree: wt,
     completed_at: null,

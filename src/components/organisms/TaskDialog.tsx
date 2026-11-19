@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
 import { translateError } from "../../i18n/translate";
 import { useRepositories } from "../../hooks/useRepositories";
@@ -6,7 +7,9 @@ import type { Task, TaskDraft, TaskOrigin } from "../../hooks/useTasks";
 import type { Agent } from "../../hooks/useTeams";
 import { Alert } from "../molecules/Alert";
 import { Modal } from "../molecules/Modal";
+import { SegmentedControl } from "../molecules/SegmentedControl";
 import { TaskForm } from "../molecules/TaskForm";
+import { TaskLinkPanel } from "./TaskLinkPanel";
 
 type Props = {
   agents: Agent[];
@@ -27,8 +30,9 @@ export function TaskDialog({
 }: Props) {
   const { t, locale } = useI18n();
   const { repositories, errorKey, loadBranches } = useRepositories();
-  const { busy, errorKey: saveErrorKey, createTask, updateTask } =
+  const { busy, errorKey: saveErrorKey, createTask, updateTask, linkTask } =
     useTaskSave();
+  const [mode, setMode] = useState<"create" | "link">("create");
   const initial: TaskDraft = task
     ? {
         title: task.title,
@@ -54,6 +58,11 @@ export function TaskDialog({
     if (saved) onSaved(saved);
   }
 
+  async function link(existing: Task) {
+    const saved = await linkTask(existing.id, origin!);
+    if (saved) onSaved(saved);
+  }
+
   return (
     <Modal
       title={task ? t("tasks.form.titleEdit") : t("tasks.form.titleNew")}
@@ -64,7 +73,30 @@ export function TaskDialog({
           <Alert message={translateError(locale, errorKey)} />
         </div>
       )}
-      {repositories && (
+      {origin && !task && (
+        <div className="px-6 pt-4 sm:px-10">
+          <SegmentedControl
+            label={t("tasks.link.mode")}
+            value={mode}
+            options={[
+              { value: "create", label: t("tasks.link.create") },
+              { value: "link", label: t("tasks.link.link") },
+            ]}
+            onChange={setMode}
+          />
+        </div>
+      )}
+      {origin && mode === "link" && (
+        <TaskLinkPanel
+          origin={origin}
+          busy={busy}
+          errorMessage={
+            saveErrorKey ? translateError(locale, saveErrorKey) : null
+          }
+          onLink={link}
+        />
+      )}
+      {repositories && mode === "create" && (
         <TaskForm
           agents={agents}
           repositories={repositories}

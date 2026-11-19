@@ -87,6 +87,7 @@ pub struct Task {
     pub origin_room_id: Option<String>,
     pub origin_room_name: Option<String>,
     pub origin_message_id: Option<String>,
+    pub linked_rooms: Vec<TaskRoomLink>,
     pub agent_ids: Vec<String>,
     pub worktree: Option<crate::domain::worktree::Worktree>,
     pub completed_at: Option<String>,
@@ -102,6 +103,13 @@ pub struct TaskDraft {
     pub repository_id: Option<String>,
     pub base_ref: Option<String>,
     pub agent_ids: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct TaskRoomLink {
+    pub room_id: String,
+    pub room_name: String,
+    pub message_id: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]

@@ -25,5 +25,8 @@ export function useTaskSave() {
   const updateTask = (taskId: string, draft: TaskDraft) =>
     save(() => invoke<Task>("update_task", { taskId, draft }));
 
-  return { busy, errorKey, createTask, updateTask };
+  const linkTask = (taskId: string, origin: TaskOrigin) =>
+    save(() => invoke<Task>("link_task_to_room", { taskId, origin }));
+
+  return { busy, errorKey, createTask, updateTask, linkTask };
 }

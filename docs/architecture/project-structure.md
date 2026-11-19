@@ -36,7 +36,7 @@ src-tauri/src/
 │   ├── app_settings.rs    ✅ get_open_at_login, change_open_at_login (OS login item through `tauri-plugin-autostart`), open_data_folder (`tauri-plugin-opener`)
 │   ├── repositories.rs    ✅ list_repositories, register_repository (folder dialog; `None` if cancelled), unregister_repository, list_repository_branches
 │   ├── worktrees.rs       ✅ get_worktrees_root, change_worktrees_root (folder dialog; `None` if cancelled), prepare_task_environment, discard_task_environment, check_task_environment_removal, remove_task_environment, pick_task_environment_files (file dialog in the repository; `None` if cancelled), copy_task_environment_files (selection id and secret confirmation only), list_task_environments, trash_task_environments, restore_task_environments, purge_task_environments (task ids only; each returns the per-task failures)
-│   ├── tasks.rs           ✅ list_tasks, create_task, update_task, change_task_status, delete_task
+│   ├── tasks.rs           ✅ list_tasks, create_task, update_task, change_task_status, link_task_to_room, delete_task
 │   ├── rooms.rs           ✅ list_rooms, create_room, get_room (with runs, snapshots and agents who left), finish_room, add_room_agents, remove_room_agent
 │   └── session.rs         ✅ load_session, complete_first_launch, create_workspace, switch_workspace, list_teams, create_team, create_agent, get_agent, update_agent, delete_agent, save_canvas_positions, reset_canvas_positions, list_agent_templates, list_agent_roles, list_llm_providers, detect_local_models, change_locale, change_theme, change_ui_scale, change_loading_enabled, change_time_format, change_reduce_motion, change_notification
 ├── services/              Layer 2: business actions (verbs)
@@ -90,6 +90,7 @@ src-tauri/src/
 │   ├── repository_unregister.rs ✅ unregisters a repository no task references (`repository_in_use`); the folder is never touched
 │   ├── repository_branches_list.rs ✅ local branches of a registered repository and the suggested default (`origin/HEAD` if it exists locally, otherwise the current branch)
 │   ├── tasks_list.rs      ✅ tasks of the current workspace by recent activity with their assigned agents and origin room name
+│   ├── task_room_link.rs  ✅ links an existing task to an open room and optionally one of its messages; idempotent, skips the task's own origin
 │   ├── task_save.rs       ✅ creates and edits tasks: validates the draft, agents and repository of the workspace, the base branch against the local branches (only when it changes) and the origin room (open) and message (of that room); replaces the assigned agents; never creates runs or worktrees
 │   ├── task_status_change.rs ✅ applies a transition allowed by the domain state machine, guarded by the current status
 │   ├── task_delete.rs     ✅ deletes a task without an active environment: in `BEGIN IMMEDIATE`, removes its `removed` worktree history and then the task (assignments and copies go in cascade)
@@ -131,6 +132,7 @@ src-tauri/src/
 │   ├── messages.rs        ✅ messages table queries
 │   ├── git_repositories.rs ✅ repositories table queries (named so the module does not repeat its parent `repositories`)
 │   ├── tasks.rs           ✅ tasks table queries (with the origin room name) and the schema integrity tests of tasks and task_agents
+│   ├── task_room_links.rs ✅ task_room_links table queries: list with room names and idempotent insert
 │   ├── task_agents.rs     ✅ task_agents table queries: list, assign (idempotent) and keep only a given set
 │   ├── task_worktree_file_copies.rs ✅ copies of the active worktrees of a workspace and the copy record (upsert)
 │   ├── task_worktrees.rs  ✅ task_worktrees queries: active per task or workspace, transient rows for recovery, `preparing` insert, guarded transitions, trash location, environments with their task and repository, expired trash and deletion of removed history
@@ -210,7 +212,7 @@ src/
 │   ├── useAgentAvailability.ts ✅ invoke check_agent_availability when opening the room, when a run finishes and on request ("Check availability"); never while typing
 │   ├── useRepositories.ts ✅ invoke list_repositories, register_repository, unregister_repository and list_repository_branches
 │   ├── useTasks.ts        ✅ invoke list_tasks, change_task_status, prepare_task_environment, discard_task_environment, check_task_environment_removal, remove_task_environment, pick_task_environment_files, copy_task_environment_files, delete_task (reloads after a failed action); task types and the status transitions mirrored from the core for the buttons
-│   ├── useTaskSave.ts     ✅ invoke create_task and update_task
+│   ├── useTaskSave.ts     ✅ invoke create_task, update_task and link_task_to_room
 │   ├── useWorktreesRoot.ts ✅ invoke get_worktrees_root and change_worktrees_root
 │   ├── useEnvironmentReview.ts ✅ (4C stage 3C) invoke review_task_environment, read_task_environment_diff and list_task_environment_folder; one session counter drops late answers on refresh, task change and unmount, a second one drops out-of-order diffs, `review_stale` discards the review; groups entries by kind and source
 │   ├── useEnvironments.ts ✅ invoke list_task_environments and the trash, restore and purge batches

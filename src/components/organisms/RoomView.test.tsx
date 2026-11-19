@@ -1203,6 +1203,7 @@ describe("creating tasks from the room", () => {
     origin_room_id: "r1",
     origin_room_name: "Daily",
     origin_message_id: null,
+    linked_rooms: [],
     agent_ids: [],
     worktree: null,
     completed_at: null,
@@ -1268,5 +1269,50 @@ describe("creating tasks from the room", () => {
       }),
       origin: { room_id: "r1", message_id: "m1" },
     });
+  });
+
+  it("links an existing task to the room instead of creating one", async () => {
+    const link = vi.fn(() => ({
+      ...created,
+      origin_room_id: null,
+      origin_room_name: null,
+      linked_rooms: [{ room_id: "r1", room_name: "Daily", message_id: null }],
+    }));
+    const create = vi.fn();
+    core({
+      get_room: () => detail(),
+      list_repositories: () => [],
+      list_tasks: () => [
+        { ...created, id: "t1", title: "Project status", origin_room_id: null },
+        {
+          ...created,
+          id: "t2",
+          title: "Already here",
+          origin_room_id: "r1",
+          origin_message_id: null,
+        },
+        { ...created, id: "t3", title: "Other work", origin_room_id: null },
+      ],
+      link_task_to_room: link,
+      create_task: create,
+    });
+    const user = userEvent.setup();
+    await renderRoom();
+
+    await user.click(screen.getByRole("button", { name: "Create task" }));
+    const dialog = within(screen.getByRole("dialog", { name: "New task" }));
+    await user.click(dialog.getByRole("button", { name: "Link existing" }));
+    expect(await dialog.findByText("Project status")).toBeInTheDocument();
+    expect(dialog.queryByText("Already here")).not.toBeInTheDocument();
+    await user.type(dialog.getByLabelText("Search tasks by title"), "other");
+    expect(dialog.queryByText("Project status")).not.toBeInTheDocument();
+    await user.click(dialog.getByRole("button", { name: /Other work/ }));
+
+    expect(link).toHaveBeenCalledWith({
+      taskId: "t3",
+      origin: { room_id: "r1", message_id: null },
+    });
+    expect(create).not.toHaveBeenCalled();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 });

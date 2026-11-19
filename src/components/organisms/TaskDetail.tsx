@@ -214,6 +214,23 @@ export function TaskDetail({
               )}
             </Item>
           )}
+          {task.linked_rooms.length > 0 && (
+            <Item label={t("tasks.detail.linked")}>
+              <ul className="grid gap-1">
+                {task.linked_rooms.map((link) => (
+                  <li key={`${link.room_id}:${link.message_id}`}>
+                    {translateWith(
+                      locale,
+                      link.message_id
+                        ? "tasks.detail.linkedMessage"
+                        : "tasks.detail.linkedRoom",
+                      { name: link.room_name },
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </Item>
+          )}
           <Item label={t("tasks.detail.created")}>
             {formatDateTime(locale, task.created_at, timeFormat)}
           </Item>
