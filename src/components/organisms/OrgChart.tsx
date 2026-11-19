@@ -143,7 +143,6 @@ export function OrgChart({ teams, zoom, onNewTeam, onNewAgent, onEditAgent, onDe
           </svg>
           <div ref={registerCard(rootId)}>
           <OrgCard
-            seed={rootId}
             name={t("teams.chart.you")}
             role={t("teams.chart.supervisor")}
             count={teams.length}
@@ -167,7 +166,6 @@ export function OrgChart({ teams, zoom, onNewTeam, onNewAgent, onEditAgent, onDe
                   registerCard={registerCard(team.id)}
                   card={
                     <OrgCard
-                      seed={team.id}
                       name={team.name}
                       role={t("teams.chart.team")}
                       asHeading
@@ -193,7 +191,6 @@ export function OrgChart({ teams, zoom, onNewTeam, onNewAgent, onEditAgent, onDe
                           registerCard={registerCard(agent.id)}
                           card={
                             <OrgAgentCard
-                              seed={agent.id}
                               name={agent.name}
                               role={agent.role}
                               {...selection(agent.id)}
@@ -211,7 +208,6 @@ export function OrgChart({ teams, zoom, onNewTeam, onNewAgent, onEditAgent, onDe
       </div>
       {drawerTeam && drawerAgent && (
         <OrgDrawer
-          seed={drawerAgent.id}
           name={drawerAgent.name}
           subtitle={drawerAgent.role}
           rows={[
@@ -245,7 +241,6 @@ export function OrgChart({ teams, zoom, onNewTeam, onNewAgent, onEditAgent, onDe
       )}
       {drawerTeam && !drawerAgent && (
         <OrgDrawer
-          seed={drawerTeam.id}
           name={drawerTeam.name}
           subtitle={t("teams.chart.team")}
           rows={[{ Icon: Users, label: t("teams.chart.agents"), value: String(drawerTeam.agents.length) }]}
@@ -266,7 +261,7 @@ export function OrgChart({ teams, zoom, onNewTeam, onNewAgent, onEditAgent, onDe
                     onClick={() => setSelectedId(agent.id)}
                     className="flex w-full cursor-pointer items-center gap-3 rounded-xl p-2 text-left transition-colors hover:bg-hi focus-visible:outline-2 focus-visible:outline-ink"
                   >
-                    <Avatar seed={agent.id} label={agent.name} className="size-8 shrink-0 rounded-full text-xs" />
+                    <Avatar seed={agent.name} label={agent.name} className="size-8 shrink-0 rounded-full text-xs" />
                     <span className="min-w-0 leading-tight">
                       <span className="block truncate text-sm font-semibold text-ink">{agent.name}</span>
                       <span className="block truncate text-xs text-muted">{agent.role}</span>

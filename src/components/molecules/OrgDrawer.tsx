@@ -5,11 +5,11 @@ import { Avatar, hueOf } from "../atoms/Avatar";
 
 type Row = { Icon: LucideIcon; label: string; value: string };
 
-type Props = { seed: string; name: string; subtitle: string; rows: Row[]; children?: ReactNode; actions: ReactNode; onClose: () => void };
+type Props = { name: string; subtitle: string; rows: Row[]; children?: ReactNode; actions: ReactNode; onClose: () => void };
 
-export function OrgDrawer({ seed, name, subtitle, rows, children, actions, onClose }: Props) {
+export function OrgDrawer({ name, subtitle, rows, children, actions, onClose }: Props) {
   const { t } = useI18n();
-  const hue = hueOf(seed);
+  const hue = hueOf(name);
   return (
     <aside
       aria-label={name}
@@ -31,7 +31,7 @@ export function OrgDrawer({ seed, name, subtitle, rows, children, actions, onClo
       </div>
       <div className="flex flex-1 flex-col gap-4 px-5 pb-5">
         <div className="-mt-10 grid gap-2">
-          <Avatar seed={seed} label={name} className="relative size-20 rounded-full text-3xl ring-4 ring-surface" />
+          <Avatar seed={name} label={name} className="relative size-20 rounded-full text-3xl ring-4 ring-surface" />
           <div className="min-w-0 leading-tight">
             <h3 className="truncate text-xl font-bold tracking-tight text-ink">{name}</h3>
             <p className="mt-1 truncate text-sm font-medium text-muted">{subtitle}</p>
