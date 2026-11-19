@@ -1,4 +1,5 @@
 use crate::domain::repository::RepositoryIdentity;
+use crate::domain::review::DiffSource;
 use crate::domain::worktree::{
     git_supports_attribute_source, info_attributes_allowed, parse_executable_filters,
     parse_gitlinks,
@@ -44,6 +45,18 @@ pub struct Limits {
 pub const REMOVAL_LIMITS: Limits = Limits {
     timeout: Duration::from_secs(60),
     max_stdout: 32 * 1024 * 1024,
+};
+
+#[allow(dead_code)]
+pub const REVIEW_STATUS_LIMITS: Limits = Limits {
+    timeout: Duration::from_secs(20),
+    max_stdout: 4 * 1024 * 1024,
+};
+
+#[allow(dead_code)]
+pub const REVIEW_DIFF_LIMITS: Limits = Limits {
+    timeout: Duration::from_secs(20),
+    max_stdout: 512 * 1024,
 };
 
 const SETTINGS_MAX_BYTES: u64 = 1024 * 1024;
@@ -461,6 +474,77 @@ impl Guard {
             .trim()
             .parse()
             .map_err(|_| GuardError::Failed(None))
+    }
+}
+
+#[allow(dead_code)]
+fn literal_pathspec(path: &[u8]) -> Result<OsString, GuardError> {
+    let mut pathspec = OsString::from(":(literal)");
+    #[cfg(unix)]
+    {
+        use std::os::unix::ffi::OsStrExt;
+        pathspec.push(OsStr::from_bytes(path));
+    }
+    #[cfg(not(unix))]
+    pathspec.push(std::str::from_utf8(path).map_err(|_| GuardError::Failed(None))?);
+    Ok(pathspec)
+}
+
+#[allow(dead_code)]
+impl Guard {
+    pub async fn review_status(&self) -> Result<Output, GuardError> {
+        self.query_partial(
+            [
+                "status",
+                "--porcelain=v2",
+                "-z",
+                "--untracked-files=normal",
+                "--ignored=matching",
+                "--ignore-submodules=all",
+            ],
+            REVIEW_STATUS_LIMITS,
+        )
+        .await
+    }
+
+    fn diff_arguments(&self, source: DiffSource) -> Vec<OsString> {
+        let mut arguments: Vec<OsString> = [
+            "diff",
+            "--no-ext-diff",
+            "--no-textconv",
+            "--no-color",
+            "--ignore-submodules=all",
+        ]
+        .map(OsString::from)
+        .to_vec();
+        match source {
+            DiffSource::Unstaged => {}
+            DiffSource::Staged => arguments.push("--cached".into()),
+            DiffSource::Branch => {
+                arguments.extend([self.base_commit.clone().into(), "HEAD".into()])
+            }
+        }
+        arguments
+    }
+
+    pub async fn diff_numstat(&self, source: DiffSource) -> Result<Output, GuardError> {
+        let mut arguments = self.diff_arguments(source);
+        arguments.extend(["--numstat".into(), "-z".into()]);
+        self.query_partial(arguments, REVIEW_STATUS_LIMITS).await
+    }
+
+    pub async fn diff_file(
+        &self,
+        source: DiffSource,
+        path: &[u8],
+        original: Option<&[u8]>,
+    ) -> Result<Output, GuardError> {
+        let mut arguments = self.diff_arguments(source);
+        arguments.extend(["-U3".into(), "--".into(), literal_pathspec(path)?]);
+        if let Some(original) = original {
+            arguments.push(literal_pathspec(original)?);
+        }
+        self.query_partial(arguments, REVIEW_DIFF_LIMITS).await
     }
 }
 
@@ -1058,5 +1142,227 @@ mod tests {
                 Err(GuardError::GitDirNotFound)
             ));
         }
+    }
+
+    use crate::domain::review::{
+        ChangeCode, EntryKind, LineKind, parse_numstat, parse_patch, parse_review_status,
+    };
+
+    fn named(
+        status: &crate::domain::review::ReviewStatus,
+        name: &str,
+    ) -> crate::domain::review::ReviewEntry {
+        status
+            .entries
+            .iter()
+            .find(|entry| entry.path == name.as_bytes())
+            .unwrap_or_else(|| panic!("{name} in {status:?}"))
+            .clone()
+    }
+
+    #[tokio::test]
+    async fn the_review_status_reads_every_kind_of_change_from_real_git() {
+        let fx = fixture(&[
+            ("c.txt", "c\n"),
+            ("d.txt", "d\n"),
+            ("old name.txt", "rename me\n"),
+            (".gitignore", "target/\n"),
+        ]);
+        let wt = &fx.work_tree;
+        std::fs::write(wt.join("c.txt"), "cc\n").unwrap();
+        git(wt, &["add", "c.txt"]);
+        fx.dirty();
+        std::fs::write(wt.join("d.txt"), "dd\n").unwrap();
+        git(wt, &["add", "d.txt"]);
+        std::fs::write(wt.join("d.txt"), "ddd\n").unwrap();
+        git(wt, &["mv", "old name.txt", "new name.txt"]);
+        std::fs::remove_file(wt.join("b.bin")).unwrap();
+        std::fs::create_dir_all(wt.join("newdir/deeper")).unwrap();
+        std::fs::write(wt.join("newdir/deeper/x.txt"), "x").unwrap();
+        std::fs::create_dir(wt.join("target")).unwrap();
+        std::fs::write(wt.join("target/out"), "x").unwrap();
+        #[cfg(target_os = "linux")]
+        {
+            use std::os::unix::ffi::OsStrExt;
+            std::fs::write(wt.join(std::ffi::OsStr::from_bytes(b"caf\xe9.txt")), "x").unwrap();
+        }
+        let guard = fx.guard().await.unwrap();
+
+        let output = guard.review_status().await.unwrap();
+        let status = parse_review_status(&output.stdout, output.truncated);
+
+        assert!(status.complete && !output.truncated);
+        assert_eq!(named(&status, "c.txt").staged, Some(ChangeCode::Modified));
+        assert_eq!(named(&status, "c.txt").unstaged, None);
+        assert_eq!(named(&status, "a.txt").unstaged, Some(ChangeCode::Modified));
+        let both = named(&status, "d.txt");
+        assert_eq!(
+            (both.staged, both.unstaged),
+            (Some(ChangeCode::Modified), Some(ChangeCode::Modified))
+        );
+        let renamed = named(&status, "new name.txt");
+        assert_eq!(renamed.staged, Some(ChangeCode::Renamed));
+        assert_eq!(renamed.original_path.as_deref(), Some(&b"old name.txt"[..]));
+        assert_eq!(named(&status, "b.bin").unstaged, Some(ChangeCode::Deleted));
+        assert_eq!(named(&status, "newdir/").kind, EntryKind::Untracked);
+        assert_eq!(named(&status, "target/").kind, EntryKind::Ignored);
+        #[cfg(target_os = "linux")]
+        assert_eq!(
+            named_bytes(&status, b"caf\xe9.txt").kind,
+            EntryKind::Untracked
+        );
+        guard.finish().await.unwrap();
+    }
+
+    #[cfg(target_os = "linux")]
+    fn named_bytes(
+        status: &crate::domain::review::ReviewStatus,
+        name: &[u8],
+    ) -> crate::domain::review::ReviewEntry {
+        status
+            .entries
+            .iter()
+            .find(|entry| entry.path == name)
+            .unwrap()
+            .clone()
+    }
+
+    #[tokio::test]
+    async fn a_merge_conflict_is_listed_as_a_conflict() {
+        let fx = fixture(&[]);
+        std::fs::write(fx.repo.join("a.txt"), "main side\n").unwrap();
+        git(&fx.repo, &["commit", "-q", "-am", "main change"]);
+        std::fs::write(fx.work_tree.join("a.txt"), "branch side\n").unwrap();
+        git(&fx.work_tree, &["commit", "-q", "-am", "branch change"]);
+        let merge = std::process::Command::new("git")
+            .arg("-C")
+            .arg(&fx.work_tree)
+            .args(["-c", "user.name=t", "-c", "user.email=t@t", "merge", "main"])
+            .output()
+            .unwrap();
+        assert!(!merge.status.success());
+        let guard = fx.guard().await.unwrap();
+
+        let output = guard.review_status().await.unwrap();
+        let status = parse_review_status(&output.stdout, output.truncated);
+
+        assert_eq!(named(&status, "a.txt").kind, EntryKind::Conflicted);
+    }
+
+    #[tokio::test]
+    async fn file_diffs_come_from_each_source_with_literal_paths_only() {
+        let fx = fixture(&[("[ab].txt", "glob\n"), ("b.txt", "b\n")]);
+        let wt = &fx.work_tree;
+        fx.dirty();
+        std::fs::write(wt.join("[ab].txt"), "GLOB\n").unwrap();
+        std::fs::write(wt.join("b.txt"), "B\n").unwrap();
+        std::fs::write(wt.join("b.bin"), b"\0\x01\x02 binary").unwrap();
+        let guard = fx.guard().await.unwrap();
+
+        let unstaged = guard
+            .diff_file(DiffSource::Unstaged, b"[ab].txt", None)
+            .await
+            .unwrap();
+        let patch = String::from_utf8_lossy(&unstaged.stdout).into_owned();
+        let diff = parse_patch(&unstaged.stdout, unstaged.truncated);
+
+        assert!(
+            patch.contains("diff --git a/[ab].txt b/[ab].txt"),
+            "{patch}"
+        );
+        assert!(!patch.contains("a/b.txt") && !patch.contains("a/a.txt"));
+        assert_eq!(diff.hunks[0].lines[0].kind, LineKind::Removed);
+        let binary = guard
+            .diff_file(DiffSource::Unstaged, b"b.bin", None)
+            .await
+            .unwrap();
+        assert!(parse_patch(&binary.stdout, binary.truncated).binary);
+        let numstat = guard.diff_numstat(DiffSource::Unstaged).await.unwrap();
+        let numstat = parse_numstat(&numstat.stdout, numstat.truncated);
+        assert!(numstat.complete);
+        assert!(
+            numstat
+                .entries
+                .iter()
+                .any(|entry| entry.path == b"b.bin" && entry.binary())
+        );
+
+        git(wt, &["add", "b.txt"]);
+        let staged = guard
+            .diff_file(DiffSource::Staged, b"b.txt", None)
+            .await
+            .unwrap();
+        assert!(String::from_utf8_lossy(&staged.stdout).contains("+B"));
+        git(wt, &["commit", "-q", "-m", "branch work", "--", "b.txt"]);
+        let branch = guard
+            .diff_file(DiffSource::Branch, b"b.txt", None)
+            .await
+            .unwrap();
+        assert!(String::from_utf8_lossy(&branch.stdout).contains("-b"));
+    }
+
+    #[tokio::test]
+    async fn a_path_outside_the_worktree_is_refused_by_git() {
+        let fx = fixture(&[]);
+        std::fs::write(fx.root.join("outside.txt"), "secret\n").unwrap();
+        let guard = fx.guard().await.unwrap();
+
+        let relative = guard
+            .diff_file(DiffSource::Unstaged, b"../outside.txt", None)
+            .await;
+        let absolute = guard
+            .diff_file(
+                DiffSource::Unstaged,
+                fx.root.join("outside.txt").to_string_lossy().as_bytes(),
+                None,
+            )
+            .await;
+
+        assert!(matches!(relative, Err(GuardError::Failed(_))));
+        assert!(matches!(absolute, Err(GuardError::Failed(_))));
+    }
+
+    #[tokio::test]
+    async fn review_queries_leave_the_repository_untouched_and_run_nothing() {
+        let fx = fixture(&[(".gitattributes", "*.bin diff=probe\n")]);
+        fx.config("diff.probe.textconv", &fx.probe("textconv"));
+        fx.config("diff.external", &fx.quiet_probe("external"));
+        fx.config("core.fsmonitor", &fx.quiet_probe("fsmonitor"));
+        fx.dirty();
+        std::fs::write(fx.work_tree.join("b.bin"), "changed\n").unwrap();
+        let common = PathBuf::from(&fx.identity.git_common_dir);
+        let before = (snapshot(&common), snapshot(&fx.admin()));
+        let guard = fx.guard().await.unwrap();
+
+        guard.review_status().await.unwrap();
+        for source in [DiffSource::Unstaged, DiffSource::Staged, DiffSource::Branch] {
+            guard.diff_numstat(source).await.unwrap();
+            guard.diff_file(source, b"b.bin", None).await.unwrap();
+            guard.diff_file(source, b"a.txt", None).await.unwrap();
+        }
+        guard.finish().await.unwrap();
+
+        assert_eq!(fx.executed(), "");
+        assert!(before == (snapshot(&common), snapshot(&fx.admin())));
+    }
+
+    #[tokio::test]
+    async fn a_cut_status_is_reported_as_partial() {
+        let fx = fixture(&[]);
+        for index in 0..60 {
+            std::fs::write(fx.work_tree.join(format!("u-{index}.txt")), "x").unwrap();
+        }
+        let guard = fx.guard().await.unwrap();
+        let tiny = Limits {
+            timeout: Duration::from_secs(30),
+            max_stdout: 120,
+        };
+        let args = ["status", "--porcelain=v2", "-z", "--untracked-files=all"];
+
+        let output = guard.query_partial(args, tiny).await.unwrap();
+        let status = parse_review_status(&output.stdout, output.truncated);
+
+        assert!(output.truncated && !status.complete);
+        assert!(!status.entries.is_empty() && status.entries.len() < 60);
     }
 }
