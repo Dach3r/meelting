@@ -828,7 +828,7 @@ describe("workspace shell", () => {
   });
 
   it("creates a team from the form and shows it", async () => {
-    const created = [{ id: "t1", name: "Design", agents: [] }];
+    const created = [{ id: "t1", name: "main-website", agents: [] }];
     invokeMock.mockImplementation(async (command) => {
       if (command === "list_teams") return [];
       if (command === "create_team") return created;
@@ -838,12 +838,14 @@ describe("workspace shell", () => {
     render(<App />);
 
     await user.click(await screen.findByRole("button", { name: "New team" }));
-    await user.type(screen.getByLabelText("Team name"), "Design");
+    await user.type(screen.getByLabelText("Team name"), "Main Website");
     await user.click(screen.getByRole("button", { name: "Create team" }));
 
-    expect(invokeMock).toHaveBeenCalledWith("create_team", { name: "Design" });
+    expect(invokeMock).toHaveBeenCalledWith("create_team", {
+      name: "main-website",
+    });
     expect(
-      await screen.findByRole("heading", { name: "Design" }),
+      await screen.findByRole("heading", { name: "main-website" }),
     ).toBeInTheDocument();
     expect(screen.queryByLabelText("Team name")).not.toBeInTheDocument();
   });

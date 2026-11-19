@@ -58,7 +58,7 @@ Full detail in [../architecture/overview.md](../architecture/overview.md#data-mo
 
 **`agents`:** `id` (UUID v7), `workspace_id`, `team_id` (FK `ON DELETE RESTRICT`), `template_key` (NULL if custom), `name` (1–80), `role` (1–80), `description` (≤ 500), `instructions` (≤ 10 000), `provider` and `model` (non-empty), timestamps. `(team_id, workspace_id)` is a composite foreign key to `teams`.
 
-**`teams`:** `id`, `workspace_id`, `name` (1–80), timestamps.
+**`teams`:** `id`, `workspace_id`, `name` (1–80, lowercase slug with hyphens, e.g. "Main Website" → `main-website`; normalized in the form and again in the core), timestamps.
 
 **Validations:** mirrored in the database with `CHECK`; `provider` and `model` are validated against `llm.yml` on creation and when they change (done); an agent whose model left the catalog remains editable and its "Model" tab warns that another one must be chosen.
 

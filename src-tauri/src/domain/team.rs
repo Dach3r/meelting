@@ -111,6 +111,18 @@ impl AgentEdit {
     }
 }
 
+pub fn slugify_name(raw: &str) -> Option<String> {
+    let slug = raw
+        .to_lowercase()
+        .split(|c: char| !c.is_alphanumeric())
+        .filter(|word| !word.is_empty())
+        .collect::<Vec<_>>()
+        .join("-");
+    (1..=TEXT_MAX_CHARS)
+        .contains(&slug.chars().count())
+        .then_some(slug)
+}
+
 fn identity_is_valid(name: &str, role: &str, description: &str, instructions: &str) -> bool {
     (1..=TEXT_MAX_CHARS).contains(&name.chars().count())
         && (1..=TEXT_MAX_CHARS).contains(&role.chars().count())
@@ -133,6 +145,23 @@ mod tests {
             provider: "openai".into(),
             model: "gpt".into(),
         }
+    }
+
+    #[test]
+    fn slugifies_team_names() {
+        assert_eq!(slugify_name("Nuevo equipo"), Some("nuevo-equipo".into()));
+        assert_eq!(
+            slugify_name("  Main   Website "),
+            Some("main-website".into())
+        );
+        assert_eq!(slugify_name("Casa María!"), Some("casa-maría".into()));
+        assert_eq!(slugify_name("ya-slug"), Some("ya-slug".into()));
+    }
+
+    #[test]
+    fn rejects_team_names_without_letters_or_too_long() {
+        assert_eq!(slugify_name(" - !! "), None);
+        assert_eq!(slugify_name(&"a".repeat(TEXT_MAX_CHARS + 1)), None);
     }
 
     #[test]

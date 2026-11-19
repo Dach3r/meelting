@@ -6,6 +6,14 @@ import { Button } from "../atoms/Button";
 import { Field } from "../atoms/Field";
 import { Alert } from "./Alert";
 
+export function slugifyTeamName(raw: string) {
+  return raw
+    .toLowerCase()
+    .split(/[^\p{L}\p{N}]+/u)
+    .filter(Boolean)
+    .join("-");
+}
+
 type Props = {
   busy: boolean;
   errorMessage: string | null;
@@ -16,11 +24,11 @@ type Props = {
 export function TeamForm({ busy, errorMessage, onSubmit, onCancel }: Props) {
   const { t } = useI18n();
   const [name, setName] = useState("");
-  const trimmed = name.trim();
+  const slug = slugifyTeamName(name);
 
   async function submit(event: FormEvent) {
     event.preventDefault();
-    if (await onSubmit(name)) onCancel();
+    if (await onSubmit(slug)) onCancel();
   }
 
   return (
@@ -39,12 +47,12 @@ export function TeamForm({ busy, errorMessage, onSubmit, onCancel }: Props) {
           <span className="h-4 w-0.5 bg-line" />
           <span className="flex max-w-full items-center gap-2.5 rounded-2xl border border-line bg-raised p-2 pr-4 text-base font-bold text-ink">
             <Avatar
-              seed={trimmed}
-              label={trimmed || "?"}
+              seed={slug}
+              label={slug || "?"}
               className="size-8 rounded-full text-sm"
             />
-            <span className={`truncate ${trimmed ? "" : "text-muted"}`}>
-              {trimmed || t("teams.newTeam")}
+            <span className={`truncate ${slug ? "" : "text-muted"}`}>
+              {slug || t("teams.newTeam")}
             </span>
           </span>
           <span className="h-4 w-0.5 bg-line" />
@@ -75,7 +83,7 @@ export function TeamForm({ busy, errorMessage, onSubmit, onCancel }: Props) {
           <Button type="button" variant="ghost" size="pill" onClick={onCancel}>
             {t("teams.cancel")}
           </Button>
-          <Button type="submit" size="pill" disabled={busy || trimmed === ""}>
+          <Button type="submit" size="pill" disabled={busy || slug === ""}>
             {t("teams.createTeam")}
           </Button>
         </div>
