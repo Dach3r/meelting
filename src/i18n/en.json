@@ -604,6 +604,9 @@
     "title": "Files",
     "description": "Working environments (worktrees) of this workspace's tasks. Environments sent to the trash are deleted completely after 30 days.",
     "empty": "There are no environments yet. Prepare one from a task.",
+    "detail": {
+      "repository": "Repository"
+    },
     "selectAll": "Select all",
     "trash": "Move to trash ({count})",
     "trashAll": "Empty all",
@@ -619,6 +622,7 @@
     "title": "Trash",
     "description": "Environments are deleted completely 30 days after entering the trash.",
     "empty": "The trash is empty.",
+    "restoreOne": "Restore",
     "restore": "Restore ({count})",
     "purge": "Delete permanently ({count})",
     "emptyTrash": "Empty trash",

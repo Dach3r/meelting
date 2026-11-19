@@ -604,6 +604,9 @@
     "title": "Archivos",
     "description": "Entornos de trabajo (worktrees) de las tareas de este workspace. Los que mandes a la papelera se eliminan por completo a los 30 días.",
     "empty": "Todavía no hay entornos. Prepara uno desde una tarea.",
+    "detail": {
+      "repository": "Repositorio"
+    },
     "selectAll": "Seleccionar todo",
     "trash": "Mover a la papelera ({count})",
     "trashAll": "Vaciar todo",
@@ -619,6 +622,7 @@
     "title": "Papelera",
     "description": "Los entornos se eliminan por completo 30 días después de entrar a la papelera.",
     "empty": "La papelera está vacía.",
+    "restoreOne": "Restaurar",
     "restore": "Restaurar ({count})",
     "purge": "Eliminar definitivamente ({count})",
     "emptyTrash": "Vaciar papelera",

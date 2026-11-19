@@ -98,7 +98,38 @@ describe("files", () => {
       ]),
     );
     await waitFor(() => expect(screen.queryByText("Login")).toBeNull());
-    expect(screen.getByText("Payments")).toBeTruthy();
+    expect(within(list).getByText("Payments")).toBeTruthy();
+  });
+
+  it("shows the details of the focused environment and moves only that one", async () => {
+    const calls = core([
+      environment("t1", "Login"),
+      environment("t2", "Payments"),
+    ]);
+    const user = userEvent.setup();
+    renderPage("files");
+
+    const detail = await screen.findByRole("complementary", { name: "Login" });
+    expect(within(detail).getByText("my-app")).toBeTruthy();
+    expect(within(detail).getByText("/w/t1")).toBeTruthy();
+
+    await user.click(screen.getByRole("button", { name: /Payments/ }));
+    const next = screen.getByRole("complementary", { name: "Payments" });
+    expect(within(next).getByText("/w/t2")).toBeTruthy();
+
+    await user.click(
+      within(next).getByRole("button", { name: "Move to trash" }),
+    );
+    await user.click(
+      within(
+        screen.getByRole("dialog", { name: "Move 1 to the trash?" }),
+      ).getByRole("button", { name: "Move to trash" }),
+    );
+    await waitFor(() =>
+      expect(calls).toEqual([
+        { command: "trash_task_environments", taskIds: ["t2"] },
+      ]),
+    );
   });
 
   it("empties every ready environment at once and skips the ones that are not ready", async () => {
@@ -113,7 +144,7 @@ describe("files", () => {
     const user = userEvent.setup();
     renderPage("files");
 
-    await screen.findByText("Login");
+    await screen.findByRole("checkbox", { name: "Login" });
     expect(
       (screen.getByRole("checkbox", { name: "Broken" }) as HTMLInputElement)
         .disabled,
@@ -165,7 +196,8 @@ describe("trash", () => {
     const user = userEvent.setup();
     renderPage("trash");
 
-    expect(await screen.findByText("Deleted in 25 days")).toBeTruthy();
+    const list = await screen.findByRole("list", { name: "Trash" });
+    expect(within(list).getByText("Deleted in 25 days")).toBeTruthy();
     expect(screen.getByText("/w/.trash/t1")).toBeTruthy();
     expect(screen.queryByText("Active")).toBeNull();
 
@@ -180,6 +212,24 @@ describe("trash", () => {
     expect(await screen.findByText("The trash is empty.")).toBeTruthy();
   });
 
+  it("restores or deletes only the focused environment from its details", async () => {
+    const calls = core([
+      trashedEnvironment("t1", "Login", 1),
+      trashedEnvironment("t2", "Payments", 3),
+    ]);
+    const user = userEvent.setup();
+    renderPage("trash");
+
+    await user.click(await screen.findByRole("button", { name: /Payments/ }));
+    const detail = screen.getByRole("complementary", { name: "Payments" });
+    await user.click(within(detail).getByRole("button", { name: "Restore" }));
+    await waitFor(() =>
+      expect(calls).toEqual([
+        { command: "restore_task_environments", taskIds: ["t2"] },
+      ]),
+    );
+  });
+
   it("deletes permanently only after confirming and can empty the whole trash", async () => {
     const calls = core([
       trashedEnvironment("t1", "Login", 1),
@@ -188,7 +238,7 @@ describe("trash", () => {
     const user = userEvent.setup();
     renderPage("trash");
 
-    await screen.findByText("Login");
+    await screen.findByRole("checkbox", { name: "Login" });
     await user.click(screen.getByRole("button", { name: "Empty trash" }));
     const dialog = screen.getByRole("dialog", {
       name: "Delete 2 permanently?",

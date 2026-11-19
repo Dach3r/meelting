@@ -8,6 +8,8 @@ type Props = {
   environments: Environment[];
   selected: Set<string>;
   selectable: (environment: Environment) => boolean;
+  focusedId: string;
+  onFocus: (taskId: string) => void;
   onToggle: (taskId: string) => void;
   onToggleAll: () => void;
   aside: (environment: Environment) => ReactNode;
@@ -18,6 +20,8 @@ export function EnvironmentList({
   environments,
   selected,
   selectable,
+  focusedId,
+  onFocus,
   onToggle,
   onToggleAll,
   aside,
@@ -40,11 +44,11 @@ export function EnvironmentList({
       </label>
       <ul aria-label={label} className="grid">
         {environments.map((environment) => {
-          const { worktree } = environment;
+          const focused = environment.task_id === focusedId;
           return (
             <li
               key={environment.task_id}
-              className="flex min-w-0 items-center gap-3 border-b border-line/60 px-4 py-3 last:border-b-0"
+              className={`flex min-w-0 items-center gap-3 border-b border-line/60 px-4 py-2 last:border-b-0 ${focused ? "bg-raised" : ""}`}
             >
               <input
                 type="checkbox"
@@ -53,22 +57,25 @@ export function EnvironmentList({
                 disabled={!selectable(environment)}
                 onChange={() => onToggle(environment.task_id)}
               />
-              <FolderGit2 aria-hidden className="size-5 shrink-0 text-muted" />
-              <div className="grid min-w-0 flex-1 gap-0.5">
-                <span className="truncate font-semibold text-ink">
-                  {environment.task_title}
+              <button
+                type="button"
+                aria-current={focused}
+                onClick={() => onFocus(environment.task_id)}
+                className="flex min-h-11 min-w-0 flex-1 cursor-pointer items-center gap-3 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+              >
+                <FolderGit2
+                  aria-hidden
+                  className="size-5 shrink-0 text-muted"
+                />
+                <span className="grid min-w-0 flex-1 gap-0.5">
+                  <span className="truncate font-semibold text-ink">
+                    {environment.task_title}
+                  </span>
+                  <span className="truncate text-xs text-muted">
+                    {environment.repository_name}
+                  </span>
                 </span>
-                <span className="truncate text-xs text-muted">
-                  {environment.repository_name} ·{" "}
-                  <code>{worktree.branch_name}</code>
-                </span>
-                <code
-                  className="truncate text-xs text-muted select-text"
-                  title={worktree.trash_path ?? worktree.path}
-                >
-                  {worktree.trash_path ?? worktree.path}
-                </code>
-              </div>
+              </button>
               <div className="shrink-0">{aside(environment)}</div>
             </li>
           );

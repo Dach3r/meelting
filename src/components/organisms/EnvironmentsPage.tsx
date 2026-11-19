@@ -5,6 +5,7 @@ import { translateError, translateWith } from "../../i18n/translate";
 import { Button } from "../atoms/Button";
 import { Alert } from "../molecules/Alert";
 import { ConfirmDialog } from "../molecules/ConfirmDialog";
+import { EnvironmentDetail } from "../molecules/EnvironmentDetail";
 import { EnvironmentList } from "../molecules/EnvironmentList";
 
 const trashDays = 30;
@@ -28,6 +29,7 @@ export function EnvironmentsPage({ mode }: { mode: "files" | "trash" }) {
     useEnvironments();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [pending, setPending] = useState<Pending | null>(null);
+  const [focusedId, setFocusedId] = useState<string | null>(null);
   const [titles, setTitles] = useState<Map<string, string>>(new Map());
   const inTrash = mode === "trash";
   const shown = (environments ?? []).filter(
@@ -35,6 +37,8 @@ export function EnvironmentsPage({ mode }: { mode: "files" | "trash" }) {
   );
   const selectable = (environment: Environment) =>
     inTrash || environment.worktree.status === "ready";
+  const focused =
+    shown.find((environment) => environment.task_id === focusedId) ?? shown[0];
   const candidates = shown.filter(selectable).map((item) => item.task_id);
   const chosen = candidates.filter((taskId) => selected.has(taskId));
 
@@ -175,15 +179,63 @@ export function EnvironmentsPage({ mode }: { mode: "files" | "trash" }) {
             {t(`${mode}.empty`)}
           </p>
         ) : (
-          <EnvironmentList
-            label={t(`${mode}.title`)}
-            environments={shown}
-            selected={selected}
-            selectable={selectable}
-            onToggle={toggle}
-            onToggleAll={toggleAll}
-            aside={aside}
-          />
+          <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_24rem]">
+            <EnvironmentList
+              label={t(`${mode}.title`)}
+              environments={shown}
+              selected={selected}
+              selectable={selectable}
+              focusedId={focused.task_id}
+              onFocus={setFocusedId}
+              onToggle={toggle}
+              onToggleAll={toggleAll}
+              aside={aside}
+            />
+            <EnvironmentDetail
+              environment={focused}
+              status={aside(focused)}
+              hint={t(`${dialogKeys[inTrash ? "purge" : "trash"]}.body`)}
+              actions={
+                inTrash ? (
+                  <>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="pill"
+                      className="border-line"
+                      disabled={busy}
+                      onClick={() => run(restore, [focused.task_id])}
+                    >
+                      {t("trash.restoreOne")}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="danger"
+                      size="pill"
+                      disabled={busy}
+                      onClick={() =>
+                        setPending({ action: "purge", taskIds: [focused.task_id] })
+                      }
+                    >
+                      {t("trash.purgeDialog.confirm")}
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="danger"
+                    size="pill"
+                    disabled={busy || !selectable(focused)}
+                    onClick={() =>
+                      setPending({ action: "trash", taskIds: [focused.task_id] })
+                    }
+                  >
+                    {t("files.trashDialog.confirm")}
+                  </Button>
+                )
+              }
+            />
+          </div>
         ))}
       {pending && (
         <ConfirmDialog
