@@ -45,7 +45,7 @@ export function ChatMessage({
             <ListPlus aria-hidden className="size-4" />
           </button>
         </p>
-        <p className="text-sm whitespace-pre-wrap break-words text-ink select-text">
+        <p className="text-sm whitespace-pre-wrap break-words text-ink">
           {message.body}
         </p>
         {footer && <p className="text-xs text-muted">{footer}</p>}

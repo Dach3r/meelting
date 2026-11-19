@@ -108,7 +108,7 @@ export function TaskEnvironment({
             </code>
           </Detail>
           <Detail label={t("tasks.environment.path")}>
-            <code className="text-sm break-all select-text">
+            <code className="text-sm break-all">
               {worktree.path}
             </code>
           </Detail>

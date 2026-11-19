@@ -161,7 +161,7 @@ export function TaskDetail({
         aria-label={t("tasks.detail.information")}
         className="grid gap-5 rounded-2xl border border-line bg-shell p-6"
       >
-        <p className="whitespace-pre-wrap break-words text-ink select-text">
+        <p className="whitespace-pre-wrap break-words text-ink">
           {task.description || (
             <span className="text-muted">{t("tasks.detail.noDescription")}</span>
           )}

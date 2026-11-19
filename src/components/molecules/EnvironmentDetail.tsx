@@ -48,7 +48,7 @@ export function EnvironmentDetail({
               {label}
             </dt>
             <dd className={`${edge} px-5 py-4`}>
-              <code className="break-all text-ink select-text">{value}</code>
+              <code className="break-all text-ink">{value}</code>
             </dd>
           </div>
           );
@@ -65,7 +65,7 @@ export function EnvironmentDetail({
                 key={copy.relative_path}
                 className="flex min-w-0 items-center justify-between gap-4 border-b border-line px-5 py-3 last:border-b-0"
               >
-                <code className="min-w-0 truncate text-ink select-text">
+                <code className="min-w-0 truncate text-ink">
                   {copy.relative_path}
                 </code>
                 <span className="shrink-0 text-xs text-muted">

@@ -34,7 +34,7 @@ export function WorktreesRootSetting() {
               ? t("settings.worktrees.custom")
               : t("settings.worktrees.default")}
           </p>
-          <code className="text-sm break-all text-ink select-text">
+          <code className="text-sm break-all text-ink">
             {root.path}
           </code>
           <p

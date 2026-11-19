@@ -78,7 +78,7 @@ export function AgentRunStatus({
         {liveText && (
           <p
             aria-live="polite"
-            className="text-sm whitespace-pre-wrap break-words text-ink/80 select-text"
+            className="text-sm whitespace-pre-wrap break-words text-ink/80"
           >
             {liveText}
           </p>
