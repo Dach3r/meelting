@@ -38,6 +38,7 @@ src-tauri/src/
 ├── services/              Capa 2: acciones de negocio (verbos)
 │   ├── worktree_run.rs    ✅ crea un worktree y ejecuta un comando en él
 │   ├── session_load.rs    ✅ carga el perfil y los workspaces; define SessionError
+│   ├── engine_check.rs    ✅ valida un par proveedor/modelo: nube contra `llm.yml`, local contra los modelos instalados en el entorno en ejecución (localhost); lo usan crear y editar agentes
 │   ├── first_launch.rs    ✅ crea el perfil y el primer workspace en una transacción
 │   ├── workspace_create.rs ✅ crea un workspace y lo deja como actual
 │   ├── workspace_switch.rs ✅ cambia el workspace actual

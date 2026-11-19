@@ -1,9 +1,9 @@
-import { Cloud, HardDrive } from "lucide-react";
+import { Cloud, HardDrive, RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
 import { useLlmProviders, type LlmProvider } from "../../hooks/useLlmProviders";
 import { useLocalModels } from "../../hooks/useLocalModels";
-import { Field } from "../atoms/Field";
+import { Button } from "../atoms/Button";
 import { SelectField } from "../atoms/SelectField";
 import { Alert } from "./Alert";
 import { SegmentedControl } from "./SegmentedControl";
@@ -25,13 +25,15 @@ export function EnginePicker({ provider, model, onChange }: Props) {
   const [localKey, setLocalKey] = useState(provider);
   const localProviders = providers.filter((entry) => entry.location === "local");
   const localProvider = localProviders.find((entry) => entry.key === localKey) ?? localProviders[0];
-  const detected = useLocalModels(location === "local");
+  const { detected, detectAgain } = useLocalModels(location === "local");
   const localState = detected?.find((entry) => entry.key === localProvider?.key);
   const localModels = localState?.models ?? [];
   const modelGroups = providers
     .filter((entry) => entry.location === "cloud")
     .map((entry) => ({ id: entry.key, label: entry.name, icon: Cloud, options: entry.models }));
   const retired = current?.location === "cloud" && model !== "" && !current.models.includes(model);
+  const uninstalled =
+    location === "local" && provider === localProvider?.key && model !== "" && localModels.length > 0 && !localModels.includes(model);
 
   return (
     <>
@@ -67,6 +69,7 @@ export function EnginePicker({ provider, model, onChange }: Props) {
               onChange("", "");
             }}
           />
+          {uninstalled && <Alert message={t("teams.agent.localUninstalled")} />}
           {detected === null && <p className="text-sm text-muted">{t("teams.agent.localDetecting")}</p>}
           {localModels.length > 0 && (
             <SelectField
@@ -83,13 +86,10 @@ export function EnginePicker({ provider, model, onChange }: Props) {
           {detected !== null && localModels.length === 0 && (
             <>
               <Alert message={t(localState?.running ? "teams.agent.localNoModels" : "teams.agent.localStopped")} />
-              <Field
-                label={t("teams.agent.modelName")}
-                value={model}
-                onChange={(nextModel) => onChange(localProvider.key, nextModel)}
-                maxLength={200}
-                icon={HardDrive}
-              />
+              <Button type="button" variant="ghost" size="compact" className="self-start" onClick={detectAgain}>
+                <RefreshCw aria-hidden className="size-4" />
+                {t("teams.agent.localDetectAgain")}
+              </Button>
             </>
           )}
         </>

@@ -12,6 +12,7 @@ pub mod agent_update;
 pub mod availability_check;
 pub mod canvas_positions_reset;
 pub mod canvas_positions_save;
+pub mod engine_check;
 pub mod first_launch;
 pub mod intervention_send;
 pub mod llm_providers_list;

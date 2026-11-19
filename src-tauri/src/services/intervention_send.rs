@@ -349,24 +349,15 @@ mod tests {
         let other = crate::services::team_create::run(&h.engine.pool, "Other")
             .await
             .unwrap();
-        let outsider = crate::services::agent_create::run(
+        let outsider = crate::services::agent_run_engine::testing::hire(
             &h.engine.pool,
-            crate::domain::team::AgentDraft {
-                team_id: other[1].id.clone(),
-                template_key: None,
-                name: "Outsider".into(),
-                role: "QA Engineer".into(),
-                description: String::new(),
-                instructions: String::new(),
-                provider: "ollama".into(),
-                model: "qwen-test".into(),
-            },
+            &other[1].id,
+            "Outsider",
+            "QA Engineer",
+            "ollama",
+            "qwen-test",
         )
-        .await
-        .unwrap()[1]
-            .agents[0]
-            .id
-            .clone();
+        .await;
         let send = |room_id: &str, agent_id: &str, body: &str, id: &str| {
             let engine = h.engine.clone();
             let (room_id, agent_id, body, id) = (

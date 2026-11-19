@@ -7,6 +7,7 @@ use crate::domain::session::Session;
 use crate::domain::team::{AgentDetail, AgentDraft, AgentEdit, Position, Team};
 use crate::domain::theme::Theme;
 use crate::domain::ui_scale::UiScale;
+use crate::services::agent_run_engine::Engine;
 use crate::services::session_load::SessionError;
 use crate::services::{
     agent_create, agent_delete, agent_get, agent_roles_list, agent_templates_list, agent_update,
@@ -15,6 +16,7 @@ use crate::services::{
     ui_scale_change, workspace_create, workspace_switch,
 };
 use sqlx::SqlitePool;
+use std::sync::Arc;
 use tauri::State;
 
 #[tauri::command]
@@ -63,9 +65,10 @@ pub async fn create_team(
 #[tauri::command]
 pub async fn create_agent(
     pool: State<'_, SqlitePool>,
+    engine: State<'_, Arc<Engine>>,
     draft: AgentDraft,
 ) -> Result<Vec<Team>, SessionError> {
-    agent_create::run(&pool, draft).await
+    agent_create::run(&pool, &engine.providers, draft).await
 }
 
 #[tauri::command]
@@ -79,10 +82,11 @@ pub async fn get_agent(
 #[tauri::command]
 pub async fn update_agent(
     pool: State<'_, SqlitePool>,
+    engine: State<'_, Arc<Engine>>,
     agent_id: String,
     edit: AgentEdit,
 ) -> Result<Vec<Team>, SessionError> {
-    agent_update::run(&pool, &agent_id, edit).await
+    agent_update::run(&pool, &engine.providers, &agent_id, edit).await
 }
 
 #[tauri::command]

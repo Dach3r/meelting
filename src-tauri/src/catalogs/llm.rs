@@ -61,16 +61,6 @@ pub fn providers() -> Vec<Provider> {
     serde_yaml_ng::from_str(FILE).expect("embedded llm catalog is valid YAML")
 }
 
-pub fn exists(provider: &str, model: &str) -> bool {
-    providers().iter().any(|entry| {
-        entry.key == provider
-            && match entry.location {
-                Location::Local => !model.trim().is_empty(),
-                Location::Cloud => entry.models.iter().any(|candidate| candidate.key == model),
-            }
-    })
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -187,20 +177,14 @@ mod tests {
     }
 
     #[test]
-    fn accepts_any_model_name_for_local_providers() {
-        assert!(exists("ollama", "qwen2.5:0.5b"));
-        assert!(!exists("ollama", "  "));
-    }
-
-    #[test]
-    fn knows_which_pairs_exist() {
-        assert!(exists("anthropic", "claude-sonnet-5-5"));
-        assert!(!exists("anthropic", "gpt-6.1-sol"));
-        assert!(!exists("nobody", "claude-sonnet-5-5"));
-    }
-
-    #[test]
     fn offers_the_replacements_of_retired_models_for_new_agents() {
+        let providers = providers();
+        let exists = |provider: &str, model: &str| {
+            providers
+                .iter()
+                .any(|entry| entry.key == provider && entry.models.iter().any(|m| m.key == model))
+        };
+
         assert!(exists("openai", "gpt-6.1-sol"));
         assert!(exists("openai", "gpt-6.1-terra"));
         assert!(exists("groq", "openai/gpt-oss-120b"));

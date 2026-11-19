@@ -773,6 +773,24 @@ describe("workspace shell", () => {
       expect(screen.getByRole("textbox", { name: "Instructions" })).toHaveValue("Be careful");
     });
 
+    it("warns when the agent's local model is not installed and offers only installed ones", async () => {
+      mockEditing();
+      const base = invokeMock.getMockImplementation()!;
+      invokeMock.mockImplementation(async (command, args) => {
+        if (command === "get_agent") return { ...detail, provider: "ollama", model: "qwen2.5-coder:32b" };
+        if (command === "detect_local_models") return detectedModels;
+        return base(command, args);
+      });
+      const user = userEvent.setup();
+      render(<App />);
+
+      const dialog = await openEditor(user);
+      await user.click(within(dialog).getByRole("tab", { name: "Model" }));
+
+      expect(await within(dialog).findByRole("alert")).toHaveTextContent("This model is not installed");
+      expect(within(dialog).getAllByRole("option").map((option) => option.textContent)).toEqual(["llama3.3:70b"]);
+    });
+
     it("changes the provider and model only when the user picks another one", async () => {
       mockEditing();
       const user = userEvent.setup();
@@ -1101,8 +1119,18 @@ describe("agent catalog", () => {
     expect(screen.getByRole("button", { name: "Continue" })).toBeEnabled();
   });
 
-  it("asks for the model name when the local runtime is stopped", async () => {
-    mockCatalog(undefined, detectedModels);
+  it("offers no free-text model when the local runtime is stopped and detects again on demand", async () => {
+    let running = false;
+    invokeMock.mockImplementation(async (command) => {
+      if (command === "detect_local_models")
+        return [{ key: "ollama", running, models: running ? ["qwen2.5:0.5b"] : [] }];
+      if (command === "list_teams") return [team];
+      if (command === "list_agent_templates") return templates;
+      if (command === "list_agent_roles") return roles;
+      if (command === "list_llm_providers") return providers;
+      if (command === "create_agent") return hired;
+      return session({ locale: "en" });
+    });
     const user = userEvent.setup();
     render(<App />);
     await openCatalog(user);
@@ -1110,18 +1138,20 @@ describe("agent catalog", () => {
     await user.click(await screen.findByRole("button", { name: "Hire QA Engineer" }));
     await user.click(screen.getByRole("button", { name: "Continue" }));
     await user.click(screen.getByRole("button", { name: "On my computer" }));
-    await user.click(screen.getByRole("button", { name: "LM Studio" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("This runtime is not running");
     expect(screen.queryByRole("option")).not.toBeInTheDocument();
+    expect(screen.queryByRole("textbox", { name: "Model name" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Continue" })).toBeDisabled();
-    await user.type(screen.getByLabelText("Model name"), "qwen2.5:0.5b");
+    running = true;
+    await user.click(screen.getByRole("button", { name: "Detect again" }));
+    await user.click(await screen.findByRole("option", { name: "qwen2.5:0.5b" }));
     await user.click(screen.getByRole("button", { name: "Continue" }));
     await user.click(screen.getByRole("button", { name: "Hire" }));
 
     expect(invokeMock).toHaveBeenCalledWith(
       "create_agent",
-      expect.objectContaining({ draft: expect.objectContaining({ provider: "lmstudio", model: "qwen2.5:0.5b" }) }),
+      expect.objectContaining({ draft: expect.objectContaining({ provider: "ollama", model: "qwen2.5:0.5b" }) }),
     );
   });
 
@@ -1136,7 +1166,8 @@ describe("agent catalog", () => {
     await user.click(screen.getByRole("button", { name: "On my computer" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("No models installed");
-    expect(screen.getByLabelText("Model name")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Detect again" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Continue" })).toBeDisabled();
   });
 
   it("keeps the wizard open with the error when the core rejects", async () => {

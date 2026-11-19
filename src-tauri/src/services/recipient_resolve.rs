@@ -33,9 +33,9 @@ pub async fn run(
 mod tests {
     use super::*;
     use crate::domain::locale::Locale;
-    use crate::domain::team::AgentDraft;
     use crate::repositories::database::open_for_test;
-    use crate::services::{agent_create, first_launch, room_create, team_create, workspace_create};
+    use crate::services::agent_run_engine::testing::hire;
+    use crate::services::{first_launch, room_create, team_create, workspace_create};
 
     async fn room_with(pool: &SqlitePool, names: &[&str]) -> (String, Vec<String>) {
         let team_id = team_create::run(pool, "General").await.unwrap()[0]
@@ -43,29 +43,16 @@ mod tests {
             .clone();
         let mut ids = Vec::new();
         for name in names {
-            let teams = agent_create::run(
-                pool,
-                AgentDraft {
-                    team_id: team_id.clone(),
-                    template_key: None,
-                    name: (*name).into(),
-                    role: "Backend Developer".into(),
-                    description: String::new(),
-                    instructions: String::new(),
-                    provider: "ollama".into(),
-                    model: "qwen-test".into(),
-                },
-            )
-            .await
-            .unwrap();
             ids.push(
-                teams[0]
-                    .agents
-                    .iter()
-                    .find(|agent| agent.name == *name)
-                    .unwrap()
-                    .id
-                    .clone(),
+                hire(
+                    pool,
+                    &team_id,
+                    name,
+                    "Backend Developer",
+                    "ollama",
+                    "qwen-test",
+                )
+                .await,
             );
         }
         let room = room_create::run(pool, "Daily", ids.clone()).await.unwrap();

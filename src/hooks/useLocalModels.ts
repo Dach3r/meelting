@@ -5,6 +5,7 @@ export type LocalProviderModels = { key: string; running: boolean; models: strin
 
 export function useLocalModels(active: boolean) {
   const [detected, setDetected] = useState<LocalProviderModels[] | null>(null);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     if (!active) return;
@@ -20,7 +21,7 @@ export function useLocalModels(active: boolean) {
     return () => {
       current = false;
     };
-  }, [active]);
+  }, [active, attempt]);
 
-  return detected;
+  return { detected, detectAgain: () => setAttempt((count) => count + 1) };
 }

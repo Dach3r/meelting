@@ -69,7 +69,7 @@ mod tests {
             provider: "anthropic".into(),
             model: "claude-sonnet-5-5".into(),
         };
-        agent_create::run(pool, draft)
+        agent_create::run(pool, &crate::catalogs::llm::providers(), draft)
             .await
             .unwrap()
             .into_iter()

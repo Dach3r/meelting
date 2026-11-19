@@ -70,10 +70,11 @@ pub mod testing {
     use crate::domain::recipient::Selection;
     use crate::domain::room::Message;
     use crate::domain::team::AgentDraft;
+    use crate::repositories::agents;
     use crate::repositories::database::open_for_test;
     use crate::services::intervention_send::{self, Intervention, InterventionSent};
-    use crate::services::session_load::SessionError;
-    use crate::services::{agent_create, first_launch, room_create, team_create};
+    use crate::services::session_load::{self, SessionError};
+    use crate::services::{first_launch, room_create, team_create};
     use std::sync::Mutex;
     use std::time::Duration;
     use tokio::io::{AsyncReadExt, AsyncWriteExt};
@@ -115,6 +116,35 @@ pub mod testing {
             .collect()
     }
 
+    pub async fn hire(
+        pool: &SqlitePool,
+        team_id: &str,
+        name: &str,
+        role: &str,
+        provider: &str,
+        model: &str,
+    ) -> String {
+        let workspace_id = session_load::require(pool)
+            .await
+            .unwrap()
+            .current_workspace_id;
+        let id = Uuid::now_v7().to_string();
+        let draft = AgentDraft {
+            team_id: team_id.into(),
+            template_key: None,
+            name: name.into(),
+            role: role.into(),
+            description: String::new(),
+            instructions: "Be brief.".into(),
+            provider: provider.into(),
+            model: model.into(),
+        };
+        agents::insert(pool, &id, &workspace_id, &draft)
+            .await
+            .unwrap();
+        id
+    }
+
     pub async fn harness(base_url: &str, limits: Limits, agents: &[(&str, &str)]) -> Harness {
         let (pool, dir) = open_for_test().await;
         first_launch::run(&pool, Locale::En, "Acme").await.unwrap();
@@ -123,22 +153,17 @@ pub mod testing {
             .clone();
         let mut ids = Vec::new();
         for (index, (provider, model)) in agents.iter().enumerate() {
-            let teams = agent_create::run(
-                &pool,
-                AgentDraft {
-                    team_id: team_id.clone(),
-                    template_key: None,
-                    name: format!("Agent{index}"),
-                    role: "QA Engineer".into(),
-                    description: String::new(),
-                    instructions: "Be brief.".into(),
-                    provider: (*provider).into(),
-                    model: (*model).into(),
-                },
-            )
-            .await
-            .unwrap();
-            ids.push(teams[0].agents.last().unwrap().id.clone());
+            ids.push(
+                hire(
+                    &pool,
+                    &team_id,
+                    &format!("Agent{index}"),
+                    "QA Engineer",
+                    provider,
+                    model,
+                )
+                .await,
+            );
         }
         let room = room_create::run(&pool, "Daily", ids.clone()).await.unwrap();
         let events: Arc<Mutex<Vec<RunEvent>>> = Arc::default();

@@ -35,7 +35,10 @@ mod tests {
             provider: "anthropic".into(),
             model: "claude-sonnet-5-5".into(),
         };
-        let agent_id = agent_create::run(&pool, draft).await.unwrap()[0].agents[0]
+        let agent_id = agent_create::run(&pool, &crate::catalogs::llm::providers(), draft)
+            .await
+            .unwrap()[0]
+            .agents[0]
             .id
             .clone();
 

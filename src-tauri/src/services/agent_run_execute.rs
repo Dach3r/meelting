@@ -1248,24 +1248,15 @@ mod tests {
             .unwrap()[0]
             .id
             .clone();
-        let agent = crate::services::agent_create::run(
+        let agent = crate::services::agent_run_engine::testing::hire(
             &pool,
-            crate::domain::team::AgentDraft {
-                team_id: team,
-                template_key: None,
-                name: "Ana".into(),
-                role: "QA Engineer".into(),
-                description: String::new(),
-                instructions: String::new(),
-                provider: "ollama".into(),
-                model: "qwen-test".into(),
-            },
+            &team,
+            "Ana",
+            "QA Engineer",
+            "ollama",
+            "qwen-test",
         )
-        .await
-        .unwrap()[0]
-            .agents[0]
-            .id
-            .clone();
+        .await;
         let room = crate::services::room_create::run(&pool, "Daily", vec![agent.clone()])
             .await
             .unwrap();

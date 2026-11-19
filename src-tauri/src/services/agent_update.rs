@@ -1,12 +1,14 @@
-use crate::catalogs::{agent_roles, llm};
+use crate::catalogs::agent_roles;
+use crate::catalogs::llm::Provider;
 use crate::domain::team::{AgentEdit, Team};
 use crate::repositories::{agents, canvas_positions, teams};
 use crate::services::session_load::{self, SessionError};
-use crate::services::teams_list;
+use crate::services::{engine_check, teams_list};
 use sqlx::SqlitePool;
 
 pub async fn run(
     pool: &SqlitePool,
+    providers: &[Provider],
     agent_id: &str,
     edit: AgentEdit,
 ) -> Result<Vec<Team>, SessionError> {
@@ -23,7 +25,7 @@ pub async fn run(
         .await?
         .ok_or(SessionError::AgentNotFound)?;
     let engine_changed = current.provider != edit.provider || current.model != edit.model;
-    if engine_changed && !llm::exists(&edit.provider, &edit.model) {
+    if engine_changed && !engine_check::run(providers, &edit.provider, &edit.model).await {
         return Err(SessionError::InvalidAgent);
     }
     agents::update(&mut *transaction, &workspace_id, agent_id, &edit)
@@ -42,10 +44,15 @@ pub async fn run(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::catalogs::llm;
     use crate::domain::locale::Locale;
     use crate::domain::team::{AgentDraft, Position};
     use crate::repositories::database::open_for_test;
+    use crate::services::agent_run_engine::testing::providers_at;
     use crate::services::{agent_create, first_launch, team_create, workspace_create};
+    use serde_json::json;
+    use wiremock::matchers::{method, path};
+    use wiremock::{Mock, MockServer, ResponseTemplate};
 
     async fn setup(pool: &SqlitePool) -> (String, String, String) {
         first_launch::run(pool, Locale::En, "First").await.unwrap();
@@ -61,10 +68,24 @@ mod tests {
             provider: "anthropic".into(),
             model: "claude-sonnet-5-5".into(),
         };
-        let agent_id = agent_create::run(pool, draft).await.unwrap()[0].agents[0]
+        let agent_id = agent_create::run(pool, &llm::providers(), draft)
+            .await
+            .unwrap()[0]
+            .agents[0]
             .id
             .clone();
         (agent_id, teams[0].id.clone(), teams[1].id.clone())
+    }
+
+    async fn ollama(models: &[&str]) -> MockServer {
+        let server = MockServer::start().await;
+        let data: Vec<_> = models.iter().map(|id| json!({ "id": id })).collect();
+        Mock::given(method("GET"))
+            .and(path("/models"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": data })))
+            .mount(&server)
+            .await;
+        server
     }
 
     fn edit(team_id: &str) -> AgentEdit {
@@ -84,7 +105,9 @@ mod tests {
         let (pool, _dir) = open_for_test().await;
         let (agent_id, _, other_team) = setup(&pool).await;
 
-        let teams = run(&pool, &agent_id, edit(&other_team)).await.unwrap();
+        let teams = run(&pool, &llm::providers(), &agent_id, edit(&other_team))
+            .await
+            .unwrap();
 
         assert!(teams[0].agents.is_empty());
         assert_eq!(teams[1].agents[0].name, "Bea");
@@ -108,11 +131,15 @@ mod tests {
             .await
             .unwrap();
 
-        run(&pool, &agent_id, edit(&team_id)).await.unwrap();
+        run(&pool, &llm::providers(), &agent_id, edit(&team_id))
+            .await
+            .unwrap();
         let kept = canvas_positions::list(&pool, &workspace_id).await.unwrap();
         assert_eq!(kept.len(), 1);
 
-        run(&pool, &agent_id, edit(&other_team)).await.unwrap();
+        run(&pool, &llm::providers(), &agent_id, edit(&other_team))
+            .await
+            .unwrap();
         let reset = canvas_positions::list(&pool, &workspace_id).await.unwrap();
         assert!(reset.is_empty());
     }
@@ -127,11 +154,11 @@ mod tests {
         wizard.role = "Wizard".into();
 
         assert!(matches!(
-            run(&pool, &agent_id, blank).await,
+            run(&pool, &llm::providers(), &agent_id, blank).await,
             Err(SessionError::InvalidAgent)
         ));
         assert!(matches!(
-            run(&pool, &agent_id, wizard).await,
+            run(&pool, &llm::providers(), &agent_id, wizard).await,
             Err(SessionError::InvalidAgent)
         ));
     }
@@ -142,29 +169,32 @@ mod tests {
         let (agent_id, team_id, _) = setup(&pool).await;
 
         assert!(matches!(
-            run(&pool, "missing", edit(&team_id)).await,
+            run(&pool, &llm::providers(), "missing", edit(&team_id)).await,
             Err(SessionError::AgentNotFound)
         ));
         assert!(matches!(
-            run(&pool, &agent_id, edit("missing")).await,
+            run(&pool, &llm::providers(), &agent_id, edit("missing")).await,
             Err(SessionError::TeamNotFound)
         ));
         workspace_create::run(&pool, "Second").await.unwrap();
         assert!(matches!(
-            run(&pool, &agent_id, edit(&team_id)).await,
+            run(&pool, &llm::providers(), &agent_id, edit(&team_id)).await,
             Err(SessionError::TeamNotFound)
         ));
     }
 
     #[tokio::test]
-    async fn changes_the_provider_and_model_to_another_pair_of_the_catalog() {
+    async fn changes_the_provider_and_model_to_an_installed_local_model() {
         let (pool, _dir) = open_for_test().await;
         let (agent_id, team_id, _) = setup(&pool).await;
+        let server = ollama(&["qwen2.5:0.5b"]).await;
         let mut local = edit(&team_id);
         local.provider = "ollama".into();
         local.model = "qwen2.5:0.5b".into();
 
-        run(&pool, &agent_id, local).await.unwrap();
+        run(&pool, &providers_at(&server.uri()), &agent_id, local)
+            .await
+            .unwrap();
 
         let workspace_id = session_load::require(&pool)
             .await
@@ -181,6 +211,62 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn rejects_a_local_model_that_is_not_installed_or_whose_server_is_stopped() {
+        let (pool, _dir) = open_for_test().await;
+        let (agent_id, team_id, _) = setup(&pool).await;
+        let server = ollama(&["qwen2.5:0.5b"]).await;
+        let mut missing = edit(&team_id);
+        missing.provider = "ollama".into();
+        missing.model = "qwen2.5-coder:32b".into();
+        let mut installed = edit(&team_id);
+        installed.provider = "ollama".into();
+        installed.model = "qwen2.5:0.5b".into();
+
+        assert!(matches!(
+            run(&pool, &providers_at(&server.uri()), &agent_id, missing).await,
+            Err(SessionError::InvalidAgent)
+        ));
+        assert!(matches!(
+            run(
+                &pool,
+                &providers_at("http://127.0.0.1:1"),
+                &agent_id,
+                installed
+            )
+            .await,
+            Err(SessionError::InvalidAgent)
+        ));
+    }
+
+    #[tokio::test]
+    async fn an_agent_on_an_uninstalled_local_model_stays_editable() {
+        let (pool, _dir) = open_for_test().await;
+        let (agent_id, team_id, _) = setup(&pool).await;
+        sqlx::query("UPDATE agents SET provider = 'ollama', model = 'qwen2.5-coder:32b'")
+            .execute(&pool)
+            .await
+            .unwrap();
+        let mut rename = edit(&team_id);
+        rename.provider = "ollama".into();
+        rename.model = "qwen2.5-coder:32b".into();
+
+        run(
+            &pool,
+            &providers_at("http://127.0.0.1:1"),
+            &agent_id,
+            rename,
+        )
+        .await
+        .unwrap();
+
+        let name: String = sqlx::query_scalar("SELECT name FROM agents")
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+        assert_eq!(name, "Bea");
+    }
+
+    #[tokio::test]
     async fn rejects_a_new_pair_outside_the_catalog() {
         let (pool, _dir) = open_for_test().await;
         let (agent_id, team_id, _) = setup(&pool).await;
@@ -191,11 +277,11 @@ mod tests {
         mismatched.model = "gpt-6.1-sol".into();
 
         assert!(matches!(
-            run(&pool, &agent_id, retired).await,
+            run(&pool, &llm::providers(), &agent_id, retired).await,
             Err(SessionError::InvalidAgent)
         ));
         assert!(matches!(
-            run(&pool, &agent_id, mismatched).await,
+            run(&pool, &llm::providers(), &agent_id, mismatched).await,
             Err(SessionError::InvalidAgent)
         ));
     }
@@ -212,11 +298,15 @@ mod tests {
         rename.provider = "openai".into();
         rename.model = "gpt-5".into();
 
-        run(&pool, &agent_id, rename).await.unwrap();
+        run(&pool, &llm::providers(), &agent_id, rename)
+            .await
+            .unwrap();
         let mut upgrade = edit(&team_id);
         upgrade.provider = "openai".into();
         upgrade.model = "gpt-6.1-sol".into();
-        run(&pool, &agent_id, upgrade).await.unwrap();
+        run(&pool, &llm::providers(), &agent_id, upgrade)
+            .await
+            .unwrap();
 
         let model: String = sqlx::query_scalar("SELECT model FROM agents")
             .fetch_one(&pool)
@@ -246,11 +336,13 @@ mod tests {
         .execute(&pool)
         .await
         .unwrap();
-        let mut local = edit(&team_id);
-        local.provider = "ollama".into();
-        local.model = "qwen2.5:0.5b".into();
+        let mut upgrade = edit(&team_id);
+        upgrade.provider = "openai".into();
+        upgrade.model = "gpt-6.1-sol".into();
 
-        run(&pool, &agent_id, local).await.unwrap();
+        run(&pool, &llm::providers(), &agent_id, upgrade)
+            .await
+            .unwrap();
 
         let copied: (String, String) =
             sqlx::query_as("SELECT provider, model FROM agent_runs WHERE id = 'run1'")
