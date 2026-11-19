@@ -9,9 +9,10 @@ type Props = {
   agents: Agent[];
   value: string[];
   onChange: (agentIds: string[]) => void;
+  hint?: string;
 };
 
-export function AgentPicker({ agents, value, onChange }: Props) {
+export function AgentPicker({ agents, value, onChange, hint }: Props) {
   const { t } = useI18n();
   const id = useId();
   const [query, setQuery] = useState("");
@@ -45,7 +46,7 @@ export function AgentPicker({ agents, value, onChange }: Props) {
       <label htmlFor={id} className="text-sm font-medium text-muted">
         {t("rooms.form.agents")}
       </label>
-      <p className="-mt-1 text-xs text-muted">{t("rooms.form.agentsHint")}</p>
+      <p className="-mt-1 text-xs text-muted">{hint ?? t("rooms.form.agentsHint")}</p>
       {selected.length > 0 && (
         <ul
           aria-label={t("rooms.form.selected")}

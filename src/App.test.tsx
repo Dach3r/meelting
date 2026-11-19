@@ -312,9 +312,30 @@ describe("workspace shell", () => {
     expect(nav.getByRole("button", { name: "Rooms" })).not.toHaveAttribute(
       "aria-current",
     );
-    expect(nav.getByText("Tasks").closest("[aria-disabled]")).toHaveAttribute(
-      "aria-disabled",
-      "true",
+    expect(nav.getByRole("button", { name: "Tasks" })).not.toHaveAttribute(
+      "aria-current",
+    );
+    expect(
+      nav.getByText("Activity").closest("[aria-disabled]"),
+    ).toHaveAttribute("aria-disabled", "true");
+  });
+
+  it("opens the tasks of the workspace from the rail", async () => {
+    invokeMock.mockImplementation(async (command) => {
+      if (command === "list_teams") return [];
+      if (command === "list_tasks") return [];
+      if (command === "list_repositories") return [];
+      return session({ locale: "en" });
+    });
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "Tasks" }));
+
+    expect(await screen.findByText("No tasks yet")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Tasks" })).toHaveAttribute(
+      "aria-current",
+      "page",
     );
   });
 

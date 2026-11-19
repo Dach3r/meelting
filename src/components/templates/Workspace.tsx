@@ -18,6 +18,7 @@ import { ProvidersPage } from "../organisms/ProvidersPage";
 import { Rail, type View } from "../organisms/Rail";
 import { RoomsPage } from "../organisms/RoomsPage";
 import { SettingsPage } from "../organisms/SettingsPage";
+import { TasksPage } from "../organisms/TasksPage";
 import { TeamsPage } from "../organisms/TeamsPage";
 import { Topbar } from "../organisms/Topbar";
 
@@ -153,6 +154,11 @@ export function Workspace({
                 />
               ) : view === "providers" ? (
                 <ProvidersPage />
+              ) : view === "tasks" ? (
+                <TasksPage
+                  key={props.currentId}
+                  agents={teams.flatMap((team) => team.agents)}
+                />
               ) : view === "rooms" ? (
                 <RoomsPage
                   key={props.currentId}

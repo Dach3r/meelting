@@ -15,6 +15,7 @@ use tauri::Manager;
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_window_state::Builder::default().build())
+        .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             let data_dir = app.path().app_data_dir()?;
             std::fs::create_dir_all(&data_dir)?;
@@ -67,7 +68,16 @@ pub fn run() {
             commands::provider_keys::list_provider_keys,
             commands::provider_keys::save_provider_key,
             commands::provider_keys::check_provider_key,
-            commands::provider_keys::delete_provider_key
+            commands::provider_keys::delete_provider_key,
+            commands::repositories::list_repositories,
+            commands::repositories::register_repository,
+            commands::repositories::unregister_repository,
+            commands::repositories::list_repository_branches,
+            commands::tasks::list_tasks,
+            commands::tasks::create_task,
+            commands::tasks::update_task,
+            commands::tasks::change_task_status,
+            commands::tasks::delete_task
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -37,6 +37,36 @@ pub enum SessionError {
     InvalidApiKey,
     #[error("provider_not_configured")]
     ProviderNotConfigured,
+    #[error("git_unavailable")]
+    GitUnavailable,
+    #[error("not_a_repository")]
+    NotARepository,
+    #[error("repository_bare")]
+    RepositoryBare,
+    #[error("repository_is_worktree")]
+    RepositoryIsWorktree,
+    #[error("repository_without_commits")]
+    RepositoryWithoutCommits,
+    #[error("repository_with_submodules")]
+    RepositoryWithSubmodules,
+    #[error("repository_already_registered")]
+    RepositoryAlreadyRegistered,
+    #[error("repository_not_found")]
+    RepositoryNotFound,
+    #[error("repository_in_use")]
+    RepositoryInUse,
+    #[error("repository_unavailable")]
+    RepositoryUnavailable,
+    #[error("invalid_base_ref")]
+    InvalidBaseRef,
+    #[error("invalid_task")]
+    InvalidTask,
+    #[error("task_not_found")]
+    TaskNotFound,
+    #[error("invalid_task_transition")]
+    InvalidTaskTransition,
+    #[error("message_not_found")]
+    MessageNotFound,
     #[error("keychain_unavailable")]
     Keychain(#[from] crate::system::keychain::KeychainError),
 }

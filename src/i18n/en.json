@@ -20,7 +20,22 @@
     "invalid_provider": "That provider does not use API keys.",
     "invalid_api_key": "Paste the full key, without spaces, up to 512 characters.",
     "provider_not_configured": "That provider has no saved key in this workspace.",
-    "keychain_unavailable": "Could not access the system keychain. Unlock it and try again."
+    "keychain_unavailable": "Could not access the system keychain. Unlock it and try again.",
+    "git_unavailable": "Git is not installed or could not be run. Install Git and try again.",
+    "not_a_repository": "That folder is not a Git repository.",
+    "repository_bare": "Bare repositories are not supported. Pick a folder with a working copy.",
+    "repository_is_worktree": "That folder is a linked worktree. Pick the main folder of the repository.",
+    "repository_without_commits": "The repository has no commits yet. Make a first commit and try again.",
+    "repository_with_submodules": "Repositories with submodules are not supported yet.",
+    "repository_already_registered": "That repository is already registered in this workspace.",
+    "repository_not_found": "That repository is no longer registered.",
+    "repository_in_use": "Some tasks use this repository. Change or delete them first.",
+    "repository_unavailable": "The repository folder could not be read. Check that it still exists.",
+    "invalid_base_ref": "That branch does not exist in the repository.",
+    "invalid_task": "Enter a title of up to 120 characters and a description of up to 10,000.",
+    "task_not_found": "That task no longer exists.",
+    "invalid_task_transition": "The task can't move to that status from its current one.",
+    "message_not_found": "That message no longer exists in the room."
   },
   "newWorkspace": {
     "title": "Create your workspace",
@@ -372,5 +387,94 @@
       "several": "You mentioned several agents. For now, pick one:",
       "conflict": "The chosen recipient and the mention don't match. Who is it for?"
     }
+  },
+  "tasks": {
+    "title": "Tasks",
+    "new": "New task",
+    "cancel": "Cancel",
+    "empty": {
+      "title": "No tasks yet",
+      "body": "Create a task to organize work and assign agents to it."
+    },
+    "filters": {
+      "label": "Filter tasks",
+      "status": "Status",
+      "repository": "Repository",
+      "agent": "Agent",
+      "all": "All",
+      "noRepository": "No repository",
+      "noMatch": "No task matches the filters."
+    },
+    "status": {
+      "pending": "Pending",
+      "in_progress": "In progress",
+      "blocked": "Blocked",
+      "completed": "Completed",
+      "canceled": "Canceled"
+    },
+    "priority": {
+      "label": "Priority",
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High"
+    },
+    "actions": {
+      "label": "Change status",
+      "pending": "Move to pending",
+      "in_progress": "Start",
+      "blocked": "Block",
+      "completed": "Complete",
+      "canceled": "Cancel task",
+      "reopen": "Reopen"
+    },
+    "form": {
+      "titleNew": "New task",
+      "titleEdit": "Edit task",
+      "title": "Title",
+      "description": "Description",
+      "descriptionHint": "Optional.",
+      "repository": "Repository",
+      "repositoryHint": "Optional. A local Git repository registered in this workspace.",
+      "noRepository": "No repository",
+      "baseRef": "Base branch",
+      "baseRefHint": "Saving the task does not create anything in the repository.",
+      "loadingBranches": "Loading branches…",
+      "agents": "Agents",
+      "agentsHint": "Optional. Assigning agents does not start any work.",
+      "submitNew": "Create task",
+      "submitEdit": "Save changes"
+    },
+    "detail": {
+      "back": "Tasks",
+      "edit": "Edit",
+      "delete": "Delete",
+      "information": "Information",
+      "agents": "Agents",
+      "noAgents": "No agents assigned.",
+      "repository": "Repository",
+      "noRepository": "No repository",
+      "baseRef": "Base branch",
+      "origin": "Origin",
+      "originRoom": "Room «{name}»",
+      "originMessage": "A message in room «{name}»",
+      "created": "Created",
+      "completed": "Completed",
+      "noDescription": "No description."
+    },
+    "deleteDialog": {
+      "title": "Delete the task?",
+      "body": "The task and its agent assignments are deleted. Rooms, messages and repositories are not touched.",
+      "confirm": "Delete"
+    },
+    "repositories": {
+      "action": "Repositories",
+      "title": "Repositories",
+      "hint": "Local Git repositories you can link to tasks. Registering one never changes its files.",
+      "add": "Add repository",
+      "empty": "No repositories registered yet.",
+      "remove": "Unregister {name}"
+    },
+    "fromRoom": "Create task",
+    "fromMessage": "Turn into task"
   }
 }

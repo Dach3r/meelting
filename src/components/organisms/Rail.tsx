@@ -14,12 +14,12 @@ import { useI18n } from "../../i18n/I18nProvider";
 import { Logo } from "../atoms/Logo";
 import { NavItem } from "../molecules/NavItem";
 
-export type View = "teams" | "rooms" | "providers" | "settings";
+export type View = "teams" | "rooms" | "tasks" | "providers" | "settings";
 
 const items: { key: string; icon: LucideIcon; view?: View }[] = [
   { key: "teams", icon: Users, view: "teams" },
   { key: "rooms", icon: Video, view: "rooms" },
-  { key: "tasks", icon: ListChecks },
+  { key: "tasks", icon: ListChecks, view: "tasks" },
   { key: "activity", icon: Activity },
   { key: "integrations", icon: Plug },
   { key: "providers", icon: KeyRound, view: "providers" },

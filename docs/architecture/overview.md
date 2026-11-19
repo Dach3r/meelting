@@ -127,7 +127,10 @@ General rules:
 | `messages` | `id`, `room_id`, `agent_id` (NULL = user), `body`, `created_at` | Immutable, no `updated_at`. `body` not empty; maximum 4000 characters only if it is from the user (`agent_id IS NULL`). `room_id → rooms` `ON DELETE CASCADE`; `(room_id, agent_id) → room_agents` `ON DELETE NO ACTION`: an agent only writes in rooms where it participates, an agent with messages cannot be deleted, and removing it from the room leaves its participation with `left_at` instead of deleting it. When the room is deleted, the check at the end of the statement allows deleting participations and messages together |
 | `agent_runs` | ✅ Migrations approved and applied ([agent-run.md §2](agent-run.md#2-final-sql-schema)): `id`, `room_id`, `agent_id`, `request_message_id`, `response_message_id`, `client_request_id`, `status`, `error_kind`, `attempts`, `provider`, `model`, `input_tokens`, `output_tokens`, `created_at`, `started_at`, `finished_at` | Unique: `(room_id, client_request_id)`, `request_message_id`, `response_message_id` and one active run per `(room_id, agent_id)` (partial index). Composite FKs to `messages` so that request and response belong to the same room and the response to the same agent; they require two unique indexes on `messages` (✅). Does not port from Rails `user_id`, `updated_at`, `finish_reason`, `response_model`, `cached_input_tokens` or `provider_request_id` |
 | `llm_providers_configured` | `provider`, `base_url`, `updated_at` | Not built: the "AI providers" screen reads whether a key exists from the keychain and local providers use the catalog URL (D26). Only revisit if a configurable local URL is needed |
-| `tasks` | `id`, `workspace_id`, `room_id`, `agent_id`, `title`, `repo_path`, `base_branch`, `branch`, `worktree_path`, `status`, `created_at`, `updated_at`, `finished_at` | Phase 4. `status`: `preparing`, `ready`, `running`, `waiting_approval`, `done`, `failed`, `discarded` |
+| `repositories` | ✅ `id`, `workspace_id`, `name` (1–80), `path`, `git_common_dir`, timestamps | Phase 4A ([tasks.md §3](../product/tasks.md#3-data-model)). Unique `(workspace_id, git_common_dir)` (the Git identity) and `(id, workspace_id)` |
+| `tasks` | ✅ `id`, `workspace_id`, `repository_id`, `origin_room_id`, `origin_message_id`, `title` (1–120), `description` (≤ 10,000), `status` (`pending`/`in_progress`/`blocked`/`completed`/`canceled`), `priority` (`low`/`medium`/`high`), `base_ref`, `completed_at`, timestamps | Phase 4A. `completed_at` set if and only if `completed`; `base_ref` only with a repository; composite FKs `NO ACTION` to `repositories (id, workspace_id)`, `rooms (id, workspace_id)` and `messages (id, room_id)` |
+| `task_agents` | ✅ `task_id`, `agent_id`, `workspace_id`, `created_at` | Phase 4A. PK `(task_id, agent_id)`; composite FKs to `tasks` and `agents`, both `ON DELETE CASCADE`. Assigning starts no run (D29) |
+| `task_worktrees`, `task_worktree_file_copies` | See [tasks.md §3.4](../product/tasks.md#34-task_worktrees-and-task_worktree_file_copies-4b-not-created) | Phase 4B; full definition presented for approval before creating them |
 | `tool_calls` | `id`, `agent_run_id`, `task_id`, `tool`, `arguments` (JSON), `status`, `output`, `exit_code`, `created_at`, `finished_at` | Phase 5 |
 | `approvals` | `id`, `tool_call_id`, `decision` (`pending`/`approved`/`denied`), `decided_at`, `remember` (`never`/`task`/`workspace`) | Phase 5 |
 | `settings` | `key`, `value` | Daily limits, Docker path, preferred shell |
@@ -160,9 +163,9 @@ Rules:
 
 ## 7. Tasks, worktrees and tools
 
-Lifecycle: the user creates a task from a room (agent, repository, base branch) → `preparing` validates `git` → the branch `meelting/<slug>-<short id>` and the worktree in `<app data>/worktrees/<workspace>/<task>` are created with `git worktree add -b` → the agent works only inside `worktree_path` → the user reviews `git diff <base>...<branch>` and keeps the branch, discards it (`git worktree remove --force` + `git branch -D`) or opens the folder in their editor.
+Specification: [tasks.md](../product/tasks.md) (D27–D39). Lifecycle: the user creates a task (from Tasks or a room) with optional repository, base branch and several agents (4A ✅) → «Prepare environment» resolves the exact SHA of the base branch and creates the branch `meelting/task-<short id>-<slug>` and the worktree under `~/Meelting/worktrees` (configurable) with hooks disabled (4B) → the user reviews status and a read-only diff (4C) → in Phase 5 the agent works only inside the worktree → completing keeps the worktree and branch; only clean worktrees are removed, never with `--force`.
 
-Rules: several tasks from the same repo run in parallel in different worktrees; default concurrency of 2 active tasks per workspace; a reconciler at startup compares `git worktree list` with `tasks` and marks orphans without deleting anything; **never** `push`, `merge` or modify the base branch.
+Rules: several tasks from the same repo get independent worktrees; operations that change a repository's shared Git metadata are serialized by `git_common_dir`; a reconciler at startup checks transient worktrees and marks problems without deleting anything; **never** `push`, `merge`, `rebase` or modify the base branch.
 
 | Tool | Effect | Approval |
 |---|---|---|
@@ -264,8 +267,8 @@ CI (`.github/workflows/ci.yml`), three jobs in parallel: `lint` (Ubuntu: `rustfm
 | 6 | Cancel a run | Include it (essential with slow local models) |
 | 7 | Auto-update | Optional via signed GitHub Releases |
 | 8 | Minimum OS support | macOS 12+, Windows 10+ (WebView2), Ubuntu 22.04+ |
-| 9 | Task concurrency | 2 per workspace |
-| 10 | Delete a workspace (Rails only allowed cancelling the account) | Allow it from Settings with confirmation; deletes teams, agents, rooms and keychain keys. Approval pending |
+| 9 | Task concurrency | Superseded by D27–D39: no limit on tasks; Git operations are serialized per repository (`git_common_dir`) |
+| 10 | Delete a workspace (Rails only allowed cancelling the account) | Allow it from Settings with confirmation; deletes teams, agents, rooms, tasks and keychain keys, and is blocked while the workspace has active worktrees (D33). Approval pending; not built |
 
 New decisions (meetings, voice, hybrid operation) are recorded in [decisions.md](../product/decisions.md).
 

@@ -20,7 +20,22 @@
     "invalid_provider": "Ese proveedor no usa claves de API.",
     "invalid_api_key": "Pega la clave completa, sin espacios, de hasta 512 caracteres.",
     "provider_not_configured": "Ese proveedor no tiene una clave guardada en este workspace.",
-    "keychain_unavailable": "No se pudo acceder al llavero del sistema. Desbloquéalo e inténtalo de nuevo."
+    "keychain_unavailable": "No se pudo acceder al llavero del sistema. Desbloquéalo e inténtalo de nuevo.",
+    "git_unavailable": "Git no está instalado o no se pudo ejecutar. Instálalo e inténtalo de nuevo.",
+    "not_a_repository": "Esa carpeta no es un repositorio Git.",
+    "repository_bare": "Los repositorios bare no son compatibles. Elige una carpeta con copia de trabajo.",
+    "repository_is_worktree": "Esa carpeta es un worktree vinculado. Elige la carpeta principal del repositorio.",
+    "repository_without_commits": "El repositorio aún no tiene commits. Haz un primer commit e inténtalo de nuevo.",
+    "repository_with_submodules": "Los repositorios con submódulos aún no son compatibles.",
+    "repository_already_registered": "Ese repositorio ya está registrado en este espacio de trabajo.",
+    "repository_not_found": "Ese repositorio ya no está registrado.",
+    "repository_in_use": "Hay tareas que usan este repositorio. Cámbialas o elimínalas primero.",
+    "repository_unavailable": "No se pudo leer la carpeta del repositorio. Comprueba que sigue existiendo.",
+    "invalid_base_ref": "Esa rama no existe en el repositorio.",
+    "invalid_task": "Escribe un título de hasta 120 caracteres y una descripción de hasta 10.000.",
+    "task_not_found": "Esa tarea ya no existe.",
+    "invalid_task_transition": "La tarea no puede pasar a ese estado desde el actual.",
+    "message_not_found": "Ese mensaje ya no existe en la sala."
   },
   "newWorkspace": {
     "title": "Crea tu workspace",
@@ -372,5 +387,94 @@
       "several": "Mencionaste a varios agentes. Por ahora, elige uno:",
       "conflict": "El destinatario elegido y la mención no coinciden. ¿A quién se lo envías?"
     }
+  },
+  "tasks": {
+    "title": "Tareas",
+    "new": "Nueva tarea",
+    "cancel": "Cancelar",
+    "empty": {
+      "title": "Aún no hay tareas",
+      "body": "Crea una tarea para organizar el trabajo y asignarle agentes."
+    },
+    "filters": {
+      "label": "Filtrar tareas",
+      "status": "Estado",
+      "repository": "Repositorio",
+      "agent": "Agente",
+      "all": "Todos",
+      "noRepository": "Sin repositorio",
+      "noMatch": "Ninguna tarea coincide con los filtros."
+    },
+    "status": {
+      "pending": "Pendiente",
+      "in_progress": "En curso",
+      "blocked": "Bloqueada",
+      "completed": "Completada",
+      "canceled": "Cancelada"
+    },
+    "priority": {
+      "label": "Prioridad",
+      "low": "Baja",
+      "medium": "Media",
+      "high": "Alta"
+    },
+    "actions": {
+      "label": "Cambiar estado",
+      "pending": "Pasar a pendiente",
+      "in_progress": "Empezar",
+      "blocked": "Bloquear",
+      "completed": "Completar",
+      "canceled": "Cancelar tarea",
+      "reopen": "Reabrir"
+    },
+    "form": {
+      "titleNew": "Nueva tarea",
+      "titleEdit": "Editar tarea",
+      "title": "Título",
+      "description": "Descripción",
+      "descriptionHint": "Opcional.",
+      "repository": "Repositorio",
+      "repositoryHint": "Opcional. Un repositorio Git local registrado en este espacio de trabajo.",
+      "noRepository": "Sin repositorio",
+      "baseRef": "Rama base",
+      "baseRefHint": "Guardar la tarea no crea nada en el repositorio.",
+      "loadingBranches": "Cargando ramas…",
+      "agents": "Agentes",
+      "agentsHint": "Opcional. Asignar agentes no inicia ningún trabajo.",
+      "submitNew": "Crear tarea",
+      "submitEdit": "Guardar cambios"
+    },
+    "detail": {
+      "back": "Tareas",
+      "edit": "Editar",
+      "delete": "Eliminar",
+      "information": "Información",
+      "agents": "Agentes",
+      "noAgents": "Sin agentes asignados.",
+      "repository": "Repositorio",
+      "noRepository": "Sin repositorio",
+      "baseRef": "Rama base",
+      "origin": "Procedencia",
+      "originRoom": "Sala «{name}»",
+      "originMessage": "Un mensaje de la sala «{name}»",
+      "created": "Creada",
+      "completed": "Completada",
+      "noDescription": "Sin descripción."
+    },
+    "deleteDialog": {
+      "title": "¿Eliminar la tarea?",
+      "body": "Se eliminan la tarea y sus asignaciones de agentes. Las salas, los mensajes y los repositorios no se tocan.",
+      "confirm": "Eliminar"
+    },
+    "repositories": {
+      "action": "Repositorios",
+      "title": "Repositorios",
+      "hint": "Repositorios Git locales que puedes vincular a tareas. Registrar uno nunca cambia sus archivos.",
+      "add": "Añadir repositorio",
+      "empty": "Aún no hay repositorios registrados.",
+      "remove": "Quitar {name}"
+    },
+    "fromRoom": "Crear tarea",
+    "fromMessage": "Convertir en tarea"
   }
 }

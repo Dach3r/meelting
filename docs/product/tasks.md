@@ -1,6 +1,6 @@
 # Tasks and worktrees (Phase 4)
 
-> **Status:** product decisions approved (D27–D39 in [decisions.md](decisions.md)). Phase 4A (repositories, tasks, agent assignment, creation from rooms) is authorized and in progress; 4B (worktrees) and 4C (review and E2E) are approved in scope but not started. Platforms: macOS, Windows and Linux.
+> **Status:** product decisions approved (D27–D39 in [decisions.md](decisions.md)). Phase 4A (repositories, tasks, agent assignment, creation from rooms) is authorized and in progress (repositories and tasks built); 4B (worktrees) and 4C (review and E2E) are approved in scope but not started. Platforms: macOS, Windows and Linux.
 
 ## 1. Goal
 
@@ -34,7 +34,7 @@ A task is a goal; its agents are participants; the worktree is the prepared file
 
 Conventions: `STRICT` tables, `TEXT` UUID v7 ids, `TEXT` ISO-8601 UTC timestamps, composite foreign keys `(id, workspace_id)` for workspace integrity, relation tables without their own id.
 
-### 3.1 `repositories` (4A)
+### 3.1 `repositories` (4A ✅)
 
 | Column | Type | Rule |
 |---|---|---|
@@ -47,7 +47,7 @@ Conventions: `STRICT` tables, `TEXT` UUID v7 ids, `TEXT` ISO-8601 UTC timestamps
 
 Unique `(workspace_id, git_common_dir)` and `(id, workspace_id)`.
 
-### 3.2 `tasks` (4A)
+### 3.2 `tasks` (4A ✅)
 
 | Column | Type | Rule |
 |---|---|---|
@@ -68,7 +68,7 @@ Unique `(id, workspace_id)`; index `(workspace_id, updated_at DESC, id DESC)`.
 
 Origin references use `NO ACTION`, not `SET NULL`: a `SET NULL` on a composite key would also null `workspace_id`. Rooms are never deleted (they are finished, D25) and messages are immutable; both disappear only when their workspace is deleted, which also deletes its tasks in the same statement. The composite keys guarantee that the origin room belongs to the task's workspace and that the origin message belongs to that room.
 
-### 3.3 `task_agents` (4A)
+### 3.3 `task_agents` (4A ✅)
 
 `task_id`, `agent_id`, `workspace_id`, `created_at`; PK `(task_id, agent_id)`; `(task_id, workspace_id)` → `tasks (id, workspace_id)` and `(agent_id, workspace_id)` → `agents (id, workspace_id)`, both `ON DELETE CASCADE`. Parent keys are backed by `UNIQUE (id, workspace_id)` on `tasks` and the unique index `agents_id_workspace_id`.
 
@@ -82,7 +82,7 @@ The full definition (PK, foreign keys, constraints and indexes) is presented for
 
 ## 4. Business rules
 
-### BR-01. Registering repositories (4A)
+### BR-01. Registering repositories (4A ✅)
 
 The user picks a folder with the native dialog, opened from Rust (`tauri-plugin-dialog`; the webview has no file permissions). Meelting checks with read-only Git commands, never through a shell:
 
@@ -94,7 +94,7 @@ The user picks a folder with the native dialog, opened from Rust (`tauri-plugin-
 
 Registering never runs `clone`, `init`, `pull` or writes any file. The check of fixed local storage (BR-12) arrives with 4B and then applies both when registering and before every preparation.
 
-### BR-02. Creating tasks (4A)
+### BR-02. Creating tasks (4A ✅)
 
 A task can be created without a repository and without agents. With a repository, the user picks the base branch among its local branches; the default branch (`origin/HEAD` when it points to an existing local branch, otherwise the current branch of the main working tree) is suggested. A task is saved as `pending`, and saving never prepares an environment.
 
@@ -102,7 +102,7 @@ A task can be created without a repository and without agents. With a repository
 
 Two entry points open the same task form: «Create task» in the room bar (origin: the room) and «Turn into task» on a message (origin: the room and the message, with the message prefilled as the description). Agents may suggest tasks in their replies, but only the user creates them. There is no automatic interpretation of messages.
 
-### BR-04. Several agents (4A)
+### BR-04. Several agents (4A ✅)
 
 The form selects any number of agents of the workspace, with search. Assigning or unassigning changes nothing else: no status change, no run, no permission. Deleting an agent (when the existing rules allow it) removes its assignments in cascade.
 
@@ -122,7 +122,7 @@ After preparing, the user can pick individual ignored or untracked files of the 
 
 Working branch, base branch and commit, Git status, files added/modified/deleted, commits since the base commit, staged and unstaged changes, untracked files and ignored files relevant for preservation, and a read-only textual diff with size and rendering limits. Binary files are shown as metadata.
 
-### BR-09. Completing a task (4A)
+### BR-09. Completing a task (4A ✅)
 
 Completing sets `completed` and `completed_at`. It never commits, merges, pushes, deletes branches or worktrees, finishes rooms or starts agents. Tasks without a repository can be completed. Reopening is explicit and leaves any worktree untouched.
 
@@ -170,7 +170,7 @@ A task can change its repository only while it has never had a worktree; once it
 
 ## 6. State machines
 
-### Tasks (4A, validated in the domain)
+### Tasks (4A ✅, validated in the domain)
 
 | From | To |
 |---|---|
