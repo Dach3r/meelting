@@ -15,14 +15,16 @@ Meelting is a local-first desktop app for macOS, Windows and Linux. You assemble
 Early development, **Phase 3** in progress. Working today:
 
 - Tauri 2 app shell with a React frontend, in Spanish and English.
-- Local SQLite storage, first launch, workspaces and settings (language and theme).
-- Teams and agents: template catalog, hiring, custom agents with a cloud or local model, editing, deleting and a draggable org chart.
-- Rooms with participants and a persistent chat (user messages).
+- Local SQLite storage, first launch, workspaces and settings (language, theme, interface size and the room transition effect).
+- Teams and agents: template catalog, hiring, custom agents with a cloud or local model picked from a list, editing, deleting and a draggable org chart.
+- Rooms with participants and a persistent chat. Agents join and leave a room like in a real meeting, and hanging up finishes it while keeping the history.
+- Agent runs: «Ask» in the room composer streams an agent's answer live, with retries, cancellation and per-provider concurrency slots. Adapters for Anthropic Messages, OpenAI Responses and Chat Completions (Groq, Ollama, LM Studio).
+- Text-directed conversation: the recipient is resolved from the selection, `@` mentions or a leading vocative, and ambiguity asks you before anything is saved.
 - Keychain commands: save, read the last four characters of, and delete a secret.
-- Spikes: a command in a fresh `git worktree` with live PTY output, and SSE streaming from a Chat Completions endpoint.
+- Spike: a command in a fresh `git worktree` with live PTY output.
 - CI on macOS, Windows and Linux.
 
-Agent execution is next. Conversational meetings, voice, tasks, tools, approvals and Docker are planned and not built yet. See the [roadmap](docs/product/roadmap.md).
+The «AI keys» screen is next. Multi-agent coordination, voice, tasks, tools, approvals and Docker are planned and not built yet. See the [roadmap](docs/product/roadmap.md).
 
 ## Tech stack
 
