@@ -240,10 +240,18 @@
       "connectionDetail": "The last request to {provider} could not connect. Check your internet connection."
     },
     "leave": "Remove {name} from the room",
+    "leaveDialog": {
+      "title": "Remove {name}?",
+      "body": "{name} will leave the room and any request in progress will be cancelled. Their messages stay in the history.",
+      "confirm": "Remove"
+    },
     "invite": {
       "action": "Invite agents",
       "title": "Invite agents",
-      "submit": "Invite"
+      "submit": "Invite",
+      "confirmTitle": "Invite to the room?",
+      "confirmBody": "These agents will join the room: {names}.",
+      "confirm": "Invite"
     }
   },
   "agentRun": {

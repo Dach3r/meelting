@@ -13,7 +13,7 @@
 - Participación de agentes (`room_agents`): un agente puede estar en varias salas y una sala puede tener varios agentes, de cualquier equipo del mismo workspace.
 - Crear, ver y eliminar salas. Los participantes se eligen al crear con un buscador por nombre o rol; los elegidos quedan como fichas que se quitan con su cruz o con Retroceso (con el buscador vacío); Intro añade la primera coincidencia. El nombre de una sala creada no se edita, pero sus agentes sí cambian: entran y salen como en una reunión real (D24). Si llegan agentes repetidos, el núcleo los deduplica conservando el orden de la primera aparición, sin error.
 - Se permite una sala sin agentes.
-- Invitar y quitar agentes de una sala existente. «Invitar agentes» abre el mismo buscador con los agentes del workspace que no están presentes; la cruz de cada mosaico lo quita sin confirmación (se puede volver a invitar). Quien sale deja de ser participante, pero su historial se conserva con su nombre; si estaba respondiendo, su ejecución se cancela.
+- Invitar y quitar agentes de una sala existente. «Invitar agentes» abre el mismo buscador con los agentes del workspace que no están presentes; al elegir agentes y pulsar «Invitar» se pide confirmación con los nombres, y la cruz de cada mosaico abre un diálogo de confirmación antes de quitar (se puede volver a invitar). Quien sale deja de ser participante, pero su historial se conserva con su nombre; si estaba respondiendo, su ejecución se cancela.
 - Mensajes (`messages`) del usuario y de agentes, con historial persistente por sala. La entrega en vivo usa **eventos Tauri** emitidos por el núcleo. Los mensajes son inmutables: sin edición ni eliminación individual.
 - Pantalla de la sala como videollamada, a pantalla completa (cubre el riel y la barra superior; «Salas» vuelve al listado): un mosaico por participante (el usuario y cada agente con su rol), la conversación como transcripción en un panel lateral con el compositor (Intro envía, Mayús+Intro salta de línea), el número de agentes en la cabecera y una barra de controles flotante con «Invitar agentes», «Comprobar disponibilidad» y «Eliminar sala». Mientras un agente tiene una ejecución activa en la sala, su mosaico muestra «Pensando…» y un anillo.
 - Lobby de participantes: listado de salas como cuadrícula de tarjetas del tema Grafito, cada una con nombre, fecha de actividad, avatares solapados de hasta tres agentes con contador del resto y botón para entrar a todo el ancho.
@@ -29,7 +29,7 @@
 2. Crea una sala: nombre y, opcionalmente, agentes.
 3. Al crearla entra directamente; ve a los participantes como mosaicos y la conversación (últimos 100 mensajes) a un costado.
 4. Escribe un mensaje: el núcleo lo guarda y actualiza la actividad de la sala en una transacción, lo devuelve y, tras el commit, emite `message:created`. La UI lo añade desde el resultado o el evento sin duplicarlo (por `id`).
-5. Invita agentes desde el control «Invitar agentes» o quita uno con la cruz de su mosaico (`add_room_agents`, `remove_room_agent`; ambos devuelven los presentes y los que salieron).
+5. Invita agentes desde el control «Invitar agentes» o quita uno con la cruz de su mosaico; ambas acciones piden confirmación (`add_room_agents`, `remove_room_agent`; ambos devuelven los presentes y los que salieron).
 6. Elimina la sala con confirmación; se eliminan también sus mensajes y participaciones.
 
 ## Criterios de aceptación

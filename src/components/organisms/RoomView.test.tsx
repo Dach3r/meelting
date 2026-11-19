@@ -608,6 +608,10 @@ describe("people joining and leaving", () => {
     expect(dialog.queryByRole("option", { name: /Ana/ })).not.toBeInTheDocument();
     await user.click(dialog.getByRole("option", { name: /Cleo/ }));
     await user.click(dialog.getByRole("button", { name: "Invite" }));
+    expect(invokeMock).not.toHaveBeenCalledWith("add_room_agents", expect.anything());
+    const confirm = within(screen.getByRole("dialog", { name: "Invite to the room?" }));
+    expect(confirm.getByText("These agents will join the room: Cleo.")).toBeInTheDocument();
+    await user.click(confirm.getByRole("button", { name: "Invite" }));
 
     expect(invokeMock).toHaveBeenCalledWith("add_room_agents", { roomId: "r1", agentIds: ["a3"] });
     expect(await participants().findByText("Cleo")).toBeInTheDocument();
@@ -623,11 +627,26 @@ describe("people joining and leaving", () => {
     await renderRoom();
 
     await user.click(participants().getByRole("button", { name: "Remove Ana from the room" }));
+    expect(invokeMock).not.toHaveBeenCalledWith("remove_room_agent", expect.anything());
+    await user.click(within(screen.getByRole("dialog", { name: "Remove Ana?" })).getByRole("button", { name: "Remove" }));
 
     expect(invokeMock).toHaveBeenCalledWith("remove_room_agent", { roomId: "r1", agentId: "a1" });
     await vi.waitFor(() => expect(participants().queryByText("Ana")).not.toBeInTheDocument());
     expect(within(screen.getByRole("list", { name: "Messages" })).getByText("Ana")).toBeInTheDocument();
     expect(screen.getByText("1 agent")).toBeInTheDocument();
+  });
+
+  it("keeps the agent when the removal is cancelled", async () => {
+    core({ get_room: () => detail() });
+    const user = userEvent.setup();
+    await renderRoom();
+
+    await user.click(participants().getByRole("button", { name: "Remove Ana from the room" }));
+    await user.click(within(screen.getByRole("dialog", { name: "Remove Ana?" })).getByRole("button", { name: "Cancel" }));
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(invokeMock).not.toHaveBeenCalledWith("remove_room_agent", expect.anything());
+    expect(participants().getByText("Ana")).toBeInTheDocument();
   });
 
   it("names agents who had already left when the room opens", async () => {
@@ -655,6 +674,7 @@ describe("people joining and leaving", () => {
     await renderRoom();
 
     await user.click(participants().getByRole("button", { name: "Remove Bob from the room" }));
+    await user.click(within(screen.getByRole("dialog", { name: "Remove Bob?" })).getByRole("button", { name: "Remove" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("That agent no longer exists.");
     expect(participants().getByText("Bob")).toBeInTheDocument();

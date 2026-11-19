@@ -240,10 +240,18 @@
       "connectionDetail": "La última solicitud a {provider} no pudo conectarse. Revisa tu conexión a internet."
     },
     "leave": "Quitar a {name} de la sala",
+    "leaveDialog": {
+      "title": "¿Quitar a {name}?",
+      "body": "{name} saldrá de la sala y se cancelará cualquier solicitud en curso. Sus mensajes se conservan en el historial.",
+      "confirm": "Quitar"
+    },
     "invite": {
       "action": "Invitar agentes",
       "title": "Invitar agentes",
-      "submit": "Invitar"
+      "submit": "Invitar",
+      "confirmTitle": "¿Invitar a la sala?",
+      "confirmBody": "Estos agentes se unirán a la sala: {names}.",
+      "confirm": "Invitar"
     }
   },
   "agentRun": {

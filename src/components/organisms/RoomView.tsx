@@ -7,6 +7,7 @@ import { type AgentAvailability, useAgentAvailability } from "../../hooks/useAge
 import type { LlmProvider } from "../../hooks/useLlmProviders";
 import { useLlmProviders } from "../../hooks/useLlmProviders";
 import { useRoom } from "../../hooks/useRoom";
+import type { Participant } from "../../hooks/useRooms";
 import type { Agent } from "../../hooks/useTeams";
 import { Button } from "../atoms/Button";
 import { Alert } from "../molecules/Alert";
@@ -34,6 +35,8 @@ export function RoomView({ roomId, agents, busy, deleteErrorMessage, onBack, onD
   const { availability, checking, recheck } = useAgentAvailability(roomId, finishedRuns);
   const [confirming, setConfirming] = useState(false);
   const [inviting, setInviting] = useState(false);
+  const [pendingInvite, setPendingInvite] = useState<string[] | null>(null);
+  const [leaving, setLeaving] = useState<Participant | null>(null);
 
   function closeConfirm() {
     onClearDeleteError();
@@ -48,12 +51,22 @@ export function RoomView({ roomId, agents, busy, deleteErrorMessage, onBack, onD
   function closeInvite() {
     clearRosterError();
     setInviting(false);
+    setPendingInvite(null);
+  }
+
+  function closeLeave() {
+    clearRosterError();
+    setLeaving(null);
   }
 
   async function invite(agentIds: string[]) {
     if (!(await addAgents(agentIds))) return;
-    setInviting(false);
+    closeInvite();
     recheck();
+  }
+
+  async function leave(agent: Participant) {
+    if (await removeAgent(agent.id)) setLeaving(null);
   }
 
   const back = (
@@ -102,15 +115,53 @@ export function RoomView({ roomId, agents, busy, deleteErrorMessage, onBack, onD
           </div>
         </Modal>
       )}
-      {inviting && (
+      {inviting && !pendingInvite && (
         <Modal title={t("rooms.invite.title")} onClose={closeInvite}>
           <InviteAgentsForm
             agents={invitable}
             busy={rosterBusy}
-            errorMessage={rosterErrorKey ? translateError(locale, rosterErrorKey) : null}
-            onSubmit={invite}
+            onSubmit={setPendingInvite}
             onCancel={closeInvite}
           />
+        </Modal>
+      )}
+      {pendingInvite && (
+        <Modal title={t("rooms.invite.confirmTitle")} onClose={closeInvite}>
+          <div className="grid gap-5 p-6">
+            <p className="text-muted">
+              {translateWith(locale, "rooms.invite.confirmBody", {
+                names: invitable
+                  .filter((agent) => pendingInvite.includes(agent.id))
+                  .map((agent) => agent.name)
+                  .join(", "),
+              })}
+            </p>
+            {rosterErrorKey && <Alert message={translateError(locale, rosterErrorKey)} />}
+            <div className="flex justify-end gap-3">
+              <Button type="button" variant="ghost" size="compact" onClick={() => setPendingInvite(null)}>
+                {t("rooms.cancel")}
+              </Button>
+              <Button type="button" size="compact" disabled={rosterBusy} onClick={() => invite(pendingInvite)}>
+                {t("rooms.invite.confirm")}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+      {leaving && (
+        <Modal title={translateWith(locale, "rooms.leaveDialog.title", { name: leaving.name })} onClose={closeLeave}>
+          <div className="grid gap-5 p-6">
+            <p className="text-muted">{translateWith(locale, "rooms.leaveDialog.body", { name: leaving.name })}</p>
+            {rosterErrorKey && <Alert message={translateError(locale, rosterErrorKey)} />}
+            <div className="flex justify-end gap-3">
+              <Button type="button" variant="ghost" size="compact" onClick={closeLeave}>
+                {t("rooms.cancel")}
+              </Button>
+              <Button type="button" variant="destructive" size="compact" disabled={rosterBusy} onClick={() => leave(leaving)}>
+                {t("rooms.leaveDialog.confirm")}
+              </Button>
+            </div>
+          </div>
         </Modal>
       )}
       <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
@@ -120,7 +171,7 @@ export function RoomView({ roomId, agents, busy, deleteErrorMessage, onBack, onD
           <p className="shrink-0 rounded-full border border-line bg-surface px-3 py-1 text-sm text-muted">{formatAgentCount(locale, room.agents.length)}</p>
         </header>
         <section aria-label={t("rooms.participants")} className="relative flex min-h-0 flex-1 flex-col gap-3">
-          {rosterErrorKey && !inviting && <Alert message={translateError(locale, rosterErrorKey)} />}
+          {rosterErrorKey && !inviting && !leaving && <Alert message={translateError(locale, rosterErrorKey)} />}
           <ul
             tabIndex={0}
             className={`grid min-h-0 flex-1 auto-rows-[minmax(10rem,1fr)] gap-3 overflow-y-auto rounded-2xl pb-20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${columns(room.agents.length + 1)}`}
@@ -135,7 +186,10 @@ export function RoomView({ roomId, agents, busy, deleteErrorMessage, onBack, onD
                 removal={{
                   label: translateWith(locale, "rooms.leave", { name: agent.name }),
                   disabled: rosterBusy,
-                  onRemove: () => removeAgent(agent.id),
+                  onRemove: () => {
+                    clearRosterError();
+                    setLeaving(agent);
+                  },
                 }}
               />
             ))}
