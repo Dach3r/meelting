@@ -1,70 +1,70 @@
-# Catálogo de agentes IA
+# AI agent catalog
 
-> **Estado:** Fase 2 completada. Ya existen: listar equipos y agentes, crear equipos (solo nombre), el catálogo de 25 plantillas (YAML es/en embebido) con buscador y filtro por categoría, el detalle de cada plantilla, contratar con un asistente por pasos, crear agentes personalizados eligiendo el modelo de `llm.yml` (en la nube o en el equipo, con buscador; en «En mi equipo» se elige Ollama o LM Studio y se listan los modelos que responden en `localhost`, detectados al abrir el paso, con aviso y botón «Volver a detectar» si el entorno no está en ejecución o no tiene modelos; el nombre del modelo nunca se escribe a mano) y un organigrama en forma de tablero ("Tú" → equipos → agentes sobre un lienzo de puntos, con tarjetas, contraer y mostrar equipos y agentes, selección de tarjetas con manijas, arrastre libre de equipos y agentes con posiciones persistidas (los agentes siguen a su equipo, las tarjetas no salen del área del organigrama, las líneas son SVG y un botón «Reordenar» restablece la disposición), panel lateral con los datos del agente (equipo, rol, proveedor y modelo) o del equipo seleccionado (el de un equipo lista sus agentes), con editar y eliminar con confirmación, y zoom flotante). Pendiente: «Contratar ahora con los datos de la plantilla» (requiere un proveedor y modelo por defecto de `llm.yml`), advertencia de proveedor sin clave, minimapa, fijados, estado de cada agente y el equipo «General» inicial. Comportamiento portado del producto Rails, donde ya estaba implementado.
+> **Status:** Phase 2 complete. Already available: listing teams and agents, creating teams (name only), the catalog of 25 templates (embedded es/en YAML) with search and category filter, each template's detail, hiring with a step-by-step wizard, creating custom agents by choosing the model from `llm.yml` (cloud or on this computer, with search; in "On my computer" the user picks Ollama or LM Studio and the models responding on `localhost` are listed, detected when the step opens, with a warning and a "Detect again" button if the runtime is not running or has no models; the model name is never typed by hand) and an org chart shaped like a board ("You" → teams → agents on a dotted canvas, with cards, collapsing and expanding teams and agents, card selection with handles, free dragging of teams and agents with persisted positions (agents follow their team, cards do not leave the org chart area, lines are SVG and a "Rearrange" button restores the layout), a side panel with the selected agent's data (team, role, provider and model) or the selected team's (a team's panel lists its agents), with edit and delete with confirmation, and floating zoom). Pending: "Hire now with the template data" (requires a default provider and model from `llm.yml`), warning for a provider without a key, minimap, pinning, each agent's status and the initial "General" team. Behavior ported from the Rails product, where it was already implemented.
 
-**Problema:** el workspace nace vacío; el usuario no puede construir su equipo, que es la base de la oficina virtual.
-**Objetivo:** que el usuario contrate agentes desde un catálogo de plantillas, los personalice y los gestione como el equipo persistente de su workspace. Cada agente tiene su propio proveedor y modelo de IA y trabaja cuando el usuario le dirige una instrucción en una sala ([agent-execution.md](agent-execution.md)).
-**Historias de usuario:**
-- Como responsable de un workspace, quiero explorar un catálogo de agentes especializados, para entender qué roles puedo sumar.
-- Como responsable, quiero contratar un agente y ajustar su nombre, rol, descripción e instrucciones.
-- Como responsable, quiero ver, editar y eliminar mis agentes.
-- Como usuario nuevo, quiero un primer paso claro en Equipos, para saber cómo empezar.
+**Problem:** the workspace starts empty; the user cannot build their team, which is the foundation of the virtual office.
+**Goal:** let the user hire agents from a template catalog, customize them and manage them as their workspace's persistent team. Each agent has its own AI provider and model and works when the user directs an instruction to it in a room ([agent-execution.md](agent-execution.md)).
+**User stories:**
+- As a workspace owner, I want to explore a catalog of specialized agents, to understand which roles I can add.
+- As an owner, I want to hire an agent and adjust its name, role, description and instructions.
+- As an owner, I want to view, edit and delete my agents.
+- As a new user, I want a clear first step in Teams, to know how to get started.
 
-## Alcance y exclusiones
+## Scope and exclusions
 
-**Incluye**
-- Catálogo con 25 plantillas, una por cada rol predefinido, como archivos YAML embebidos en la app. La categoría de una plantilla (Producto, Ingeniería, Datos, Diseño y soporte, Negocio) sale del grupo de su rol; el catálogo se muestra como una sección por categoría (ícono, nombre y cantidad) cuyas tarjetas se acomodan en una cuadrícula que se rellena según el ancho y cada tarjeta lleva la inicial del nombre en un círculo neutro. El usuario busca por nombre, rol o descripción y filtra por categoría; las categorías sin coincidencias no se muestran.
-- Tabla `agents` perteneciente a un workspace, con copia de los valores de la plantilla.
-- Secciones separadas: **Catálogo de agentes** y **Equipos**.
-- Contratar desde el catálogo, crear agentes personalizados sin plantilla, ver, editar y eliminar.
-- Equipos como pantalla de inicio, con organigrama arrastrable: equipos que agrupan agentes bajo "Tú" (todo agente pertenece a un equipo), arrastrar libremente equipos y agentes (los agentes siguen a su equipo); el equipo de un agente se cambia al editarlo, en una tabla de equipos ordenada por nombre, con los agentes de cada equipo y el equipo actual marcado (al cambiar de equipo se descarta su posición guardada y reaparece en la disposición automática del equipo nuevo; guardar sin cambiar de equipo la conserva).
-- Selector de proveedor y modelo por agente, incluidos los proveedores locales Ollama y LM Studio.
+**Includes**
+- Catalog with 25 templates, one per predefined role, as YAML files embedded in the app. A template's category (Product, Engineering, Data, Design and support, Business) comes from its role's group; the catalog is shown as one section per category (icon, name and count) whose cards are laid out in a grid that fills according to the width, and each card carries the name's initial in a neutral circle. The user searches by name, role or description and filters by category; categories with no matches are not shown.
+- `agents` table belonging to a workspace, with a copy of the template's values.
+- Separate sections: **Agent catalog** and **Teams**.
+- Hiring from the catalog, creating custom agents without a template, viewing, editing and deleting.
+- Teams as the home screen, with a draggable org chart: teams that group agents under "You" (every agent belongs to a team), free dragging of teams and agents (agents follow their team); an agent's team is changed when editing it, in a table of teams sorted by name, with each team's agents and the current team marked (when changing team its saved position is discarded and it reappears in the new team's automatic layout; saving without changing team keeps it).
+- Provider and model picker per agent, including the local providers Ollama and LM Studio.
 
-**Excluye**
-- Colaboración entre agentes, métricas, consumo de tokens y estadísticas en las tarjetas.
-- Límite de agentes por workspace.
-- Cambio automático del contenido de un agente al cambiar el idioma.
+**Excludes**
+- Collaboration between agents, metrics, token usage and statistics on the cards.
+- Limit of agents per workspace.
+- Automatic change of an agent's content when the language changes.
 
-## Flujo funcional
+## Functional flow
 
-1. El usuario elige "Equipos" en el riel.
-2. Ve el organigrama con "Tú" en la raíz, equipos y agentes; clic en un equipo lo resalta y clic en la raíz vuelve a todos. "Nuevo equipo" abre un diálogo para nombrarlo.
-3. Con un equipo seleccionado pulsa "Contratar agente" y llega al **Catálogo de agentes** de ese equipo.
-4. "Ver detalles" muestra el detalle de la plantilla (avatar, rol, descripción e instrucciones por secciones). "Contratar" abre el mismo formulario por pasos de «Crear agente personalizado» (Identidad, Motor, Comportamiento, con indicador lateral de pasos, Atrás y Continuar), precargado con los datos de la plantilla; el último paso confirma con «Contratar». En Comportamiento, cada campo trae una ayuda y un ejemplo; la descripción es corta y las instrucciones ocupan el espacio restante, ambos crecen según el texto, y con una plantilla aparece «Restaurar plantilla» cuando las instrucciones se editaron.
-5. Al confirmar se crea el agente en el workspace activo con el `template_key` de origen y se muestra su ficha con un toast.
-6. Desde Equipos puede ver, editar o eliminar (con confirmación) cada agente. Editar no es un asistente: abre pestañas laterales (Identidad, Equipo, Instrucciones; todas con la misma altura, y Equipo usa la misma lista abierta con buscador que Rol) a las que se salta con un clic, y cada una es un formulario independiente con su propio «Guardar cambios» (deshabilitado sin cambios); el diálogo sigue abierto tras guardar y se cierra con «Cerrar».
-7. La ficha del agente lista las salas en las que participa o un estado vacío.
+1. The user picks "Teams" in the rail.
+2. Sees the org chart with "You" at the root, teams and agents; clicking a team highlights it and clicking the root returns to all. "New team" opens a dialog to name it.
+3. With a team selected, clicks "Hire agent" and reaches that team's **Agent catalog**.
+4. "View details" shows the template's detail (avatar, role, description and instructions by section). "Hire" opens the same step-by-step form as "Create custom agent" (Identity, Engine, Behavior, with a side step indicator, Back and Continue), prefilled with the template's data; the last step confirms with "Hire". In Behavior, each field comes with help text and an example; the description is short and the instructions take the remaining space, both grow with the text, and with a template "Restore template" appears when the instructions were edited.
+5. On confirming, the agent is created in the active workspace with the source `template_key` and its profile is shown with a toast.
+6. From Teams, each agent can be viewed, edited or deleted (with confirmation). Editing is not a wizard: it opens side tabs (Identity, Team, Instructions; all the same height, and Team uses the same open list with search as Role) that can be jumped to with one click, and each one is an independent form with its own "Save changes" (disabled without changes); the dialog stays open after saving and is closed with "Close".
+7. The agent's profile lists the rooms it participates in or an empty state.
 
-**Equipos:** se crean, se renombran y se eliminan (solo sin agentes). Cada workspace nace con un equipo «General». Un agente se mueve de equipo desde su edición.
+**Teams:** created, renamed and deleted (only without agents). Each workspace starts with a "General" team. An agent is moved to another team from its edit dialog.
 
-**Agente personalizado:** desde Equipos, «Crear agente personalizado» abre un formulario de tres pasos (Identidad, Modelo, Instrucciones) y crea un agente con `template_key` nulo. El rol se elige de una lista cerrada de roles predefinidos (`catalogs/agent_roles.yml`), agrupados por área (Producto, Ingeniería, Datos, Diseño y soporte, Negocio) en una lista siempre abierta con buscador y teclado (flechas, Enter); el núcleo rechaza cualquier rol que no esté en ella, también al contratar desde una plantilla.
+**Custom agent:** from Teams, "Create custom agent" opens a three-step form (Identity, Model, Instructions) and creates an agent with a null `template_key`. The role is chosen from a closed list of predefined roles (`catalogs/agent_roles.yml`), grouped by area (Product, Engineering, Data, Design and support, Business) in an always-open list with search and keyboard support (arrows, Enter); the core rejects any role not in it, also when hiring from a template.
 
-**Idioma:** al contratar se copian los valores del idioma activo; el agente guardado no cambia si luego cambia el idioma de la interfaz.
+**Language:** hiring copies the values of the active language; the saved agent does not change if the interface language changes later.
 
-Se puede contratar la misma plantilla varias veces.
+The same template can be hired several times.
 
-## Reglas de negocio
-- Un agente pertenece a un único workspace; todas las consultas parten del workspace actual.
-- La contratación copia los valores de la plantilla. El agente no vuelve a leer el YAML.
-- `template_key` es solo trazabilidad: se fija al crear, no se cambia al editar y no condiciona el rol. Se valida contra el catálogo solo al crear.
-- Un agente solo puede estar en un equipo de su mismo workspace; un equipo con agentes no se puede eliminar.
-- Al eliminar un workspace se eliminan sus equipos y agentes.
-- Un agente con mensajes o ejecuciones no se puede eliminar.
-- Ninguna pantalla sugiere actividad que no exista.
+## Business rules
+- An agent belongs to a single workspace; all queries start from the current workspace.
+- Hiring copies the template's values. The agent does not read the YAML again.
+- `template_key` is for traceability only: it is set on creation, not changed on edit and does not constrain the role. It is validated against the catalog only on creation.
+- An agent can only be in a team of its own workspace; a team with agents cannot be deleted.
+- Deleting a workspace deletes its teams and agents.
+- An agent with messages or runs cannot be deleted.
+- No screen suggests activity that does not exist.
 
-## Modelo de datos (SQLite)
+## Data model (SQLite)
 
-Detalle completo en [../architecture/overview.md](../architecture/overview.md#modelo-de-datos).
+Full detail in [../architecture/overview.md](../architecture/overview.md#data-model).
 
-**`agents`:** `id` (UUID v7), `workspace_id`, `team_id` (FK `ON DELETE RESTRICT`), `template_key` (NULL si es personalizado), `name` (1–80), `role` (1–80), `description` (≤ 500), `instructions` (≤ 10 000), `provider` y `model` (no vacíos), timestamps. `(team_id, workspace_id)` es clave foránea compuesta hacia `teams`.
+**`agents`:** `id` (UUID v7), `workspace_id`, `team_id` (FK `ON DELETE RESTRICT`), `template_key` (NULL if custom), `name` (1–80), `role` (1–80), `description` (≤ 500), `instructions` (≤ 10 000), `provider` and `model` (non-empty), timestamps. `(team_id, workspace_id)` is a composite foreign key to `teams`.
 
 **`teams`:** `id`, `workspace_id`, `name` (1–80), timestamps.
 
-**Validaciones:** se reflejan en la base con `CHECK`; `provider` y `model` se validan contra `llm.yml` al crear y cuando cambian (hecho); un agente cuyo modelo salió del catálogo sigue siendo editable y su pestaña «Modelo» avisa que debe elegir otro.
+**Validations:** mirrored in the database with `CHECK`; `provider` and `model` are validated against `llm.yml` on creation and when they change (done); an agent whose model left the catalog remains editable and its "Model" tab warns that another one must be chosen.
 
-**Avatar:** los agentes no tienen imagen elegible; `AgentAvatar` dibuja un círculo con las iniciales (máx. 2) de las dos primeras palabras del nombre.
+**Avatar:** agents have no selectable image; `AgentAvatar` draws a circle with the initials (max. 2) of the first two words of the name.
 
-**Plantillas (sin tabla):** `agent_templates/<key>.yml`, un archivo por plantilla, embebido en la app y leído con `serde_yaml`:
+**Templates (no table):** `agent_templates/<key>.yml`, one file per template, embedded in the app and read with `serde_yaml`:
 
 ```yaml
 key: product_owner
@@ -77,41 +77,41 @@ en:
   ...
 ```
 
-El contenido localizado vive solo en el YAML; los textos de interfaz van en los archivos i18n del frontend. Catálogo y agentes son conceptos independientes: el agente solo conoce la clave.
+Localized content lives only in the YAML; interface text goes in the frontend i18n files. Catalog and agents are independent concepts: the agent only knows the key.
 
-## Comandos Tauri (planificado)
+## Tauri commands (planned)
 
-| Comando | Efecto |
+| Command | Effect |
 |---|---|
-| `list_agent_templates`, `get_agent_template(key)` | Catálogo en el idioma activo |
-| `list_teams`, `create_team`, `update_team`, `delete_team` | Equipos del workspace actual |
-| `list_agents`, `get_agent`, `create_agent`, `update_agent`, `delete_agent` | Agentes del workspace actual |
-| `save_canvas_positions(positions)` | Organigrama: guarda el desplazamiento de equipos y agentes (ignora nodos desconocidos) |
-| `reset_canvas_positions` | Organigrama: borra las posiciones guardadas y devuelve los equipos en su disposición automática |
+| `list_agent_templates`, `get_agent_template(key)` | Catalog in the active language |
+| `list_teams`, `create_team`, `update_team`, `delete_team` | Teams of the current workspace |
+| `list_agents`, `get_agent`, `create_agent`, `update_agent`, `delete_agent` | Agents of the current workspace |
+| `save_canvas_positions(positions)` | Org chart: saves the offset of teams and agents (ignores unknown nodes) |
+| `reset_canvas_positions` | Org chart: deletes the saved positions and returns the teams in their automatic layout |
 
-El frontend no accede a SQLite directamente; los comandos son delgados y llaman a servicios del núcleo.
+The frontend does not access SQLite directly; commands are thin and call core services.
 
-## Criterios de aceptación
-- [ ] «Equipos» del riel abre el organigrama y aparece como activo solo allí.
-- [ ] El catálogo muestra las 25 plantillas con rol y descripción, y se puede buscar y filtrar por categoría; su detalle muestra las instrucciones.
-- [ ] Contratar crea un agente en el workspace activo con los valores editados y `template_key` de origen.
-- [ ] Se puede contratar la misma plantilla más de una vez y crear un agente personalizado.
-- [ ] Cambiar el idioma no modifica agentes ya contratados.
-- [ ] `name` y `role` compuestos solo de espacios son inválidos.
-- [x] Un agente se edita (incluidos proveedor y modelo, D18 en [decisions.md](decisions.md)) y se elimina con confirmación.
-- [ ] Cada agente usa su proveedor y modelo, elegidos de un selector dependiente alimentado por `llm.yml`. Un proveedor sin clave se puede elegir con una advertencia.
-- [ ] Un agente de otro workspace no aparece ni se puede modificar al cambiar de workspace.
-- [ ] Errores de validación visibles en el formulario; textos completos en `es` y `en`.
+## Acceptance criteria
+- [ ] "Teams" in the rail opens the org chart and appears active only there.
+- [ ] The catalog shows the 25 templates with role and description, and can be searched and filtered by category; its detail shows the instructions.
+- [ ] Hiring creates an agent in the active workspace with the edited values and the source `template_key`.
+- [ ] The same template can be hired more than once, and a custom agent can be created.
+- [ ] Changing the language does not modify already hired agents.
+- [ ] `name` and `role` made only of spaces are invalid.
+- [x] An agent can be edited (including provider and model, D18 in [decisions.md](decisions.md)) and deleted with confirmation.
+- [ ] Each agent uses its provider and model, chosen from a dependent picker fed by `llm.yml`. A provider without a key can be chosen with a warning.
+- [ ] An agent from another workspace does not appear and cannot be modified after switching workspaces.
+- [ ] Validation errors visible in the form; complete text in `es` and `en`.
 
-## Pruebas
-- Núcleo (`cargo test`): repositorios y `CHECK`, validaciones, `template_key` solo al crear, integridad por workspace.
-- Plantillas: carga de las 5, clave inexistente, `es` y `en`, sin claves duplicadas.
-- Componentes (Vitest): `AgentRow`, `AgentAvatar`, `AgentTile`, `TeamNode`, `Rail`/`NavItem` con estado activo.
+## Tests
+- Core (`cargo test`): repositories and `CHECK`, validations, `template_key` only on creation, workspace integrity.
+- Templates: loading the 5, nonexistent key, `es` and `en`, no duplicate keys.
+- Components (Vitest): `AgentRow`, `AgentAvatar`, `AgentTile`, `TeamNode`, `Rail`/`NavItem` with active state.
 
-## Implicaciones futuras
-- **Salas:** `room_agents` ya contempla la relación sin cambiar `agents`.
-- **Ejecución:** estado y consumo viven en `agent_runs`, no en columnas de `agents`.
-- **Plantillas del usuario o marketplace:** se migraría el catálogo a tabla sin cambiar `agents`.
+## Future implications
+- **Rooms:** `room_agents` already covers the relationship without changing `agents`.
+- **Execution:** status and usage live in `agent_runs`, not in `agents` columns.
+- **User templates or marketplace:** the catalog would be migrated to a table without changing `agents`.
 
-**Prioridad:** Must Have (Fase 2).
-**Métrica de éxito:** % de workspaces con al menos 1 agente contratado tras el primer arranque; agentes por workspace; % de agentes personalizados.
+**Priority:** Must Have (Phase 2).
+**Success metric:** % of workspaces with at least 1 hired agent after first launch; agents per workspace; % of custom agents.
