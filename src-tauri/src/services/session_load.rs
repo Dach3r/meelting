@@ -31,6 +31,14 @@ pub enum SessionError {
     ClientRequestConflict,
     #[error("not_set_up")]
     NotSetUp,
+    #[error("invalid_provider")]
+    InvalidProvider,
+    #[error("invalid_api_key")]
+    InvalidApiKey,
+    #[error("provider_not_configured")]
+    ProviderNotConfigured,
+    #[error("keychain_unavailable")]
+    Keychain(#[from] crate::system::keychain::KeychainError),
 }
 
 impl Serialize for SessionError {

@@ -4,7 +4,7 @@
 
 ## Current status
 
-Phase 0 complete (2026-11-17): Tauri 2 scaffold (React + TypeScript + Vite), spikes for the keychain, `git worktree` + PTY with live output and SSE streaming (Chat Completions), validated on the three OSes from CI and with real tests against Ollama and DeepSeek. Phase 1 complete (2026-11-17): SQLite with `profile` and `workspaces`, first launch (language and workspace), shell (rail + topbar), workspace switching and creation, Grafito tokens and `es`/`en` i18n. Phase 2 complete (2026-11-18): teams, custom agents, template catalog and hiring with a wizard; agents can now be edited (including the team) and deleted with confirmation, and org chart nodes can be dragged with persisted positions; local models (Ollama and LM Studio) are now detected. Phase 3 in progress (2026-11-18): rooms, participants and persistent chat built; `AgentRun` built (engine with persisted states, streaming, retries, cancellation and expiry at startup; adapters for the five providers tested with `wiremock`; "Ask" in the room) and tested with a real Ollama model; the "AI keys" screen is still not built. See [../architecture/overview.md](../architecture/overview.md).
+Phase 0 complete (2026-11-17): Tauri 2 scaffold (React + TypeScript + Vite), spikes for the keychain, `git worktree` + PTY with live output and SSE streaming (Chat Completions), validated on the three OSes from CI and with real tests against Ollama and DeepSeek. Phase 1 complete (2026-11-17): SQLite with `profile` and `workspaces`, first launch (language and workspace), shell (rail + topbar), workspace switching and creation, Grafito tokens and `es`/`en` i18n. Phase 2 complete (2026-11-18): teams, custom agents, template catalog and hiring with a wizard; agents can now be edited (including the team) and deleted with confirmation, and org chart nodes can be dragged with persisted positions; local models (Ollama and LM Studio) are now detected. Phase 3 in progress (2026-11-18): rooms, participants and persistent chat built; `AgentRun` built (engine with persisted states, streaming, retries, cancellation and expiry at startup; adapters for the five providers tested with `wiremock`; "Ask" in the room) and tested with a real Ollama model; Phase 3 complete (2026-11-18) with the "AI providers" screen in Settings (keys verified before saving, per workspace, in the keychain). See [../architecture/overview.md](../architecture/overview.md).
 
 ## Phase 0 — Validation spike (1 week)
 
@@ -37,13 +37,13 @@ Phase 0 complete (2026-11-17): Tauri 2 scaffold (React + TypeScript + Vite), spi
 
 **Result:** met. The minor pending items in [agent-catalog.md](agent-catalog.md) (hiring with the template data, warning for a provider without a key, minimap, pinning, agent status, "General" team) stay outside the phase.
 
-## Phase 3 — Rooms and streaming execution (3 weeks)
+## Phase 3 — Rooms and streaming execution (3 weeks) ✅
 
 - ✅ Rooms, participants and persistent chat ([rooms.md](rooms.md)).
 - ✅ Adapters for the five providers of the real catalog: `anthropic`, `openai`, `groq`, `ollama` and `lmstudio` (approved decision D9). Verified with `wiremock`; with a real provider, only Ollama so far.
 - ✅ `AgentRun` with states, retries, idempotency, expiry at startup and cancellation, with the adjustments meetings need: prompt built on `claim` and tokens with a sequence ([agent-run.md](../architecture/agent-run.md), approved and built).
 - ✅ Explicit change of an agent's provider and model (D18), a delivery independent of the engine.
-- AI keys in the keychain with prior verification ("AI keys" screen, a delivery separate from `AgentRun`).
+- ✅ AI keys in the keychain with prior verification ("AI providers" screen in Settings, a delivery separate from `AgentRun`, D26).
 
 **Expected result:** all the criteria in [agent-execution.md](agent-execution.md), plus streaming and cancellation; works offline with a local provider running.
 

@@ -33,9 +33,6 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
-            commands::keychain::save_secret,
-            commands::keychain::secret_last_four,
-            commands::keychain::delete_secret,
             commands::worktree::run_in_worktree,
             commands::session::load_session,
             commands::session::complete_first_launch,
@@ -66,7 +63,11 @@ pub fn run() {
             commands::agent_runs::send_intervention,
             commands::agent_runs::resolve_recipient,
             commands::agent_runs::check_agent_availability,
-            commands::agent_runs::cancel_agent_run
+            commands::agent_runs::cancel_agent_run,
+            commands::provider_keys::list_provider_keys,
+            commands::provider_keys::save_provider_key,
+            commands::provider_keys::check_provider_key,
+            commands::provider_keys::delete_provider_key
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

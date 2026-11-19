@@ -1,4 +1,4 @@
-import { Palette, SlidersHorizontal } from "lucide-react";
+import { KeyRound, Palette, SlidersHorizontal } from "lucide-react";
 import { useState } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
 import type { Locale } from "../../i18n/translate";
@@ -9,6 +9,7 @@ import { SegmentedControl } from "../molecules/SegmentedControl";
 import { SettingsRow } from "../molecules/SettingsRow";
 import { ThemeSwitcher } from "../molecules/ThemeSwitcher";
 import { UiScaleSwitcher } from "../molecules/UiScaleSwitcher";
+import { ProvidersSettings } from "./ProvidersSettings";
 
 type Props = {
   locale: Locale;
@@ -23,10 +24,14 @@ type Props = {
   onChangeLoadingEnabled: (loadingEnabled: boolean) => void;
 };
 
-const categories = ["general", "appearance"] as const;
+const categories = ["general", "appearance", "providers"] as const;
 type Category = (typeof categories)[number];
 
-const categoryIcons = { general: SlidersHorizontal, appearance: Palette };
+const categoryIcons = {
+  general: SlidersHorizontal,
+  appearance: Palette,
+  providers: KeyRound,
+};
 
 export function SettingsPage({
   locale,
@@ -77,7 +82,8 @@ export function SettingsPage({
             {t(`settings.categories.${category}.description`)}
           </p>
         </div>
-        <div className="rounded-2xl bg-pill-hover">
+        {category === "providers" && <ProvidersSettings />}
+        <div className="rounded-2xl bg-pill-hover empty:hidden">
           {category === "general" && (
             <SettingsRow
               title={t("settings.language.title")}

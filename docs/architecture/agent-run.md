@@ -2,7 +2,7 @@
 
 > **Status:** **approved** (revision 3, final approval on 2026-11-18, see §16 and D17 in [decisions.md](../product/decisions.md)). Implementation authorized in three deliveries: core and persistence, real execution, interface. This document describes the design; what already exists in the code is listed in [project-structure.md](project-structure.md). Product: [agent-execution.md](../product/agent-execution.md). Decisions: [decisions.md](../product/decisions.md). Relationship with meetings: [conversation-engine.md](conversation-engine.md).
 >
-> **Exists today:** rooms, participants, user messages and the `message:created` event; the `llm.yml` catalog (providers, location, models and `base_url` of the local ones); the keychain with `save_secret`, `secret_last_four` and `delete_secret`; the `stream_completion` spike (Chat Completions with SSE, without retries or persistence and not used from the UI).
+> **Exists today:** rooms, participants, user messages and the `message:created` event; the `llm.yml` catalog (providers, location, models and `base_url` of the local ones); the keychain (then exposed through generic secret commands, since replaced by the provider-scoped commands of the "AI providers" screen); the `stream_completion` spike (Chat Completions with SSE, without retries or persistence and not used from the UI).
 
 ## 1. Scope of the first cut
 
@@ -481,17 +481,7 @@ No temporary flow is added. The credential mechanism the core already has is use
 
 - **CI:** always `wiremock`; never real keys or APIs.
 - **Optional real tests:** `#[ignore]` tests that read the key from an environment variable (`MEELTING_ANTHROPIC_API_KEY`, `MEELTING_OPENAI_API_KEY`, `MEELTING_GROQ_API_KEY`) and call the adapter directly. They do not touch the keychain or the app.
-- **Manual test in the app. Development-only procedure**, never documented for users nor available in a production build. It is done with `pnpm tauri dev`:
-  1. Open the webview's developer tools. They only exist in debug builds.
-  2. Get the workspace id with `load_session`.
-  3. Invoke the existing `save_secret` command with the name `<workspace_id>/<provider>`.
-     - The key is requested with `prompt()` inside the call itself, so it does not appear in the code typed into the console or in its history.
-     - It is not assigned to variables or printed.
-     - The command does not return it.
-  4. Check the result with `secret_last_four`, which only shows the last 4 characters.
-  5. Remove it with `delete_secret`.
-  
-  On macOS `security add-generic-password -s meelting -a <workspace_id>/<provider> -w` also works: with `-w` at the end it asks for it interactively and it does not stay in the shell history. On Windows and Linux, the `keyring` crate format is confirmed during implementation (I).
+- **Manual test in the app:** save the key in Settings › AI providers with `pnpm tauri dev`; it is verified with a minimal request before it is stored ([agent-execution.md](../product/agent-execution.md#api-keys)).
 - **Nothing in the core logs the key**: no logs, events or errors (§11).
 - Without a key, a cloud agent fails with `provider_not_configured` and local ones work the same.
 

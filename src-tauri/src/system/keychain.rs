@@ -1,5 +1,4 @@
 use keyring::Entry;
-use serde::Serialize;
 
 const SERVICE: &str = "meelting";
 
@@ -7,12 +6,6 @@ const SERVICE: &str = "meelting";
 pub enum KeychainError {
     #[error("keychain unavailable")]
     Unavailable(#[from] keyring::Error),
-}
-
-impl Serialize for KeychainError {
-    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        serializer.serialize_str(&self.to_string())
-    }
 }
 
 fn entry(name: &str) -> Result<Entry, KeychainError> {
