@@ -174,7 +174,7 @@ export function RoomView({ roomId, agents, busy, finishErrorMessage, onBack, onF
           {rosterErrorKey && !inviting && !leaving && <Alert message={translateError(locale, rosterErrorKey)} />}
           <ul
             tabIndex={0}
-            className={`grid min-h-0 flex-1 auto-rows-[minmax(10rem,1fr)] gap-3 overflow-y-auto rounded-2xl pb-20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${columns(room.agents.length + 1)}`}
+            className={`grid min-h-0 flex-1 auto-rows-[minmax(10rem,1fr)] gap-3 overflow-y-auto rounded-2xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${columns(room.agents.length + 1)}`}
           >
             <ParticipantTile name={t("rooms.you")} role={t("rooms.supervisor")} />
             {room.agents.map((agent) => (
@@ -194,7 +194,7 @@ export function RoomView({ roomId, agents, busy, finishErrorMessage, onBack, onF
               />
             ))}
           </ul>
-          <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-2xl border border-line bg-shell/80 p-2 backdrop-blur">
+          <div className="absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 items-center gap-2 rounded-2xl border border-line bg-shell/70 p-2 shadow-2xl shadow-black/40 backdrop-blur-md">
             <ControlButton label={t("rooms.invite.action")} onClick={openInvite}>
               <UserPlus aria-hidden className="size-5" />
             </ControlButton>
