@@ -1,6 +1,8 @@
 # Tasks and worktrees (Phase 4)
 
-> **Status:** product decisions approved (D27–D48 in [decisions.md](decisions.md)). Phase 4A (repositories, tasks, agent assignment, creation from rooms) and Phase 4B (Git environments) are built; 4C (review and E2E) is approved in scope but not started. Platforms: macOS, Windows and Linux.
+> **Status:** product decisions approved (D27–D48 in [decisions.md](decisions.md)). Phase 4A (repositories, tasks, agent assignment, creation from rooms) is built and verified. Phase 4B (Git environments) is **implemented** and verified on macOS and Ubuntu, but **not yet verified on Windows** (see [§7.1](#71-verification-evidence)). 4C (review, drift warnings and E2E) is approved in scope but not started. Platforms: macOS, Windows and Linux.
+>
+> In this document ✅ means *implemented*. What has been *verified*, and on which platform, is recorded only in §7.1.
 
 ## 1. Goal
 
@@ -177,9 +179,11 @@ Uncommitted changes of the original repository are never copied; the UI says tha
 
 **Cleanup.** Copied files stay in the environment. Because they are ignored or untracked, they block its removal (BR-10) until the user deletes them; the removal dialog lists them (D44).
 
-### BR-07. Base branch drift (4B)
+### BR-07. Base branch drift (4C, not built)
 
-`base_commit_sha` is immutable. If the base branch moves, the environment is not updated and the UI warns («main has moved since this environment was prepared»). No rebase, merge or reset. If the base branch is deleted, the worktree keeps its identity and the comparison is reported as unavailable.
+`base_commit_sha` is immutable and is stored by 4B, but **nothing compares it with the current base branch yet**: no code reads the base branch after preparation and the UI shows no warning. Reporting the drift is part of 4C (D35).
+
+Intended behavior: if the base branch moves, the environment is not updated and the UI warns («main has moved since this environment was prepared»). No rebase, merge or reset. If the base branch is deleted, the worktree keeps its identity and the comparison is reported as unavailable.
 
 ### BR-08. Reviewing changes (4C)
 
@@ -307,21 +311,55 @@ A task can change its repository only while it has never had a worktree; once it
 | AC06 | Assign an agent of another workspace | Rejected | 4A ✅ |
 | AC07 | Create a task from a room message | Task and origin saved | 4A ✅ |
 | AC08 | Create a task with a repository | No worktree created | 4A ✅ |
-| AC09–AC17 | Prepare, isolation, two tasks of the same repo, duplicate requests, alternative base, drift, file copies, escaping paths, no overwrite | See BR-05 to BR-07 | 4B ✅ |
+| AC09–AC13 | Prepare, isolation, two tasks of the same repo, duplicate requests, alternative base | See BR-05 | 4B ✅ |
+| AC14 | Base branch drift | Warning without rebasing, merging or resetting (BR-07) | 4C (not built) |
+| AC15–AC17 | File copies, escaping paths, no overwrite | See BR-06 | 4B ✅ |
 | AC18 | Complete a task with a worktree | Environment and branch kept | 4B ✅ |
 | AC19–AC21 | Remove with local changes, with an ignored `.env`, clean | Blocked, blocked, removed keeping the branch | 4B ✅ |
-| AC22–AC24, AC26–AC28 | Root change, restart during preparation, external move or delete, shared repository across workspaces, unsafe path, executable checkout | See BR-11 to BR-15 | 4B ✅ |
+| AC22–AC24, AC26–AC28 | Root change, restart during preparation, external move or delete (detected at startup only, BR-14), shared repository across workspaces, unsafe path, executable checkout | See BR-11 to BR-15 | 4B ✅ |
 | AC25 | Review code changes | Read-only diff | 4C |
 | AC29 | macOS, Windows and Linux | Main flows and recovery validated: E2E on Linux and Windows, automated Rust and frontend tests plus a reproducible manual checklist on macOS (`tauri-driver` has no macOS driver) | 4C |
 | AC30 | Multi-agent assignment | No assignment starts an `AgentRun` | 4A ✅ |
 
 File and Git operations are tested with real temporary repositories, including unusual names, spaces, Unicode, symbolic links, existing branches and concurrent operations.
 
+### 7.1 Verification evidence
+
+Implemented (✅ above) is not the same as verified. Evidence is dated and tied to a commit.
+
+**Rust tests of 4B.** Last CI run of the repository, on `a55329d` (2026-11-19):
+
+| Platform | Result | 4B tests |
+|---|---|---|
+| macOS | 504 passed, 0 failed, 4 ignored | all pass |
+| Ubuntu | 504 passed, 0 failed, 4 ignored | all pass |
+| Windows | 496 passed, **5 failed**, 4 ignored | **3 fail** (below) |
+
+The same three 4B tests fail on Windows in the earlier runs on `4e3401b` and `3d56dbd`.
+
+| Windows failure (4B) | Diagnosis |
+|---|---|
+| `worktree_prepare::tests::interrupted_preparations_are_recovered_or_marked_failed_without_deleting` | The fixture root was not stripped of the `\\?\` prefix that `canonicalize` adds on Windows, and Git rejects it: `could not create leading directories of '//?/C:/…'` |
+| `worktree_prepare::tests::prepares_a_worktree_from_the_exact_commit_without_touching_the_repository` | Same fixture root: `worktree.path` is stripped by the implementation and the fixture is not, so `starts_with` fails. The assertions before it passed; the later ones (`HEAD`, original repository untouched) did not run |
+| `system::safe_file::tests::opens_regular_files_below_the_root` | Opening a folder on Windows fails with access denied and surfaces as an I/O error instead of «not a regular file». The outcome of a copy is the same (the file is refused) |
+
+Windows preparation and recovery therefore have **no passing evidence yet**. These failures are open until a CI run on Windows passes them.
+
+**Other failures, outside 4B and not addressed here:**
+
+- Windows and (once, on `4e3401b`) macOS: `intervention_send::tests::failed_or_cancelled_replies_do_not_change_the_proposal` (`ProviderAuthFailed` instead of `Cancelled`).
+- Windows: `llm_stream::tests::a_refused_connection_is_an_unreachable_provider` (`Timeout` instead of `ProviderUnavailable`).
+- Bundle (macOS): `failed to run actool … Icon.icon`. Bundles for Ubuntu and Windows pass.
+
+**Frontend.** `pnpm test` and `pnpm build` ran locally with an x64 Node 26.3.0 matching the installed native bindings (the default Node on that machine is arm64 and cannot load them): 12 files and 200 tests passed, the build passed. One earlier run of the same suite failed `RoomsPage.test.tsx` once (`scrolls to the new message…`), so that test is flaky. CI uses Node 22: the local and CI Node versions differ and the environments are not claimed to be equivalent. CI runs the frontend checks on Ubuntu only.
+
+**Not verified at all:** Linux and Windows end-to-end flows (no E2E harness exists), the real fixed-storage check (BR-12) on CI runners (the Rust tests inject a permissive checker), and interrupted operations on a real process kill (only simulated).
+
 ## 8. Delivery
 
 - **4A — Domain, repositories and tasks:** migrations `repositories`, `tasks`, `task_agents`; repository registration; task CRUD with statuses, priorities and several agents; creation from rooms; tests.
-- **4B — Git environments ✅:** root setting, storage checks, preparation, base commit, file copies, technical states, concurrency, recovery, safe removal. Step 1 removed the Phase 0 `run_in_worktree` spike (arbitrary shell command in a PTY), `terminal.rs` and `portable-pty` (D27).
-- **4C — Review and interface:** environment detail, Git status, read-only diff, drift warnings, error and recovery screens, E2E on Linux and Windows.
+- **4B — Git environments ✅ (implemented; Windows verification pending, §7.1):** root setting, storage checks, preparation, base commit, file copies, technical states, concurrency, recovery, safe removal. Step 1 removed the Phase 0 `run_in_worktree` spike (arbitrary shell command in a PTY), `terminal.rs` and `portable-pty` (D27).
+- **4C — Review and interface:** environment detail, Git status, read-only diff, drift warnings (BR-07, AC14), error and recovery screens, E2E on Linux and Windows.
 
 ## 9. Out of scope
 
