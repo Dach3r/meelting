@@ -66,6 +66,7 @@ fn guard_error(error: GuardError) -> SessionError {
     match error {
         GuardError::Unavailable(_) => SessionError::GitUnavailable,
         GuardError::GitTooOld => SessionError::GitTooOld,
+        GuardError::IsolationUnavailable => SessionError::ProcessIsolationUnavailable,
         _ => SessionError::EnvironmentCheckRefused,
     }
 }

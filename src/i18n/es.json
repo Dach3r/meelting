@@ -49,6 +49,7 @@
     "environment_still_exists": "La carpeta del entorno o su registro en Git siguen existiendo, así que no se descartó.",
     "repository_moved": "La carpeta del repositorio ya no contiene el repositorio registrado. Regístralo de nuevo.",
     "git_too_old": "Preparar entornos requiere Git 2.40 o posterior. Actualiza Git e inténtalo de nuevo.",
+    "process_isolation_unavailable": "Este sistema no puede garantizar que Git se ejecute sin iniciar otros programas (por ejemplo, si Meelting corre como administrador o root), así que no se leyó el entorno.",
     "filters_not_supported": "Este repositorio usa filtros de Git que ejecutan programas al hacer checkout (por ejemplo, Git LFS), y aún no son compatibles.",
     "worktree_path_conflict": "Ya existe algo donde se crearía el entorno. No se cambió nada.",
     "task_has_environment": "Elimina o descarta el entorno de la tarea antes de borrarla.",

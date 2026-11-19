@@ -37,6 +37,8 @@ pub enum GuardError {
     TimedOut,
     #[error("git output too large")]
     OutputTooLarge,
+    #[error("process isolation unavailable")]
+    IsolationUnavailable,
     #[error("git failed")]
     Failed(Option<i32>),
 }
@@ -145,8 +147,10 @@ async fn windows_active_processes() -> Result<u32, GuardError> {
     for active in 1..=3 {
         let mut version = command(false);
         version.arg("version");
-        if run(version, REMOVAL_LIMITS, active).await.is_ok() {
-            return Ok(*LEARNED.get_or_init(|| active));
+        match run(version, REMOVAL_LIMITS, active).await {
+            Ok(_) => return Ok(*LEARNED.get_or_init(|| active)),
+            Err(GuardError::IsolationUnavailable) => return Err(GuardError::IsolationUnavailable),
+            Err(_) => {}
         }
     }
     Err(GuardError::Failed(None))
@@ -164,14 +168,16 @@ async fn run(
         .kill_on_drop(true);
     #[cfg(unix)]
     command.process_group(0);
+    #[cfg(unix)]
+    child_limit::ensure_effective().map_err(|_| GuardError::IsolationUnavailable)?;
     child_limit::prepare(&mut command);
     let mut child = command.spawn()?;
     #[cfg(windows)]
     let _job = match child_limit::confine(&child, active_processes) {
         Ok(job) => job,
-        Err(error) => {
+        Err(_) => {
             terminate(&mut child).await;
-            return Err(GuardError::Unavailable(error));
+            return Err(GuardError::IsolationUnavailable);
         }
     };
     let (Some(mut stdout), Some(mut stderr)) = (child.stdout.take(), child.stderr.take()) else {

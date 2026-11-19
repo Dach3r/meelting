@@ -93,6 +93,8 @@ pub enum SessionError {
     RepositoryMoved,
     #[error("git_too_old")]
     GitTooOld,
+    #[error("process_isolation_unavailable")]
+    ProcessIsolationUnavailable,
     #[error("filters_not_supported")]
     FiltersNotSupported,
     #[error("worktree_path_conflict")]

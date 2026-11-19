@@ -49,6 +49,7 @@
     "environment_still_exists": "The environment's folder or its Git registration still exists, so it was not discarded.",
     "repository_moved": "The repository folder no longer holds the registered repository. Register it again.",
     "git_too_old": "Preparing environments needs Git 2.40 or later. Update Git and try again.",
+    "process_isolation_unavailable": "This system cannot guarantee that Git runs without starting other programs (for example when Meelting runs as administrator or root), so the environment was not read.",
     "filters_not_supported": "This repository uses Git filters that run programs on checkout (for example Git LFS), which are not supported yet.",
     "worktree_path_conflict": "Something already exists where the environment would be created. Nothing was changed.",
     "task_has_environment": "Remove or discard the task's environment before deleting it.",
