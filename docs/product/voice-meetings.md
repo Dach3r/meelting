@@ -1,293 +1,293 @@
-# Reuniones conversacionales con agentes
+# Conversational meetings with agents
 
-> **Estado:** propuesta, **no implementada** salvo la conversación dirigida por texto (R1, ✅ implementada) y lo marcado «✅ implementado». Depende de `AgentRun` (Fase 3, sin construir). Las decisiones ya tomadas por el responsable del producto están en [decisions.md](decisions.md); el resto se marca **pendiente**. Ningún cambio de esquema queda aprobado por este documento.
+> **Status:** proposal, **not implemented** except for the text-directed conversation (R1, ✅ implemented) and what is marked "✅ implemented". Depends on `AgentRun` (Phase 3, not built). Decisions already made by the product owner are in [decisions.md](decisions.md); everything else is marked **pending**. No schema change is approved by this document.
 >
-> Documentos técnicos: [motor conversacional](../architecture/conversation-engine.md) y [motor de voz](../architecture/voice-engine.md). Salas actuales: [rooms.md](rooms.md). Ejecución: [agent-execution.md](agent-execution.md).
+> Technical documents: [conversation engine](../architecture/conversation-engine.md) and [voice engine](../architecture/voice-engine.md). Current rooms: [rooms.md](rooms.md). Execution: [agent-execution.md](agent-execution.md).
 
-**Problema:** una sala hoy es un chat persistente donde solo escribe el usuario. Trabajar con varios agentes especializados exige poder dirigirse a uno, al equipo o pedirles que discutan, y hacerlo también hablando, sin perder el control ni pagar por respuestas que nadie pidió.
-**Objetivo:** que entrar a una sala se sienta como entrar a una reunión de trabajo (estilo Meet o Teams) donde los demás participantes son agentes de IA: el usuario habla o escribe, los agentes responden con texto y voz, y todo lo que se ve corresponde a estados reales.
-**Historia de usuario:** Como responsable de un workspace, quiero reunir a mis agentes en una sala, hablarles y escuchar sus propuestas, para discutir decisiones con mi equipo de IA como lo haría con personas, manteniendo el control de quién habla y de lo que se ejecuta.
+**Problem:** today a room is a persistent chat where only the user writes. Working with several specialized agents requires being able to address one of them, the team, or ask them to discuss, and to do it by speaking too, without losing control or paying for responses nobody asked for.
+**Goal:** entering a room should feel like joining a work meeting (Meet or Teams style) where the other participants are AI agents: the user speaks or writes, the agents answer with text and voice, and everything shown corresponds to real states.
+**User story:** As the owner of a workspace, I want to gather my agents in a room, talk to them and hear their proposals, so I can discuss decisions with my AI team as I would with people, while keeping control over who speaks and what gets executed.
 
-## 1. Principios
+## 1. Principles
 
-- **El usuario dirige la reunión.** Siempre tiene prioridad: puede interrumpir, detener y cambiar de tema en cualquier momento.
-- **Nada simulado.** «Hablando», «pensando», «no disponible» o «error» reflejan estados reales del núcleo. No hay animaciones de actividad sin actividad.
-- **El texto es la fuente de verdad.** La voz es una forma de entrada (se transcribe a texto) y de salida (se sintetiza desde texto). Toda la reunión puede usarse sin voz.
-- **Conversación ≠ autorización.** Una frase hablada o escrita nunca autoriza a ejecutar comandos, escribir archivos ni modificar repositorios; eso queda bajo las reglas de aprobación de las Fases 4–5.
-- **Coste y turnos acotados.** Ningún mensaje despierta a todos los agentes por defecto, y ningún agente puede iniciar turnos por sí mismo.
-- **Operación híbrida.** Cada agente usa su proveedor y modelo (nube o local); los motores de voz se eligen aparte. Se pueden mezclar en una misma reunión. Ver §7.
+- **The user leads the meeting.** They always have priority: they can interrupt, stop and change topic at any time.
+- **Nothing simulated.** "Speaking", "thinking", "unavailable" or "error" reflect real core states. No activity animations without activity.
+- **Text is the source of truth.** Voice is a form of input (transcribed to text) and output (synthesized from text). The whole meeting can be used without voice.
+- **Conversation ≠ authorization.** A spoken or written sentence never authorizes running commands, writing files or modifying repositories; that stays under the approval rules of Phases 4–5.
+- **Bounded cost and turns.** No message wakes up every agent by default, and no agent can start turns on its own.
+- **Hybrid operation.** Each agent uses its own provider and model (cloud or local); voice engines are chosen separately. They can be mixed in the same meeting. See §7.
 
-## 2. Qué cambia respecto a la sala actual
+## 2. What changes compared to the current room
 
-| Concepto | Hoy (✅ implementado) | Con esta propuesta |
+| Concept | Today (✅ implemented) | With this proposal |
 |---|---|---|
-| Sala (`rooms`) | Persistente: nombre, participantes, historial | Igual. Sigue siendo la unidad de contexto |
-| Mensajes (`messages`) | Inmutables, del usuario; `message:created` | Igual. Se añaden mensajes de agentes vía `AgentRun` |
-| Sesión de reunión | No existe | Estado **temporal** del núcleo mientras la sala está abierta; salir no borra nada |
-| Destinatario | No existe (el selector «Pedir a» llega con `AgentRun`) | Por intervención: un agente, varios, el equipo o una discusión |
-| Voz | No existe | Entrada push-to-talk y salida con voz por agente, opcionales |
+| Room (`rooms`) | Persistent: name, participants, history | Same. Still the unit of context |
+| Messages (`messages`) | Immutable, from the user; `message:created` | Same. Agent messages are added via `AgentRun` |
+| Meeting session | Does not exist | **Temporary** core state while the room is open; leaving deletes nothing |
+| Recipient | Does not exist (the "Ask" selector arrives with `AgentRun`) | Per intervention: one agent, several, the team or a discussion |
+| Voice | Does not exist | Push-to-talk input and per-agent voice output, optional |
 
-## 3. Modos conversacionales
+## 3. Conversational modes
 
-**Decisión aprobada:** el modo no se guarda ni en la sala ni en la sesión; se resuelve **por intervención**, según el destinatario. Cambiar de modo es elegir otro destinatario.
+**Approved decision:** the mode is stored neither in the room nor in the session; it is resolved **per intervention**, based on the recipient. Changing mode means choosing another recipient.
 
-| Destinatario | Modo | Quién responde |
+| Recipient | Mode | Who responds |
 |---|---|---|
-| Ninguno | Mensaje sin respuesta | Nadie (comportamiento actual). Ver «destinatario por defecto» abajo |
-| Un agente (selector o mención) | **Dirigido** | Solo ese agente |
-| Varios agentes nombrados | **Ronda** | Cada uno una vez, en el orden nombrado |
-| «Equipo» | **Reunión** | El coordinador elige quién aporta (§4) |
-| «Discusión» entre agentes nombrados | **Discusión** | Los nombrados alternan hasta el límite (§4) |
+| None | Message without a response | Nobody (current behavior). See "default recipient" below |
+| One agent (selector or mention) | **Directed** | Only that agent |
+| Several named agents | **Round** | Each one once, in the order named |
+| "Team" | **Meeting** | The coordinator chooses who contributes (§4) |
+| "Discussion" between named agents | **Discussion** | The named agents alternate up to the limit (§4) |
 
-- **Modo dirigido** es el inicial recomendado y el primero que se construye: el usuario controla quién responde y no hay ejecuciones innecesarias.
-- **Preguntar al equipo** solo es posible eligiendo «Equipo» (selector o vocativo «Equipo», «Team», «todos»). Nunca se activa por omisión.
-- **Destinatario por defecto (✅ implementado, D19):** si el usuario no nombra a nadie y el último agente que respondió con éxito en la sala durante esta ejecución de la app sigue participando, el destinatario propuesto es ese agente («Respondiendo a Backend»), visible y modificable antes de enviar. Resuelve seguimientos como «Explícame mejor lo de PKCE». Sin sesión previa, no hay destinatario.
+- **Directed mode** is the recommended starting mode and the first one built: the user controls who responds and there are no unnecessary runs.
+- **Asking the team** is only possible by choosing "Team" (selector or the vocative «Equipo», «Team», «todos»). It is never activated by default.
+- **Default recipient (✅ implemented, D19):** if the user names nobody and the last agent that responded successfully in the room during this app session is still participating, the proposed recipient is that agent ("Replying to Backend"), visible and changeable before sending. It handles follow-ups such as "Explain the PKCE part better". Without a previous session, there is no recipient.
 
-### Menciones y ambigüedad
+### Mentions and ambiguity
 
-- **Texto:** `@` abre el selector de participantes; también se reconoce el nombre del agente al inicio de la frase («Backend, …»).
-- **Voz:** la transcripción se analiza igual: vocativo al inicio («Backend, ¿cómo…?»), nombres o roles de participantes, y «equipo».
-- La comparación ignora mayúsculas y tildes y acepta el nombre o el rol del agente (por ejemplo «Backend» coincide con «Backend Developer» si es único).
-- **Ambigüedad:** si una referencia coincide con dos o más participantes (dos agentes «Backend»), el núcleo no elige: la intervención queda como borrador y la UI pide elegir entre los candidatos. Nunca se ejecuta a un agente «probable».
-- Una referencia a alguien que no participa en la sala no se resuelve (los agentes de otras salas o workspaces no existen para la reunión).
+- **Text:** `@` opens the participant selector; the agent's name at the start of the sentence is also recognized («Backend, …»).
+- **Voice:** the transcript is parsed the same way: a leading vocative («Backend, ¿cómo…?», "Backend, how…?"), participant names or roles, and «equipo» ("team").
+- Matching ignores case and accents and accepts the agent's name or role (for example "Backend" matches "Backend Developer" if it is unique).
+- **Ambiguity:** if a reference matches two or more participants (two "Backend" agents), the core does not choose: the intervention stays as a draft and the UI asks to choose among the candidates. A "probable" agent is never run.
+- A reference to someone who is not participating in the room is not resolved (agents from other rooms or workspaces do not exist for the meeting).
 
-## 4. Coordinación de turnos
+## 4. Turn coordination
 
-**Decisiones aprobadas:** coordinador **híbrido** con **reglas primero e IA opcional**; **discusiones acotadas** a un máximo de **4 intervenciones automáticas**, solo si el usuario las pide.
+**Approved decisions:** a **hybrid** coordinator with **rules first and optional AI**; **bounded discussions** with a maximum of **4 automatic interventions**, only if the user asks for them.
 
-- Las reglas (deterministas, en Rust) resuelven: destinatario explícito, menciones, rondas, límites, disponibilidad, cancelaciones y fin de discusión por límite.
-- Solo ante «Equipo» se pide **sugerencia** a un modelo coordinador elegido por el usuario en Ajustes. La sugerencia es una lista ordenada de participantes que las reglas validan (solo participantes disponibles, sin repetir, dentro del límite). Si no hay modelo coordinador configurado, no está disponible, falla o devuelve algo inválido, se usa la **ronda fija** (orden de la sala) con la opción de que cada agente pase.
-- **Pasar (pendiente, recomendado):** en el modo equipo cada agente puede responder que no tiene nada que aportar; esa respuesta no se publica como mensaje. Evita que todos hablen siempre.
-- **Límite:** una intervención del usuario genera como máximo 4 respuestas automáticas de agentes. Aplicarlo también a «Equipo» (además de a la discusión) es **pendiente, recomendado**.
-- **Fin de una discusión:** se alcanza el límite, un agente pasa, el usuario interviene o pulsa «Detener», o (si hay modelo coordinador) este indica que la discusión terminó. Al terminar, el turno vuelve al usuario.
-- **Los agentes no convocan a otros.** Que un agente escriba «@QA, ¿qué opinas?» no ejecuta a QA. En una etapa posterior, la UI podría ofrecerlo como sugerencia que el usuario acepta (**pendiente**).
-- El coordinador no ejecuta herramientas, no cambia límites ni proveedores, y no puede crear aprobaciones.
+- The rules (deterministic, in Rust) resolve: explicit recipient, mentions, rounds, limits, availability, cancellations and end of discussion by limit.
+- Only for "Team" is a **suggestion** requested from a coordinator model chosen by the user in Settings. The suggestion is an ordered list of participants that the rules validate (only available participants, no repeats, within the limit). If no coordinator model is configured, or it is unavailable, fails or returns something invalid, the **fixed round** (room order) is used, with the option for each agent to pass.
+- **Passing (pending, recommended):** in team mode each agent can reply that it has nothing to add; that reply is not published as a message. It prevents everyone from always speaking.
+- **Limit:** one user intervention produces at most 4 automatic agent responses. Applying it to "Team" too (besides discussion) is **pending, recommended**.
+- **End of a discussion:** the limit is reached, an agent passes, the user intervenes or presses "Stop", or (if there is a coordinator model) it indicates that the discussion is over. When it ends, the turn returns to the user.
+- **Agents do not summon others.** An agent writing "@QA, what do you think?" does not run QA. In a later stage, the UI could offer it as a suggestion the user accepts (**pending**).
+- The coordinator does not run tools, does not change limits or providers, and cannot create approvals.
 
-## 5. Escenarios
+## 5. Scenarios
 
-Los diagramas de secuencia de cada escenario están en [conversation-engine.md](../architecture/conversation-engine.md#8-diagramas-de-secuencia).
+The sequence diagrams for each scenario are in [conversation-engine.md](../architecture/conversation-engine.md#8-sequence-diagrams).
 
-### A. Conversación dirigida con un agente
+### A. Directed conversation with one agent
 
-Sala con Product Owner, Backend Developer y QA Engineer. El usuario mantiene pulsado el botón de micrófono y dice «Backend, ¿cómo implementarías autenticación con OAuth en este proyecto?».
+A room with Product Owner, Backend Developer and QA Engineer. The user holds down the microphone button and says "Backend, how would you implement OAuth authentication in this project?".
 
-1. Mientras mantiene pulsado, el núcleo captura audio y la UI muestra «Micrófono activo».
-2. Al soltar, termina la intervención (push-to-talk: no hace falta detectar el final).
-3. El motor STT configurado transcribe; la UI muestra «Transcribiendo…».
-4. El núcleo resuelve el destinatario: «Backend» → Backend Developer (único).
-5. Se guarda el mensaje del usuario (texto transcrito) y se crea un `AgentRun` para Backend.
-6. El contexto incluye instrucciones de Backend, participantes, historial reciente de la sala y la pregunta.
-7. La tarjeta de Backend pasa a «Pensando…»; la transcripción muestra el texto provisional token a token.
-8. Al terminar la generación, la respuesta se guarda como mensaje de Backend.
-9. El motor TTS sintetiza la respuesta con la voz de Backend y se reproduce; su tarjeta muestra «Hablando».
-10. Si el usuario vuelve a pulsar el micrófono, el audio se detiene en el acto (§6).
-11. Al terminar la reproducción, Backend vuelve a «Disponible».
+1. While holding, the core captures audio and the UI shows "Microphone on".
+2. On release, the intervention ends (push-to-talk: no end detection needed).
+3. The configured STT engine transcribes; the UI shows "Transcribing…".
+4. The core resolves the recipient: "Backend" → Backend Developer (unique).
+5. The user's message (transcribed text) is saved and an `AgentRun` is created for Backend.
+6. The context includes Backend's instructions, participants, recent room history and the question.
+7. Backend's card switches to "Thinking…"; the transcript shows the provisional text token by token.
+8. When generation finishes, the response is saved as a Backend message.
+9. The TTS engine synthesizes the response with Backend's voice and plays it; its card shows "Speaking".
+10. If the user presses the microphone again, the audio stops immediately (§6).
+11. When playback ends, Backend returns to "Available".
 
-Después, «Explícame mejor lo de PKCE» (sin nombre) va a Backend por el destinatario por defecto (pendiente) y su contexto ya contiene la respuesta anterior: la conversación no se reinicia.
+Afterwards, "Explain the PKCE part better" (no name) goes to Backend through the default recipient (pending) and its context already contains the previous answer: the conversation does not restart.
 
-**Excepciones:** micrófono sin permiso, audio vacío o silencio (no se envía nada), STT no disponible (se ofrece escribir), Backend no disponible (§7), error del proveedor (línea de estado con el motivo, se puede volver a pedir).
+**Exceptions:** microphone without permission, empty audio or silence (nothing is sent), STT unavailable (writing is offered), Backend unavailable (§7), provider error (status line with the reason, the request can be repeated).
 
-### B. Pregunta a todo el equipo
+### B. Question to the whole team
 
-«Equipo, ¿qué opinan de implementar autenticación mediante OAuth?»
+"Team, what do you think about implementing authentication with OAuth?"
 
-1. Vocativo «Equipo» → modo reunión.
-2. Las reglas filtran participantes disponibles. Si hay modelo coordinador, este sugiere quién aporta y en qué orden (p. ej. PO → Backend → QA); si no, ronda fija en el orden de la sala.
-3. Las respuestas se generan **en secuencia**: cada agente ve lo que dijeron los anteriores (Backend puede responder a la propuesta del PO). La generación del siguiente puede empezar mientras se reproduce la voz del anterior; las voces nunca se superponen.
-4. Un agente que no tiene nada que aportar pasa (pendiente) y no se publica nada.
-5. «Me gusta. Backend, desarrolla tu propuesta» → modo dirigido a Backend, con todo lo anterior en su contexto.
+1. Vocative "Team" → meeting mode.
+2. The rules filter available participants. If there is a coordinator model, it suggests who contributes and in what order (e.g. PO → Backend → QA); otherwise, a fixed round in room order.
+3. Responses are generated **in sequence**: each agent sees what the previous ones said (Backend can respond to the PO's proposal). Generation of the next one can start while the previous one's voice is playing; voices never overlap.
+4. An agent with nothing to add passes (pending) and nothing is published.
+5. "I like it. Backend, develop your proposal" → directed mode to Backend, with everything above in its context.
 
-### C. Discusión entre agentes
+### C. Discussion between agents
 
-«Product Owner y Backend, discutan cómo deberíamos implementar el sistema de autenticación.»
+"Product Owner and Backend, discuss how we should implement the authentication system."
 
-1. Se reconoce una discusión entre PO y Backend: por el destinatario «Discusión» del selector o por un verbo de la lista localizada («discutan», «debatan», «discuss», «debate»). Detección exacta **pendiente**.
-2. Alternan PO → Backend → PO → Backend: como máximo 4 intervenciones.
-3. Cada intervención es un `AgentRun` cuyo origen es la intervención del usuario: ningún agente lanza turnos.
-4. El usuario puede intervenir en cualquier momento: su intervención descarta los turnos pendientes de la discusión y se atiende primero.
-5. Al alcanzar el límite, la UI muestra «Discusión terminada (4 de 4)» y ofrece «Continuar la discusión» (una nueva intervención del usuario, con otro presupuesto de 4).
+1. A discussion between PO and Backend is recognized: through the "Discussion" recipient in the selector or through a verb from the localized list («discutan», «debatan», «discuss», «debate»). Exact detection **pending**.
+2. They alternate PO → Backend → PO → Backend: at most 4 interventions.
+3. Each intervention is an `AgentRun` whose origin is the user's intervention: no agent launches turns.
+4. The user can intervene at any time: their intervention discards the discussion's pending turns and is handled first.
+5. When the limit is reached, the UI shows "Discussion ended (4 of 4)" and offers "Continue the discussion" (a new user intervention, with another budget of 4).
 
-### D. Interrupción humana
+### D. Human interruption
 
-Mientras Backend habla, el usuario pulsa el micrófono: «Espera, explícame primero cómo funcionaría el flujo».
+While Backend is speaking, the user presses the microphone: "Wait, first explain how the flow would work".
 
-1. Al pulsar, el audio de Backend se detiene de inmediato y se descarta el audio pendiente.
-2. Los turnos planificados que no han empezado se pausan. Al enviar la nueva intervención se descartan.
-3. Si había generación en curso, se cancela al enviar la nueva intervención (**pendiente, recomendado**; alternativa: dejarla terminar en silencio).
-4. Se procesa la nueva intervención con su destinatario.
+1. On press, Backend's audio stops immediately and pending audio is discarded.
+2. Planned turns that have not started are paused. They are discarded when the new intervention is sent.
+3. If a generation was in progress, it is cancelled when the new intervention is sent (**pending, recommended**; alternative: let it finish silently).
+4. The new intervention is processed with its recipient.
 
-**Qué queda en el historial (decisión aprobada):** si la generación terminó, el mensaje completo queda guardado aunque el audio se cortara. Durante la sesión, la UI lo marca «interrumpido». Esa marca vive solo en memoria y no se persiste. Si la generación se canceló, no hay mensaje: la ejecución queda `failed` con `error_kind = cancelled`, como ya define `AgentRun`.
+**What stays in the history (approved decision):** if generation finished, the full message stays saved even if the audio was cut off. During the session, the UI marks it "interrupted". That mark lives only in memory and is not persisted. If generation was cancelled, there is no message: the run ends `failed` with `error_kind = cancelled`, as `AgentRun` already defines.
 
-| Situación | ¿Mensaje persistido? | Marca visible |
+| Situation | Message persisted? | Visible mark |
 |---|---|---|
-| Generado y escuchado completo | Sí | — |
-| Generado, audio interrumpido | Sí, texto completo | «Interrumpido» (solo en la sesión) |
-| Generado, audio nunca reproducido (descartado) | Sí, texto completo | «No reproducido» (solo en la sesión) |
-| Generación cancelada | No | Línea de estado «Cancelado» |
-| Generación fallida | No | Línea de estado con el motivo |
+| Generated and fully heard | Yes | — |
+| Generated, audio interrupted | Yes, full text | "Interrupted" (session only) |
+| Generated, audio never played (discarded) | Yes, full text | "Not played" (session only) |
+| Generation cancelled | No | "Cancelled" status line |
+| Generation failed | No | Status line with the reason |
 
-Al reabrir la sala no se sabe qué parte se escuchó: es una limitación aceptada.
+When the room is reopened, it is not known which part was heard: this is an accepted limitation.
 
-### E. Participantes no disponibles
+### E. Unavailable participants
 
-Un agente usa Ollama, pero Ollama no está en ejecución. Otro usa un proveedor en la nube sin clave.
+One agent uses Ollama, but Ollama is not running. Another uses a cloud provider without a key.
 
-- Cada tarjeta muestra su estado real con el motivo: «Ollama no está en ejecución» y «Falta la clave de Anthropic».
-- La reunión sigue con los agentes disponibles. Un agente no disponible no se planifica en rondas ni discusiones; si se le dirige una pregunta, la UI avisa antes de enviar; si el usuario envía igualmente, la intervención se guarda y la ejecución falla de inmediato con su motivo (`provider_not_configured`, `provider_unavailable`…), como ya define [agent-execution.md](agent-execution.md).
-- Alternativas ofrecidas: «Reintentar» (vuelve a comprobar), «Configurar clave», «Abrir Ollama» (solo como indicación) o dirigir la pregunta a otro agente disponible de la sala.
-- **Nunca** se cambia de proveedor o modelo automáticamente. Una política de fallback explícita y configurada por el usuario queda como evolución **pendiente**.
-- Hoy un agente no puede cambiar de proveedor o modelo después de crearse: `update_agent` solo edita nombre, rol, descripción, instrucciones y equipo. Ofrecer «Cambiar modelo del agente» depende de añadir esa edición.
+- Each card shows its real state with the reason: "Ollama is not running" and "Anthropic key missing".
+- The meeting continues with the available agents. An unavailable agent is not scheduled in rounds or discussions; if a question is addressed to it, the UI warns before sending; if the user sends anyway, the intervention is saved and the run fails immediately with its reason (`provider_not_configured`, `provider_unavailable`…), as [agent-execution.md](agent-execution.md) already defines.
+- Alternatives offered: "Retry" (checks again), "Configure key", "Open Ollama" (as a hint only) or addressing the question to another available agent in the room.
+- The provider or model is **never** switched automatically. An explicit, user-configured fallback policy remains a **pending** evolution.
+- Today an agent cannot change provider or model after being created: `update_agent` only edits name, role, description, instructions and team. Offering "Change the agent's model" depends on adding that edit.
 
-### F. Reunión sin conexión
+### F. Offline meeting
 
-Sin internet, con Ollama o LM Studio funcionando:
+Without internet, with Ollama or LM Studio running:
 
-- Siguen disponibles workspaces, equipos, salas e historial.
-- Responden los agentes con modelo local en ejecución.
-- La voz funciona si el STT y el TTS elegidos son locales y sus modelos están descargados.
-- Las reglas deterministas del coordinador funcionan. La sugerencia por IA solo funciona si el modelo coordinador es local; si no, se usa la ronda fija.
-- Los agentes y motores que dependen de la nube se muestran como «Requiere conexión». Nunca se simula su respuesta.
-- No se hace ninguna llamada externa sin una configuración explícita del usuario.
-- Al volver la conexión, «Reintentar» recupera su disponibilidad.
+- Workspaces, teams, rooms and history remain available.
+- Agents with a running local model respond.
+- Voice works if the chosen STT and TTS are local and their models are downloaded.
+- The coordinator's deterministic rules work. The AI suggestion only works if the coordinator model is local; otherwise, the fixed round is used.
+- Agents and engines that depend on the cloud are shown as "Requires connection". Their response is never simulated.
+- No external call is made without an explicit user configuration.
+- When the connection returns, "Retry" restores their availability.
 
-### G. Reunión con trabajo real (evolución, fases 4–5 y posteriores)
+### G. Meeting with real work (evolution, phases 4–5 and later)
 
-«Backend, revisa el módulo de autenticación y propón una solución.»
+"Backend, review the authentication module and propose a solution."
 
-- **Hasta la Fase 5:** el agente responde verbalmente con lo que sabe del contexto. No lee archivos.
-- **Después:** desde la reunión se crea una **tarea** (agente, repositorio, rama base) con su worktree. El agente pide permisos según [agent-execution.md](agent-execution.md#herramientas-y-aprobaciones), y la pantalla compartida muestra terminal, diff y artefactos reales. El agente puede explicar su progreso con voz.
-- Crear una tarea o aprobar un comando son **acciones explícitas de la UI**, nunca el resultado de una frase hablada ni de un mensaje de otro agente.
+- **Until Phase 5:** the agent answers verbally with what it knows from the context. It does not read files.
+- **Afterwards:** a **task** (agent, repository, base branch) is created from the meeting with its worktree. The agent requests permissions according to [agent-execution.md](agent-execution.md#tools-and-approvals), and the shared screen shows the real terminal, diff and artifacts. The agent can explain its progress by voice.
+- Creating a task or approving a command are **explicit UI actions**, never the result of a spoken sentence or of another agent's message.
 
-## 6. Voz
+## 6. Voice
 
-**Decisiones aprobadas:**
-- **Push-to-talk** en la primera versión.
-- **Motores configurables** locales o en la nube, sin preferencia obligatoria.
-- **Voz por agente** independiente de su proveedor LLM, guardada en una tabla aparte (`agent_voices`). El esquema exacto está pendiente de aprobación.
+**Approved decisions:**
+- **Push-to-talk** in the first version.
+- **Configurable engines**, local or cloud, with no mandatory preference.
+- **Per-agent voice** independent of its LLM provider, stored in a separate table (`agent_voices`). The exact schema is pending approval.
 
-- **Entrada:** mantener pulsado el botón (o el atajo dentro de la ventana) para hablar. Al pulsar se detiene la voz de los agentes. Como el micrófono no está abierto mientras hablan, se evita el eco sin cancelación de eco en la v1.
-- **Transcripción:** con el destinatario resuelto, se envía sola. Con destinatario ambiguo o ausente, queda como borrador editable en el compositor. Ambas reglas son **pendiente, recomendado**.
-- **Salida:** cada respuesta se sintetiza con la voz del agente. **Solo una voz suena a la vez**; las demás esperan en cola en el orden lógico de la conversación.
-- **Controles:** silenciar a los agentes (la conversación sigue en texto), subtítulos, detener, volumen y, si es viable, dispositivo de entrada y salida.
-- **Reproducir de nuevo:** cualquier mensaje de un agente se puede volver a escuchar (se sintetiza desde el texto guardado).
-- **Idiomas:** español e inglés. Por defecto el STT usa el idioma del perfil. Cada agente necesita una voz por idioma: **pendiente** si `agent_voices` se indexa por agente e idioma.
-- **Audio:** no se guardan grabaciones. El audio del micrófono vive en memoria hasta transcribirse y luego se descarta. El audio sintetizado no se guarda. Política **propuesta, pendiente de confirmar**.
-- **Transparencia:** con un motor en la nube, la UI indica que el audio sale de la máquina hacia ese proveedor. Las voces sintéticas se identifican como generadas por IA, como exigen algunos proveedores.
+- **Input:** hold the button (or the shortcut within the window) to speak. Pressing stops the agents' voices. Since the microphone is not open while they speak, echo is avoided without echo cancellation in v1.
+- **Transcription:** with the recipient resolved, it is sent automatically. With an ambiguous or missing recipient, it stays as an editable draft in the composer. Both rules are **pending, recommended**.
+- **Output:** each response is synthesized with the agent's voice. **Only one voice plays at a time**; the others wait in a queue in the logical order of the conversation.
+- **Controls:** mute the agents (the conversation continues in text), captions, stop, volume and, if feasible, input and output device.
+- **Replay:** any agent message can be heard again (it is synthesized from the saved text).
+- **Languages:** Spanish and English. By default STT uses the profile language. Each agent needs one voice per language: **pending** whether `agent_voices` is keyed by agent and language.
+- **Audio:** no recordings are saved. Microphone audio lives in memory until transcribed and is then discarded. Synthesized audio is not saved. Policy **proposed, pending confirmation**.
+- **Transparency:** with a cloud engine, the UI indicates that audio leaves the machine for that provider. Synthetic voices are identified as AI-generated, as some providers require.
 
-Detalle técnico y comparativa de motores: [voice-engine.md](../architecture/voice-engine.md).
+Technical detail and engine comparison: [voice-engine.md](../architecture/voice-engine.md).
 
-## 7. Disponibilidad y operación híbrida
+## 7. Availability and hybrid operation
 
-Meelting es una app de escritorio sin backend propio. Trabaja con servicios en la nube y con modelos y motores instalados en el equipo, y el usuario elige qué usa cada agente y cada motor de voz. **No hay preferencia obligatoria por local ni por nube.**
+Meelting is a desktop app with no backend of its own. It works with cloud services and with models and engines installed on the computer, and the user chooses what each agent and each voice engine uses. **There is no mandatory preference for local or cloud.**
 
-Estados de disponibilidad de un agente o de un motor de voz:
+Availability states of an agent or a voice engine:
 
-| Estado | Significado | Ejemplo |
+| State | Meaning | Example |
 |---|---|---|
-| Requiere configuración | Falta lo mínimo para usarlo | Proveedor en la nube sin clave; modelo de voz local no descargado |
-| Configurado | Tiene lo necesario, sin comprobar aún | Clave guardada, sin verificar en esta sesión |
-| Disponible | Comprobado y respondiendo | Ollama en ejecución con el modelo del agente |
-| No disponible | Comprobado y falla | Ollama apagado; modelo ausente; clave rechazada |
-| Requiere conexión | Depende de internet y no hay conexión | Agente con Claude sin red |
+| Requires configuration | The minimum needed to use it is missing | Cloud provider without a key; local voice model not downloaded |
+| Configured | Has what it needs, not checked yet | Key saved, not verified in this session |
+| Available | Checked and responding | Ollama running with the agent's model |
+| Unavailable | Checked and failing | Ollama off; model missing; key rejected |
+| Requires connection | Depends on internet and there is no connection | Agent using Claude without network |
 
-- Una clave guardada no significa «Disponible».
-- Los estados se calculan con comprobaciones reales y con el resultado de las ejecuciones. «Reintentar» vuelve a comprobar.
-- **Fallback:** no se cambia de proveedor ni de modelo de forma silenciosa. Si se pierde la conexión, el agente con Claude queda «Requiere conexión»: se informa, se permite reintentar y se ofrecen agentes disponibles de la sala. Una política de fallback explícita es **pendiente**.
+- A saved key does not mean "Available".
+- States are computed from real checks and from run results. "Retry" checks again.
+- **Fallback:** the provider or model is never switched silently. If the connection is lost, the Claude agent becomes "Requires connection": the user is informed, retrying is allowed and available agents in the room are offered. An explicit fallback policy is **pending**.
 
-## 8. Experiencia visual
+## 8. Visual experience
 
-Coherente con Grafito: mismos tokens, componentes y tono que la sala actual. Sin controles decorativos: cada control corresponde a una función real de su etapa.
+Consistent with Grafito: the same tokens, components and tone as the current room. No decorative controls: each control corresponds to a real function of its stage.
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
-│ ← Salas   Autenticación OAuth   ● En reunión   4 participantes   ⋯   │  encabezado
+│ ← Rooms   OAuth authentication   ● In meeting   4 participants   ⋯   │  header
 ├───────────────────────────────────────────────┬──────────────────────┤
-│  ┌─────────┐  ┌─────────┐  ┌─────────┐        │ Conversación         │
-│  │  (Tú)   │  │   PO    │  │ Backend │        │ ─ mensajes ─         │
-│  │ Superv. │  │Disponib.│  │▶Hablando│        │ Backend (escribiendo)│
-│  └─────────┘  └─────────┘  └─────────┘        │ …texto provisional…  │
+│  ┌─────────┐  ┌─────────┐  ┌─────────┐        │ Conversation         │
+│  │  (You)  │  │   PO    │  │ Backend │        │ ─ messages ─         │
+│  │ Superv. │  │Availabl.│  │▶Speaking│        │ Backend (typing)     │
+│  └─────────┘  └─────────┘  └─────────┘        │ …provisional text…   │
 │  ┌─────────┐                                  │                      │
-│  │   QA    │      [subtítulo de quien habla]  │ Para: [Backend ▾]    │
-│  │Pensando…│                                  │ [compositor     ] ⏎  │
+│  │   QA    │      [caption of the speaker]    │ To: [Backend ▾]      │
+│  │Thinking…│                                  │ [composer       ] ⏎  │
 │  └─────────┘                                  │                      │
 ├───────────────────────────────────────────────┴──────────────────────┤
-│ 🎙 Mantén para hablar   🔊 Voces   CC Subtítulos   ■ Detener   Salir   ⚙ │  barra inferior
+│ 🎙 Hold to talk   🔊 Voices   CC Captions   ■ Stop   Leave   ⚙      │  bottom bar
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
-- **Encabezado:** volver, nombre de la sala, estado de la reunión («En reunión» / «Detenida»), número de participantes y menú (ajustes de audio, eliminar sala). Eliminar sala hoy está en la barra inferior; se propone moverla al menú.
-- **Tarjetas:** avatar, nombre, rol y estado. «Hablando» lleva anillo, icono y texto (no solo color). «Pensando…» solo aparece con una ejecución activa. «No disponible» muestra el motivo. Con más de 6 agentes, el que habla pasa a primer plano.
-- **Panel lateral:** conversación persistida y texto provisional (con estilo de provisional), marcas «interrumpido» o «no reproducido», líneas de estado de cada ejecución, compositor con destinatario («Para: Backend · Equipo · Discusión»).
-- **Barra inferior:** micrófono push-to-talk, silenciar voces, subtítulos, «Detener» (cancela todo lo pendiente de la sala), salir de la reunión y ajustes de audio. Cada control aparece en la etapa que lo hace real.
-- **Responsive** (ventana mínima 800×600): en anchos grandes, cuadrícula y panel lateral fijo (como hoy). En anchos menores, el panel se pliega a un cajón o a pestañas «Participantes · Conversación». Cada zona tiene su propio scroll y el compositor queda siempre visible.
-- **Teclado:** todo se opera con teclado. El atajo de push-to-talk funciona solo con la ventana enfocada y fuera del compositor (sin atajo global). Atajo concreto **pendiente**.
-- **Accesibilidad:** los mensajes nuevos se anuncian con `aria-live="polite"` y los errores con `assertive`; los estados tienen texto; se respeta `prefers-reduced-motion`; los subtítulos están siempre disponibles y toda acción hablada tiene equivalente escrito.
+- **Header:** back, room name, meeting state ("In meeting" / "Stopped"), number of participants and menu (audio settings, delete room). Delete room is in the bottom bar today; moving it to the menu is proposed.
+- **Cards:** avatar, name, role and state. "Speaking" has a ring, icon and text (not only color). "Thinking…" only appears with an active run. "Unavailable" shows the reason. With more than 6 agents, the speaker moves to the foreground.
+- **Side panel:** persisted conversation and provisional text (styled as provisional), "interrupted" or "not played" marks, status lines for each run, composer with recipient ("To: Backend · Team · Discussion").
+- **Bottom bar:** push-to-talk microphone, mute voices, captions, "Stop" (cancels everything pending in the room), leave the meeting and audio settings. Each control appears in the stage that makes it real.
+- **Responsive** (minimum window 800×600): at large widths, grid and fixed side panel (as today). At smaller widths, the panel collapses into a drawer or "Participants · Conversation" tabs. Each area has its own scroll and the composer always stays visible.
+- **Keyboard:** everything is operable by keyboard. The push-to-talk shortcut only works with the window focused and outside the composer (no global shortcut). Specific shortcut **pending**.
+- **Accessibility:** new messages are announced with `aria-live="polite"` and errors with `assertive`; states have text; `prefers-reduced-motion` is respected; captions are always available and every spoken action has a written equivalent.
 
-### Estados vacíos y de error
+### Empty and error states
 
-| Caso | Experiencia |
+| Case | Experience |
 |---|---|
-| Sala sin participantes | Se puede escribir; los controles de voz y destinatario quedan desactivados y se invita a crear una sala con agentes (una sala creada no se edita) |
-| Sala sin mensajes | Sugerencia de cómo dirigirse a un agente o al equipo |
-| Micrófono sin permiso | Botón de micrófono desactivado con «Permiso de micrófono denegado» y cómo concederlo en el SO; el texto sigue disponible |
-| Ningún modelo disponible | Tarjetas con el motivo; el compositor guarda mensajes sin destinatario |
-| STT no configurado | El micrófono lleva a Ajustes › Voz |
-| TTS no configurado | Voces desactivadas, la conversación sigue en texto |
-| Reunión detenida | «Detenida»; nada pendiente; el usuario puede seguir escribiendo |
-| Agente no disponible | Estado y motivo en la tarjeta; se excluye de rondas |
+| Room without participants | Writing is possible; voice and recipient controls are disabled and the user is invited to create a room with agents (a created room is not edited) |
+| Room without messages | Suggestion of how to address an agent or the team |
+| Microphone without permission | Microphone button disabled with "Microphone permission denied" and how to grant it in the OS; text remains available |
+| No model available | Cards with the reason; the composer saves messages without a recipient |
+| STT not configured | The microphone leads to Settings › Voice |
+| TTS not configured | Voices disabled, the conversation continues in text |
+| Meeting stopped | "Stopped"; nothing pending; the user can keep writing |
+| Agent unavailable | State and reason on the card; excluded from rounds |
 
-## 9. Criterios de aceptación (por etapa; ver [roadmap.md](roadmap.md))
+## 9. Acceptance criteria (per stage; see [roadmap.md](roadmap.md))
 
-**Conversación dirigida (texto)**
-- [ ] Solo se puede dirigir una intervención a agentes participantes de la sala; un id ajeno o de otro workspace falla sin guardar nada.
-- [ ] Una mención ambigua no ejecuta a nadie y pide elegir.
-- [ ] El contexto de cada agente incluye los mensajes de los demás con su nombre y rol, y conserva sus propias instrucciones.
-- [ ] Un mensaje de un agente nunca se presenta ni se envía al modelo como si fuera del usuario.
+**Directed conversation (text)**
+- [ ] An intervention can only be addressed to agents participating in the room; a foreign id or one from another workspace fails without saving anything.
+- [ ] An ambiguous mention runs nobody and asks to choose.
+- [ ] Each agent's context includes the other agents' messages with their name and role, and keeps its own instructions.
+- [ ] An agent's message is never presented or sent to the model as if it came from the user.
 
-**Coordinación (texto)**
-- [ ] Una intervención genera como máximo 4 respuestas automáticas.
-- [ ] Ningún mensaje de un agente crea una ejecución.
-- [ ] Una intervención del usuario descarta los turnos pendientes de la anterior.
-- [ ] «Detener» cancela todo lo pendiente de la sala de forma idempotente; un evento tardío no reactiva nada.
-- [ ] Sin modelo coordinador, o si su sugerencia es inválida, se usa la ronda fija.
-- [ ] Un agente no disponible no se planifica.
+**Coordination (text)**
+- [ ] An intervention produces at most 4 automatic responses.
+- [ ] No agent message creates a run.
+- [ ] A user intervention discards the pending turns of the previous one.
+- [ ] "Stop" cancels everything pending in the room idempotently; a late event reactivates nothing.
+- [ ] Without a coordinator model, or if its suggestion is invalid, the fixed round is used.
+- [ ] An unavailable agent is not scheduled.
 
-**Voz de salida**
-- [ ] Nunca suenan dos voces a la vez.
-- [ ] Silenciar las voces no altera la conversación en texto.
-- [ ] Salir de la reunión, cambiar de workspace o cerrar la ventana detiene el audio en menos de un objetivo a medir.
-- [ ] No se guarda audio sintetizado.
+**Voice output**
+- [ ] Two voices never play at the same time.
+- [ ] Muting voices does not alter the text conversation.
+- [ ] Leaving the meeting, switching workspace or closing the window stops audio within a target to be measured.
+- [ ] No synthesized audio is saved.
 
-**Voz de entrada**
-- [ ] El micrófono solo está abierto mientras se mantiene pulsado y la UI lo indica.
-- [ ] Pulsar el micrófono detiene la voz de los agentes.
-- [ ] Audio vacío o silencio no crea mensajes.
-- [ ] Sin permiso, sin dispositivo o sin STT, el texto sigue funcionando y se informa la causa.
-- [ ] No se guarda audio del micrófono.
+**Voice input**
+- [ ] The microphone is only open while held down, and the UI indicates it.
+- [ ] Pressing the microphone stops the agents' voices.
+- [ ] Empty audio or silence creates no messages.
+- [ ] Without permission, device or STT, text keeps working and the cause is reported.
+- [ ] No microphone audio is saved.
 
-**Transversales**
-- [ ] Todo en `es` y `en`; estados accesibles sin depender del color.
-- [ ] Ninguna clave en eventos, logs ni transcripciones.
-- [ ] Con solo motores y modelos locales disponibles, la reunión funciona sin conexión.
+**Cross-cutting**
+- [ ] Everything in `es` and `en`; accessible states that do not depend on color.
+- [ ] No keys in events, logs or transcripts.
+- [ ] With only local engines and models available, the meeting works offline.
 
-## 10. MVP propuesto
+## 10. Proposed MVP
 
-**Primera reunión hablada demostrable** (al final de la etapa R4 del [roadmap](roadmap.md#pista-r--reuniones-conversacionales)): modo dirigido y modo equipo por texto con el coordinador híbrido, voz de salida con un motor por plataforma y entrada push-to-talk con un motor STT. Quedan fuera del MVP la escucha continua, el TTS por frases en streaming, la cancelación de eco, speech-to-speech y las herramientas.
+**First demonstrable spoken meeting** (at the end of stage R4 of the [roadmap](roadmap.md#track-r--conversational-meetings)): directed mode and team mode by text with the hybrid coordinator, voice output with one engine per platform and push-to-talk input with one STT engine. Out of the MVP: continuous listening, streaming sentence-level TTS, echo cancellation, speech-to-speech and tools.
 
-## 11. Fuera de alcance
+## 11. Out of scope
 
-- Video real, cámaras, WebRTC entre personas, participantes humanos adicionales.
-- Sincronización remota, cuentas, servicios propios en la nube.
-- Grabaciones de audio persistidas.
-- Memoria a largo plazo y resúmenes automáticos (pendiente de aprobar su comportamiento y su persistencia).
-- Agentes que hablan espontáneamente o se convocan entre sí.
-- Cambio automático de proveedor o de modelo.
+- Real video, cameras, WebRTC between people, additional human participants.
+- Remote sync, accounts, our own cloud services.
+- Persisted audio recordings.
+- Long-term memory and automatic summaries (their behavior and persistence pending approval).
+- Agents that speak spontaneously or summon each other.
+- Automatic switching of provider or model.
 
-## Dependencias
-- `AgentRun` con streaming y cancelación ([agent-execution.md](agent-execution.md)).
-- Salas y mensajes ✅ ([rooms.md](rooms.md)).
-- Tabla `settings` (planificada) para el modelo coordinador y las preferencias de voz; tabla `agent_voices` (propuesta).
-- Spikes de audio y voz ([voice-engine.md](../architecture/voice-engine.md#9-spikes)).
+## Dependencies
+- `AgentRun` with streaming and cancellation ([agent-execution.md](agent-execution.md)).
+- Rooms and messages ✅ ([rooms.md](rooms.md)).
+- `settings` table (planned) for the coordinator model and voice preferences; `agent_voices` table (proposed).
+- Audio and voice spikes ([voice-engine.md](../architecture/voice-engine.md#9-spikes)).
 
-**Prioridad:** Should Have (después de `AgentRun`).
-**Métrica de éxito:** porcentaje de salas con al menos una intervención a «Equipo» o a varios agentes, tasa de intervenciones por voz frente a texto, tasa de interrupciones y de discusiones que llegan al límite, y tiempo hasta el primer audio (medido localmente).
+**Priority:** Should Have (after `AgentRun`).
+**Success metric:** percentage of rooms with at least one intervention to "Team" or to several agents, rate of voice versus text interventions, rate of interruptions and of discussions that reach the limit, and time to first audio (measured locally).
