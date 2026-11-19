@@ -1,153 +1,153 @@
-# Alcance y roadmap
+# Scope and roadmap
 
-> Las fases son una **propuesta**, pendiente de aprobación. Estimaciones orientativas para 1–2 personas; se ajustan tras la Fase 0.
+> The phases are a **proposal**, pending approval. Rough estimates for 1–2 people; adjusted after Phase 0.
 
-## Estado actual
+## Current status
 
-Fase 0 completada (2026-11-17): scaffold Tauri 2 (React + TypeScript + Vite), spikes de keychain, de `git worktree` + PTY con salida en vivo y de streaming SSE (Chat Completions), validados en los tres SO desde CI y con pruebas reales contra Ollama y DeepSeek. Fase 1 completada (2026-11-17): SQLite con `profile` y `workspaces`, primer arranque (idioma y workspace), shell (riel + topbar), cambio y creación de workspace, tokens Grafito e i18n `es`/`en`. Fase 2 completada (2026-11-18): equipos, agentes personalizados, catálogo de plantillas y contratación con asistente; ya se pueden editar (incluido el equipo) y eliminar agentes con confirmación y arrastrar los nodos del organigrama con posiciones persistidas; ya se detectan los modelos locales (Ollama y LM Studio). Fase 3 en curso (2026-11-18): salas, participantes y chat persistente construidos; `AgentRun` construido (motor con estados persistidos, streaming, reintentos, cancelación y expiración al arrancar; adaptadores de los cinco proveedores probados con `wiremock`; «Pedir a» en la sala) y probado con un modelo real de Ollama; la pantalla «Claves de IA» sigue sin construir. Ver [../architecture/overview.md](../architecture/overview.md).
+Phase 0 complete (2026-11-17): Tauri 2 scaffold (React + TypeScript + Vite), spikes for the keychain, `git worktree` + PTY with live output and SSE streaming (Chat Completions), validated on the three OSes from CI and with real tests against Ollama and DeepSeek. Phase 1 complete (2026-11-17): SQLite with `profile` and `workspaces`, first launch (language and workspace), shell (rail + topbar), workspace switching and creation, Grafito tokens and `es`/`en` i18n. Phase 2 complete (2026-11-18): teams, custom agents, template catalog and hiring with a wizard; agents can now be edited (including the team) and deleted with confirmation, and org chart nodes can be dragged with persisted positions; local models (Ollama and LM Studio) are now detected. Phase 3 in progress (2026-11-18): rooms, participants and persistent chat built; `AgentRun` built (engine with persisted states, streaming, retries, cancellation and expiry at startup; adapters for the five providers tested with `wiremock`; "Ask" in the room) and tested with a real Ollama model; the "AI keys" screen is still not built. See [../architecture/overview.md](../architecture/overview.md).
 
-## Fase 0 — Spike de validación (1 semana)
+## Phase 0 — Validation spike (1 week)
 
-**Objetivo:** probar lo más riesgoso antes de comprometerse.
+**Goal:** prove the riskiest parts before committing.
 
-- Proyecto Tauri 2 con UI mínima.
-- Llamada con streaming a Ollama y a un proveedor en la nube.
-- Crear un `git worktree`, ejecutar un comando con PTY y mostrar la salida en vivo.
-- Guardar y leer una clave en el keychain.
-- Compilar e instalar en macOS, Windows y Linux desde CI.
+- Tauri 2 project with a minimal UI.
+- Streaming call to Ollama and to a cloud provider.
+- Create a `git worktree`, run a command with a PTY and show the output live.
+- Save and read a key in the keychain.
+- Build and install on macOS, Windows and Linux from CI.
 
-**Criterios de salida:** funciona en los tres SO; arranque en frío < 2 s; instalador < 30 MB; sin bloqueos en Windows (ConPTY, rutas, WebView2) ni Linux (WebKitGTK). Si Linux falla, se evalúa Electron.
+**Exit criteria:** works on the three OSes; cold start < 2 s; installer < 30 MB; no blockers on Windows (ConPTY, paths, WebView2) or Linux (WebKitGTK). If Linux fails, Electron is evaluated.
 
-**Resultado:** cumplidos. CI verde en macOS, Windows y Ubuntu (lint, tests y bundle). Instaladores: `.dmg` 3.4 MB, `.msi` 3.5 MB, `.exe` 2.6 MB, `.deb` 3.7 MB; el criterio de 30 MB se mide con estos, no con el AppImage (79 MB), que empaqueta GTK y WebKit. Arranque: ventana visible en 0.24–0.7 s con el binario de release en macOS (caché de disco caliente; no se midió el render del contenido). Streaming probado con Ollama (`qwen2.5:0.5b`) y DeepSeek, con la clave guardada en el keychain.
+**Result:** met. CI green on macOS, Windows and Ubuntu (lint, tests and bundle). Installers: `.dmg` 3.4 MB, `.msi` 3.5 MB, `.exe` 2.6 MB, `.deb` 3.7 MB; the 30 MB criterion is measured with these, not with the AppImage (79 MB), which bundles GTK and WebKit. Startup: window visible in 0.24–0.7 s with the release binary on macOS (warm disk cache; content rendering was not measured). Streaming tested with Ollama (`qwen2.5:0.5b`) and DeepSeek, with the key stored in the keychain.
 
-## Fase 1 — Fundamentos (2 semanas)
+## Phase 1 — Foundations (2 weeks)
 
-- CI en la matriz de 3 SO, `clippy`, `rustfmt`, lint y plantilla de commits.
-- SQLite, migraciones y repositorios con los `CHECK` del modelo de datos.
-- Tokens de diseño Grafito, atoms y molecules base, i18n `es`/`en`.
-- Primer arranque (idioma y workspace), shell (riel + topbar) y cambio de workspace.
+- CI on the 3-OS matrix, `clippy`, `rustfmt`, lint and commit template.
+- SQLite, migrations and repositories with the data model's `CHECK`s.
+- Grafito design tokens, base atoms and molecules, `es`/`en` i18n.
+- First launch (language and workspace), shell (rail + topbar) and workspace switching.
 
-**Resultado:** cumplido. Crear y cambiar de workspace con persistencia y ambos idiomas; CI verde, `clippy`, `rustfmt`, tests de Rust (45) y de frontend (15).
+**Result:** met. Creating and switching workspaces with persistence and both languages; CI green, `clippy`, `rustfmt`, Rust tests (45) and frontend tests (15).
 
-## Fase 2 — Equipos y agentes (2 semanas)
+## Phase 2 — Teams and agents (2 weeks)
 
-- ✅ Organigrama con nodos arrastrables y posiciones persistidas.
-- ✅ Catálogo de plantillas, contratar, crear, editar, eliminar y mover agentes.
-- ✅ Selector de proveedor y modelo desde `llm.yml` (nube o equipo, con buscador).
+- ✅ Org chart with draggable nodes and persisted positions.
+- ✅ Template catalog, hiring, creating, editing, deleting and moving agents.
+- ✅ Provider and model picker from `llm.yml` (cloud or on this computer, with search).
 
-**Resultado:** cumplido. Los pendientes menores de [agent-catalog.md](agent-catalog.md) (contratar con los datos de la plantilla, advertencia de proveedor sin clave, minimapa, fijados, estado de agente, equipo «General») quedan fuera de la fase.
+**Result:** met. The minor pending items in [agent-catalog.md](agent-catalog.md) (hiring with the template data, warning for a provider without a key, minimap, pinning, agent status, "General" team) stay outside the phase.
 
-## Fase 3 — Salas y ejecución con streaming (3 semanas)
+## Phase 3 — Rooms and streaming execution (3 weeks)
 
-- ✅ Salas, participantes y chat persistente ([rooms.md](rooms.md)).
-- ✅ Adaptadores para los cinco proveedores del catálogo real: `anthropic`, `openai`, `groq`, `ollama` y `lmstudio` (decisión aprobada D9). Verificados con `wiremock`; con proveedor real, solo Ollama hasta ahora.
-- ✅ `AgentRun` con estados, reintentos, idempotencia, expiración al arrancar y cancelación, con los ajustes que necesitan las reuniones: prompt construido en `claim` y tokens con secuencia ([agent-run.md](../architecture/agent-run.md), aprobado y construido).
-- ✅ Cambio explícito de proveedor y modelo de un agente (D18), entrega independiente del motor.
-- Claves de IA en keychain con verificación previa (pantalla «Claves de IA», entrega separada de `AgentRun`).
+- ✅ Rooms, participants and persistent chat ([rooms.md](rooms.md)).
+- ✅ Adapters for the five providers of the real catalog: `anthropic`, `openai`, `groq`, `ollama` and `lmstudio` (approved decision D9). Verified with `wiremock`; with a real provider, only Ollama so far.
+- ✅ `AgentRun` with states, retries, idempotency, expiry at startup and cancellation, with the adjustments meetings need: prompt built on `claim` and tokens with a sequence ([agent-run.md](../architecture/agent-run.md), approved and built).
+- ✅ Explicit change of an agent's provider and model (D18), a delivery independent of the engine.
+- AI keys in the keychain with prior verification ("AI keys" screen, a delivery separate from `AgentRun`).
 
-**Resultado esperado:** todos los criterios de [agent-execution.md](agent-execution.md), más streaming y cancelación; funciona sin conexión con un proveedor local en ejecución.
+**Expected result:** all the criteria in [agent-execution.md](agent-execution.md), plus streaming and cancellation; works offline with a local provider running.
 
-## Pista R — Reuniones conversacionales
+## Track R — Conversational meetings
 
-> **Propuesta**, no aprobada para implementación. El orden (texto primero, después voz) está aprobado ([decisions.md](decisions.md) D1). Depende de la Fase 3 y avanza en paralelo a las Fases 4–6 salvo R6. Producto: [voice-meetings.md](voice-meetings.md). Arquitectura: [conversation-engine.md](../architecture/conversation-engine.md) y [voice-engine.md](../architecture/voice-engine.md). Sin estimaciones en semanas: el tamaño de R3–R5 depende de los spikes de voz.
+> **Proposal**, not approved for implementation. The order (text first, then voice) is approved ([decisions.md](decisions.md) D1). Depends on Phase 3 and proceeds in parallel with Phases 4–6 except R6. Product: [voice-meetings.md](voice-meetings.md). Architecture: [conversation-engine.md](../architecture/conversation-engine.md) and [voice-engine.md](../architecture/voice-engine.md). No estimates in weeks: the size of R3–R5 depends on the voice spikes.
 
 ```mermaid
 flowchart LR
-    F3[Fase 3 · AgentRun] --> R1[R1 · Dirigida por texto]
-    R1 --> R2[R2 · Coordinación multiagente]
-    R2 --> R3[R3 · Voz de salida]
+    F3[Phase 3 · AgentRun] --> R1[R1 · Text-directed]
+    R1 --> R2[R2 · Multi-agent coordination]
+    R2 --> R3[R3 · Voice output]
     S[Spikes S1–S6] --> R3
-    R3 --> R4[R4 · Voz de entrada push-to-talk]
-    R4 --> R5[R5 · Conversación natural]
-    F5[Fases 4–5 · Tareas y herramientas] --> R6[R6 · Reunión con trabajo real]
+    R3 --> R4[R4 · Push-to-talk voice input]
+    R4 --> R5[R5 · Natural conversation]
+    F5[Phases 4–5 · Tasks and tools] --> R6[R6 · Meeting with real work]
     R2 --> R6
 ```
 
-### R1 — Conversación dirigida por texto ✅
-- **Estado:** implementada (D19–D23). Detalle en [conversation-engine.md](../architecture/conversation-engine.md#r1-implementado).
-- **Objetivo:** que el usuario hable con un agente concreto en una conversación que conserva el contexto.
-- **Incluye:** selector de destinatario y menciones `@`; ambigüedad; destinatario por defecto (P5); prompt de reunión con nombre y rol de cada emisor; estado visual de los agentes; disponibilidad real por agente.
-- **Módulos:** servicio de intervención (sucede a `message_send`), dominio de menciones, `BuildPrompt`, `useRoom`, `MessageComposer`, `ParticipantTile`.
-- **Base de datos:** ningún cambio más allá de `agent_runs` (Fase 3).
-- **Riesgos:** recorte de contexto con modelos locales; resolución de nombres.
-- **Pruebas:** dominio de menciones, prompt, aislamiento por workspace, eventos.
-- **Aceptación:** criterios «Conversación dirigida» de [voice-meetings.md](voice-meetings.md#9-criterios-de-aceptación-por-etapa-ver-roadmapmd).
-- **Excluye:** respuestas de varios agentes, voz.
-- **Siguiente etapa si:** las respuestas de seguimiento usan el contexto anterior sin reiniciar la conversación.
+### R1 — Text-directed conversation ✅
+- **Status:** implemented (D19–D23). Details in [conversation-engine.md](../architecture/conversation-engine.md#r1-built).
+- **Goal:** let the user talk to a specific agent in a conversation that keeps context.
+- **Includes:** recipient picker and `@` mentions; ambiguity; default recipient (P5); meeting prompt with each speaker's name and role; visual agent status; real availability per agent.
+- **Modules:** intervention service (succeeds `message_send`), mentions domain, `BuildPrompt`, `useRoom`, `MessageComposer`, `ParticipantTile`.
+- **Database:** no change beyond `agent_runs` (Phase 3).
+- **Risks:** context trimming with local models; name resolution.
+- **Tests:** mentions domain, prompt, workspace isolation, events.
+- **Acceptance:** "Directed conversation" criteria in [voice-meetings.md](voice-meetings.md#9-acceptance-criteria-per-stage-see-roadmapmd).
+- **Excludes:** responses from several agents, voice.
+- **Next stage if:** follow-up responses use the previous context without restarting the conversation.
 
-### R2 — Coordinación multiagente (texto)
-- **Objetivo:** preguntas al equipo, rondas y discusiones acotadas.
-- **Incluye:** coordinador híbrido (D2), sugerencia por IA con un modelo de Ajustes, ronda fija, «pasar» (P7), presupuesto de 4 (D3), sesión en memoria, «Detener», cancelación por intervención.
-- **Módulos:** dominio de planificación, registro de sesiones, servicios de intervención y cancelación, Ajustes (modelo coordinador), `useMeeting`.
-- **Base de datos:** `settings` (planificada, alcance P9); `agent_runs` con C1/P7. Requieren aprobación.
-- **Riesgos:** coste en la nube, JSON inválido del coordinador (S7), bucles.
-- **Pruebas:** presupuesto, «ningún mensaje de agente crea runs», cancelación idempotente, eventos tardíos, sugerencia inválida.
-- **Aceptación:** criterios «Coordinación» de [voice-meetings.md](voice-meetings.md).
-- **Excluye:** voz; agentes que convocan a otros.
-- **Siguiente etapa si:** las discusiones terminan siempre dentro del presupuesto y «Detener» deja la sala en reposo.
+### R2 — Multi-agent coordination (text)
+- **Goal:** questions to the team, rounds and bounded discussions.
+- **Includes:** hybrid coordinator (D2), AI suggestion with a model from Settings, fixed round, "pass" (P7), budget of 4 (D3), in-memory session, "Stop", cancellation per intervention.
+- **Modules:** planning domain, session registry, intervention and cancellation services, Settings (coordinator model), `useMeeting`.
+- **Database:** `settings` (planned, scope P9); `agent_runs` with C1/P7. Require approval.
+- **Risks:** cloud cost, invalid JSON from the coordinator (S7), loops.
+- **Tests:** budget, "no agent message creates runs", idempotent cancellation, late events, invalid suggestion.
+- **Acceptance:** "Coordination" criteria in [voice-meetings.md](voice-meetings.md).
+- **Excludes:** voice; agents that summon others.
+- **Next stage if:** discussions always end within the budget and "Stop" leaves the room idle.
 
-### R3 — Voz de salida
-- **Objetivo:** escuchar a cada agente con su voz.
-- **Incluye:** TTS nativo por plataforma (recomendado, S3); cola de reproducción con una sola voz a la vez; silenciar, subtítulos y «reproducir de nuevo»; voz por agente (D8); marcas «interrumpido» y «no reproducido» en memoria (D7).
-- **Módulos:** `system/` de TTS y reproducción, servicio de cola, Ajustes › Voz, `useVoice`.
-- **Base de datos:** `agent_voices` (esquema pendiente) y claves de `settings`.
-- **Riesgos:** calidad en Linux, licencias de las voces neuronales (P24), audio al salir.
-- **Pruebas:** máquina de reproducción, deduplicación, cierre de sesión, manual en los 3 SO.
-- **Aceptación:** criterios «Voz de salida».
-- **Excluye:** micrófono, TTS en streaming, voces neuronales si S4 no las aprueba.
-- **Siguiente etapa si:** S1 y S2 están aprobados.
+### R3 — Voice output
+- **Goal:** hear each agent with its own voice.
+- **Includes:** native TTS per platform (recommended, S3); playback queue with a single voice at a time; mute, subtitles and "play again"; per-agent voice (D8); "interrupted" and "not played" marks in memory (D7).
+- **Modules:** TTS and playback `system/`, queue service, Settings › Voice, `useVoice`.
+- **Database:** `agent_voices` (schema pending) and `settings` keys.
+- **Risks:** quality on Linux, neural voice licenses (P24), audio on exit.
+- **Tests:** playback state machine, deduplication, session close, manual on the 3 OSes.
+- **Acceptance:** "Voice output" criteria.
+- **Excludes:** microphone, streaming TTS, neural voices if S4 does not approve them.
+- **Next stage if:** S1 and S2 are approved.
 
-### R4 — Voz de entrada (push-to-talk) · MVP de reunión hablada
-- **Objetivo:** hablar a los agentes.
-- **Incluye:** captura en el núcleo, push-to-talk (D5), STT local o en la nube configurable (D6), permisos e indicador, envío o borrador (P4), detener la voz al pulsar.
-- **Módulos:** `system/` de captura y STT, servicio de transcripción, entitlements de macOS, `useVoice`.
-- **Base de datos:** claves de `settings`.
-- **Riesgos:** permisos y firma en macOS, compilación nativa, latencia.
-- **Pruebas:** máquina de captura, audio vacío, STT simulado, matriz manual.
-- **Aceptación:** criterios «Voz de entrada».
-- **Excluye:** escucha continua, cancelación de eco.
-- **Siguiente etapa si:** latencias medidas y aceptadas, y uso real que pida más naturalidad.
+### R4 — Voice input (push-to-talk) · spoken meeting MVP
+- **Goal:** talk to the agents.
+- **Includes:** capture in the core, push-to-talk (D5), configurable local or cloud STT (D6), permissions and indicator, send or draft (P4), stop the voice on press.
+- **Modules:** capture and STT `system/`, transcription service, macOS entitlements, `useVoice`.
+- **Database:** `settings` keys.
+- **Risks:** permissions and signing on macOS, native compilation, latency.
+- **Tests:** capture state machine, empty audio, mocked STT, manual matrix.
+- **Acceptance:** "Voice input" criteria.
+- **Excludes:** continuous listening, echo cancellation.
+- **Next stage if:** latencies measured and accepted, and real usage asking for more naturalness.
 
-### R5 — Conversación natural
-- **Incluye:** VAD y escucha continua opcional, cancelación de eco (S8), TTS por frases, prelectura del turno siguiente (P16), menor latencia.
-- **Excluye:** speech-to-speech como base (solo se evaluaría por agente tras un spike).
+### R5 — Natural conversation
+- **Includes:** VAD and optional continuous listening, echo cancellation (S8), per-sentence TTS, prefetch of the next turn (P16), lower latency.
+- **Excludes:** speech-to-speech as the foundation (it would only be evaluated per agent after a spike).
 
-### R6 — Reunión con trabajo real
-- **Depende de:** las Fases 4–5 (tareas, worktrees, herramientas, aprobaciones).
-- **Objetivo:** crear tareas desde la reunión y que el agente explique su progreso.
-- **Regla:** la conversación nunca autoriza herramientas.
+### R6 — Meeting with real work
+- **Depends on:** Phases 4–5 (tasks, worktrees, tools, approvals).
+- **Goal:** create tasks from the meeting and have the agent explain its progress.
+- **Rule:** the conversation never authorizes tools.
 
-## Fase 4 — Tareas y worktrees (2 semanas)
+## Phase 4 — Tasks and worktrees (2 weeks)
 
-- Tareas con repositorio y rama base; creación y limpieza de worktrees; reconciliación de huérfanos; límite de concurrencia.
-- Panel de tarea con diff de solo lectura.
+- Tasks with a repository and base branch; worktree creation and cleanup; orphan reconciliation; concurrency limit.
+- Task panel with a read-only diff.
 
-**Resultado esperado:** dos tareas en paralelo sobre el mismo repo sin interferirse; descartar limpia worktree y rama.
+**Expected result:** two tasks in parallel on the same repo without interfering; discarding cleans up the worktree and branch.
 
-## Fase 5 — Herramientas y aprobaciones (3 semanas)
+## Phase 5 — Tools and approvals (3 weeks)
 
-- Bucle de herramientas con `tool use` nativo, path jail, entorno saneado, timeouts.
-- `tool_calls`, `approvals`, diálogo de aprobación y terminal en vivo.
-- Antes de empezar: propuesta en formato [feature-template.md](feature-template.md) para tareas y aprobaciones.
+- Tool loop with native `tool use`, path jail, sanitized environment, timeouts.
+- `tool_calls`, `approvals`, approval dialog and live terminal.
+- Before starting: a proposal in [feature-template.md](feature-template.md) format for tasks and approvals.
 
-**Resultado esperado:** el agente completa una tarea simple pidiendo aprobación; ninguna escritura sale del worktree.
+**Expected result:** the agent completes a simple task asking for approval; no write leaves the worktree.
 
-## Fase 6 — Docker opcional (1–2 semanas)
+## Phase 6 — Optional Docker (1–2 weeks)
 
-- Detección, ejecución en contenedor con el worktree montado, sin red por defecto, limpieza al descartar.
+- Detection, execution in a container with the worktree mounted, no network by default, cleanup on discard.
 
-## Fase 7 — Endurecimiento y lanzamiento (2 semanas)
+## Phase 7 — Hardening and launch (2 weeks)
 
-- Firma y notarización, instaladores, actualizador opcional.
-- Pruebas manuales en los tres SO, accesibilidad y rendimiento.
-- Exportar y borrar datos desde Ajustes.
+- Signing and notarization, installers, optional updater.
+- Manual testing on the three OSes, accessibility and performance.
+- Export and delete data from Settings.
 
-## Qué NO construir
+## What NOT to build
 
-- Cuentas, login, sincronización, colaboración multiusuario y backend remoto.
-- Integraciones externas (GitHub, Slack, ClickUp) y delegación de tareas entre agentes. La conversación coordinada entre agentes ya no está excluida: pasa a la Pista R, acotada y siempre iniciada por el usuario.
-- Facturación, créditos y marketplace.
-- Videollamadas reales (video, cámaras, WebRTC entre personas), avatares hiperrealistas, animaciones 3D. La reunión con agentes es visual, con texto y voz opcional.
-- Automatizaciones sin permisos ni supervisión.
+- Accounts, login, sync, multi-user collaboration and a remote backend.
+- External integrations (GitHub, Slack, ClickUp) and task delegation between agents. Coordinated conversation between agents is no longer excluded: it moves to Track R, bounded and always initiated by the user.
+- Billing, credits and marketplace.
+- Real video calls (video, cameras, WebRTC between people), hyperrealistic avatars, 3D animations. The meeting with agents is visual, with text and optional voice.
+- Automations without permissions or supervision.
 
-Prioridad: validar que el usuario obtiene valor real trabajando con agentes de IA sobre su propio código.
+Priority: validate that the user gets real value working with AI agents on their own code.
