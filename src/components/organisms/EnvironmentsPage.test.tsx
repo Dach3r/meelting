@@ -249,9 +249,10 @@ describe("trash", () => {
       ]),
     );
     const guide = await screen.findByRole("complementary", {
-      name: "How the trash works",
+      name: "No environment on the clock",
     });
-    expect(within(guide).getAllByRole("listitem")).toHaveLength(3);
+    expect(within(guide).getAllByRole("listitem")).toHaveLength(2);
+    expect(within(guide).getByText("Enters the trash")).toBeTruthy();
   });
 
   it("restores or deletes only the focused environment from its details", async () => {

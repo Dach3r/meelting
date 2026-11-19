@@ -696,20 +696,11 @@
   "trash": {
     "title": "Papelera",
     "description": "Los entornos se eliminan por completo 30 días después de entrar a la papelera.",
-    "guide": {
-      "title": "Cómo funciona la papelera",
-      "first": {
-        "title": "Manda un entorno a la papelera",
-        "body": "Desde Archivos, con su carpeta y sus cambios."
-      },
-      "second": {
-        "title": "Espera hasta 30 días",
-        "body": "Puedes restaurarlo cuando quieras."
-      },
-      "third": {
-        "title": "Se elimina por completo",
-        "body": "Pasados los 30 días se borra con su rama."
-      }
+    "empty": {
+      "title": "Ningún entorno en cuenta regresiva",
+      "body": "Cada uno tiene 30 días para volver. Restaura cuando quieras.",
+      "enters": "Entra a la papelera",
+      "deleted": "Se borra con su rama"
     },
     "restoreOne": "Restaurar",
     "restore": "Restaurar ({count})",

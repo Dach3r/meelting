@@ -7,6 +7,7 @@ import { Alert } from "../molecules/Alert";
 import { ConfirmDialog } from "../molecules/ConfirmDialog";
 import { EnvironmentDetail } from "../molecules/EnvironmentDetail";
 import { EnvironmentsEmptyGuide } from "../molecules/EnvironmentsEmptyGuide";
+import { TrashEmptyCalendar } from "../molecules/TrashEmptyCalendar";
 import { EnvironmentList } from "../molecules/EnvironmentList";
 
 const trashDays = 30;
@@ -270,7 +271,11 @@ export function EnvironmentsPage({ mode }: { mode: "files" | "trash" }) {
           }
         />
       ) : environments ? (
-        <EnvironmentsEmptyGuide mode={mode} />
+        mode === "trash" ? (
+          <TrashEmptyCalendar />
+        ) : (
+          <EnvironmentsEmptyGuide />
+        )
       ) : (
         <aside
           aria-hidden

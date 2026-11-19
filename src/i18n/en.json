@@ -696,20 +696,11 @@
   "trash": {
     "title": "Trash",
     "description": "Environments are deleted completely 30 days after entering the trash.",
-    "guide": {
-      "title": "How the trash works",
-      "first": {
-        "title": "Send an environment to the trash",
-        "body": "From Files, with its folder and changes."
-      },
-      "second": {
-        "title": "Wait up to 30 days",
-        "body": "You can restore it any time."
-      },
-      "third": {
-        "title": "It is deleted completely",
-        "body": "After 30 days it is removed along with its branch."
-      }
+    "empty": {
+      "title": "No environment on the clock",
+      "body": "Each one has 30 days to come back. Restore whenever you like.",
+      "enters": "Enters the trash",
+      "deleted": "Deleted with its branch"
     },
     "restoreOne": "Restore",
     "restore": "Restore ({count})",
