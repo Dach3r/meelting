@@ -361,6 +361,7 @@
       "check": "Check connection",
       "checking": "Checking…",
       "delete": "Delete",
+      "retryKeychain": "Retry keychain access",
       "cancel": "Cancel",
       "save": "Verify and save",
       "verifying": "Verifying…"

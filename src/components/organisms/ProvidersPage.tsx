@@ -16,7 +16,8 @@ import { ProviderKeyRow } from "../molecules/ProviderKeyRow";
 
 export function ProvidersPage() {
   const { locale, t } = useI18n();
-  const { statuses, checks, errorKey, save, check, remove } = useProviderKeys();
+  const { statuses, checks, errorKey, save, check, remove, retry } =
+    useProviderKeys();
   const providers = useLlmProviders();
   const { detected, detectAgain } = useLocalModels(true);
   const [deleting, setDeleting] = useState<ProviderKeyStatus | null>(null);
@@ -37,7 +38,24 @@ export function ProvidersPage() {
         <h1 className="text-2xl font-bold text-ink">{t("providers.title")}</h1>
         <p className="text-sm text-muted">{t("providers.description")}</p>
       </div>
-      {errorKey && <Alert message={translateError(locale, errorKey)} />}
+      {errorKey && (
+        <Alert
+          message={translateError(locale, errorKey)}
+          action={
+            errorKey === "keychain_unavailable" && (
+              <Button
+                type="button"
+                variant="destructive"
+                size="compact"
+                className="shrink-0"
+                onClick={retry}
+              >
+                {t("providers.actions.retryKeychain")}
+              </Button>
+            )
+          }
+        />
+      )}
       <div className="grid items-start gap-4 xl:grid-cols-2">
         <section className="grid gap-5 rounded-3xl border border-line p-6">
           <div className="flex items-start gap-4">

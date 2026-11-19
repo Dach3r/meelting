@@ -97,6 +97,28 @@ describe("ProvidersPage", () => {
     expect(screen.getByText("Not running")).toBeInTheDocument();
   });
 
+  it("retries the keychain access from the alert", async () => {
+    let locked = true;
+    mockCore({
+      list_provider_keys: () => {
+        if (locked) throw "keychain_unavailable";
+        return statuses;
+      },
+    });
+    renderPage();
+    await screen.findByText(
+      "Could not access the system keychain. Unlock it and try again.",
+    );
+
+    locked = false;
+    await userEvent.click(
+      screen.getByRole("button", { name: "Retry keychain access" }),
+    );
+
+    expect(await screen.findByText("2 of 3 configured")).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
   it("lists the models installed in a running local runtime", async () => {
     mockCore();
     renderPage();

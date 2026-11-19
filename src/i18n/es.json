@@ -361,6 +361,7 @@
       "check": "Comprobar conexión",
       "checking": "Comprobando…",
       "delete": "Eliminar",
+      "retryKeychain": "Reintentar acceso al llavero",
       "cancel": "Cancelar",
       "save": "Verificar y guardar",
       "verifying": "Verificando…"
