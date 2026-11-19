@@ -319,7 +319,7 @@ export function RoomView({
               />
             ))}
           </ul>
-          <div className="flex w-full shrink-0 items-center justify-center gap-2 rounded-2xl border border-line bg-shell p-2">
+          <div className="flex w-full shrink-0 items-center gap-2 rounded-2xl border border-line bg-shell p-2">
             <ControlButton
               label={t("rooms.invite.action")}
               onClick={openInvite}
@@ -347,6 +347,7 @@ export function RoomView({
             <ControlButton
               label={t("rooms.finish.action")}
               danger
+              className="ml-auto"
               onClick={() => setConfirming(true)}
             >
               <PhoneOff aria-hidden className="size-5" />
@@ -386,6 +387,7 @@ type ControlProps = {
   label: string;
   danger?: boolean;
   disabled?: boolean;
+  className?: string;
   onClick: () => void;
   children: ReactNode;
 };
@@ -394,6 +396,7 @@ function ControlButton({
   label,
   danger = false,
   disabled,
+  className = "flex-1",
   onClick,
   children,
 }: ControlProps) {
@@ -404,9 +407,10 @@ function ControlButton({
       title={label}
       disabled={disabled}
       onClick={onClick}
-      className={`grid size-12 cursor-pointer place-items-center rounded-xl border transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:cursor-not-allowed disabled:opacity-60 ${danger ? "border-error bg-error text-surface hover:bg-error/85" : "border-line bg-raised text-ink hover:bg-hi"}`}
+      className={`flex h-12 cursor-pointer items-center justify-center gap-2 rounded-xl border px-4 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:cursor-not-allowed disabled:opacity-60 ${danger ? "border-error bg-error text-surface hover:bg-error/85" : "border-line bg-raised text-ink hover:bg-hi"} ${className}`}
     >
       {children}
+      <span className="hidden truncate sm:inline">{label}</span>
     </button>
   );
 }
