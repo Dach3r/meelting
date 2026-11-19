@@ -130,7 +130,7 @@ export function TasksPage({ agents }: { agents: Agent[] }) {
   return (
     <div className="flex w-full flex-col gap-6">
       {dialogs}
-      <header className="-mx-8 -mt-8 flex flex-wrap items-center justify-between gap-4 border-b border-line bg-linear-to-b from-shell to-surface px-8 py-5">
+      <header className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-2xl font-bold text-ink">{t("tasks.title")}</h1>
         <div className="flex gap-2">
           <Button
