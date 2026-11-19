@@ -110,17 +110,21 @@ export function EnvironmentsPage({ mode }: { mode: "files" | "trash" }) {
   return (
     <div className="flex min-h-0 flex-1 gap-3">
       <section
-        className={`flex min-h-0 flex-col gap-5 overflow-y-auto rounded-3xl border border-line bg-pill p-6 ${focused ? "w-100 shrink-0" : "flex-1"}`}
+        className={`flex min-h-0 flex-col gap-5 overflow-y-auto rounded-3xl border border-line bg-pill p-3 ${focused ? "w-100 shrink-0" : "flex-1"}`}
       >
-        <div className="grid gap-1.5">
+        <div className="grid gap-1.5 px-4 pt-4">
           <h1 className="text-2xl font-bold text-ink">{t(`${mode}.title`)}</h1>
           <p className="text-sm text-muted">{t(`${mode}.description`)}</p>
         </div>
-        {errorKey && <Alert message={translateError(locale, errorKey)} />}
+        {errorKey && (
+          <div className="px-4">
+            <Alert message={translateError(locale, errorKey)} />
+          </div>
+        )}
         {failures.length > 0 && (
           <div
             role="alert"
-            className="grid gap-2 rounded-2xl border border-error p-4"
+            className="mx-4 grid gap-2 rounded-2xl border border-error p-4"
           >
             <p className="text-sm font-semibold text-error">
               {translateWith(locale, "files.failed", {
@@ -154,7 +158,7 @@ export function EnvironmentsPage({ mode }: { mode: "files" | "trash" }) {
               aside={aside}
             />
           ) : (
-            <p className="rounded-2xl border border-line px-4 py-6 text-center text-sm text-muted">
+            <p className="mx-4 rounded-2xl border border-line px-4 py-6 text-center text-sm text-muted">
               {t(`${mode}.empty`)}
             </p>
           ))}

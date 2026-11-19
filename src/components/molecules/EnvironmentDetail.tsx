@@ -28,7 +28,7 @@ export function EnvironmentDetail({
   return (
     <aside
       aria-label={environment.task_title}
-      className="flex min-h-0 min-w-0 flex-1 flex-col gap-7 overflow-y-auto rounded-3xl border border-line bg-pill p-10"
+      className="flex min-h-0 min-w-0 flex-1 flex-col gap-7 overflow-y-auto rounded-3xl border border-line bg-pill p-7"
     >
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="grid justify-items-start gap-3">
