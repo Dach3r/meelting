@@ -432,7 +432,11 @@
       "transcript": "Mensajes",
       "message": "Mensaje",
       "placeholder": "Escribe un mensaje",
-      "send": "Enviar"
+      "send": "Enviar",
+      "tabs": "Panel de la conversación",
+      "tabChat": "Chat",
+      "tabTasks": "Tareas",
+      "noTasks": "Todavía no hay tareas vinculadas a esta sala."
     },
     "finish": {
       "action": "Colgar",

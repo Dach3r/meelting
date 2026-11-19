@@ -136,6 +136,7 @@ function core(
 ) {
   invokeMock.mockImplementation(async (command, args) => {
     if (command === "list_llm_providers") return providers;
+    if (command === "list_tasks" && !handlers.list_tasks) return [];
     const handler = handlers[command];
     if (!handler) throw new Error(`unexpected ${command}`);
     return handler((args ?? {}) as Record<string, unknown>);
@@ -1318,5 +1319,66 @@ describe("creating tasks from the room", () => {
     });
     expect(create).not.toHaveBeenCalled();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+});
+
+describe("room tasks tab", () => {
+  const base = {
+    description: "",
+    status: "in_progress",
+    priority: "medium",
+    repository_id: null,
+    base_ref: null,
+    origin_message_id: null,
+    agent_ids: [],
+    worktree: null,
+    completed_at: null,
+    created_at: "2026-11-24T10:00:00.000Z",
+    updated_at: "2026-11-24T10:00:00.000Z",
+  };
+
+  it("lists only the tasks tied to this room with their status", async () => {
+    core({
+      get_room: () => detail(),
+      list_tasks: () => [
+        {
+          ...base,
+          id: "t1",
+          title: "Fix login",
+          origin_room_id: "r1",
+          origin_room_name: "Daily",
+          linked_rooms: [],
+        },
+        {
+          ...base,
+          id: "t2",
+          title: "Linked task",
+          status: "blocked",
+          origin_room_id: null,
+          origin_room_name: null,
+          linked_rooms: [
+            { room_id: "r1", room_name: "Daily", message_id: null },
+          ],
+        },
+        {
+          ...base,
+          id: "t3",
+          title: "Elsewhere",
+          origin_room_id: "r9",
+          origin_room_name: "Other",
+          linked_rooms: [],
+        },
+      ],
+    });
+    const user = userEvent.setup();
+    await renderRoom();
+
+    await user.click(screen.getByRole("button", { name: "Tasks" }));
+
+    expect(await screen.findByText("Fix login")).toBeInTheDocument();
+    expect(screen.getByText("Linked task")).toBeInTheDocument();
+    expect(screen.getByText("Blocked")).toBeInTheDocument();
+    expect(screen.queryByText("Elsewhere")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Message")).not.toBeInTheDocument();
   });
 });

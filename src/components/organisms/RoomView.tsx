@@ -22,6 +22,7 @@ import {
 import type { LlmProvider } from "../../hooks/useLlmProviders";
 import { useLlmProviders } from "../../hooks/useLlmProviders";
 import { useRoom } from "../../hooks/useRoom";
+import { useTasks } from "../../hooks/useTasks";
 import type { Message, Participant } from "../../hooks/useRooms";
 import type { Agent } from "../../hooks/useTeams";
 import { Button } from "../atoms/Button";
@@ -69,6 +70,12 @@ export function RoomView({
     clearRosterError,
   } = useRoom(roomId);
   const providers = useLlmProviders();
+  const { tasks, replace: replaceTask } = useTasks();
+  const roomTasks = (tasks ?? []).filter(
+    (task) =>
+      task.origin_room_id === roomId ||
+      task.linked_rooms.some((link) => link.room_id === roomId),
+  );
   const finishedRuns = detail
     ? Object.values(detail.runs.runs).filter(isFinal).length
     : 0;
@@ -232,7 +239,10 @@ export function RoomView({
             message_id: taskSource.message?.id ?? null,
           }}
           description={taskSource.message?.body}
-          onSaved={() => setTaskSource(null)}
+          onSaved={(task) => {
+            replaceTask(task);
+            setTaskSource(null);
+          }}
           onClose={() => setTaskSource(null)}
         />
       )}
@@ -360,6 +370,7 @@ export function RoomView({
           room={room}
           formerAgents={formerAgents}
           messages={messages}
+          tasks={roomTasks}
           runs={runs}
           proposedAgentId={proposal}
           providers={providers}

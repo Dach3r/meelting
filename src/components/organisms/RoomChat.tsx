@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useRef } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
 import { translateWith } from "../../i18n/translate";
 import {
@@ -10,16 +10,20 @@ import {
 import type { LlmProvider } from "../../hooks/useLlmProviders";
 import type { Draft, SendResult } from "../../hooks/useRoom";
 import type { Message, Participant, Room } from "../../hooks/useRooms";
+import type { Task } from "../../hooks/useTasks";
 import { Alert } from "../molecules/Alert";
 import { AgentRunStatus } from "../molecules/AgentRunStatus";
 import { ChatMessage } from "../molecules/ChatMessage";
 import { MessageComposer } from "../molecules/MessageComposer";
+import { RoomTasks } from "../molecules/RoomTasks";
+import { SegmentedControl } from "../molecules/SegmentedControl";
 import { authorName } from "./authorName";
 
 type Props = {
   room: Room;
   formerAgents: Participant[];
   messages: Message[];
+  tasks: Task[];
   runs: RunState;
   proposedAgentId: string | null;
   providers: LlmProvider[];
@@ -34,6 +38,7 @@ export function RoomChat({
   room,
   formerAgents,
   messages,
+  tasks,
   runs,
   proposedAgentId,
   providers,
@@ -44,6 +49,7 @@ export function RoomChat({
   onCreateTask,
 }: Props) {
   const { t, locale } = useI18n();
+  const [tab, setTab] = useState<"chat" | "tasks">("chat");
   const end = useRef<HTMLLIElement>(null);
   const allRuns = Object.values(runs.runs);
   const lastMessageId = messages[messages.length - 1]?.id;
@@ -83,8 +89,19 @@ export function RoomChat({
       aria-label={t("rooms.chat.title")}
       className="flex min-h-0 flex-col gap-4 rounded-2xl border border-line bg-surface p-5"
     >
-      <h2 className="font-semibold text-ink">{t("rooms.chat.title")}</h2>
-      {messages.length === 0 ? (
+      <h2 className="sr-only">{t("rooms.chat.title")}</h2>
+      <SegmentedControl
+        label={t("rooms.chat.tabs")}
+        value={tab}
+        onChange={setTab}
+        options={[
+          { value: "chat", label: t("rooms.chat.tabChat") },
+          { value: "tasks", label: t("rooms.chat.tabTasks") },
+        ]}
+      />
+      {tab === "tasks" ? (
+        <RoomTasks tasks={tasks} />
+      ) : messages.length === 0 ? (
         <p className="flex-1 text-sm text-muted">{t("rooms.noMessages")}</p>
       ) : (
         <ol
@@ -123,15 +140,17 @@ export function RoomChat({
           <li ref={end} aria-hidden />
         </ol>
       )}
-      {errorMessage && <Alert message={errorMessage} />}
-      <MessageComposer
-        roomId={room.id}
-        agents={room.agents}
-        proposedAgentId={proposedAgentId}
-        busyAgentIds={busyAgentIds}
-        sending={sending}
-        onSend={onSend}
-      />
+      {tab === "chat" && errorMessage && <Alert message={errorMessage} />}
+      {tab === "chat" && (
+        <MessageComposer
+          roomId={room.id}
+          agents={room.agents}
+          proposedAgentId={proposedAgentId}
+          busyAgentIds={busyAgentIds}
+          sending={sending}
+          onSend={onSend}
+        />
+      )}
     </section>
   );
 }

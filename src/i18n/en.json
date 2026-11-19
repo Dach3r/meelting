@@ -432,7 +432,11 @@
       "transcript": "Messages",
       "message": "Message",
       "placeholder": "Write a message",
-      "send": "Send"
+      "send": "Send",
+      "tabs": "Conversation panel",
+      "tabChat": "Chat",
+      "tabTasks": "Tasks",
+      "noTasks": "No tasks linked to this room yet."
     },
     "finish": {
       "action": "Hang up",
