@@ -1,24 +1,24 @@
-# Integraciones previstas
+# Planned integrations
 
-> **Estado:** visión. Ninguna integración está planificada para la v1 de escritorio.
+> **Status:** vision. No integration is planned for desktop v1.
 
-La visión contempla conectar Meelting con herramientas de uso diario de equipos técnicos, después de validar el flujo local. Roadmap: ver [roadmap.md](roadmap.md), sección «Qué NO construir».
+The vision includes connecting Meelting to the everyday tools of technical teams, after the local flow has been validated. Roadmap: see [roadmap.md](roadmap.md), section "What NOT to build".
 
 ## GitHub
 
-- Consultar repositorios, issues y pull requests.
-- Analizar cambios de código y preparar propuestas.
-- Publicar ramas o PRs autorizados. En la v1 la app **nunca hace `push` ni `merge`**: publicar queda en manos del usuario.
+- Browse repositories, issues and pull requests.
+- Analyze code changes and prepare proposals.
+- Publish authorized branches or PRs. In v1 the app **never runs `push` or `merge`**: publishing is left to the user.
 
 ## Slack
 
-- Consultar conversaciones, recuperar contexto y preparar respuestas.
-- Publicar mensajes autorizados.
+- Read conversations, retrieve context and prepare replies.
+- Post authorized messages.
 
 ## ClickUp
 
-- Consultar proyectos y tareas, crear o actualizar tareas, mantener seguimiento.
+- Browse projects and tasks, create or update tasks, keep track of progress.
 
-## Regla transversal
+## Cross-cutting rule
 
-Acciones con impacto externo (publicar, crear, modificar, ejecutar) requieren permisos y aprobación humana. Con solo el proveedor local, la app no sale a internet.
+Actions with external impact (publishing, creating, modifying, executing) require permissions and human approval. With only the local provider, the app never goes out to the internet.
