@@ -1,4 +1,4 @@
-import { FolderGit2, GitBranch, ListChecks, MoveRight } from "lucide-react";
+import { FolderGit2, GitBranch, ListChecks } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useI18n } from "../../i18n/I18nProvider";
 
@@ -15,27 +15,28 @@ export function EnvironmentsEmptyGuide() {
       aria-label={t("files.guide.title")}
       className="grid min-w-0 flex-1 place-items-center overflow-auto rounded-3xl border border-line bg-pill p-7"
     >
-      <ol className="grid w-full max-w-[760px] grid-cols-1 gap-3 md:grid-cols-3">
+      <ol className="grid w-full max-w-[660px] grid-cols-1 gap-8 md:grid-cols-3 md:gap-0">
         {steps.map(({ key, icon: Icon }, index) => (
           <li
             key={key}
-            className="relative flex flex-col gap-4 rounded-2xl border border-line bg-raised p-4"
+            className="relative flex flex-col items-center gap-4 px-4 text-center"
           >
-            <div className="flex items-center justify-between">
+            {index < steps.length - 1 && (
               <span
                 aria-hidden
-                className="grid size-10 place-items-center rounded-xl bg-hi text-ink"
-              >
-                <Icon className="size-5" strokeWidth={1.6} />
-              </span>
-              <span
-                aria-hidden
-                className="font-mono text-xs font-semibold text-muted"
-              >
+                className="absolute top-[26px] left-1/2 hidden w-full border-t border-dashed border-line md:block"
+              />
+            )}
+            <span
+              aria-hidden
+              className="relative z-10 grid size-[52px] place-items-center rounded-2xl border border-line bg-raised text-ink"
+            >
+              <Icon className="size-6" strokeWidth={1.5} />
+              <span className="absolute -top-2 -right-2 grid size-5 place-items-center rounded-full bg-primary font-mono text-[11px] font-semibold">
                 {index + 1}
               </span>
-            </div>
-            <div>
+            </span>
+            <div className="flex flex-col gap-1">
               <p className="text-[13px] font-bold text-ink">
                 {t(`files.guide.${key}.title`)}
               </p>
@@ -43,13 +44,6 @@ export function EnvironmentsEmptyGuide() {
                 {t(`files.guide.${key}.body`)}
               </p>
             </div>
-            {index < steps.length - 1 && (
-              <MoveRight
-                aria-hidden
-                className="absolute top-1/2 -right-[11px] z-10 hidden size-5 -translate-y-1/2 rounded-full bg-pill p-0.5 text-muted md:block"
-                strokeWidth={1.6}
-              />
-            )}
           </li>
         ))}
       </ol>
