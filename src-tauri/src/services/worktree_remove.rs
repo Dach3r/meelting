@@ -3,14 +3,13 @@ use crate::domain::storage::StorageIssue;
 use crate::domain::task::Task;
 use crate::domain::worktree::{
     ChangeKind, IN_PROGRESS_MARKERS, PendingChange, RemovalCheck, Worktree, WorktreeErrorCode,
-    WorktreeStatus, parse_status,
+    WorktreeStatus, parse_status, parse_worktree_list,
 };
 use crate::repositories::{git_repositories, task_worktrees};
 use crate::services::repository_locks::RepositoryLocks;
 use crate::services::session_load::{self, SessionError};
 use crate::services::tasks_list;
-use crate::services::worktree_prepare::check_repository;
-use crate::services::worktrees_reconcile::{gone, intact};
+use crate::services::worktrees_reconcile::{gone, intact, same_path};
 use crate::system::git;
 use crate::system::git_guarded::{self, Guard, GuardError};
 use sqlx::SqlitePool;
@@ -21,7 +20,15 @@ pub async fn ready_environment(
     task_id: &str,
 ) -> Result<(String, Worktree, RepositoryIdentity), SessionError> {
     let workspace_id = session_load::require(pool).await?.current_workspace_id;
-    let task = tasks_list::one(pool, &workspace_id, task_id).await?;
+    ready_environment_in(pool, &workspace_id, task_id).await
+}
+
+pub async fn ready_environment_in(
+    pool: &SqlitePool,
+    workspace_id: &str,
+    task_id: &str,
+) -> Result<(String, Worktree, RepositoryIdentity), SessionError> {
+    let task = tasks_list::one(pool, workspace_id, task_id).await?;
     let worktree = task
         .worktree
         .filter(|worktree| worktree.status == WorktreeStatus::Ready)
@@ -35,7 +42,7 @@ pub async fn ready_environment(
     let repository = git_repositories::identity(pool, &repository_id)
         .await?
         .ok_or(SessionError::RepositoryNotFound)?;
-    Ok((workspace_id, worktree, repository))
+    Ok((workspace_id.to_string(), worktree, repository))
 }
 
 pub async fn verify_identity(
@@ -43,11 +50,24 @@ pub async fn verify_identity(
     worktree: &Worktree,
     check_storage: &impl AsyncFn(&Path) -> Result<(), StorageIssue>,
 ) -> Result<(), SessionError> {
-    check_repository(repository, check_storage).await?;
+    let repository_path = Path::new(&repository.path);
+    let (git_dir, common_dir) = git_guarded::repository_layout(repository_path)
+        .await
+        .map_err(guard_error)?;
+    if common_dir != repository.git_common_dir || git_dir != common_dir {
+        return Err(SessionError::RepositoryMoved);
+    }
+    check_storage(repository_path).await?;
+    check_storage(Path::new(&repository.git_common_dir)).await?;
     let path = Path::new(worktree.location());
     check_storage(path).await?;
-    let entry = intact(repository, worktree)
+    std::fs::symlink_metadata(path).map_err(|_| SessionError::EnvironmentIdentityMismatch)?;
+    let registered = git_guarded::registered_worktrees(repository_path)
         .await
+        .map_err(guard_error)?;
+    let entry = parse_worktree_list(&registered)
+        .into_iter()
+        .find(|entry| same_path(&entry.path, worktree.location()))
         .ok_or(SessionError::EnvironmentIdentityMismatch)?;
     let admin = git_guarded::verified_admin_dir(Path::new(&repository.git_common_dir), path)
         .map_err(|_| SessionError::EnvironmentIdentityMismatch)?;

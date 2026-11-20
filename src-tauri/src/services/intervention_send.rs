@@ -876,13 +876,13 @@ mod tests {
             .mount(&server)
             .await;
         Mock::given(method("POST"))
-            .and(wiremock::matchers::body_string_contains("fail now"))
-            .respond_with(wiremock::ResponseTemplate::new(401))
+            .and(wiremock::matchers::body_string_contains("take your time"))
+            .respond_with(chat(&["late"]).set_delay(std::time::Duration::from_millis(500)))
             .mount(&server)
             .await;
         Mock::given(method("POST"))
-            .and(wiremock::matchers::body_string_contains("take your time"))
-            .respond_with(chat(&["late"]).set_delay(std::time::Duration::from_millis(500)))
+            .and(wiremock::matchers::body_string_contains("fail now"))
+            .respond_with(wiremock::ResponseTemplate::new(401))
             .mount(&server)
             .await;
         let h = harness(&server.uri(), fast_limits(), &two_agents()).await;
@@ -979,6 +979,7 @@ mod tests {
             h.engine.pool.clone(),
             h.engine.providers.clone(),
             fast_limits(),
+            crate::services::repository_locks::RepositoryLocks::default(),
             std::sync::Arc::new(|_| {}),
         );
         let after_restart =

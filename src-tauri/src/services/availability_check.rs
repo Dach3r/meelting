@@ -1,10 +1,11 @@
 use crate::catalogs::llm::{Location, Provider};
 use crate::domain::agent_run::ErrorKind;
 use crate::domain::provider_key;
+use crate::domain::tool_support::ToolSupport;
 use crate::repositories::{agents, room_agents, rooms};
 use crate::services::agent_run_engine::Engine;
 use crate::services::session_load::{self, SessionError};
-use crate::system::{keychain, local_models};
+use crate::system::{keychain, local_models, tool_support};
 use futures_util::future::join_all;
 use serde::Serialize;
 use std::collections::HashMap;
@@ -24,6 +25,7 @@ pub struct AgentAvailability {
     pub provider: String,
     pub availability: Availability,
     pub reason: Option<ErrorKind>,
+    pub tools: ToolSupport,
 }
 
 pub async fn run(engine: &Engine, room_id: &str) -> Result<Vec<AgentAvailability>, SessionError> {
@@ -73,24 +75,58 @@ pub async fn run(engine: &Engine, room_id: &str) -> Result<Vec<AgentAvailability
         .into_iter()
         .collect();
 
+    let states: Vec<(Availability, Option<ErrorKind>)> = targets
+        .iter()
+        .map(|(_, key, model)| match providers.get(key.as_str()) {
+            None => (Availability::Unavailable, Some(ErrorKind::ModelUnavailable)),
+            Some(provider) if provider.location == Location::Local => {
+                local(detected.get(key.as_str()).and_then(Option::as_ref), model)
+            }
+            Some(provider) => cloud(engine, &workspace_id, provider, model),
+        })
+        .collect();
+    let supports = join_all(targets.iter().zip(&states).map(
+        |((_, key, model), (availability, _))| {
+            let provider = providers.get(key.as_str()).copied();
+            async move { tools_of(provider, model, *availability).await }
+        },
+    ))
+    .await;
     Ok(targets
         .iter()
-        .map(|(agent_id, key, model)| {
-            let (availability, reason) = match providers.get(key.as_str()) {
-                None => (Availability::Unavailable, Some(ErrorKind::ModelUnavailable)),
-                Some(provider) if provider.location == Location::Local => {
-                    local(detected.get(key.as_str()).and_then(Option::as_ref), model)
-                }
-                Some(provider) => cloud(engine, &workspace_id, provider, model),
-            };
-            AgentAvailability {
+        .zip(states)
+        .zip(supports)
+        .map(
+            |(((agent_id, key, _), (availability, reason)), tools)| AgentAvailability {
                 agent_id: agent_id.clone(),
                 provider: key.clone(),
                 availability,
                 reason,
-            }
-        })
+                tools,
+            },
+        )
         .collect())
+}
+
+async fn tools_of(
+    provider: Option<&Provider>,
+    model: &str,
+    availability: Availability,
+) -> ToolSupport {
+    let Some(provider) = provider else {
+        return ToolSupport::Unknown;
+    };
+    match provider.location {
+        Location::Cloud => match provider.models.iter().find(|entry| entry.key == model) {
+            Some(entry) if entry.tools => ToolSupport::Supported,
+            Some(_) => ToolSupport::Unsupported,
+            None => ToolSupport::Unknown,
+        },
+        Location::Local if availability == Availability::Available => {
+            tool_support::detect(provider, model).await
+        }
+        Location::Local => ToolSupport::Unknown,
+    }
 }
 
 fn local(models: Option<&Vec<String>>, model: &str) -> (Availability, Option<ErrorKind>) {
@@ -336,5 +372,80 @@ mod tests {
             run(&h.engine, &h.room_id).await,
             Err(SessionError::RoomNotFound)
         ));
+    }
+
+    #[tokio::test]
+    async fn the_tool_capability_is_reported_apart_from_availability_and_never_inferred() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/models"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(
+                serde_json::json!({ "data": [{ "id": "qwen-test" }, { "id": "qwen-plain" }] }),
+            ))
+            .mount(&server)
+            .await;
+        Mock::given(method("POST"))
+            .and(path("/api/show"))
+            .respond_with(
+                ResponseTemplate::new(200)
+                    .set_body_json(serde_json::json!({ "capabilities": ["completion", "tools"] })),
+            )
+            .mount(&server)
+            .await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/models"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "models": [{ "type": "llm", "key": "qwen-plain",
+                             "capabilities": { "trained_for_tool_use": false } }]
+            })))
+            .mount(&server)
+            .await;
+        let h = harness(
+            &server.uri(),
+            fast_limits(),
+            &[
+                ("ollama", "qwen-test"),
+                ("lmstudio", "qwen-plain"),
+                ("lmstudio", "qwen-test"),
+                ("ollama", "not-installed"),
+                ("deepseek", "deepseek-flash"),
+                ("groq", "openai/gpt-oss-120b"),
+                ("deepseek", "retired-model"),
+            ],
+        )
+        .await;
+
+        let found = run(&h.engine, &h.room_id).await.unwrap();
+
+        let tools: Vec<ToolSupport> = found.iter().map(|entry| entry.tools).collect();
+        assert_eq!(
+            tools,
+            [
+                ToolSupport::Supported,
+                ToolSupport::Unsupported,
+                ToolSupport::Unknown,
+                ToolSupport::Unknown,
+                ToolSupport::Supported,
+                ToolSupport::Unsupported,
+                ToolSupport::Unknown,
+            ]
+        );
+        assert_eq!(found[0].availability, Availability::Available);
+        assert_eq!(found[3].availability, Availability::Unavailable);
+        assert!(!h.engine.tools_enabled());
+    }
+
+    #[tokio::test]
+    async fn an_unreachable_local_runtime_has_unknown_tools() {
+        let h = harness(
+            "http://127.0.0.1:1",
+            fast_limits(),
+            &[("ollama", "qwen-test")],
+        )
+        .await;
+
+        let found = run(&h.engine, &h.room_id).await.unwrap();
+
+        assert_eq!(found[0].tools, ToolSupport::Unknown);
     }
 }

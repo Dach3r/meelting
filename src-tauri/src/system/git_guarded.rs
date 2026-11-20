@@ -5,7 +5,7 @@ use crate::domain::worktree::{
     parse_executable_filters, parse_gitlinks,
 };
 use crate::system::child_limit;
-use crate::system::git::{self, GitError};
+use crate::system::git;
 use std::collections::BTreeSet;
 use std::ffi::{OsStr, OsString};
 use std::path::{Path, PathBuf};
@@ -125,11 +125,20 @@ async fn terminate(child: &mut Child) {
 }
 
 async fn execute(command: Command, limits: Limits) -> Result<Output, GuardError> {
+    execute_with_input(command, limits, None).await
+}
+
+async fn execute_with_input(
+    command: Command,
+    limits: Limits,
+    input: Option<Vec<u8>>,
+) -> Result<Output, GuardError> {
     #[cfg(windows)]
     let active_processes = windows_active_processes().await?;
     run(
         command,
         limits,
+        input,
         #[cfg(windows)]
         active_processes,
     )
@@ -145,7 +154,7 @@ async fn windows_active_processes() -> Result<u32, GuardError> {
     for active in 1..=3 {
         let mut version = command(false);
         version.arg("version");
-        match run(version, REMOVAL_LIMITS, active).await {
+        match run(version, REMOVAL_LIMITS, None, active).await {
             Ok(_) => return Ok(*LEARNED.get_or_init(|| active)),
             Err(GuardError::IsolationUnavailable) => return Err(GuardError::IsolationUnavailable),
             Err(_) => {}
@@ -157,10 +166,15 @@ async fn windows_active_processes() -> Result<u32, GuardError> {
 async fn run(
     mut command: Command,
     limits: Limits,
+    input: Option<Vec<u8>>,
     #[cfg(windows)] active_processes: u32,
 ) -> Result<Output, GuardError> {
     command
-        .stdin(Stdio::null())
+        .stdin(if input.is_some() {
+            Stdio::piped()
+        } else {
+            Stdio::null()
+        })
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .kill_on_drop(true);
@@ -170,6 +184,12 @@ async fn run(
     child_limit::ensure_effective().map_err(|_| GuardError::IsolationUnavailable)?;
     child_limit::prepare(&mut command);
     let mut child = command.spawn()?;
+    if let (Some(input), Some(mut stdin)) = (input, child.stdin.take()) {
+        tokio::spawn(async move {
+            use tokio::io::AsyncWriteExt;
+            let _ = stdin.write_all(&input).await;
+        });
+    }
     #[cfg(windows)]
     let _job = match child_limit::confine(&child, active_processes) {
         Ok(job) => job,
@@ -244,13 +264,6 @@ fn flag(name: &str, path: &Path) -> OsString {
     let mut argument = OsString::from(name);
     argument.push(path);
     argument
-}
-
-fn from_git_error(error: GitError) -> GuardError {
-    match error {
-        GitError::Unavailable(error) => GuardError::Unavailable(error),
-        GitError::Failed(_) => GuardError::Failed(None),
-    }
 }
 
 fn read_bounded(path: &Path) -> Result<Option<Vec<u8>>, GuardError> {
@@ -359,6 +372,89 @@ fn located(isolated: bool, admin_dir: &Path, work_tree: &Path) -> Command {
     command
 }
 
+const NO_HOOKS: &str = if cfg!(windows) {
+    "core.hooksPath=NUL"
+} else {
+    "core.hooksPath=/dev/null"
+};
+
+async fn main_repository(
+    repository_path: &Path,
+    args: &[&str],
+    limits: Limits,
+    input: Option<Vec<u8>>,
+) -> Result<Vec<u8>, GuardError> {
+    let mut command = command(true);
+    command
+        .arg("-C")
+        .arg(repository_path)
+        .args(["-c", NO_HOOKS, "-c", "core.fsmonitor=false"])
+        .arg("-c")
+        .arg(format!("core.attributesFile={NULL_DEVICE}"))
+        .args(args);
+    let output = execute_with_input(command, limits, input).await?;
+    if output.truncated {
+        return Err(GuardError::OutputTooLarge);
+    }
+    Ok(output.stdout)
+}
+
+pub async fn repository_layout(repository_path: &Path) -> Result<(String, String), GuardError> {
+    let output = main_repository(
+        repository_path,
+        &[
+            "rev-parse",
+            "--path-format=absolute",
+            "--git-dir",
+            "--git-common-dir",
+        ],
+        REVIEW_STATUS_LIMITS,
+        None,
+    )
+    .await?;
+    let text = String::from_utf8_lossy(&output);
+    match text.lines().collect::<Vec<_>>()[..] {
+        [git_dir, common_dir] => Ok((git_dir.to_string(), common_dir.to_string())),
+        _ => Err(GuardError::Failed(None)),
+    }
+}
+
+pub async fn registered_worktrees(repository_path: &Path) -> Result<String, GuardError> {
+    let output = main_repository(
+        repository_path,
+        &["worktree", "list", "--porcelain", "-z"],
+        REVIEW_STATUS_LIMITS,
+        None,
+    )
+    .await?;
+    Ok(String::from_utf8_lossy(&output).into_owned())
+}
+
+async fn filters_used(repository_path: &Path, commit: &str) -> Result<Vec<String>, GuardError> {
+    let hexadecimal = commit.bytes().all(|byte| byte.is_ascii_hexdigit());
+    if !hexadecimal || ![40, 64].contains(&commit.len()) {
+        return Err(GuardError::Failed(None));
+    }
+    let paths = main_repository(
+        repository_path,
+        &["ls-tree", "-r", "-z", "--name-only", commit],
+        REMOVAL_LIMITS,
+        None,
+    )
+    .await?;
+    if paths.is_empty() {
+        return Ok(Vec::new());
+    }
+    let attributes = main_repository(
+        repository_path,
+        &["check-attr", "--source", commit, "-z", "--stdin", "filter"],
+        REMOVAL_LIMITS,
+        Some(paths),
+    )
+    .await?;
+    Ok(git::filter_names(&attributes))
+}
+
 pub async fn head_reference_of(
     admin_dir: &Path,
     work_tree: &Path,
@@ -445,9 +541,7 @@ impl Guard {
         guard.reject_config_includes().await?;
         guard.conversions = guard.effective_conversions().await?;
         guard.filters = guard.executable_filters().await?;
-        let used = git::filters_at(Path::new(&repository.path), base_commit)
-            .await
-            .map_err(from_git_error)?;
+        let used = filters_used(Path::new(&repository.path), base_commit).await?;
         let applying: Vec<String> = used
             .iter()
             .filter(|name| guard.filters.contains(*name))
@@ -1746,5 +1840,181 @@ mod tests {
 
         assert!(output.truncated && !status.complete);
         assert!(!status.entries.is_empty() && status.entries.len() < 60);
+    }
+
+    #[tokio::test]
+    async fn the_main_repository_is_described_through_the_isolated_executor() {
+        let f = fixture(&[("a.txt", "x")]);
+
+        let (git_dir, common_dir) = repository_layout(&f.repo).await.unwrap();
+        let registered = registered_worktrees(&f.repo).await.unwrap();
+
+        assert_eq!(git_dir, common_dir);
+        assert_eq!(common_dir, f.identity.git_common_dir);
+        let entries = crate::domain::worktree::parse_worktree_list(&registered);
+        assert!(entries.len() >= 2);
+        assert!(
+            entries
+                .iter()
+                .any(|entry| entry.path == slashed(&f.work_tree))
+        );
+        assert!(matches!(
+            repository_layout(&f.root).await,
+            Err(GuardError::Failed(_))
+        ));
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn an_isolated_process_cannot_start_descendants() {
+        let mut command = Command::new("sh");
+        command.args(["-c", "sleep 30 & echo started"]);
+        let started = std::time::Instant::now();
+
+        let result = execute(
+            command,
+            Limits {
+                timeout: Duration::from_secs(3),
+                max_stdout: 1024,
+            },
+        )
+        .await;
+
+        assert!(
+            matches!(result, Err(GuardError::Failed(_) | GuardError::TimedOut)),
+            "{result:?}"
+        );
+        assert!(started.elapsed() < Duration::from_secs(10));
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn dropping_a_query_kills_the_git_process() {
+        let dir = tempfile::tempdir().unwrap();
+        let pid_file = dir.path().join("pid");
+        let mut command = Command::new("sh");
+        command.args([
+            "-c".to_string(),
+            format!("echo $$ > '{}'; exec sleep 30", pid_file.display()),
+        ]);
+        let query = execute(
+            command,
+            Limits {
+                timeout: Duration::from_secs(60),
+                max_stdout: 1024,
+            },
+        );
+
+        let _ = tokio::time::timeout(Duration::from_millis(1500), query).await;
+
+        let pid: libc::pid_t = std::fs::read_to_string(&pid_file)
+            .unwrap()
+            .trim()
+            .parse()
+            .unwrap();
+        let mut gone = false;
+        for _ in 0..50 {
+            let zombie = std::fs::read_to_string(format!("/proc/{pid}/stat")).is_ok_and(|stat| {
+                stat.rsplit(')')
+                    .next()
+                    .is_some_and(|rest| rest.trim_start().starts_with('Z'))
+            });
+            if unsafe { libc::kill(pid, 0) } != 0 || zombie {
+                gone = true;
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(100)).await;
+        }
+        assert!(gone, "the process {pid} survived the cancellation");
+    }
+
+    #[tokio::test]
+    async fn the_filters_in_use_are_read_through_the_isolated_executor_like_before() {
+        let fx = fixture(&[(".gitattributes", "*.dat filter=shout\n"), ("x.dat", "1\n")]);
+
+        let isolated = filters_used(&fx.repo, &fx.base).await.unwrap();
+        let plain = git::filters_at(&fx.repo, &fx.base).await.unwrap();
+
+        assert_eq!(isolated, ["shout"]);
+        assert_eq!(isolated, plain);
+    }
+
+    #[tokio::test]
+    async fn hostile_configuration_neither_runs_programs_nor_adds_filters_when_reading_them() {
+        let fx = fixture(&[(".gitattributes", "*.dat filter=shout\n"), ("x.dat", "1\n")]);
+        let command = fx.probe("clean");
+        for key in [
+            "core.fsmonitor",
+            "diff.external",
+            "core.pager",
+            "core.editor",
+        ] {
+            fx.config(key, &command);
+        }
+        let outside = fx.root.join("outside.attributes");
+        std::fs::write(&outside, "* filter=planted\n").unwrap();
+        fx.config("core.attributesFile", &slashed(&outside));
+
+        let isolated = filters_used(&fx.repo, &fx.base).await.unwrap();
+
+        assert_eq!(isolated, ["shout"]);
+        assert_eq!(fx.executed(), "");
+    }
+
+    #[tokio::test]
+    async fn the_commit_must_be_a_full_hexadecimal_id_and_the_repository_must_exist() {
+        let fx = fixture(&[]);
+
+        for commit in [
+            "HEAD",
+            "main",
+            "--all",
+            &fx.base[..39],
+            &format!("{}x", &fx.base[..39]),
+        ] {
+            assert!(
+                matches!(
+                    filters_used(&fx.repo, commit).await,
+                    Err(GuardError::Failed(_))
+                ),
+                "{commit}"
+            );
+        }
+        let missing = fx.root.join("nope");
+        assert!(filters_used(&missing, &fx.base).await.is_err());
+        assert!(filters_used(&fx.repo, &"0".repeat(40)).await.is_err());
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn a_large_input_is_written_without_blocking_and_a_stuck_reader_is_cut_at_the_timeout() {
+        let input = vec![b'x'; 2 * 1024 * 1024];
+        let echoed = execute_with_input(
+            Command::new("cat"),
+            Limits {
+                timeout: Duration::from_secs(10),
+                max_stdout: 4 * 1024 * 1024,
+            },
+            Some(input.clone()),
+        )
+        .await
+        .unwrap();
+        assert_eq!(echoed.stdout, input);
+
+        let mut stuck = Command::new("sleep");
+        stuck.arg("30");
+        let started = std::time::Instant::now();
+        let result = execute_with_input(
+            stuck,
+            Limits {
+                timeout: Duration::from_millis(300),
+                max_stdout: 1024,
+            },
+            Some(input),
+        )
+        .await;
+
+        assert!(matches!(result, Err(GuardError::TimedOut)));
+        assert!(started.elapsed() < Duration::from_secs(10));
     }
 }

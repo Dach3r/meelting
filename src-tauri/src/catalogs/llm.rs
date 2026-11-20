@@ -37,6 +37,8 @@ impl OutputTokensParam {
 pub struct Model {
     pub key: String,
     pub max_output_tokens: u32,
+    #[serde(default)]
+    pub tools: bool,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

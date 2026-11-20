@@ -11,7 +11,7 @@ use crate::system::git_guarded;
 use sqlx::SqlitePool;
 use std::path::Path;
 
-fn same_path(registered: &str, stored: &str) -> bool {
+pub fn same_path(registered: &str, stored: &str) -> bool {
     let normalized = |path: &str| path.replace('\\', "/");
     normalized(registered) == normalized(stored)
         || matches!(

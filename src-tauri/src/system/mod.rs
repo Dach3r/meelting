@@ -10,3 +10,4 @@ pub mod local_models;
 pub mod openai_responses;
 pub mod safe_file;
 pub mod storage;
+pub mod tool_support;

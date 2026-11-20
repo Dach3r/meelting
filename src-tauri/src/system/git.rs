@@ -186,6 +186,10 @@ pub async fn filters_at(dir: &Path, commit: &str) -> Result<Vec<String>, GitErro
         Some(paths),
     )
     .await?;
+    Ok(filter_names(&attributes))
+}
+
+pub fn filter_names(attributes: &[u8]) -> Vec<String> {
     let fields: Vec<&[u8]> = attributes.split(|byte| *byte == 0).collect();
     let mut names: Vec<String> = fields
         .chunks(3)
@@ -195,7 +199,7 @@ pub async fn filters_at(dir: &Path, commit: &str) -> Result<Vec<String>, GitErro
         .collect();
     names.sort();
     names.dedup();
-    Ok(names)
+    names
 }
 
 pub async fn filter_is_executable(dir: &Path, name: &str) -> Result<bool, GitError> {

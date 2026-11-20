@@ -37,6 +37,27 @@ pub async fn list<'e>(
         .collect())
 }
 
+pub async fn candidate_tasks<'e>(
+    executor: impl SqliteExecutor<'e>,
+    workspace_id: &str,
+    room_id: &str,
+    agent_id: &str,
+) -> Result<Vec<String>, sqlx::Error> {
+    sqlx::query_scalar(
+        "SELECT DISTINCT tasks.id FROM task_room_links \
+         JOIN tasks ON tasks.id = task_room_links.task_id AND tasks.workspace_id = task_room_links.workspace_id \
+         JOIN task_agents ON task_agents.task_id = tasks.id AND task_agents.agent_id = ? \
+         WHERE task_room_links.workspace_id = ? AND task_room_links.room_id = ? \
+           AND tasks.status NOT IN ('completed', 'canceled') \
+         ORDER BY tasks.id LIMIT 2",
+    )
+    .bind(agent_id)
+    .bind(workspace_id)
+    .bind(room_id)
+    .fetch_all(executor)
+    .await
+}
+
 pub async fn insert<'e>(
     executor: impl SqliteExecutor<'e>,
     id: &str,
@@ -114,5 +135,39 @@ mod tests {
             .await
             .unwrap();
         assert!(list(&pool, "w1").await.unwrap().is_empty());
+    }
+
+    #[tokio::test]
+    async fn candidates_are_the_open_tasks_of_the_room_assigned_to_the_agent() {
+        let (pool, _dir) = seeded().await;
+        for sql in [
+            "INSERT INTO teams VALUES ('g1', 'w1', 'General', 'x', 'x')",
+            "INSERT INTO agents (id, workspace_id, team_id, name, role, description, instructions, provider, model, created_at, updated_at) \
+             VALUES ('a1', 'w1', 'g1', 'Ada', 'Dev', '', '', 'local', 'qwen', 'x', 'x'), ('a2', 'w1', 'g1', 'Bob', 'Dev', '', '', 'local', 'qwen', 'x', 'x')",
+            "INSERT INTO tasks (id, workspace_id, title, description, status, priority, completed_at, created_at, updated_at) \
+             VALUES ('k2', 'w1', 'T', '', 'completed', 'medium', 'x', 'x', 'x'), ('k3', 'w1', 'T', '', 'in_progress', 'medium', NULL, 'x', 'x'), ('k4', 'w1', 'T', '', 'pending', 'medium', NULL, 'x', 'x')",
+            "INSERT INTO task_agents VALUES ('k1', 'a1', 'w1', 'x'), ('k2', 'a1', 'w1', 'x'), ('k3', 'a1', 'w1', 'x'), ('k4', 'a2', 'w1', 'x')",
+        ] {
+            sqlx::query(sql).execute(&pool).await.unwrap();
+        }
+        for (id, task) in [("l1", "k1"), ("l2", "k2"), ("l3", "k4")] {
+            insert(&pool, id, task, "w1", "r1", None).await.unwrap();
+        }
+
+        let only = |agent: &'static str| candidate_tasks(&pool, "w1", "r1", agent);
+        assert_eq!(only("a1").await.unwrap(), vec!["k1"]);
+        assert_eq!(only("a2").await.unwrap(), vec!["k4"]);
+
+        insert(&pool, "l4", "k3", "w1", "r1", Some("m1"))
+            .await
+            .unwrap();
+        insert(&pool, "l5", "k3", "w1", "r1", None).await.unwrap();
+        assert_eq!(only("a1").await.unwrap(), vec!["k1", "k3"]);
+        assert!(
+            candidate_tasks(&pool, "w1", "other", "a1")
+                .await
+                .unwrap()
+                .is_empty()
+        );
     }
 }

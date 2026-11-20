@@ -2,8 +2,8 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use tokio::sync::OwnedMutexGuard;
 
-#[derive(Default)]
-pub struct RepositoryLocks(Mutex<HashMap<String, Arc<tokio::sync::Mutex<()>>>>);
+#[derive(Default, Clone)]
+pub struct RepositoryLocks(Arc<Mutex<HashMap<String, Arc<tokio::sync::Mutex<()>>>>>);
 
 impl RepositoryLocks {
     pub async fn acquire(&self, git_common_dir: &str) -> OwnedMutexGuard<()> {

@@ -392,9 +392,10 @@ describe("inside a room", () => {
     expect(participants.getByText("You")).toBeInTheDocument();
     expect(participants.getByText("Ana")).toBeInTheDocument();
     expect(participants.getByText("QA Engineer")).toBeInTheDocument();
-    expect(screen.getByRole("combobox", { name: "Ask" })).toHaveDisplayValue(
-      "From the message",
-    );
+    expect(screen.queryByRole("combobox", { name: "Ask" })).toBeNull();
+    expect(
+      screen.getByRole("combobox", { name: "Message" }),
+    ).toBeInTheDocument();
   });
 
   it("sends a message with Enter and shows it once even when its event also arrives", async () => {
@@ -443,8 +444,6 @@ describe("inside a room", () => {
     const user = await openDaily();
 
     await user.click(screen.getByLabelText("Message"));
-    await user.tab({ shift: true });
-    expect(screen.getByRole("combobox", { name: "Ask" })).toHaveFocus();
     const list = screen.getByRole("list", { name: "Messages" });
     const taskButtons = within(list).getAllByRole("button", {
       name: "Turn into task",

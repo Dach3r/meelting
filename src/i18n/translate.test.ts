@@ -86,6 +86,10 @@ describe("translate", () => {
       "output_truncated",
       "invalid_response",
       "context_too_large",
+      "tools_unsupported",
+      "iteration_budget_exhausted",
+      "tool_call_budget_exhausted",
+      "tool_output_budget_exhausted",
       "cancelled",
       "expired",
     ];

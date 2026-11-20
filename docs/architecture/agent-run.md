@@ -629,3 +629,14 @@ Built according to this document in three deliveries: schema and integrity, exec
 - **Limits:** `Limits::default()` holds the values of §9.4; the engine receives it when created and tests use other values. There are no persistent preferences or screen.
 
 **Tests:** 45 single-row schema cases plus tests for uniqueness, deletions, guard, query plan and migration on data; repository; `send_instruction` (including 12 simultaneous repeats with a single provider call); engine (order of arrival with retries at the end, slot released in the backoff, cancellation in the queue, in backoff, during the stream and racing with success, maximum duration, L1, `context_too_large`, retired model, keychain key, events only after the commit); adapters with `wiremock`; frontend with Vitest. Real test: an agent with Ollama (`qwen2.5:0.5b`) responded with streaming twice in the same room, with token usage reported.
+
+## 19. Tool loop (Phase 5A, stage A)
+
+When the frozen context carries a tool root (`services/tool_environment.rs`, see [tools-and-approvals.md](../product/tools-and-approvals.md)), `attempt` hands the run to `services/tool_loop.rs` instead of the plain stream. The registry freezes the tool context together with the prompt, so a retried attempt does not resolve it again.
+
+- **Turn:** `llm_call::stream_turn` (Chat Completions only; any other protocol is `tools_unsupported`) sends the prompt, the tool definitions and the in-memory exchange (assistant calls and `tool` results). Fragmented `delta.tool_calls` are assembled by index; arguments over 4096 bytes are flagged and dropped; calls without id or name, duplicate ids within a response or across the run, or an index beyond 63 are `invalid_response`.
+- **Budgets:** `domain/tools.rs::Budget`, checked before each model request, before each batch (whole) and after each result.
+- **Execution:** one call at a time, each preceded by `tool_environment::revalidate` (same single open task, agent still assigned, same ready environment and path); Git calls go through `services/tool_git.rs` and the engine's `RepositoryLocks`; the audit row is inserted `running`, the filesystem work (`services/tool_files.rs`) runs in `spawn_blocking`, and it races the cancellation token and the run deadline. Cancellation or deadline raises a stop flag the work checks (searches check it per folder and file) and closes the row `cancelled`.
+- **Outcomes:** `Failed { after_tools }` is retried by the existing policy only when `after_tools` is false; otherwise the run fails immediately with the same `error_kind` (§7 retries never re-run a tool).
+- **Text:** the final answer is pushed to the registry as one chunk, so completion, rounds and PASS behave as for a text run; there are no live tokens for runs that use tools.
+- **Errors:** `tools_unsupported`, `iteration_budget_exhausted`, `tool_call_budget_exhausted` and `tool_output_budget_exhausted` have copy in both locales.

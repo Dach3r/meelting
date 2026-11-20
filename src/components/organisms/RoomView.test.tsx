@@ -388,16 +388,22 @@ describe("asking an agent", () => {
           messages: [message("m1", "First")],
           runs: [run("running", 1)],
         }),
+      resolve_recipient: () => ({ kind: "agent", agent_id: "a1" }),
     });
     const user = userEvent.setup();
     await renderRoom();
 
-    await ask(user, "Second");
+    await user.type(screen.getByLabelText("Message"), "Second");
 
     expect(
-      screen.getByText("Ana is still working on a request."),
+      await screen.findByText("Ana is still working on a request."),
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Send" })).toBeDisabled();
+    await user.keyboard("{Enter}");
+    expect(invokeMock).not.toHaveBeenCalledWith(
+      "send_intervention",
+      expect.anything(),
+    );
   });
 });
 
@@ -783,16 +789,16 @@ describe("reading the conversation", () => {
         .closest("li") as HTMLElement,
     );
     expect(tile.queryByText("tech lead")).not.toBeInTheDocument();
-    expect(
-      screen.getByRole("option", { name: "Tech Lead" }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("option", { name: "Bob · Developer" }),
-    ).toBeInTheDocument();
-    await user.type(screen.getByRole("combobox", { name: "Message" }), "@t");
+    const field = screen.getByRole("combobox", { name: "Message" });
+    await user.type(field, "@t");
     expect(
       within(screen.getByRole("listbox")).getByRole("option").textContent,
     ).toBe("TTech Lead");
+    await user.clear(field);
+    await user.type(field, "@b");
+    expect(
+      within(screen.getByRole("listbox")).getByRole("option").textContent,
+    ).toBe("BBobDeveloper");
   });
 });
 

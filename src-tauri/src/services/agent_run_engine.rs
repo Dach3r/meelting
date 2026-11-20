@@ -3,8 +3,10 @@ use crate::domain::agent_run::{AgentRun, Limits, TokenChunk};
 use crate::domain::room::Message;
 use crate::services::agent_run_execute;
 use crate::services::agent_run_registry::Registry;
+use crate::services::repository_locks::RepositoryLocks;
 use sqlx::SqlitePool;
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use tokio::sync::Semaphore;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -21,8 +23,11 @@ pub struct Engine {
     pub registry: Registry,
     pub providers: Vec<Provider>,
     pub limits: Limits,
+    pub locks: RepositoryLocks,
     local_slots: Semaphore,
     cloud_slots: Semaphore,
+    cloud_tools_consent: AtomicBool,
+    tools_enabled: AtomicBool,
     emit: Emit,
 }
 
@@ -31,6 +36,7 @@ impl Engine {
         pool: SqlitePool,
         providers: Vec<Provider>,
         limits: Limits,
+        locks: RepositoryLocks,
         emit: Emit,
     ) -> Arc<Self> {
         Arc::new(Engine {
@@ -39,9 +45,30 @@ impl Engine {
             providers,
             local_slots: Semaphore::new(limits.local.concurrency),
             cloud_slots: Semaphore::new(limits.cloud.concurrency),
+            cloud_tools_consent: AtomicBool::new(false),
+            tools_enabled: AtomicBool::new(false),
             limits,
+            locks,
             emit,
         })
+    }
+
+    pub fn tools_enabled(&self) -> bool {
+        self.tools_enabled.load(Ordering::Relaxed)
+    }
+
+    pub fn cloud_tools_consent(&self) -> bool {
+        self.cloud_tools_consent.load(Ordering::Relaxed)
+    }
+
+    #[cfg(test)]
+    pub fn enable_tools(&self) {
+        self.tools_enabled.store(true, Ordering::Relaxed);
+    }
+
+    #[cfg(test)]
+    pub fn grant_cloud_tools_consent(&self) {
+        self.cloud_tools_consent.store(true, Ordering::Relaxed);
     }
 
     pub fn emit(&self, event: RunEvent) {
@@ -172,6 +199,7 @@ pub mod testing {
             pool,
             providers_at(base_url),
             limits,
+            RepositoryLocks::default(),
             Arc::new(move |event| recorded.lock().unwrap().push(event)),
         );
         Harness {

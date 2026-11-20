@@ -505,6 +505,10 @@
       "output_truncated": "La respuesta del agente era demasiado larga y no se guardó.",
       "invalid_response": "{provider} envió una respuesta que Meelting no pudo leer.",
       "context_too_large": "Las instrucciones del agente y esta solicitud son demasiado largas para este modelo. Acorta las instrucciones o usa otro modelo.",
+      "tools_unsupported": "Este modelo no puede usar las herramientas del entorno. Usa otro modelo o continúa sin ellas.",
+      "iteration_budget_exhausted": "El agente se detuvo: usó todos sus pasos para esta solicitud.",
+      "tool_call_budget_exhausted": "El agente se detuvo: hizo demasiadas llamadas a herramientas en esta solicitud.",
+      "tool_output_budget_exhausted": "El agente se detuvo: las herramientas devolvieron más datos de los permitidos en esta solicitud.",
       "cancelled": "Cancelada.",
       "expired": "Se detuvo porque Meelting se cerró.",
       "unknown": "La solicitud a {provider} falló."
