@@ -631,12 +631,12 @@ mod tests {
         const LATER: &str = "'2026-11-19T10:00:01.000Z'";
 
         fn block(prefix: &str) -> String {
-            DOC.split("```sql\n")
+            DOC.replace("\r\n", "\n")
+                .split("```sql\n")
                 .skip(1)
-                .filter_map(|section| section.split("```").next())
+                .filter_map(|section| section.split("```").next().map(str::to_string))
                 .find(|sql| sql.starts_with(prefix))
                 .unwrap()
-                .to_string()
         }
 
         fn rollback_sql() -> String {
