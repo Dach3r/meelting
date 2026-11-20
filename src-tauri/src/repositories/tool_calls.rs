@@ -698,7 +698,7 @@ mod tests {
             .fetch_one(pool)
             .await
             .unwrap();
-            text.replace('"', "")
+            text.replace('"', "").replace("\r\n", "\n")
         }
 
         async fn pragma(pool: &SqlitePool, statement: &'static str) -> Vec<String> {
@@ -763,7 +763,7 @@ mod tests {
         #[test]
         fn the_migration_is_exactly_the_sql_approved_in_the_proposal() {
             assert_eq!(
-                MIGRATION.trim(),
+                MIGRATION.replace("\r\n", "\n").trim(),
                 block("CREATE TABLE tool_calls_rebuilt").trim()
             );
         }
