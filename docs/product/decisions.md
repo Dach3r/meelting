@@ -161,6 +161,12 @@ Context: [tasks.md](tasks.md).
 | D54 | **Limits and capability of tool use (5A):** 20 model iterations and 40 tool calls per run, 16 KiB per file read, 8 KiB per search or listing, 32 KiB per diff, 128 KiB of accumulated output per run, with explicit truncation and partial reads. Internal engine constants, not persisted and without UI. Exhausting a budget ends the run `failed` with its own `error_kind`. Tool support is declared per model in `llm.yml` (cloud) and detected for local models with three outcomes (`supported`, `unsupported`, `unknown`); `unknown` is never treated as supported and nothing switches provider or model | Bounded cost and loops; verifiable compatibility | Persisted or user-visible limits; assuming local models support tools |
 | D55 | **Audit of rejected tool calls (5A, approved design, migration `rebuild_tool_calls_for_rejected_calls` created, not applied outside tests):** `tool` and `arguments` may be NULL in `tool_calls` only on rows that end `failed` / `invalid_arguments`; a call with malformed, non-object or oversized arguments or an invalid tool name is audited without storing its content (the name is kept only if well formed). `invalid_arguments` stays the single code. Call ids are restricted to `[A-Za-z0-9_.:-]`. SQL, comparison, rollback and verification in [d55-tool-call-audit-proposal.md](d55-tool-call-audit-proposal.md) | The audit must not miss attempts; no untrusted payload is persisted | Storing the raw text; a counter on `agent_runs`; failing the run at the first rejected call |
 
+### Pending (2026-11-20, opening tools)
+
+| # | Recommendation | Rationale | Alternatives |
+|---|---|---|---|
+| D56 | **Agent tools for local models on macOS only**, turned on with a toggle in Settings › Advanced that is kept in memory (off at every launch, no schema change); the core refuses it outside macOS and cloud consent stays closed. No `run_command` or `git_commit`. Proposal in [local-tools-switch-proposal.md](local-tools-switch-proposal.md) | First real work by an agent with nothing leaving the machine; an opt-in that closes itself on restart | A persisted `profile` column (needs a migration); an environment variable; always on for local models |
+
 ### Risks and dependencies
 
 See the risks in [conversation-engine.md §14](../architecture/conversation-engine.md#14-risks) and [voice-engine.md §12](../architecture/voice-engine.md#12-risks), and the stage dependencies in [roadmap.md](roadmap.md#track-r--conversational-meetings).
