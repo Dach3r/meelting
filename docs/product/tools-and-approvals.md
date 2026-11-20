@@ -1,6 +1,6 @@
 # Tools and approvals (Phase 5)
 
-> **Proposal**, not approved for implementation. Provider choice, approval granularity and commit inclusion were chosen by the product owner on 2026-11-19; everything else here is a recommendation. Nothing in this document approves a schema change: each migration needs its own proposal and explicit approval.
+> **Proposal.** The 5A schema and limits are approved (D53, D54); the engine and tools are not yet authorized. Provider choice, approval granularity and commit inclusion were chosen by the product owner on 2026-11-19; everything else here is a recommendation. Nothing in this document approves a schema change: each migration needs its own proposal and explicit approval.
 
 **Problem:** agents talk in a room but cannot work. The user cannot ask for a code change and get a verifiable result.
 
@@ -57,11 +57,14 @@
 - Pending Windows hardening (Job Object, `NtResumeProcess`) affects 5B.
 - The loop can run away: needs a step budget per run and cancellation at every step.
 
-## Open points for approval before 5A
-- Exact columns of `tool_calls` (and `approvals` in 5B).
-- Step budget per run and output caps per tool.
-- How tool activity is shown in the message history (separate rows from `messages`).
-- Whether the model must declare tool support in `llm.yml` for cloud and be detected for local.
+## Approved for 5A (D53, D54)
+- `tool_calls` audit table, separate from `messages`, with the run, room, workspace, task and environment tied by composite foreign keys. Results are never persisted, only their size and whether they were truncated.
+- Per run: 20 iterations, 40 tool calls and 128 KiB of accumulated output; per call: 16 KiB for file reads, 8 KiB for searches and listings, 32 KiB for diffs. Exhausting a budget ends the run with an explicit `error_kind`.
+- Tool support is declared in `llm.yml` for cloud models and detected for local ones (`supported`, `unsupported`, `unknown`).
+
+## Open for 5B
+- Columns of `approvals`, linked to a `tool_calls` row that stays `running` while it waits.
+- Independent limits for `run_command` output.
 
 ## Dependencies
 - Tasks and environments ([tasks.md](tasks.md)), rooms ([rooms.md](rooms.md)), `AgentRun` ([agent-run.md](../architecture/agent-run.md)), Changes review (4C 3B–3C).
