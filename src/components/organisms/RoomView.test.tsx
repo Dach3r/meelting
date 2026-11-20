@@ -973,6 +973,93 @@ describe("following a run", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("asks the whole team and shows how many agents will reply in turn", async () => {
+    core({
+      get_room: () => detail(),
+      resolve_recipient: () => ({ kind: "round", agent_ids: ["a1", "a2"] }),
+      send_intervention: () =>
+        sent(message("m1", "Thoughts?"), run("queued", 0)),
+    });
+    const user = userEvent.setup();
+    await renderRoom();
+
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Ask" }),
+      "The whole team, in turn",
+    );
+    await user.type(screen.getByLabelText("Message"), "Thoughts?");
+    expect(
+      await screen.findByText("2 agents will reply in turn."),
+    ).toBeInTheDocument();
+    await user.type(screen.getByLabelText("Message"), "{Enter}");
+
+    expect(invokeMock).toHaveBeenCalledWith("resolve_recipient", {
+      roomId: "r1",
+      body: "Thoughts?",
+      selection: { kind: "team" },
+      mentionIds: [],
+    });
+    expect(invokeMock).toHaveBeenCalledWith("send_intervention", {
+      roomId: "r1",
+      body: "Thoughts?",
+      selection: { kind: "team" },
+      mentionIds: [],
+      clientRequestId: expect.stringMatching(uuid),
+    });
+  });
+
+  it("shows every turn of a round under the message it answers and notes who passed", async () => {
+    core({
+      get_room: () =>
+        detail({
+          messages: [
+            message("m1", "Thoughts?"),
+            message("m2", "Idea A", {
+              agent_id: "a1",
+              created_at: "2026-11-18T10:00:02.000Z",
+            }),
+          ],
+          runs: [
+            run("succeeded", 1, {
+              id: "run1",
+              response_message_id: "m2",
+              finished_at: "2026-11-18T10:00:02.000Z",
+            }),
+            run("passed", 1, {
+              id: "run2",
+              agent_id: "a2",
+              finished_at: "2026-11-18T10:00:03.000Z",
+            }),
+          ],
+        }),
+    });
+    await renderRoom();
+
+    expect(screen.getByText("Bob has nothing to add.")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Stop" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("stops the whole room while a turn is active", async () => {
+    core({
+      get_room: () =>
+        detail({
+          messages: [message("m1", "Thoughts?")],
+          runs: [run("running", 1)],
+        }),
+      stop_intervention: () => null,
+    });
+    const user = userEvent.setup();
+    await renderRoom();
+
+    await user.click(screen.getByRole("button", { name: "Stop" }));
+
+    expect(invokeMock).toHaveBeenCalledWith("stop_intervention", {
+      roomId: "r1",
+    });
+  });
+
   it("explains failures with the provider name", async () => {
     core({
       get_room: () =>

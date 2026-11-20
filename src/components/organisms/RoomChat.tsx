@@ -1,3 +1,4 @@
+import { CircleStop } from "lucide-react";
 import { Fragment, useEffect, useRef, useState } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
 import { translateWith } from "../../i18n/translate";
@@ -11,6 +12,7 @@ import type { LlmProvider } from "../../hooks/useLlmProviders";
 import type { Draft, SendResult } from "../../hooks/useRoom";
 import type { Message, Participant, Room } from "../../hooks/useRooms";
 import type { Task } from "../../hooks/useTasks";
+import { Button } from "../atoms/Button";
 import { Alert } from "../molecules/Alert";
 import { AgentRunStatus } from "../molecules/AgentRunStatus";
 import { ChatMessage } from "../molecules/ChatMessage";
@@ -31,6 +33,7 @@ type Props = {
   errorMessage: string | null;
   onSend: (draft: Draft) => Promise<SendResult>;
   onCancel: (runId: string) => void;
+  onStop: () => void;
   onCreateTask: (message: Message) => void;
 };
 
@@ -46,6 +49,7 @@ export function RoomChat({
   errorMessage,
   onSend,
   onCancel,
+  onStop,
   onCreateTask,
 }: Props) {
   const { t, locale } = useI18n();
@@ -111,7 +115,7 @@ export function RoomChat({
           className="grid flex-1 content-start gap-4 overflow-y-auto overscroll-contain rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
         >
           {messages.map((message) => {
-            const run = allRuns.find(
+            const requested = allRuns.filter(
               (candidate) => candidate.request_message_id === message.id,
             );
             return (
@@ -122,8 +126,9 @@ export function RoomChat({
                   footer={footer(message)}
                   onCreateTask={() => onCreateTask(message)}
                 />
-                {run && (
+                {requested.map((run) => (
                   <AgentRunStatus
+                    key={run.id}
                     run={run}
                     agentName={
                       knownAgents.find((agent) => agent.id === run.agent_id)
@@ -134,7 +139,7 @@ export function RoomChat({
                     liveText={liveText(runs, run)}
                     onCancel={() => onCancel(run.id)}
                   />
-                )}
+                ))}
               </Fragment>
             );
           })}
@@ -142,6 +147,18 @@ export function RoomChat({
         </ol>
       )}
       {tab === "chat" && errorMessage && <Alert message={errorMessage} />}
+      {tab === "chat" && busyAgentIds.length > 0 && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="compact"
+          onClick={onStop}
+          className="self-start"
+        >
+          <CircleStop aria-hidden className="size-4" />
+          {t("agentRun.stop")}
+        </Button>
+      )}
       {tab === "chat" && (
         <MessageComposer
           roomId={room.id}

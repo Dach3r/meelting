@@ -63,6 +63,7 @@ export function RoomView({
     sending,
     sendIntervention,
     cancelRun,
+    stopRoom,
     rosterErrorKey,
     rosterBusy,
     addAgents,
@@ -380,6 +381,7 @@ export function RoomView({
           }
           onSend={sendIntervention}
           onCancel={cancelRun}
+          onStop={stopRoom}
           onCreateTask={(message) => setTaskSource({ message })}
         />
       </div>

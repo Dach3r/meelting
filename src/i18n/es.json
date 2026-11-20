@@ -472,6 +472,7 @@
   "agentRun": {
     "askLabel": "Pedir a",
     "nobody": "Nadie, solo un mensaje",
+    "team": "Todo el equipo, por turnos",
     "auto": "Según el mensaje",
     "proposal": "Respondiendo a {agent}",
     "proposed": "propuesto",
@@ -483,11 +484,14 @@
       "nobody": "Nadie responderá: se guardará como mensaje. Menciona a un agente con @ para preguntarle.",
       "ambiguous": "Varios agentes coinciden con ese nombre: al enviar podrás elegir.",
       "several": "Mencionaste a varios agentes: al enviar tendrás que elegir uno.",
-      "conflict": "La mención no coincide con el agente elegido: al enviar podrás aclararlo."
+      "conflict": "La mención no coincide con el agente elegido: al enviar podrás aclararlo.",
+      "round": "Responderán {count} agentes por turnos."
     },
     "queued": "En cola…",
     "retrying": "Problema temporal. Reintentando (intento {attempt} de 3)…",
     "cancel": "Cancelar",
+    "stop": "Detener",
+    "passed": "{agent} no tiene nada que añadir.",
     "thinking": "Pensando…",
     "writing": "Escribiendo…",
     "tokens": "{input} de entrada · {output} de salida",

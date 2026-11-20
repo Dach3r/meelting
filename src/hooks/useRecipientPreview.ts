@@ -5,6 +5,7 @@ import type { Choice, Selection } from "./useRoom";
 export type Resolution =
   | { kind: "nobody" }
   | { kind: "agent" | "proposed"; agent_id: string }
+  | { kind: "round"; agent_ids: string[] }
   | ({ kind: "choose" } & Choice);
 
 const previewDelayMs = 150;

@@ -38,6 +38,7 @@ type Props = {
 function selectionOf(value: string, proposal: string | null): Selection {
   if (value === "auto") return { kind: "auto", agent_id: proposal };
   if (value === "nobody") return { kind: "nobody" };
+  if (value === "team") return { kind: "team" };
   return { kind: "agent", agent_id: value };
 }
 
@@ -98,7 +99,7 @@ export function MessageComposer({
   const targetId =
     selection.kind === "agent"
       ? selection.agent_id
-      : preview && preview.kind !== "nobody" && preview.kind !== "choose"
+      : preview && (preview.kind === "agent" || preview.kind === "proposed")
         ? preview.agent_id
         : following
           ? proposal
@@ -113,6 +114,10 @@ export function MessageComposer({
     if (!preview || selection.kind === "nobody") return null;
     if (preview.kind === "choose")
       return t(`agentRun.preview.${preview.reason}`);
+    if (preview.kind === "round")
+      return translateWith(locale, "agentRun.preview.round", {
+        count: preview.agent_ids.length,
+      });
     if (selection.kind === "agent" || preview.kind === "proposed") return null;
     if (preview.kind === "agent" && target)
       return translateWith(locale, "agentRun.preview.agent", {
@@ -215,6 +220,7 @@ export function MessageComposer({
           >
             <option value="auto">{t("agentRun.auto")}</option>
             <option value="nobody">{t("agentRun.nobody")}</option>
+            <option value="team">{t("agentRun.team")}</option>
             {agents.map((agent) => (
               <option key={agent.id} value={agent.id}>
                 {agentLabel(agent)}

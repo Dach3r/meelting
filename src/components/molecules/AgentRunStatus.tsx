@@ -24,6 +24,14 @@ export function AgentRunStatus({
 }: Props) {
   const { t, locale } = useI18n();
   if (run.status === "succeeded") return null;
+  if (run.status === "passed")
+    return (
+      <li className="pl-11">
+        <p role="status" className="text-xs text-muted">
+          {translateWith(locale, "agentRun.passed", { agent: agentName })}
+        </p>
+      </li>
+    );
   if (run.status === "failed") {
     const cancelled = run.error_kind === "cancelled";
     return (

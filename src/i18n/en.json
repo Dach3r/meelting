@@ -472,6 +472,7 @@
   "agentRun": {
     "askLabel": "Ask",
     "nobody": "No one, just a message",
+    "team": "The whole team, in turn",
     "auto": "From the message",
     "proposal": "Replying to {agent}",
     "proposed": "suggested",
@@ -483,11 +484,14 @@
       "nobody": "Nobody will reply: it will be saved as a message. Mention an agent with @ to ask them.",
       "ambiguous": "Several agents match that name: you can pick one when sending.",
       "several": "You mentioned several agents: you'll pick one when sending.",
-      "conflict": "The mention doesn't match the chosen agent: you can settle it when sending."
+      "conflict": "The mention doesn't match the chosen agent: you can settle it when sending.",
+      "round": "{count} agents will reply in turn."
     },
     "queued": "Queued…",
     "retrying": "Temporary problem. Retrying (attempt {attempt} of 3)…",
     "cancel": "Cancel",
+    "stop": "Stop",
+    "passed": "{agent} has nothing to add.",
     "thinking": "Thinking…",
     "writing": "Writing…",
     "tokens": "{input} in · {output} out tokens",

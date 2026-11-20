@@ -30,6 +30,7 @@ type RoomDetail = {
 export type Selection =
   | { kind: "auto"; agent_id: string | null }
   | { kind: "nobody" }
+  | { kind: "team" }
   | { kind: "agent" | "confirmed"; agent_id: string };
 
 export type Draft = {
@@ -221,6 +222,15 @@ export function useRoom(roomId: string) {
     }
   }
 
+  async function stopRoom() {
+    setSendErrorKey(null);
+    try {
+      await invoke("stop_intervention", { roomId });
+    } catch (error) {
+      setSendErrorKey(String(error));
+    }
+  }
+
   async function changeRoster(command: string, args: Record<string, unknown>) {
     setRosterBusy(true);
     setRosterErrorKey(null);
@@ -263,6 +273,7 @@ export function useRoom(roomId: string) {
     sending,
     sendIntervention,
     cancelRun,
+    stopRoom,
     rosterErrorKey,
     rosterBusy,
     addAgents,

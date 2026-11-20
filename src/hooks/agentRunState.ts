@@ -1,4 +1,5 @@
-export type RunStatus = "queued" | "running" | "succeeded" | "failed";
+export type RunStatus =
+  "queued" | "running" | "succeeded" | "passed" | "failed";
 
 export type AgentRun = {
   id: string;
@@ -35,7 +36,11 @@ export type RunState = {
 export const emptyRunState: RunState = { runs: {}, live: {} };
 
 export function isFinal(run: AgentRun) {
-  return run.status === "succeeded" || run.status === "failed";
+  return (
+    run.status === "succeeded" ||
+    run.status === "passed" ||
+    run.status === "failed"
+  );
 }
 
 export function isActive(run: AgentRun) {
