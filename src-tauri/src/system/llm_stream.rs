@@ -244,13 +244,10 @@ mod tests {
     #[tokio::test]
     async fn a_refused_connection_is_an_unreachable_provider() {
         let prompt = prompt();
-        let result = open(
-            &request("http://127.0.0.1:1", &prompt),
-            "/x",
-            &[],
-            Value::Null,
-        )
-        .await;
+        let mut refused = request("http://127.0.0.1:1", &prompt);
+        refused.connect_timeout = Duration::from_secs(5);
+        refused.idle_timeout = Duration::from_secs(10);
+        let result = open(&refused, "/x", &[], Value::Null).await;
 
         assert_eq!(
             result.err().map(|f| (f.kind, f.unreachable)),

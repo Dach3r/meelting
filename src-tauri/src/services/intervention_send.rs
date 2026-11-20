@@ -876,13 +876,13 @@ mod tests {
             .mount(&server)
             .await;
         Mock::given(method("POST"))
-            .and(wiremock::matchers::body_string_contains("fail now"))
-            .respond_with(wiremock::ResponseTemplate::new(401))
+            .and(wiremock::matchers::body_string_contains("take your time"))
+            .respond_with(chat(&["late"]).set_delay(std::time::Duration::from_millis(500)))
             .mount(&server)
             .await;
         Mock::given(method("POST"))
-            .and(wiremock::matchers::body_string_contains("take your time"))
-            .respond_with(chat(&["late"]).set_delay(std::time::Duration::from_millis(500)))
+            .and(wiremock::matchers::body_string_contains("fail now"))
+            .respond_with(wiremock::ResponseTemplate::new(401))
             .mount(&server)
             .await;
         let h = harness(&server.uri(), fast_limits(), &two_agents()).await;
