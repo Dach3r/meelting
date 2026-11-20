@@ -21,7 +21,9 @@ describe("Switch", () => {
 
   it("does nothing when disabled", async () => {
     const onChange = vi.fn();
-    render(<Switch label="Sound" checked={false} onChange={onChange} disabled />);
+    render(
+      <Switch label="Sound" checked={false} onChange={onChange} disabled />,
+    );
     await userEvent.click(screen.getByRole("switch", { name: "Sound" }));
     expect(onChange).not.toHaveBeenCalled();
   });

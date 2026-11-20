@@ -80,7 +80,10 @@ export function TasksPage({ agents }: { agents: Agent[] }) {
         />
       )}
       {dialog === "repositories" && (
-        <Modal title={t("tasks.repositories.title")} onClose={closeRepositories}>
+        <Modal
+          title={t("tasks.repositories.title")}
+          onClose={closeRepositories}
+        >
           <RepositoryList
             repositories={repositoryList}
             busy={repositories.busy}

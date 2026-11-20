@@ -21,7 +21,10 @@ describe("DiffViewer", () => {
   function renderViewer(locale: "en" | "es", state: State, path = "a.ts") {
     return render(
       <I18nProvider locale={locale}>
-        <DiffViewer row={{ entry: entry(0, path), source: "staged" }} state={state} />
+        <DiffViewer
+          row={{ entry: entry(0, path), source: "staged" }}
+          state={state}
+        />
       </I18nProvider>,
     );
   }
@@ -47,7 +50,10 @@ describe("DiffViewer", () => {
   });
 
   it("speaks Spanish", () => {
-    renderViewer("es", { phase: "ready", diff: diff({ binary: true, hunks: [] }) });
+    renderViewer("es", {
+      phase: "ready",
+      diff: diff({ binary: true, hunks: [] }),
+    });
 
     expect(screen.getByText(/archivo binario/)).toBeVisible();
     expect(screen.getByText("cambios en staging")).toBeVisible();

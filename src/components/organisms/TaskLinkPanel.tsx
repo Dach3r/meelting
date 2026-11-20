@@ -63,7 +63,10 @@ export function TaskLinkPanel({ origin, busy, errorMessage, onLink }: Props) {
             className="max-h-72 overflow-y-auto overscroll-contain rounded-2xl border border-line"
           >
             {options.map((task) => (
-              <li key={task.id} className="border-b border-line/60 last:border-b-0">
+              <li
+                key={task.id}
+                className="border-b border-line/60 last:border-b-0"
+              >
                 <button
                   type="button"
                   disabled={busy}

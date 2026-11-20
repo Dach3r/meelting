@@ -2,19 +2,10 @@ import { invoke } from "@tauri-apps/api/core";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 export type ChangeCode =
-  | "added"
-  | "modified"
-  | "deleted"
-  | "renamed"
-  | "copied"
-  | "type_changed";
+  "added" | "modified" | "deleted" | "renamed" | "copied" | "type_changed";
 
 export type EntryKind =
-  | "committed"
-  | "changed"
-  | "conflicted"
-  | "untracked"
-  | "ignored";
+  "committed" | "changed" | "conflicted" | "untracked" | "ignored";
 
 export type DiffSource = "staged" | "unstaged" | "branch";
 
@@ -64,12 +55,7 @@ export type FileDiff = {
 type FolderListing = { entries: ReviewEntry[]; complete: boolean };
 
 export type GroupKey =
-  | "conflicted"
-  | "staged"
-  | "unstaged"
-  | "untracked"
-  | "committed"
-  | "ignored";
+  "conflicted" | "staged" | "unstaged" | "untracked" | "committed" | "ignored";
 
 export const groupOrder: GroupKey[] = [
   "conflicted",

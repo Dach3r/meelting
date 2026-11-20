@@ -46,7 +46,8 @@ export function TaskChanges({ task }: { task: Task }) {
           <GitCompare aria-hidden className="size-5 text-muted" />
           {t("review.title")}
         </h2>
-        {usable && refresh(loading ? t("review.refreshing") : t("review.refresh"))}
+        {usable &&
+          refresh(loading ? t("review.refreshing") : t("review.refresh"))}
       </header>
       {!usable && (
         <p className="text-sm text-muted">{t("review.unavailable")}</p>

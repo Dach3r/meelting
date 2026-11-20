@@ -71,7 +71,9 @@ export function EnvironmentList({
                   {environment.task_title}
                 </span>
                 <span className="flex min-w-0 items-center gap-2 text-xs text-muted">
-                  <span className="truncate">{environment.repository_name}</span>
+                  <span className="truncate">
+                    {environment.repository_name}
+                  </span>
                   <span aria-hidden>·</span>
                   {aside(environment)}
                 </span>

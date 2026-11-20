@@ -46,7 +46,9 @@ export function AgentPicker({ agents, value, onChange, hint }: Props) {
       <label htmlFor={id} className="text-sm font-medium text-muted">
         {t("rooms.form.agents")}
       </label>
-      <p className="-mt-1 text-xs text-muted">{hint ?? t("rooms.form.agentsHint")}</p>
+      <p className="-mt-1 text-xs text-muted">
+        {hint ?? t("rooms.form.agentsHint")}
+      </p>
       {selected.length > 0 && (
         <ul
           aria-label={t("rooms.form.selected")}

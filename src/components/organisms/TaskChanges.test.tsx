@@ -44,10 +44,14 @@ beforeEach(() => {
 
 describe("header and states", () => {
   it("shows loading, then the branch, base, HEAD, commits ahead, drift and Git operation", async () => {
-    core({ review_task_environment: () => review([entry(0, "a.txt", staged)]) });
+    core({
+      review_task_environment: () => review([entry(0, "a.txt", staged)]),
+    });
     renderChanges([]);
 
-    expect(screen.getByText("Reading the changes of this environment…")).toBeVisible();
+    expect(
+      screen.getByText("Reading the changes of this environment…"),
+    ).toBeVisible();
     expect(await screen.findByText("meelting/fix-login-abc")).toBeVisible();
     expect(screen.getByText(`main @ ${"a".repeat(12)}`)).toBeVisible();
     expect(screen.getByText("b".repeat(12))).toBeVisible();
@@ -76,7 +80,9 @@ describe("header and states", () => {
     });
     renderChanges([]);
 
-    expect(await screen.findByText(/Git operation \(merge, rebase/)).toBeVisible();
+    expect(
+      await screen.findByText(/Git operation \(merge, rebase/),
+    ).toBeVisible();
     expect(screen.getByText(/This list is incomplete/)).toBeVisible();
     expect(screen.getByText("In progress")).toBeVisible();
   });
@@ -85,36 +91,42 @@ describe("header and states", () => {
     ["failed", null],
     ["missing", null],
     ["ready", "2026-11-25T10:00:00.000Z"],
-  ] as const)("does not read an environment that is %s or in the trash", (status, trashed) => {
-    core({});
-    renderChanges(["t1", worktree({ status, trashed_at: trashed })]);
+  ] as const)(
+    "does not read an environment that is %s or in the trash",
+    (status, trashed) => {
+      core({});
+      renderChanges(["t1", worktree({ status, trashed_at: trashed })]);
 
-    expect(screen.getByText(/environment is not ready/)).toBeVisible();
-    expect(screen.queryByRole("button", { name: "Refresh" })).toBeNull();
-    expect(invokeMock).not.toHaveBeenCalled();
-  });
+      expect(screen.getByText(/environment is not ready/)).toBeVisible();
+      expect(screen.queryByRole("button", { name: "Refresh" })).toBeNull();
+      expect(invokeMock).not.toHaveBeenCalled();
+    },
+  );
 
   it.each([
     ["environment_identity_mismatch", /no longer match what Meelting created/],
     ["process_isolation_unavailable", /cannot guarantee that Git runs/],
     ["environment_filters_apply", /Git filters that run programs/],
     ["review_timeout", /took too long/],
-  ])("shows the backend error %s as is and lets the user retry", async (code, message) => {
-    let calls = 0;
-    core({
-      review_task_environment: () => {
-        calls += 1;
-        if (calls === 1) throw code;
-        return review([]);
-      },
-    });
-    renderChanges([]);
+  ])(
+    "shows the backend error %s as is and lets the user retry",
+    async (code, message) => {
+      let calls = 0;
+      core({
+        review_task_environment: () => {
+          calls += 1;
+          if (calls === 1) throw code;
+          return review([]);
+        },
+      });
+      renderChanges([]);
 
-    expect(await screen.findByRole("alert")).toHaveTextContent(message);
-    expect(screen.queryByText("Base branch")).toBeNull();
-    await userEvent.click(screen.getByRole("button", { name: "Retry" }));
-    expect(await screen.findByText(/No changes yet/)).toBeVisible();
-  });
+      expect(await screen.findByRole("alert")).toHaveTextContent(message);
+      expect(screen.queryByText("Base branch")).toBeNull();
+      await userEvent.click(screen.getByRole("button", { name: "Retry" }));
+      expect(await screen.findByText(/No changes yet/)).toBeVisible();
+    },
+  );
 });
 
 describe("drift", () => {
@@ -122,21 +134,26 @@ describe("drift", () => {
     ["moved", /has moved since this environment was prepared/],
     ["rewritten", /was rewritten/],
     ["unavailable", /not available/],
-  ] as const)("informs about %s without offering to sync", async (state, message) => {
-    core({
-      review_task_environment: () =>
-        review([], {
-          drift: { state, base_ref: "main", current_commit: null },
-        }),
-    });
-    renderChanges([]);
+  ] as const)(
+    "informs about %s without offering to sync",
+    async (state, message) => {
+      core({
+        review_task_environment: () =>
+          review([], {
+            drift: { state, base_ref: "main", current_commit: null },
+          }),
+      });
+      renderChanges([]);
 
-    expect(await screen.findByText(message)).toBeVisible();
-    expect(screen.queryByRole("alert")).toBeNull();
-    expect(
-      screen.queryByRole("button", { name: /merge|rebase|reset|sync|update/i }),
-    ).toBeNull();
-  });
+      expect(await screen.findByText(message)).toBeVisible();
+      expect(screen.queryByRole("alert")).toBeNull();
+      expect(
+        screen.queryByRole("button", {
+          name: /merge|rebase|reset|sync|update/i,
+        }),
+      ).toBeNull();
+    },
+  );
 
   it("shows no notice when the base branch has not moved", async () => {
     core({ review_task_environment: () => review([]) });
@@ -204,8 +221,12 @@ describe("file groups", () => {
     expect(screen.getByText(/Conflicts are not shown as a diff/)).toBeVisible();
     expect(screen.getByText("Binary")).toBeVisible();
     expect(screen.getByText("Protected")).toBeVisible();
-    expect(screen.getByRole("region", { name: /Untracked/ })).toHaveTextContent("notes.txt");
-    expect(screen.getByRole("region", { name: /Ignored/ })).toHaveTextContent("build/");
+    expect(screen.getByRole("region", { name: /Untracked/ })).toHaveTextContent(
+      "notes.txt",
+    );
+    expect(screen.getByRole("region", { name: /Ignored/ })).toHaveTextContent(
+      "build/",
+    );
     expect(screen.getByLabelText("0 added, 0 deleted lines")).toBeVisible();
   });
 });
@@ -226,18 +247,22 @@ describe("diff", () => {
 
     await userEvent.click(await screen.findByRole("button", { name: /a\.ts/ }));
 
-    const table = await screen.findByRole("table", { name: /Changes of a\.ts/ });
+    const table = await screen.findByRole("table", {
+      name: /Changes of a\.ts/,
+    });
     expect(invokeMock).toHaveBeenCalledWith("read_task_environment_diff", {
       taskId: "t1",
       request: { review_id: "review-1", entry_id: 0, source: "staged" },
     });
     expect(within(table).getByText("@@ -3,2 +3,3 @@")).toBeVisible();
     const rows = within(table).getAllByRole("row");
-    expect(rows[2]).toHaveTextContent("4"); 
+    expect(rows[2]).toHaveTextContent("4");
     expect(within(rows[2]).getByText("Removed line")).toBeInTheDocument();
     expect(within(rows[3]).getByText("Added line")).toBeInTheDocument();
     expect(within(rows[1]).getByText("Unchanged line")).toBeInTheDocument();
-    expect(within(table).getByText("<img src=x onerror=alert(1)>")).toBeVisible();
+    expect(
+      within(table).getByText("<img src=x onerror=alert(1)>"),
+    ).toBeVisible();
     expect(table.querySelector("img")).toBeNull();
     expect(screen.getByRole("button", { name: /a\.ts/ })).toHaveAttribute(
       "aria-current",
@@ -254,9 +279,13 @@ describe("diff", () => {
     await userEvent.click(await screen.findByRole("button", { name: /a\.ts/ }));
 
     const rows = within(await screen.findByRole("table")).getAllByRole("row");
-    const numbers = rows.slice(1).map((row) =>
-      Array.from(row.querySelectorAll("td[aria-hidden]")).map((cell) => cell.textContent),
-    );
+    const numbers = rows
+      .slice(1)
+      .map((row) =>
+        Array.from(row.querySelectorAll("td[aria-hidden]")).map(
+          (cell) => cell.textContent,
+        ),
+      );
     expect(numbers).toEqual([
       ["3", "3"],
       ["4", ""],
@@ -269,7 +298,9 @@ describe("diff", () => {
     core({ review_task_environment: () => review(entries) });
     renderChanges([]);
 
-    await userEvent.click(await screen.findByRole("button", { name: /\.env\.local/ }));
+    await userEvent.click(
+      await screen.findByRole("button", { name: /\.env\.local/ }),
+    );
 
     expect(await screen.findByText(/may hold secrets/)).toBeVisible();
     expect(invokeMock).not.toHaveBeenCalledWith(
@@ -331,7 +362,9 @@ describe("diff", () => {
 
     await userEvent.click(await screen.findByRole("button", { name: /a\.ts/ }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent(/changed since this review/);
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      /changed since this review/,
+    );
     expect(screen.queryByRole("button", { name: /a\.ts/ })).toBeNull();
     expect(screen.queryByRole("table")).toBeNull();
     await userEvent.click(screen.getByRole("button", { name: "Refresh" }));
@@ -367,7 +400,9 @@ describe("diff", () => {
     await userEvent.click(screen.getByRole("button", { name: "Refresh" }));
 
     await waitFor(() => expect(screen.queryByRole("table")).toBeNull());
-    expect(await screen.findByText("Select a file to read its changes.")).toBeVisible();
+    expect(
+      await screen.findByText("Select a file to read its changes."),
+    ).toBeVisible();
   });
 });
 
@@ -387,7 +422,9 @@ describe("untracked folders", () => {
     });
     renderChanges([]);
 
-    const toggle = await screen.findByRole("button", { name: "Expand folder docs/" });
+    const toggle = await screen.findByRole("button", {
+      name: "Expand folder docs/",
+    });
     expect(toggle).toHaveAttribute("aria-expanded", "false");
     await userEvent.click(toggle);
 
@@ -397,11 +434,12 @@ describe("untracked folders", () => {
       reviewId: "review-1",
       entryId: 0,
     });
-    expect(screen.getByRole("button", { name: "Collapse folder docs/" })).toHaveAttribute(
-      "aria-expanded",
-      "true",
-    );
-    expect(screen.getByRole("button", { name: "Expand folder docs/deep/" })).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "Collapse folder docs/" }),
+    ).toHaveAttribute("aria-expanded", "true");
+    expect(
+      screen.getByRole("button", { name: "Expand folder docs/deep/" }),
+    ).toBeVisible();
   });
 
   it("keeps each folder's loading and error apart from the rest of the list", async () => {
@@ -418,14 +456,20 @@ describe("untracked folders", () => {
     });
     renderChanges([]);
 
-    await userEvent.click(await screen.findByRole("button", { name: "Expand folder docs/" }));
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Expand folder docs/" }),
+    );
     expect(screen.getByText("Reading the folder…")).toBeVisible();
-    await userEvent.click(screen.getByRole("button", { name: "Expand folder src/" }));
+    await userEvent.click(
+      screen.getByRole("button", { name: "Expand folder src/" }),
+    );
     expect(await screen.findByRole("alert")).toHaveTextContent(/took too long/);
     expect(screen.getByText("Reading the folder…")).toBeVisible();
 
     release({ entries: [], complete: false });
-    expect(await screen.findByText("The folder has no files to show.")).toBeVisible();
+    expect(
+      await screen.findByText("The folder has no files to show."),
+    ).toBeVisible();
     expect(screen.getByText("The folder listing is incomplete.")).toBeVisible();
   });
 
@@ -438,9 +482,13 @@ describe("untracked folders", () => {
     });
     renderChanges([]);
 
-    await userEvent.click(await screen.findByRole("button", { name: "Expand folder docs/" }));
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Expand folder docs/" }),
+    );
 
-    expect(await screen.findByRole("alert")).toHaveTextContent(/changed since this review/);
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      /changed since this review/,
+    );
     expect(screen.queryByText("docs/")).toBeNull();
   });
 });

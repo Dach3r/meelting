@@ -30,8 +30,13 @@ export function TaskDialog({
 }: Props) {
   const { t, locale } = useI18n();
   const { repositories, errorKey, loadBranches } = useRepositories();
-  const { busy, errorKey: saveErrorKey, createTask, updateTask, linkTask } =
-    useTaskSave();
+  const {
+    busy,
+    errorKey: saveErrorKey,
+    createTask,
+    updateTask,
+    linkTask,
+  } = useTaskSave();
   const [mode, setMode] = useState<"create" | "link">("create");
   const initial: TaskDraft = task
     ? {

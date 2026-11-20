@@ -67,8 +67,7 @@ export function TaskDetail({
   );
 
   function actionLabel(status: TaskStatus) {
-    const reopening =
-      task.status === "completed" || task.status === "canceled";
+    const reopening = task.status === "completed" || task.status === "canceled";
     return reopening ? t("tasks.actions.reopen") : t(`tasks.actions.${status}`);
   }
 
@@ -123,7 +122,12 @@ export function TaskDetail({
             {task.title}
           </h1>
           <div className="flex gap-2">
-            <Button type="button" variant="ghost" size="compact" onClick={onEdit}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="compact"
+              onClick={onEdit}
+            >
               <Pencil aria-hidden className="size-4" />
               {t("tasks.detail.edit")}
             </Button>
@@ -142,7 +146,10 @@ export function TaskDetail({
           </div>
         </div>
       </header>
-      <nav aria-label={t("tasks.actions.label")} className="flex flex-wrap gap-2">
+      <nav
+        aria-label={t("tasks.actions.label")}
+        className="flex flex-wrap gap-2"
+      >
         {nextStatuses[task.status].map((status) => (
           <Button
             key={status}
@@ -164,7 +171,9 @@ export function TaskDetail({
       >
         <p className="whitespace-pre-wrap break-words text-ink">
           {task.description || (
-            <span className="text-muted">{t("tasks.detail.noDescription")}</span>
+            <span className="text-muted">
+              {t("tasks.detail.noDescription")}
+            </span>
           )}
         </p>
         <dl className="grid gap-4 sm:grid-cols-2">

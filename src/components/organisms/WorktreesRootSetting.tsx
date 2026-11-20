@@ -34,12 +34,8 @@ export function WorktreesRootSetting() {
               ? t("settings.worktrees.custom")
               : t("settings.worktrees.default")}
           </p>
-          <code className="text-sm break-all text-ink">
-            {root.path}
-          </code>
-          <p
-            className={`text-sm ${root.issue ? "text-error" : "text-muted"}`}
-          >
+          <code className="text-sm break-all text-ink">{root.path}</code>
+          <p className={`text-sm ${root.issue ? "text-error" : "text-muted"}`}>
             {root.issue
               ? t(`settings.worktrees.issues.${root.issue}`)
               : t("settings.worktrees.ok")}

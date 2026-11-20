@@ -52,11 +52,7 @@ type Props = {
 };
 
 type Section =
-  | "general"
-  | "appearance"
-  | "notifications"
-  | "environments"
-  | "advanced";
+  "general" | "appearance" | "notifications" | "environments" | "advanced";
 
 const sectionOrder: Section[] = [
   "general",

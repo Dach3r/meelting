@@ -229,14 +229,19 @@ function Path({ entry }: { entry: ReviewEntry }) {
         {entry.path}
       </code>
       {entry.original_path && (
-        <span className="truncate text-xs text-muted" title={entry.original_path}>
+        <span
+          className="truncate text-xs text-muted"
+          title={entry.original_path}
+        >
           {translateWith(locale, "review.renamedFrom", {
             path: entry.original_path,
           })}
         </span>
       )}
       {entry.lossy_path && (
-        <span className="text-xs text-muted">{t("review.badges.lossyPath")}</span>
+        <span className="text-xs text-muted">
+          {t("review.badges.lossyPath")}
+        </span>
       )}
     </span>
   );

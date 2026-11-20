@@ -108,9 +108,7 @@ export function TaskEnvironment({
             </code>
           </Detail>
           <Detail label={t("tasks.environment.path")}>
-            <code className="text-sm break-all">
-              {worktree.path}
-            </code>
+            <code className="text-sm break-all">{worktree.path}</code>
           </Detail>
           <Detail label={t("tasks.detail.created")}>
             {formatDateTime(locale, worktree.created_at, timeFormat)}

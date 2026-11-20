@@ -2,10 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { useCallback, useEffect, useState } from "react";
 
 export type Availability =
-  | "available"
-  | "needs_setup"
-  | "unavailable"
-  | "needs_connection";
+  "available" | "needs_setup" | "unavailable" | "needs_connection";
 
 export type AgentAvailability = {
   agent_id: string;

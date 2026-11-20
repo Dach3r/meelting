@@ -161,7 +161,9 @@ export function TaskForm({
           disabled={
             busy ||
             draft.description.trim() === "" ||
-            (draft.repository_id !== null && branches === null && !branchErrorKey)
+            (draft.repository_id !== null &&
+              branches === null &&
+              !branchErrorKey)
           }
         >
           {editing ? t("tasks.form.submitEdit") : t("tasks.form.submitNew")}

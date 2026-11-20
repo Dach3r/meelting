@@ -24,7 +24,9 @@ export function useOpenAtLogin() {
     setBusy(true);
     setErrorKey(null);
     try {
-      setEnabled(await invoke<boolean>("change_open_at_login", { enabled: next }));
+      setEnabled(
+        await invoke<boolean>("change_open_at_login", { enabled: next }),
+      );
     } catch (error) {
       setErrorKey(String(error));
     } finally {

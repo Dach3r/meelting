@@ -15,8 +15,7 @@ export type Verification =
   | { status: "provider_busy" };
 
 export type KeyAttempt =
-  | { verification: Verification; last_four: string | null }
-  | { error: string };
+  { verification: Verification; last_four: string | null } | { error: string };
 
 function errorCode(error: unknown) {
   return typeof error === "string" ? error : "unknown";

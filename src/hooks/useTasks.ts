@@ -3,20 +3,12 @@ import { listen } from "@tauri-apps/api/event";
 import { useCallback, useEffect, useState } from "react";
 
 export type TaskStatus =
-  | "pending"
-  | "in_progress"
-  | "blocked"
-  | "completed"
-  | "canceled";
+  "pending" | "in_progress" | "blocked" | "completed" | "canceled";
 
 export type TaskPriority = "low" | "medium" | "high";
 
 export type WorktreeStatus =
-  | "preparing"
-  | "ready"
-  | "failed"
-  | "missing"
-  | "removing";
+  "preparing" | "ready" | "failed" | "missing" | "removing";
 
 export type Worktree = {
   id: string;
@@ -133,10 +125,11 @@ export function useTasks() {
 
   useEffect(() => {
     const unlisten = listen<Task>("task:updated", (event) =>
-      setTasks((current) =>
-        current?.map((task) =>
-          task.id === event.payload.id ? event.payload : task,
-        ) ?? null,
+      setTasks(
+        (current) =>
+          current?.map((task) =>
+            task.id === event.payload.id ? event.payload : task,
+          ) ?? null,
       ),
     );
     return () => {

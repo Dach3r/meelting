@@ -19,7 +19,9 @@ export function TaskBadges({
   const { t } = useI18n();
   return (
     <p className="flex flex-wrap items-center gap-2 text-xs font-semibold">
-      <span className={`rounded-full border px-2.5 py-0.5 ${statusTones[status]}`}>
+      <span
+        className={`rounded-full border px-2.5 py-0.5 ${statusTones[status]}`}
+      >
         {t(`tasks.status.${status}`)}
       </span>
       <span className="rounded-full border border-line px-2.5 py-0.5 text-muted">

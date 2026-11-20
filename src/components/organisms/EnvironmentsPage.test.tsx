@@ -134,9 +134,9 @@ describe("files", () => {
       .setup()
       .click(screen.getByRole("button", { name: /Payments/ }));
     expect(
-      within(screen.getByRole("complementary", { name: "Payments" })).queryByText(
-        "Copied files",
-      ),
+      within(
+        screen.getByRole("complementary", { name: "Payments" }),
+      ).queryByText("Copied files"),
     ).toBeNull();
   });
 

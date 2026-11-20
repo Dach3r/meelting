@@ -23,7 +23,9 @@ const tones: Record<DiffLineKind, string> = {
 
 export function hunkStarts(header: string) {
   const match = /^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/.exec(header);
-  return match ? { oldLine: Number(match[1]), newLine: Number(match[2]) } : null;
+  return match
+    ? { oldLine: Number(match[1]), newLine: Number(match[2]) }
+    : null;
 }
 
 type Props = { row: Row | null; state: DiffState | null };
@@ -84,7 +86,10 @@ function DiffBody({ diff, title }: { diff: FileDiff; title: string }) {
       )}
       {diff.hunks.length > 0 && (
         <div className="overflow-x-auto rounded-2xl border border-line bg-surface">
-          <table aria-label={title} className="w-full border-collapse font-mono text-xs select-text">
+          <table
+            aria-label={title}
+            className="w-full border-collapse font-mono text-xs select-text"
+          >
             {diff.hunks.map((hunk, index) => {
               const starts = hunkStarts(hunk.header);
               let oldLine = starts?.oldLine ?? 0;
@@ -101,8 +106,10 @@ function DiffBody({ diff, title }: { diff: FileDiff; title: string }) {
                     </th>
                   </tr>
                   {hunk.lines.map((line, lineIndex) => {
-                    const old = line.kind === "context" || line.kind === "removed";
-                    const next = line.kind === "context" || line.kind === "added";
+                    const old =
+                      line.kind === "context" || line.kind === "removed";
+                    const next =
+                      line.kind === "context" || line.kind === "added";
                     const oldNumber = old && starts ? oldLine++ : null;
                     const newNumber = next && starts ? newLine++ : null;
                     return (

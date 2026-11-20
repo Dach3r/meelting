@@ -36,7 +36,15 @@ const daily: Room = {
   name: "Daily",
   updated_at: "2026-11-18T10:00:00.000Z",
   finished_at: null,
-  agents: [{ id: "a1", name: "Ana", role: "QA Engineer", provider: "ollama", model: "llama3" }],
+  agents: [
+    {
+      id: "a1",
+      name: "Ana",
+      role: "QA Engineer",
+      provider: "ollama",
+      model: "llama3",
+    },
+  ],
 };
 const retro: Room = {
   id: "r2",
@@ -186,12 +194,28 @@ describe("creating a room", () => {
       list_rooms: () => ({ rooms: [], featured_messages: [] }),
       create_room: () => ({
         ...daily,
-        agents: [{ id: "a2", name: "Bob", role: "Software Developer", provider: "ollama", model: "llama3" }],
+        agents: [
+          {
+            id: "a2",
+            name: "Bob",
+            role: "Software Developer",
+            provider: "ollama",
+            model: "llama3",
+          },
+        ],
       }),
       get_room: () => ({
         room: {
           ...daily,
-          agents: [{ id: "a2", name: "Bob", role: "Software Developer", provider: "ollama", model: "llama3" }],
+          agents: [
+            {
+              id: "a2",
+              name: "Bob",
+              role: "Software Developer",
+              provider: "ollama",
+              model: "llama3",
+            },
+          ],
         },
         former_agents: [],
         messages: [],

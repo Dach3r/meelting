@@ -9,11 +9,7 @@ type Props = {
   actions: ReactNode;
 };
 
-export function EnvironmentDetail({
-  environment,
-  status,
-  actions,
-}: Props) {
+export function EnvironmentDetail({ environment, status, actions }: Props) {
   const { t, locale, timeFormat } = useI18n();
   const { worktree } = environment;
   const rows = [
@@ -41,14 +37,14 @@ export function EnvironmentDetail({
         {rows.map(([label, value], index) => {
           const edge = index === 0 ? "" : "border-t border-line";
           return (
-          <div key={label} className="contents">
-            <dt className={`${edge} bg-shell px-5 py-4 text-muted`}>
-              {label}
-            </dt>
-            <dd className={`${edge} px-5 py-4`}>
-              <code className="break-all text-ink">{value}</code>
-            </dd>
-          </div>
+            <div key={label} className="contents">
+              <dt className={`${edge} bg-shell px-5 py-4 text-muted`}>
+                {label}
+              </dt>
+              <dd className={`${edge} px-5 py-4`}>
+                <code className="break-all text-ink">{value}</code>
+              </dd>
+            </div>
           );
         })}
       </dl>

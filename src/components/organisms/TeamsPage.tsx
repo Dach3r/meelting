@@ -130,7 +130,10 @@ export function TeamsPage({
       )}
       {deleting && (
         <Modal
-          title={t(`teams.${deleting.kind}.deleteTitle`).replace("{name}", deleting.name)}
+          title={t(`teams.${deleting.kind}.deleteTitle`).replace(
+            "{name}",
+            deleting.name,
+          )}
           onClose={close}
           bare
           narrow
