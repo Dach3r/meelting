@@ -104,6 +104,7 @@ pub fn run() {
             commands::agent_runs::resolve_recipient,
             commands::agent_runs::check_agent_availability,
             commands::agent_runs::cancel_agent_run,
+            commands::agent_runs::stop_intervention,
             commands::provider_keys::list_provider_keys,
             commands::provider_keys::save_provider_key,
             commands::provider_keys::check_provider_key,

@@ -4,6 +4,7 @@ use crate::services::agent_run_cancel;
 use crate::services::agent_run_engine::{Emit, Engine, RunEvent};
 use crate::services::availability_check::{self, AgentAvailability};
 use crate::services::intervention_send::{self, Intervention, InterventionSent};
+use crate::services::intervention_stop;
 use crate::services::recipient_resolve;
 use crate::services::run_notice;
 use crate::services::session_load::SessionError;
@@ -101,4 +102,12 @@ pub async fn cancel_agent_run(
     run_id: String,
 ) -> Result<(), SessionError> {
     agent_run_cancel::run(&engine, &run_id).await
+}
+
+#[tauri::command]
+pub async fn stop_intervention(
+    engine: State<'_, Arc<Engine>>,
+    room_id: String,
+) -> Result<(), SessionError> {
+    intervention_stop::run(&engine, &room_id).await
 }

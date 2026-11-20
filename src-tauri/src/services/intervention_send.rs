@@ -33,7 +33,7 @@ pub struct Intervention<'a> {
 }
 
 enum Stored {
-    Run(Message, AgentRun),
+    Run(Message, AgentRun, Option<Vec<String>>),
     Repeated(Message, AgentRun),
     Nobody,
     Choose(ChoiceReason, Vec<String>),
@@ -66,10 +66,15 @@ pub async fn run(
         }
         Stored::Choose(reason, candidates) => Ok(InterventionSent::Choose { reason, candidates }),
         Stored::Repeated(message, run) => Ok(sent(engine, message, run)),
-        Stored::Run(message, run) => {
+        Stored::Run(message, run, round) => {
+            engine.registry.end_round(&run.room_id);
+            let is_round = round.is_some();
+            if let Some(pending) = round {
+                engine.registry.start_round(&run.room_id, pending);
+            }
             engine.emit(RunEvent::MessageCreated(message.clone()));
             engine.emit(RunEvent::Status(run.clone()));
-            engine.submit(run.clone());
+            engine.submit(run.clone(), is_round);
             Ok(sent(engine, message, run))
         }
     }
@@ -109,7 +114,7 @@ async fn store(
             .ok_or(SessionError::ClientRequestConflict)?;
         let other_agent = match intervention.selection {
             Selection::Agent(id) | Selection::Confirmed(id) => *id != existing.agent_id,
-            Selection::Auto(_) | Selection::Nobody => false,
+            Selection::Auto(_) | Selection::Nobody | Selection::Team => false,
         };
         if other_agent || request.body != body {
             return Err(SessionError::ClientRequestConflict);
@@ -122,7 +127,7 @@ async fn store(
         .filter(|(room, _)| room == room_id)
         .map(|(_, participant)| participant)
         .collect();
-    let agent_id = match recipient::resolve(
+    let (agent_id, round) = match recipient::resolve(
         intervention.selection,
         body,
         intervention.mention_ids,
@@ -132,11 +137,26 @@ async fn store(
     {
         Resolution::Nobody => return Ok(Stored::Nobody),
         Resolution::Choose { reason, candidates } => return Ok(Stored::Choose(reason, candidates)),
-        Resolution::Agent { agent_id } | Resolution::Proposed { agent_id } => agent_id,
+        Resolution::Agent { agent_id } | Resolution::Proposed { agent_id } => {
+            if agent_runs::has_active(&mut *transaction, room_id, &agent_id).await? {
+                return Err(SessionError::AgentBusy);
+            }
+            (agent_id, None)
+        }
+        Resolution::Round { agent_ids } => {
+            let mut idle = Vec::new();
+            for id in agent_ids {
+                if !agent_runs::has_active(&mut *transaction, room_id, &id).await? {
+                    idle.push(id);
+                }
+            }
+            if idle.is_empty() {
+                return Err(SessionError::AgentBusy);
+            }
+            let first = idle.remove(0);
+            (first, Some(idle))
+        }
     };
-    if agent_runs::has_active(&mut *transaction, room_id, &agent_id).await? {
-        return Err(SessionError::AgentBusy);
-    }
     let agent = agents::get(&mut *transaction, workspace_id, &agent_id)
         .await?
         .ok_or(SessionError::AgentNotFound)?;
@@ -163,7 +183,7 @@ async fn store(
     .await?;
     rooms::touch(&mut *transaction, room_id, &message.created_at).await?;
     transaction.commit().await?;
-    Ok(Stored::Run(message, run))
+    Ok(Stored::Run(message, run, round))
 }
 
 #[cfg(test)]

@@ -12,6 +12,7 @@ pub enum RunStatus {
     Queued,
     Running,
     Succeeded,
+    Passed,
     Failed,
 }
 
@@ -21,6 +22,7 @@ impl RunStatus {
             "queued" => Some(RunStatus::Queued),
             "running" => Some(RunStatus::Running),
             "succeeded" => Some(RunStatus::Succeeded),
+            "passed" => Some(RunStatus::Passed),
             "failed" => Some(RunStatus::Failed),
             _ => None,
         }
@@ -129,6 +131,12 @@ pub struct TokenChunk {
     pub attempt: i64,
     pub seq: u64,
     pub text: String,
+}
+
+pub fn is_pass(reply: &str) -> bool {
+    reply
+        .trim_matches(|character: char| !character.is_alphanumeric())
+        .eq_ignore_ascii_case("pass")
 }
 
 pub fn is_canonical_client_request_id(value: &str) -> bool {
@@ -250,11 +258,22 @@ mod tests {
     }
 
     #[test]
+    fn only_a_reply_that_is_just_pass_is_a_pass() {
+        for reply in ["PASS", "pass", " Pass. ", "\"PASS\"", "**PASS**"] {
+            assert!(is_pass(reply), "{reply}");
+        }
+        for reply in ["", "I will pass on this", "PASS, but one thing", "Passing"] {
+            assert!(!is_pass(reply), "{reply}");
+        }
+    }
+
+    #[test]
     fn parses_every_status() {
         for (text, status) in [
             ("queued", RunStatus::Queued),
             ("running", RunStatus::Running),
             ("succeeded", RunStatus::Succeeded),
+            ("passed", RunStatus::Passed),
             ("failed", RunStatus::Failed),
         ] {
             assert_eq!(RunStatus::parse(text), Some(status));

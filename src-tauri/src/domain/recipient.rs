@@ -4,12 +4,15 @@ use unicode_normalization::UnicodeNormalization;
 use unicode_normalization::char::is_combining_mark;
 
 const VOCATIVE_MAX_WORDS: usize = 4;
+pub const ROUND_BUDGET: usize = 4;
+const TEAM_WORDS: [&str; 5] = ["equipo", "team", "todos", "everyone", "all"];
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 #[serde(tag = "kind", content = "agent_id", rename_all = "snake_case")]
 pub enum Selection {
     Auto(Option<String>),
     Nobody,
+    Team,
     Agent(String),
     Confirmed(String),
 }
@@ -32,6 +35,9 @@ pub enum Resolution {
     Proposed {
         agent_id: String,
     },
+    Round {
+        agent_ids: Vec<String>,
+    },
     Choose {
         reason: ChoiceReason,
         candidates: Vec<String>,
@@ -50,6 +56,7 @@ pub fn resolve(
     let participates = |id: &str| participants.iter().any(|participant| participant.id == id);
     match selection {
         Selection::Nobody => Ok(Resolution::Nobody),
+        Selection::Team => Ok(round(participants)),
         Selection::Confirmed(id) if participates(id) => Ok(Resolution::Agent {
             agent_id: id.clone(),
         }),
@@ -71,6 +78,9 @@ pub fn resolve(
         Selection::Auto(proposed) => {
             let references = references(body, mention_ids, participants);
             let candidates = ordered(distinct(&references), participants);
+            if candidates.is_empty() && team_vocative(body) {
+                return Ok(round(participants));
+            }
             Ok(match candidates.as_slice() {
                 [] => match proposed {
                     Some(id) if participates(id) => Resolution::Proposed {
@@ -93,6 +103,23 @@ pub fn resolve(
             })
         }
     }
+}
+
+fn round(participants: &[Participant]) -> Resolution {
+    if participants.is_empty() {
+        return Resolution::Nobody;
+    }
+    Resolution::Round {
+        agent_ids: participants
+            .iter()
+            .take(ROUND_BUDGET)
+            .map(|participant| participant.id.clone())
+            .collect(),
+    }
+}
+
+fn team_vocative(body: &str) -> bool {
+    vocative(body).is_some_and(|head| TEAM_WORDS.contains(&head.as_str()))
 }
 
 fn references(
@@ -322,6 +349,44 @@ mod tests {
             choose(ChoiceReason::Several, &["be", "qa"])
         );
         assert_eq!(auto("@Bruno @backend"), agent("be"));
+    }
+
+    fn round_of(ids: &[&str]) -> Resolution {
+        Resolution::Round {
+            agent_ids: ids.iter().map(|id| id.to_string()).collect(),
+        }
+    }
+
+    #[test]
+    fn the_team_selection_makes_a_round_in_room_order() {
+        assert_eq!(
+            resolve(&Selection::Team, "What do you think?", &[], &room()),
+            Ok(round_of(&["be", "po", "qa"]))
+        );
+        assert_eq!(
+            resolve(&Selection::Team, "Anyone?", &[], &[]),
+            Ok(Resolution::Nobody)
+        );
+    }
+
+    #[test]
+    fn a_round_never_exceeds_the_budget() {
+        let crowd: Vec<Participant> = (0..6)
+            .map(|index| participant(&format!("a{index}"), &format!("Agent{index}"), "Dev"))
+            .collect();
+        assert_eq!(
+            resolve(&Selection::Team, "Hi", &[], &crowd),
+            Ok(round_of(&["a0", "a1", "a2", "a3"]))
+        );
+    }
+
+    #[test]
+    fn a_team_vocative_makes_a_round_unless_someone_is_mentioned() {
+        assert_eq!(auto("Equipo, ¿qué opinan?"), round_of(&["be", "po", "qa"]));
+        assert_eq!(auto("  Team: thoughts?"), round_of(&["be", "po", "qa"]));
+        assert_eq!(auto("Todos, a revisar"), round_of(&["be", "po", "qa"]));
+        assert_eq!(auto("@Bruno, team: thoughts?"), agent("be"));
+        assert_eq!(auto("The team is late"), Resolution::Nobody);
     }
 
     #[test]

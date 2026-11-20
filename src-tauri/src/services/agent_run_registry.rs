@@ -1,11 +1,12 @@
 use crate::domain::agent_run::{Partial, TokenChunk};
 use crate::domain::prompt::Prompt;
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::{Arc, Mutex, MutexGuard};
 use tokio_util::sync::CancellationToken;
 
 struct Entry {
     room_id: String,
+    round: bool,
     attempt: i64,
     seq: u64,
     text: String,
@@ -21,6 +22,7 @@ pub struct TooLong;
 pub struct Registry {
     entries: Mutex<HashMap<String, Entry>>,
     last_responders: Mutex<HashMap<String, String>>,
+    rounds: Mutex<HashMap<String, VecDeque<String>>>,
     unreachable_providers: Mutex<HashSet<String>>,
 }
 
@@ -65,12 +67,13 @@ impl Registry {
             .contains(provider)
     }
 
-    pub fn insert(&self, run_id: &str, room_id: &str) -> CancellationToken {
+    pub fn insert(&self, run_id: &str, room_id: &str, round: bool) -> CancellationToken {
         let cancel = CancellationToken::new();
         self.lock().insert(
             run_id.to_string(),
             Entry {
                 room_id: room_id.to_string(),
+                round,
                 attempt: 0,
                 seq: 0,
                 text: String::new(),
@@ -80,6 +83,29 @@ impl Registry {
             },
         );
         cancel
+    }
+
+    pub fn is_round(&self, run_id: &str) -> bool {
+        self.lock().get(run_id).is_some_and(|entry| entry.round)
+    }
+
+    fn lock_rounds(&self) -> MutexGuard<'_, HashMap<String, VecDeque<String>>> {
+        self.rounds
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+    }
+
+    pub fn start_round(&self, room_id: &str, pending: Vec<String>) {
+        self.lock_rounds()
+            .insert(room_id.to_string(), pending.into());
+    }
+
+    pub fn next_in_round(&self, room_id: &str) -> Option<String> {
+        self.lock_rounds().get_mut(room_id)?.pop_front()
+    }
+
+    pub fn end_round(&self, room_id: &str) {
+        self.lock_rounds().remove(room_id);
     }
 
     pub fn start_attempt(&self, run_id: &str, attempt: i64) {
@@ -160,11 +186,13 @@ impl Registry {
 
     pub fn cancel(&self, run_id: &str) {
         if let Some(entry) = self.lock().remove(run_id) {
+            self.end_round(&entry.room_id);
             entry.cancel.cancel();
         }
     }
 
     pub fn cancel_room(&self, room_id: &str) {
+        self.end_round(room_id);
         self.lock().retain(|_, entry| {
             let keep = entry.room_id != room_id;
             if !keep {
@@ -200,7 +228,7 @@ mod tests {
     #[test]
     fn groups_pushed_text_into_numbered_chunks_per_attempt() {
         let registry = Registry::default();
-        registry.insert("run1", "r1");
+        registry.insert("run1", "r1", false);
         registry.start_attempt("run1", 1);
 
         registry.push("run1", "Hel", 100).unwrap();
@@ -222,7 +250,7 @@ mod tests {
     #[test]
     fn the_snapshot_holds_only_text_already_sent_as_chunks() {
         let registry = Registry::default();
-        registry.insert("run1", "r1");
+        registry.insert("run1", "r1", false);
         registry.start_attempt("run1", 1);
         registry.push("run1", "sent", 100).unwrap();
         registry.flush("run1");
@@ -243,7 +271,7 @@ mod tests {
     #[test]
     fn a_new_attempt_empties_the_text_and_restarts_the_sequence() {
         let registry = Registry::default();
-        registry.insert("run1", "r1");
+        registry.insert("run1", "r1", false);
         registry.start_attempt("run1", 1);
         registry.push("run1", "first try", 100).unwrap();
         registry.flush("run1");
@@ -259,7 +287,7 @@ mod tests {
     #[test]
     fn never_holds_more_than_the_byte_limit() {
         let registry = Registry::default();
-        registry.insert("run1", "r1");
+        registry.insert("run1", "r1", false);
         registry.push("run1", "ñññ", 8).unwrap();
         registry.flush("run1");
 
@@ -271,9 +299,9 @@ mod tests {
     #[test]
     fn snapshots_are_isolated_by_room() {
         let registry = Registry::default();
-        registry.insert("run1", "r1");
-        registry.insert("run2", "r2");
-        registry.insert("run3", "r1");
+        registry.insert("run1", "r1", false);
+        registry.insert("run2", "r2", false);
+        registry.insert("run3", "r1", false);
 
         let runs: Vec<String> = registry
             .partials("r1")
@@ -288,9 +316,9 @@ mod tests {
     #[test]
     fn cancelling_fires_the_token_and_drops_the_buffer() {
         let registry = Registry::default();
-        let first = registry.insert("run1", "r1");
-        let second = registry.insert("run2", "r2");
-        let third = registry.insert("run3", "r2");
+        let first = registry.insert("run1", "r1", false);
+        let second = registry.insert("run2", "r2", false);
+        let third = registry.insert("run3", "r2", false);
 
         registry.cancel("run1");
         registry.cancel_room("r2");
@@ -304,7 +332,7 @@ mod tests {
     #[test]
     fn keeps_the_frozen_prompt_until_removed() {
         let registry = Registry::default();
-        registry.insert("run1", "r1");
+        registry.insert("run1", "r1", false);
         let prompt = Prompt {
             system: "s".into(),
             turns: vec![],

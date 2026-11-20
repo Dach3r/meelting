@@ -178,6 +178,25 @@ pub async fn succeed<'e>(
     .await
 }
 
+pub async fn pass<'e>(
+    executor: impl SqliteExecutor<'e>,
+    id: &str,
+    input_tokens: Option<i64>,
+    output_tokens: Option<i64>,
+) -> Result<Option<AgentRun>, sqlx::Error> {
+    one(
+        executor,
+        sqlx::query_as(sqlx::AssertSqlSafe(format!(
+            "UPDATE agent_runs SET status = 'passed', input_tokens = ?, output_tokens = ?, finished_at = {NOW} \
+             WHERE id = ? AND status = 'running' RETURNING {COLUMNS}"
+        )))
+        .bind(input_tokens)
+        .bind(output_tokens)
+        .bind(id.to_string()),
+    )
+    .await
+}
+
 pub async fn fail<'e>(
     executor: impl SqliteExecutor<'e>,
     id: &str,

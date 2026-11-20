@@ -33,7 +33,7 @@ pub async fn build(pool: &SqlitePool, run: &AgentRun) -> Result<Option<Notice>, 
                 Locale::En => "Could not reply",
             },
         ),
-        (RunStatus::Queued | RunStatus::Running, _) => return Ok(None),
+        (RunStatus::Queued | RunStatus::Running | RunStatus::Passed, _) => return Ok(None),
     };
     if !enabled {
         return Ok(None);
@@ -176,6 +176,7 @@ mod tests {
             (RunStatus::Failed, Some(ErrorKind::Expired)),
             (RunStatus::Running, None),
             (RunStatus::Queued, None),
+            (RunStatus::Passed, None),
         ] {
             assert_eq!(build(&pool, &run(status, kind, "a1")).await.unwrap(), None);
         }

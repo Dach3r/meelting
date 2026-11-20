@@ -55,8 +55,8 @@ impl Engine {
         }
     }
 
-    pub fn submit(self: &Arc<Self>, run: AgentRun) {
-        let cancel = self.registry.insert(&run.id, &run.room_id);
+    pub fn submit(self: &Arc<Self>, run: AgentRun, round: bool) {
+        let cancel = self.registry.insert(&run.id, &run.room_id, round);
         tokio::spawn(agent_run_execute::run(self.clone(), run, cancel));
     }
 }
@@ -221,6 +221,53 @@ pub mod testing {
             }
         }
 
+        pub async fn send_team(&self, body: &str) -> Sent {
+            match intervention_send::run(
+                &self.engine,
+                Intervention {
+                    room_id: &self.room_id,
+                    body,
+                    selection: &Selection::Team,
+                    mention_ids: &[],
+                    client_request_id: &Uuid::now_v7().to_string(),
+                },
+            )
+            .await
+            .unwrap()
+            {
+                InterventionSent::Sent {
+                    message,
+                    run: Some(run),
+                    partial,
+                } => Sent {
+                    message,
+                    run: *run,
+                    partial,
+                },
+                other => panic!("expected a run, got {other:?}"),
+            }
+        }
+
+        pub async fn settled_runs(&self, expected: usize) -> Vec<AgentRun> {
+            for _ in 0..1000 {
+                let runs = crate::repositories::agent_runs::for_room(
+                    &self.engine.pool,
+                    &self.room_id,
+                    1000,
+                )
+                .await
+                .unwrap();
+                let active = runs
+                    .iter()
+                    .any(|run| matches!(run.status, RunStatus::Queued | RunStatus::Running));
+                if runs.len() == expected && !active {
+                    return runs;
+                }
+                tokio::time::sleep(Duration::from_millis(10)).await;
+            }
+            panic!("the room never settled with {expected} runs");
+        }
+
         pub async fn run(&self, run_id: &str) -> AgentRun {
             crate::repositories::agent_runs::for_room(&self.engine.pool, &self.room_id, 1000)
                 .await
@@ -244,7 +291,10 @@ pub mod testing {
         pub async fn finished(&self, run_id: &str) -> AgentRun {
             let run = self
                 .wait_until(run_id, |run| {
-                    matches!(run.status, RunStatus::Succeeded | RunStatus::Failed)
+                    matches!(
+                        run.status,
+                        RunStatus::Succeeded | RunStatus::Passed | RunStatus::Failed
+                    )
                 })
                 .await;
             for _ in 0..200 {

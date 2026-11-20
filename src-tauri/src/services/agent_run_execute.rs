@@ -1,12 +1,13 @@
 use crate::catalogs::llm::{Location, Provider};
 use crate::domain::agent_run::{
-    AgentRun, ErrorKind, LocationLimits, NextStep, TOKEN_FLUSH, after_failure,
+    AgentRun, ErrorKind, LocationLimits, NextStep, TOKEN_FLUSH, after_failure, is_pass,
 };
 use crate::domain::locale::Locale;
 use crate::domain::prompt::{self, Author, Budget, HistoryMessage, Prompt, PromptInput};
 use crate::domain::provider_key;
 use crate::repositories::{agent_runs, agents, messages, profile, room_agents, rooms};
 use crate::services::agent_run_engine::{Engine, RunEvent};
+use crate::services::round_advance;
 use crate::system::llm_stream::{Failure, StreamRequest, Usage};
 use crate::system::{keychain, llm_call};
 use std::collections::HashMap;
@@ -285,6 +286,13 @@ async fn load_context(
             body: message.body,
         })
         .collect();
+    let request_from = request.agent_id.as_ref().and_then(|id| {
+        participants
+            .iter()
+            .chain(&former)
+            .find(|participant| participant.id == *id)
+            .map(|participant| (participant.name.clone(), participant.role.clone()))
+    });
     Ok(Some(PromptInput {
         agent_name: agent.name,
         agent_role: agent.role,
@@ -294,6 +302,8 @@ async fn load_context(
         locale,
         history,
         request: request.body,
+        request_from,
+        round: engine.registry.is_round(&run.id),
     }))
 }
 
@@ -304,7 +314,7 @@ async fn read_key(pool: &sqlx::SqlitePool, run: &AgentRun) -> Option<String> {
         .flatten()
 }
 
-async fn complete(engine: &Engine, run: &AgentRun, usage: Usage) {
+async fn complete(engine: &Arc<Engine>, run: &AgentRun, usage: Usage) {
     let Some(text) = engine.registry.full_text(&run.id) else {
         return;
     };
@@ -312,12 +322,28 @@ async fn complete(engine: &Engine, run: &AgentRun, usage: Usage) {
     if body.is_empty() {
         return finish_failed(engine, &run.id, ErrorKind::InvalidResponse).await;
     }
+    if engine.registry.is_round(&run.id) && is_pass(body) {
+        let passed = agent_runs::pass(
+            &engine.pool,
+            &run.id,
+            usage.input_tokens,
+            usage.output_tokens,
+        )
+        .await;
+        engine.registry.remove(&run.id);
+        if let Ok(Some(passed)) = passed {
+            engine.emit(RunEvent::Status(passed));
+            round_advance::run(engine, &run.room_id).await;
+        }
+        return;
+    }
     match commit_success(engine, run, body, usage).await {
         Ok(Some((message, done))) => {
             engine.registry.remove(&run.id);
             engine.registry.responded(&run.room_id, &run.agent_id);
             engine.emit(RunEvent::MessageCreated(message));
             engine.emit(RunEvent::Status(done));
+            round_advance::run(engine, &run.room_id).await;
         }
         _ => engine.registry.remove(&run.id),
     }
@@ -354,11 +380,13 @@ async fn commit_success(
     Ok(Some((message, done)))
 }
 
-async fn finish_failed(engine: &Engine, run_id: &str, kind: ErrorKind) {
+async fn finish_failed(engine: &Arc<Engine>, run_id: &str, kind: ErrorKind) {
     let failed = agent_runs::fail(&engine.pool, run_id, kind).await;
     engine.registry.remove(run_id);
     if let Ok(Some(failed)) = failed {
+        let room_id = failed.room_id.clone();
         engine.emit(RunEvent::Status(failed));
+        round_advance::run(engine, &room_id).await;
     }
 }
 

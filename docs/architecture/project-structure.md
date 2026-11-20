@@ -31,7 +31,7 @@ src-tauri/src/
 ├── lib.rs                 Tauri builder, single-instance, window state and dialog plugins, run expiry and worktree recovery at startup, an hourly purge of environments 30 days in the trash, execution engine and repository locks as state, and command registration
 ├── commands/              Layer 1: Tauri commands (thin)
 │   ├── provider_keys.rs   ✅ list_provider_keys, save_provider_key, check_provider_key, delete_provider_key (take only the provider; the core resolves the workspace)
-│   ├── agent_runs.rs      ✅ send_intervention, resolve_recipient, check_agent_availability, cancel_agent_run and the engine's event emitter (agent_run:status, agent_run:token, message:created)
+│   ├── agent_runs.rs      ✅ send_intervention, resolve_recipient, check_agent_availability, cancel_agent_run, stop_intervention and the engine's event emitter (agent_run:status, agent_run:token, message:created)
 │   ├── dialog.rs          ✅ native folder and multiple-file dialogs opened from Rust (`tauri-plugin-dialog`); the webview never sends a path
 │   ├── app_settings.rs    ✅ get_open_at_login, change_open_at_login (OS login item through `tauri-plugin-autostart`), open_data_folder (`tauri-plugin-opener`)
 │   ├── repositories.rs    ✅ list_repositories, register_repository (folder dialog; `None` if cancelled), unregister_repository, list_repository_branches
@@ -101,6 +101,8 @@ src-tauri/src/
 │   ├── agent_run_execute.rs ✅ a run's task: slot wait, claim, frozen context, adapter call, tokens batched every 50 ms, retries with the slot released, maximum duration, atomic success and failures
 │   ├── agent_run_registry.rs ✅ in-memory registry of accepted runs (attempt text bounded by L1, sequence, frozen prompt and cancellation token), last agent that replied in each room (D19) and providers whose last connection failed
 │   ├── agent_run_cancel.rs ✅ idempotent cancellation filtered by workspace
+│   ├── round_advance.rs   ✅ queues the next turn of a team round when the previous run ends (succeeded, passed or failed), skipping agents that left, are busy or were deleted
+│   ├── intervention_stop.rs ✅ stop_intervention: discards the pending turns, cancels the active runs of the room and emits their final state
 │   ├── agent_runs_expire.rs ✅ expires queued and running runs at startup
 │   ├── canvas_positions_save.rs ✅ saves the org chart positions of teams and agents of the current workspace
 │   ├── canvas_positions_reset.rs ✅ deletes the org chart positions of the current workspace and returns the updated list
@@ -140,7 +142,7 @@ src-tauri/src/
 │   └── agent_runs.rs      ✅ agent_runs queries and guarded transitions, and the schema integrity tests
 ├── domain/                Pure models and logic, no I/O
 │   ├── agent_run.rs       ✅ states, error_kind, run, snapshot, injectable internal limits and retry policy
-│   ├── recipient.rs       ✅ recipient resolution: selection (automatic, nobody, agent, confirmed), @ mentions by name or role ignoring case and accents, leading vocative, ambiguity, multiple agents and conflict
+│   ├── recipient.rs       ✅ recipient resolution: selection (automatic, nobody, team, agent, confirmed), the team round (up to 4 agents in room order) and the team vocative («equipo», «team», «todos»), @ mentions by name or role ignoring case and accents, leading vocative, ambiguity, multiple agents and conflict
 │   ├── prompt.rs          ✅ BuildPrompt: instructions, framing, labeled history (author and, in the user's questions, the agent they were addressed to) and budget; context_too_large if the minimum does not fit
 │   ├── provider_error.rs  ✅ normalization of provider errors by HTTP status and code
 │   ├── provider_key.rs    ✅ keychain name of a provider key (`<workspace_id>/<provider>`), key format validation and the verification result (verified, rejected, offline, provider_busy)
