@@ -100,7 +100,7 @@
 - The write walks from the root with held handles and never follows a link (`openat` + `O_NOFOLLOW` on Unix, held folder handles plus reparse-point checks on Windows), writes a temporary file `.meelting-<uuid>.tmp` in the same folder, syncs it and renames it over the target. A symbolic link or folder at the target is refused; a hard link is replaced by a new file, so a file outside the worktree hard-linked into it is never modified. The existing permission bits are kept (new files `0644`); on failure the temporary file is removed.
 - **Audit:** the model still receives its full arguments back in the history, but the `tool_calls` row stores only the path and the byte size of each text field (`content_bytes`, `old_text_bytes`, `new_text_bytes`), so written content is never persisted and the 4096-byte `arguments` limit (D53) holds without a schema change. The streaming cap per call is 192 KiB for every tool (to fit an escaped 64 KiB content); read tools keep their 4096-byte limit, checked after parsing.
 - The prompt for an enabled run now says the agent can inspect and change files, but cannot run commands or commit.
-- **Windows:** the write path is reviewed and compiled by CI only; it has not been run from here.
+- **Windows:** the write tests (folder creation, no leftover temporary file, folders never replaced, the loop's write and edit audit) pass on Windows CI (2026-11-20, `main`); links and hard links are tested on Unix only.
 
 **Pending for 5B:** `run_command`, `git_commit`, the `approvals` table (proposal in [approvals-proposal.md](approvals-proposal.md), not approved), timeouts and process cleanup for commands.
 
