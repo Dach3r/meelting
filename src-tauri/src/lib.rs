@@ -139,3 +139,22 @@ pub fn run() {
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn the_webview_gets_only_the_core_permissions_and_no_file_or_shell_access() {
+        let capability: serde_json::Value =
+            serde_json::from_str(include_str!("../capabilities/default.json")).unwrap();
+
+        assert_eq!(capability["windows"], serde_json::json!(["main"]));
+        assert_eq!(
+            capability["permissions"],
+            serde_json::json!(["core:default"])
+        );
+        let capabilities = std::fs::read_dir(concat!(env!("CARGO_MANIFEST_DIR"), "/capabilities"))
+            .unwrap()
+            .count();
+        assert_eq!(capabilities, 1);
+    }
+}
