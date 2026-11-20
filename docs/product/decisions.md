@@ -45,7 +45,7 @@ Context: [voice-meetings.md](voice-meetings.md), [conversation-engine.md](../arc
 | P3 | A new intervention while runs from the previous one are active | Cancel them (user priority and cost) | R2 |
 | P4 | Is the transcription sent automatically? | Yes if the recipient is resolved; otherwise it stays as a draft | R4 |
 | P6 | Does the limit of 4 also apply to "Team"? | Yes: a single budget per intervention | R2 |
-| P7 | "Pass" mechanism and `succeeded` without a message | Decide in R2. If approved, it requires rebuilding `agent_runs` (SQLite does not allow changing a `CHECK` without copying the table) | R2 |
+| P7 | "Pass" mechanism and `succeeded` without a message | Resolved by D51: a `passed` status in `agent_runs`, with no message | R2 |
 | P8 | How a discussion is requested | Explicit "Discussion" recipient + localized list of verbs | R2 |
 | P9 | Scope of `settings` (global or per workspace) for the coordinator model and engines | Per workspace for what uses keys; global for devices | R2 |
 | P10 | Can agents ask for another agent to take part? | Not in the MVP; later, as a suggestion the user accepts | R2+ |
@@ -150,6 +150,7 @@ Context: [tasks.md](tasks.md).
 | # | Decision | Rationale | Discarded alternatives |
 |---|---|---|---|
 | D50 | **Settings reorganized into a flat list of sections with one card per group of settings, and five new global preferences in `profile`** (`time_format`, `reduce_motion`, `notify_run_succeeded`, `notify_run_failed`, `notify_sound`) added by **one** migration, `add_preferences_to_profile` (an explicit exception to one file per column). **Open at login** is read from and written to the operating system through `tauri-plugin-autostart` with no column; notifications are sent from the core with `tauri-plugin-notification` when a run ends `succeeded` or `failed` and the window is not focused; **Data folder** is opened from the core with `tauri-plugin-opener`. Provider keys stay in their own view (D26). Specification in [settings.md](settings.md) | The structure grows by adding a setting, a group or a section; the OS owns the login item so there is nothing to drift; a notification needs no user mention because mentions go from the user to agents, so «Run failed» replaces «Mentions» | Per-workspace settings; keyboard shortcuts (none exist yet); density (overlaps interface size and touches every component's spacing); quiet hours; debug log (no logging infrastructure); «Reset settings» and «Clear history» (no destructive actions for now); moving provider keys into Settings; one migration per column |
+| D51 | **`agent_runs` rebuilt for rounds (R2a):** unique `(request_message_id, agent_id)` and `(room_id, client_request_id, agent_id)` replace the per-message and per-room uniqueness, and a final `passed` status (no message, no error) lets an agent decline to answer. The round, the budget of 4 and "Stop" stay in memory (P1) | One intervention can create several runs and an agent can listen without speaking, without a message that pollutes the history | Table rebuild (one transaction, tested over data); a `passed` run is not a failure, and the UI and the code must not treat it as one | A `succeeded` run with an empty message; a persisted `intervention_id` |
 
 ### Risks and dependencies
 

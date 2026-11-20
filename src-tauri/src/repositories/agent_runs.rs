@@ -427,6 +427,46 @@ mod tests {
                 true,
             ),
             (
+                "passed without a response",
+                vec![
+                    ("status", "'passed'"),
+                    ("attempts", "1"),
+                    ("started_at", T1),
+                    ("finished_at", T2),
+                ],
+                true,
+            ),
+            (
+                "passed with a response",
+                [succeeded.to_vec(), vec![("status", "'passed'")]].concat(),
+                false,
+            ),
+            (
+                "passed without finished_at",
+                vec![
+                    ("status", "'passed'"),
+                    ("attempts", "1"),
+                    ("started_at", T1),
+                ],
+                false,
+            ),
+            (
+                "passed without attempts",
+                vec![("status", "'passed'"), ("finished_at", T2)],
+                false,
+            ),
+            (
+                "passed with error kind",
+                vec![
+                    ("status", "'passed'"),
+                    ("error_kind", "'timeout'"),
+                    ("attempts", "1"),
+                    ("started_at", T1),
+                    ("finished_at", T2),
+                ],
+                false,
+            ),
+            (
                 "cancelled while queued",
                 vec![
                     ("status", "'failed'"),
@@ -672,16 +712,27 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn client_request_ids_are_unique_per_room() {
+    async fn client_request_ids_are_unique_per_room_and_agent() {
         let (pool, _dir) = seeded().await;
         exec(&pool, &run(&[])).await.unwrap();
+        exec(
+            &pool,
+            &format!(
+                "UPDATE agent_runs SET status = 'failed', error_kind = 'cancelled', finished_at = {T2}"
+            ),
+        )
+        .await
+        .unwrap();
 
-        let same_room = run(&[
-            ("id", "'run2'"),
+        let same_agent = run(&[("id", "'run2'"), ("request_message_id", "'u2'")]);
+        assert!(exec(&pool, &same_agent).await.is_err());
+
+        let other_agent = run(&[
+            ("id", "'run4'"),
             ("agent_id", "'a2'"),
             ("request_message_id", "'u2'"),
         ]);
-        assert!(exec(&pool, &same_room).await.is_err());
+        exec(&pool, &other_agent).await.unwrap();
 
         let other_room = run(&[
             ("id", "'run3'"),
@@ -729,7 +780,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn requests_and_responses_belong_to_a_single_run() {
+    async fn a_response_belongs_to_a_single_run_and_a_request_to_a_single_run_per_agent() {
         let (pool, _dir) = seeded().await;
         let finished = |id: &'static str, client: &'static str, request: &'static str| {
             run(&[
@@ -753,15 +804,26 @@ mod tests {
         let reused_response = finished("'run2'", "'0196f3a0-0000-7000-8000-000000000002'", "'u2'");
         assert!(exec(&pool, &reused_response).await.is_err());
 
-        let reused_request = run(&[
+        let same_agent_request = run(&[
             ("id", "'run3'"),
             (
                 "client_request_id",
                 "'0196f3a0-0000-7000-8000-000000000003'",
             ),
-            ("agent_id", "'a2'"),
+            ("request_message_id", "'u1'"),
         ]);
-        assert!(exec(&pool, &reused_request).await.is_err());
+        assert!(exec(&pool, &same_agent_request).await.is_err());
+
+        let other_agent_request = run(&[
+            ("id", "'run4'"),
+            (
+                "client_request_id",
+                "'0196f3a0-0000-7000-8000-000000000004'",
+            ),
+            ("agent_id", "'a2'"),
+            ("request_message_id", "'u1'"),
+        ]);
+        exec(&pool, &other_agent_request).await.unwrap();
     }
 
     #[tokio::test]
@@ -984,6 +1046,67 @@ mod tests {
             .unwrap();
         assert_eq!(integrity, "ok");
         assert_eq!(count(&pool, "SELECT COUNT(*) FROM messages").await, 8);
+    }
+
+    #[tokio::test]
+    async fn rebuilding_the_runs_keeps_the_existing_ones() {
+        let dir = tempfile::tempdir().unwrap();
+        let options = sqlx::sqlite::SqliteConnectOptions::new()
+            .filename(dir.path().join("test.db"))
+            .create_if_missing(true)
+            .foreign_keys(true);
+        let pool = SqlitePool::connect_with(options).await.unwrap();
+        let full: Migrator = sqlx::migrate!("./migrations");
+        let mut before = sqlx::migrate!("./migrations");
+        before.migrations = Cow::Owned(
+            full.migrations
+                .iter()
+                .filter(|migration| migration.version < 20261129000001)
+                .cloned()
+                .collect(),
+        );
+        before.run(&pool).await.unwrap();
+        for sql in SEED {
+            sqlx::query(sql).execute(&pool).await.unwrap();
+        }
+        exec(&pool, &run(&[])).await.unwrap();
+        exec(
+            &pool,
+            &run(&[
+                ("id", "'run2'"),
+                ("agent_id", "'a2'"),
+                ("request_message_id", "'u2'"),
+                (
+                    "client_request_id",
+                    "'0196f3a0-0000-7000-8000-000000000002'",
+                ),
+                ("status", "'succeeded'"),
+                ("attempts", "1"),
+                ("started_at", T1),
+                ("finished_at", T2),
+                ("response_message_id", "'g2'"),
+            ]),
+        )
+        .await
+        .unwrap();
+
+        full.run(&pool).await.unwrap();
+
+        assert_eq!(count(&pool, "SELECT COUNT(*) FROM agent_runs").await, 2);
+        assert_eq!(
+            count(
+                &pool,
+                "SELECT COUNT(*) FROM agent_runs WHERE id = 'run2' AND response_message_id = 'g2' AND status = 'succeeded'"
+            )
+            .await,
+            1
+        );
+        assert_eq!(foreign_key_violations(&pool).await, 0);
+        let integrity: String = sqlx::query_scalar("PRAGMA integrity_check")
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+        assert_eq!(integrity, "ok");
     }
 }
 

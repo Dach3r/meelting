@@ -91,9 +91,9 @@ CREATE INDEX agent_runs_room_id_agent_id ON agent_runs (room_id, agent_id);
 | The request belongs to the same room | FK `(request_message_id, room_id) → messages (id, room_id)` | Request from another room: rejected |
 | The response belongs to the same room and **to the agent that ran** | FK `(response_message_id, room_id, agent_id) → messages (id, room_id, agent_id)`; not checked when `response_message_id` is null | Response from another room, another agent or a user message: rejected |
 | No run reuses another run's response | `response_message_id UNIQUE` | Reuse: rejected |
-| Only one run per request message in this cut | `request_message_id UNIQUE` | — |
+| One run per request message **and agent** (R2a; it was one per message) | Unique `(request_message_id, agent_id)` | Same agent twice: rejected; another agent: accepted |
 | The request is a **user** message | **Not expressible** without changing `messages` or using triggers (an FK cannot require `agent_id IS NULL` on the parent). Guaranteed by `send_instruction`, the only creator of runs, because it inserts the user message itself in the same transaction. Dedicated test | An agent message as request: the database accepts it; the service prevents it |
-| Idempotency | Unique `(room_id, client_request_id)`; lowercase UUID | Same id in the same room: rejected |
+| Idempotency | Unique `(room_id, client_request_id, agent_id)` (R2a); lowercase UUID | Same id, room and agent: rejected; another agent: accepted |
 | One active run per agent and room | Unique partial index | Two active: rejected |
 | No `queued` without attempts left | `CHECK (status <> 'queued' OR attempts < 3)` | `queued` with 3 attempts: rejected |
 | Consistency of status, error and response | `failed` ⇔ `error_kind`; `succeeded` ⇔ `response_message_id`; final ⇔ `finished_at` | `failed` without error, `queued` with error, `succeeded` without response, `failed` with response, `running` with `finished_at`, unknown `error_kind`: rejected |
@@ -113,7 +113,7 @@ CREATE INDEX agent_runs_room_id_agent_id ON agent_runs (room_id, agent_id);
 
 **What is not ported from Rails** (no consumer): `user_id`, `updated_at`, `finish_reason` (derived from the status and the `error_kind`), `response_model`, `cached_input_tokens` and `provider_request_id`. If a screen needs them, they are proposed with their own `add_<column>_to_agent_runs`.
 
-**Dependency on the conversation engine (no anticipatory structures):** the one-run-per-message constraint holds for the directed MVP. When an intervention can produce several runs (R2), a separate proposal will have to review: the unique indexes on `request_message_id` and `client_request_id` (index-only migration), the `send_instruction` contract (who creates the following runs and with which id), authorization (only the coordinator, starting from a user intervention) and, if "pass" (P7) is approved, the `succeeded` `CHECK`, which forces rebuilding the table.
+**Rounds (R2a, migration `rebuild_agent_runs_for_rounds`, D51):** the table was rebuilt (copy, drop, rename) so that one intervention can produce several runs and an agent can decline to answer. `request_message_id UNIQUE` became unique `(request_message_id, agent_id)`; the unique `(room_id, client_request_id)` became unique `(room_id, client_request_id, agent_id)`; and the status `passed` was added: final, with `finished_at`, at least one attempt, no `error_kind` and no `response_message_id`. The `succeeded` ⇔ `response_message_id` rule is unchanged. Existing rows are copied as they are (checked in `cargo test` over a database with runs). Still pending for R2a: the code that creates several runs per intervention and the code that produces `passed`. Until then `RunStatus` has no `Passed`, `find_by_client_request` still returns a single run, and the service creates one run per message. The round, the budget of 4 and "Stop" stay in memory (P1).
 
 ## 3. `send_instruction` contract and idempotency (A2)
 
@@ -517,7 +517,7 @@ The `stream_completion` spike and its service are removed in the same change tha
 
 - **Schema** (`cargo test` with a temporary SQLite; the 45 already verified cases are ported):
   - each FK of §2.3 (request and response from another room or workspace, response from another agent or from the user, non-participant agent);
-  - uniqueness of `request_message_id`, `response_message_id` and `(room_id, client_request_id)`;
+  - uniqueness of `(request_message_id, agent_id)`, `response_message_id` and `(room_id, client_request_id, agent_id)`;
   - the partial index;
   - each `CHECK` on status, error, dates and attempts;
   - deleting the room, also with an active run (no leftovers);
