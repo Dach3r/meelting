@@ -205,7 +205,7 @@ async fn execute(session: &Session<'_>, state: &mut State, call: &Call) -> Resul
     state.position += 1;
     let row_id = Uuid::now_v7().to_string();
     let pool = &session.engine.pool;
-    let (arguments, request) = match &call.prepared {
+    let (audit, request) = match &call.prepared {
         Prepared::Rejected { named } => {
             tool_calls::insert_rejected(
                 pool,
@@ -227,7 +227,7 @@ async fn execute(session: &Session<'_>, state: &mut State, call: &Call) -> Resul
             state.executed = true;
             return Ok(error_text("invalid_arguments"));
         }
-        Prepared::Audited { arguments, request } => (arguments, request),
+        Prepared::Audited { audit, request, .. } => (audit, request),
     };
     tool_calls::insert_running(
         pool,
@@ -242,7 +242,7 @@ async fn execute(session: &Session<'_>, state: &mut State, call: &Call) -> Resul
             position: state.position,
             provider_call_id: &call.id,
             tool: &call.name,
-            arguments,
+            arguments: audit,
         },
     )
     .await
@@ -964,6 +964,80 @@ mod tests {
         .await
         .unwrap();
         assert!(!persisted.contains("alpha") && !persisted.contains("needle line"));
+    }
+
+    #[tokio::test]
+    async fn writes_and_edits_files_and_audits_only_their_sizes() {
+        let rig = rig().await;
+        std::fs::write(rig.root.path().join("src/a.txt"), "one\ntwo\n").unwrap();
+        let server = model(vec![
+            calls_turn(&[
+                (
+                    "c1",
+                    "write_file",
+                    r#"{"path":"src/new/b.txt","content":"secret body\n"}"#,
+                ),
+                (
+                    "c2",
+                    "edit_file",
+                    r#"{"path":"src/a.txt","old_text":"two","new_text":"changed text"}"#,
+                ),
+                ("c3", "write_file", r#"{"path":".env","content":"X=1"}"#),
+                (
+                    "c4",
+                    "edit_file",
+                    r#"{"path":"src/a.txt","old_text":"absent","new_text":""}"#,
+                ),
+            ]),
+            chat(&["done"]),
+        ])
+        .await;
+
+        let outcome = drive_run(&rig, &server, &CancellationToken::new()).await;
+
+        assert!(matches!(outcome, Outcome::Final { .. }));
+        let root = rig.root.path();
+        assert_eq!(
+            std::fs::read_to_string(root.join("src/new/b.txt")).unwrap(),
+            "secret body\n"
+        );
+        assert_eq!(
+            std::fs::read_to_string(root.join("src/a.txt")).unwrap(),
+            "one\nchanged text\n"
+        );
+        assert_eq!(
+            std::fs::read_to_string(root.join(".env")).unwrap(),
+            "SECRET=1"
+        );
+        let stored = rows(&rig).await;
+        let summary: Vec<_> = stored
+            .iter()
+            .map(|row| (row.1.as_str(), row.2.as_str(), row.3.as_deref()))
+            .collect();
+        assert_eq!(
+            summary,
+            vec![
+                ("write_file", "succeeded", None),
+                ("edit_file", "succeeded", None),
+                ("write_file", "failed", Some("path_protected")),
+                ("edit_file", "failed", Some("no_match")),
+            ]
+        );
+        let persisted: Vec<String> =
+            sqlx::query_scalar("SELECT arguments FROM tool_calls ORDER BY position")
+                .fetch_all(&rig.harness.engine.pool)
+                .await
+                .unwrap();
+        assert_eq!(
+            persisted[..2],
+            [
+                r#"{"content_bytes":12,"path":"src/new/b.txt"}"#,
+                r#"{"new_text_bytes":12,"old_text_bytes":3,"path":"src/a.txt"}"#,
+            ]
+        );
+        let requests = server.received_requests().await.unwrap();
+        let second = String::from_utf8_lossy(&requests[1].body).to_string();
+        assert!(second.contains("secret body"));
     }
 
     #[tokio::test]

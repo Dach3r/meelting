@@ -1,5 +1,5 @@
 use crate::domain::agent_run::ErrorKind;
-use crate::domain::tools::{Definition, MAX_ARGUMENT_BYTES};
+use crate::domain::tools::{Definition, MAX_WRITE_ARGUMENT_BYTES};
 use crate::system::llm_stream::{
     self, Failure, OnText, StreamRequest, Usage, parse, stream_error, tokens,
 };
@@ -183,7 +183,7 @@ fn collect(calls: &mut BTreeMap<usize, RawCall>, fragments: &Value) -> Result<()
 }
 
 fn append(call: &mut RawCall, text: &str) {
-    if call.oversized || call.arguments.len() + text.len() > MAX_ARGUMENT_BYTES {
+    if call.oversized || call.arguments.len() + text.len() > MAX_WRITE_ARGUMENT_BYTES {
         call.oversized = true;
         call.arguments.clear();
     } else {
@@ -405,7 +405,7 @@ mod tests {
 
     #[tokio::test]
     async fn arguments_beyond_the_audit_limit_are_flagged_and_not_kept() {
-        let long = "a".repeat(MAX_ARGUMENT_BYTES);
+        let long = "a".repeat(MAX_WRITE_ARGUMENT_BYTES);
         let first = format!(
             r#"{{"index":0,"id":"a","function":{{"name":"list_dir","arguments":"{{\"path\":\"{long}"}}}}"#
         );

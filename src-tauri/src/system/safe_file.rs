@@ -233,6 +233,52 @@ mod platform {
         use std::os::unix::fs::PermissionsExt;
         Ok(file.metadata()?.permissions().mode())
     }
+
+    pub fn replace(root: &Path, relative: &str, content: &[u8]) -> Result<(), SafeFileError> {
+        use std::io::Write;
+        use std::os::unix::fs::PermissionsExt;
+        let (dir, last) = walk(root, relative, true)?;
+        let mode = match open_at(&dir, last, libc::O_RDONLY | libc::O_NONBLOCK, 0) {
+            Ok(existing) => {
+                let metadata = File::from(existing).metadata()?;
+                if !metadata.is_file() {
+                    return Err(SafeFileError::NotAFile);
+                }
+                metadata.permissions().mode() & 0o777
+            }
+            Err(SafeFileError::Io(error)) if error.kind() == io::ErrorKind::NotFound => 0o644,
+            Err(error) => return Err(error),
+        };
+        let temporary = super::temporary_name();
+        let flags = libc::O_WRONLY | libc::O_CREAT | libc::O_EXCL;
+        let mut file = File::from(open_at(&dir, &temporary, flags, 0o600)?);
+        let c_temporary = name(&temporary)?;
+        let c_last = name(last)?;
+        let written = file
+            .set_permissions(std::fs::Permissions::from_mode(mode))
+            .and_then(|_| file.write_all(content))
+            .and_then(|_| file.sync_all())
+            .and_then(|_| {
+                let renamed = unsafe {
+                    libc::renameat(
+                        dir.as_raw_fd(),
+                        c_temporary.as_ptr(),
+                        dir.as_raw_fd(),
+                        c_last.as_ptr(),
+                    )
+                };
+                if renamed == 0 {
+                    Ok(())
+                } else {
+                    Err(io::Error::last_os_error())
+                }
+            });
+        if let Err(error) = written {
+            unsafe { libc::unlinkat(dir.as_raw_fd(), c_temporary.as_ptr(), 0) };
+            return Err(classify(error));
+        }
+        Ok(())
+    }
 }
 
 #[cfg(windows)]
@@ -393,12 +439,62 @@ mod platform {
             })
     }
 
+    pub fn replace(root: &Path, relative: &str, content: &[u8]) -> Result<(), SafeFileError> {
+        use std::io::Write;
+        let mut path = root.to_path_buf();
+        let mut held = vec![hold(&path)?];
+        let mut parts: Vec<&str> = relative.split('/').collect();
+        let last = parts.pop().ok_or(SafeFileError::NotAFile)?;
+        for part in parts {
+            path.push(part);
+            let folder = match hold(&path) {
+                Err(SafeFileError::Io(error)) if error.kind() == std::io::ErrorKind::NotFound => {
+                    std::fs::create_dir(&path)?;
+                    hold(&path)?
+                }
+                other => other?,
+            };
+            held.push(folder);
+        }
+        let temporary = path.join(super::temporary_name());
+        path.push(last);
+        match std::fs::symlink_metadata(&path) {
+            Ok(metadata) if metadata.file_attributes() & FILE_ATTRIBUTE_REPARSE_POINT != 0 => {
+                return Err(SafeFileError::SymbolicLink);
+            }
+            Ok(metadata) if !metadata.is_file() => return Err(SafeFileError::NotAFile),
+            Ok(_) => {}
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+            Err(error) => return Err(error.into()),
+        }
+        let written = OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .custom_flags(FILE_FLAG_OPEN_REPARSE_POINT)
+            .open(&temporary)
+            .and_then(|mut file| {
+                file.write_all(content)?;
+                file.sync_all()
+            })
+            .and_then(|_| std::fs::rename(&temporary, &path));
+        drop(held);
+        if let Err(error) = written {
+            let _ = std::fs::remove_file(&temporary);
+            return Err(error.into());
+        }
+        Ok(())
+    }
+
     pub fn mode(_file: &File) -> std::io::Result<u32> {
         Ok(0o644)
     }
 }
 
-pub use platform::{create_destination, list_dir, mode, open_for_read, open_source};
+pub use platform::{create_destination, list_dir, mode, open_for_read, open_source, replace};
+
+fn temporary_name() -> String {
+    format!(".meelting-{}.tmp", uuid::Uuid::now_v7().simple())
+}
 
 pub fn exists(root: &Path, relative: &str) -> bool {
     std::fs::symlink_metadata(root.join(relative)).is_ok()
@@ -408,6 +504,76 @@ pub fn exists(root: &Path, relative: &str) -> bool {
 mod tests {
     use super::*;
     use crate::domain::tools::ListedKind;
+
+    #[test]
+    fn replaces_a_file_creating_its_folders_and_leaving_no_temporary_file() {
+        let root = tempfile::tempdir().unwrap();
+
+        replace(root.path(), "a/b/c.txt", b"one").unwrap();
+        replace(root.path(), "a/b/c.txt", b"two").unwrap();
+
+        assert_eq!(
+            std::fs::read(root.path().join("a/b/c.txt")).unwrap(),
+            b"two"
+        );
+        let names: Vec<_> = std::fs::read_dir(root.path().join("a/b"))
+            .unwrap()
+            .map(|entry| entry.unwrap().file_name())
+            .collect();
+        assert_eq!(names, ["c.txt"]);
+    }
+
+    #[test]
+    fn a_folder_is_never_replaced() {
+        let root = tempfile::tempdir().unwrap();
+        std::fs::create_dir(root.path().join("dir")).unwrap();
+
+        assert!(matches!(
+            replace(root.path(), "dir", b"x"),
+            Err(SafeFileError::NotAFile)
+        ));
+        assert!(root.path().join("dir").is_dir());
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn keeps_the_mode_and_never_writes_through_links() {
+        use std::os::unix::fs::PermissionsExt;
+        let root = tempfile::tempdir().unwrap();
+        let outside = tempfile::tempdir().unwrap();
+        let target = outside.path().join("target.txt");
+        std::fs::write(&target, "outside").unwrap();
+        std::fs::write(root.path().join("run.sh"), "old").unwrap();
+        std::fs::set_permissions(
+            root.path().join("run.sh"),
+            std::fs::Permissions::from_mode(0o750),
+        )
+        .unwrap();
+        std::os::unix::fs::symlink(&target, root.path().join("link.txt")).unwrap();
+        std::os::unix::fs::symlink(outside.path(), root.path().join("out")).unwrap();
+        std::fs::hard_link(&target, root.path().join("hard.txt")).unwrap();
+
+        replace(root.path(), "run.sh", b"new").unwrap();
+        let link = replace(root.path(), "link.txt", b"x");
+        let through = replace(root.path(), "out/target.txt", b"x");
+        replace(root.path(), "hard.txt", b"replaced").unwrap();
+
+        let mode = std::fs::metadata(root.path().join("run.sh"))
+            .unwrap()
+            .permissions()
+            .mode();
+        assert_eq!(mode & 0o777, 0o750);
+        assert!(matches!(link, Err(SafeFileError::SymbolicLink)));
+        assert!(matches!(
+            through,
+            Err(SafeFileError::SymbolicLink | SafeFileError::NotAFile)
+        ));
+        assert_eq!(std::fs::read_to_string(&target).unwrap(), "outside");
+        assert_eq!(
+            std::fs::read_to_string(root.path().join("hard.txt")).unwrap(),
+            "replaced"
+        );
+    }
 
     #[test]
     fn opens_regular_files_below_the_root() {

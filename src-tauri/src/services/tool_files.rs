@@ -1,9 +1,9 @@
 use crate::domain::path_jail::is_hidden_entry;
 use crate::domain::tools::{ListedKind, Request};
 use crate::domain::tools::{
-    MAX_LIST_ENTRIES, MAX_SEARCH_DEPTH, MAX_SEARCH_DIRS, MAX_SEARCH_FILE_BYTES, MAX_SEARCH_FILES,
-    MAX_SEARCH_TOTAL_BYTES, Needle, READ_WINDOW, SearchReport, decode_window, render_listing,
-    render_window,
+    MAX_EDIT_FILE_BYTES, MAX_LIST_ENTRIES, MAX_SEARCH_DEPTH, MAX_SEARCH_DIRS,
+    MAX_SEARCH_FILE_BYTES, MAX_SEARCH_FILES, MAX_SEARCH_TOTAL_BYTES, Needle, READ_WINDOW,
+    SearchReport, apply_edit, decode_window, render_listing, render_window,
 };
 use crate::system::safe_file::{self, SafeFileError};
 use std::io::{Read, Seek, SeekFrom};
@@ -21,8 +21,33 @@ pub fn run(root: &Path, request: Request, stop: &AtomicBool) -> ToolResult {
             path,
             ignore_case,
         } => search(root, &query, &path, ignore_case, stop),
+        Request::WriteFile { path, content } => write_file(root, &path, &content),
+        Request::EditFile {
+            path,
+            old_text,
+            new_text,
+        } => edit_file(root, &path, &old_text, &new_text),
         Request::GitStatus | Request::GitDiff { .. } => Err("internal_error"),
     }
+}
+
+fn write_file(root: &Path, path: &str, content: &str) -> ToolResult {
+    safe_file::replace(root, path, content.as_bytes()).map_err(file_code_of)?;
+    Ok((format!("wrote {path} ({} bytes)\n", content.len()), false))
+}
+
+fn edit_file(root: &Path, path: &str, old_text: &str, new_text: &str) -> ToolResult {
+    let (chunk, more) = read_chunk(root, path, 0, MAX_EDIT_FILE_BYTES)?;
+    if more {
+        return Err("file_too_large");
+    }
+    let content = match String::from_utf8(chunk) {
+        Ok(content) if !content.contains('\0') => content,
+        _ => return Err("binary_file"),
+    };
+    let edited = apply_edit(&content, old_text, new_text)?;
+    safe_file::replace(root, path, edited.as_bytes()).map_err(file_code_of)?;
+    Ok((format!("edited {path}\n"), false))
 }
 
 fn code_of(error: SafeFileError) -> &'static str {
@@ -178,6 +203,37 @@ mod tests {
     use super::*;
     use crate::domain::tools::{MAX_READ_BYTES, MAX_SEARCH_BYTES};
     use std::fs;
+
+    #[test]
+    fn edits_only_text_files_within_the_size_limit_and_leaves_refused_ones_untouched() {
+        let root = tree();
+        let path = root.path();
+        let large = "x".repeat(MAX_EDIT_FILE_BYTES + 1);
+        fs::write(path.join("large.txt"), &large).unwrap();
+        let edit = |file: &str, old: &str| {
+            run(
+                path,
+                Request::EditFile {
+                    path: file.into(),
+                    old_text: old.into(),
+                    new_text: "X".into(),
+                },
+                &AtomicBool::new(false),
+            )
+        };
+
+        assert_eq!(edit("README.md", "world").unwrap().0, "edited README.md\n");
+        assert_eq!(edit("blob.bin", "needle"), Err("binary_file"));
+        assert_eq!(edit("latin.txt", "needle"), Err("binary_file"));
+        assert_eq!(edit("large.txt", "x"), Err("file_too_large"));
+        assert_eq!(edit("missing.txt", "x"), Err("not_found"));
+        assert_eq!(edit("src", "x"), Err("not_a_file"));
+        assert_eq!(
+            fs::read_to_string(path.join("README.md")).unwrap(),
+            "hello X\nsecond line\n"
+        );
+        assert_eq!(fs::read_to_string(path.join("large.txt")).unwrap(), large);
+    }
 
     fn tree() -> tempfile::TempDir {
         let root = tempfile::tempdir().unwrap();

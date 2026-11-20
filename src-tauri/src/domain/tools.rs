@@ -8,6 +8,11 @@ pub const MAX_ITERATIONS: u32 = 20;
 pub const MAX_CALLS: u32 = 40;
 pub const MAX_OUTPUT_BYTES: usize = 128 * 1024;
 pub const MAX_ARGUMENT_BYTES: usize = 4096;
+pub const MAX_WRITE_ARGUMENT_BYTES: usize = 192 * 1024;
+pub const MAX_WRITE_BYTES: usize = 64 * 1024;
+pub const MAX_EDIT_FILE_BYTES: usize = 256 * 1024;
+const WRITE_TOOLS: [&str; 2] = ["write_file", "edit_file"];
+const TEXT_FIELDS: [&str; 3] = ["content", "old_text", "new_text"];
 pub const MAX_LIST_BYTES: usize = 8 * 1024;
 pub const MAX_LIST_ENTRIES: usize = 2_000;
 pub const MAX_READ_BYTES: usize = 16 * 1024;
@@ -140,6 +145,48 @@ pub fn definitions() -> Vec<Definition> {
                 "additionalProperties": false
             }),
         },
+        Definition {
+            name: "write_file",
+            description: "Create or replace a UTF-8 text file of the task working directory with the given content (at most 64 KiB). Missing folders are created. Files that look like secrets, '.git' and symbolic links are refused.",
+            parameters: json!({
+                "type": "object",
+                "properties": {
+                    "path": {
+                        "type": "string",
+                        "description": "File relative to the working directory root."
+                    },
+                    "content": {
+                        "type": "string",
+                        "description": "The whole new content of the file."
+                    }
+                },
+                "required": ["path", "content"],
+                "additionalProperties": false
+            }),
+        },
+        Definition {
+            name: "edit_file",
+            description: "Replace one exact occurrence of a text in a UTF-8 text file of the task working directory (files up to 256 KiB). The text must appear exactly once: include enough surrounding lines to make it unique. Read the file first.",
+            parameters: json!({
+                "type": "object",
+                "properties": {
+                    "path": {
+                        "type": "string",
+                        "description": "File relative to the working directory root."
+                    },
+                    "old_text": {
+                        "type": "string",
+                        "description": "Exact text to replace, as it appears in the file, including whitespace."
+                    },
+                    "new_text": {
+                        "type": "string",
+                        "description": "Text that replaces it. May be empty to delete it."
+                    }
+                },
+                "required": ["path", "old_text", "new_text"],
+                "additionalProperties": false
+            }),
+        },
     ]
 }
 
@@ -162,6 +209,15 @@ pub enum Request {
         source: DiffSource,
         path: String,
     },
+    WriteFile {
+        path: String,
+        content: String,
+    },
+    EditFile {
+        path: String,
+        old_text: String,
+        new_text: String,
+    },
 }
 
 impl Request {
@@ -177,6 +233,7 @@ pub enum Prepared {
     },
     Audited {
         arguments: String,
+        audit: String,
         request: Result<Request, &'static str>,
     },
 }
@@ -190,7 +247,12 @@ pub fn prepare(name: &str, raw_arguments: &str, oversized: bool) -> Prepared {
     let rejected = Prepared::Rejected {
         named: well_formed_name,
     };
-    if oversized || raw_arguments.len() > MAX_ARGUMENT_BYTES || !well_formed_name {
+    let limit = if WRITE_TOOLS.contains(&name) {
+        MAX_WRITE_ARGUMENT_BYTES
+    } else {
+        MAX_ARGUMENT_BYTES
+    };
+    if oversized || raw_arguments.len() > limit || !well_formed_name {
         return rejected;
     }
     let trimmed = raw_arguments.trim();
@@ -206,7 +268,8 @@ pub fn prepare(name: &str, raw_arguments: &str, oversized: bool) -> Prepared {
         return rejected;
     }
     let arguments = value.to_string();
-    if arguments.len() > MAX_ARGUMENT_BYTES {
+    let audit = audit_of(&value).to_string();
+    if arguments.len() > limit || audit.len() > MAX_ARGUMENT_BYTES {
         return rejected;
     }
     let request = match name {
@@ -215,9 +278,30 @@ pub fn prepare(name: &str, raw_arguments: &str, oversized: bool) -> Prepared {
         "search" => search_request(&value),
         "git_status" => fields(&value, &[]).map(|_| Request::GitStatus),
         "git_diff" => git_diff_request(&value),
+        "write_file" => write_file_request(&value),
+        "edit_file" => edit_file_request(&value),
         _ => Err("unknown_tool"),
     };
-    Prepared::Audited { arguments, request }
+    Prepared::Audited {
+        arguments,
+        audit,
+        request,
+    }
+}
+
+fn audit_of(arguments: &Value) -> Value {
+    let mut audit = serde_json::Map::new();
+    for (key, field) in arguments.as_object().into_iter().flatten() {
+        match field {
+            Value::String(text) if TEXT_FIELDS.contains(&key.as_str()) => {
+                audit.insert(format!("{key}_bytes"), json!(text.len()));
+            }
+            other => {
+                audit.insert(key.clone(), other.clone());
+            }
+        }
+    }
+    Value::Object(audit)
 }
 
 fn fields<'a>(
@@ -307,6 +391,66 @@ fn git_diff_request(arguments: &Value) -> Result<Request, &'static str> {
         Some(_) => return Err("invalid_arguments"),
     };
     Ok(Request::GitDiff { source, path })
+}
+
+fn file_path(fields: &serde_json::Map<String, Value>) -> Result<String, &'static str> {
+    if !fields.contains_key("path") {
+        return Err("invalid_arguments");
+    }
+    let path = optional_path(fields)?;
+    if path.is_empty() {
+        return Err(PathError::Invalid.code());
+    }
+    Ok(path)
+}
+
+fn text(
+    fields: &serde_json::Map<String, Value>,
+    key: &str,
+    allow_empty: bool,
+) -> Result<String, &'static str> {
+    match fields.get(key) {
+        Some(Value::String(text)) if text.len() > MAX_WRITE_BYTES => Err("content_too_large"),
+        Some(Value::String(text)) if allow_empty || !text.is_empty() => Ok(text.clone()),
+        _ => Err("invalid_arguments"),
+    }
+}
+
+fn write_file_request(arguments: &Value) -> Result<Request, &'static str> {
+    let fields = fields(arguments, &["path", "content"])?;
+    Ok(Request::WriteFile {
+        path: file_path(fields)?,
+        content: text(fields, "content", true)?,
+    })
+}
+
+fn edit_file_request(arguments: &Value) -> Result<Request, &'static str> {
+    let fields = fields(arguments, &["path", "old_text", "new_text"])?;
+    Ok(Request::EditFile {
+        path: file_path(fields)?,
+        old_text: text(fields, "old_text", false)?,
+        new_text: text(fields, "new_text", true)?,
+    })
+}
+
+pub fn apply_edit(content: &str, old_text: &str, new_text: &str) -> Result<String, &'static str> {
+    let Some(start) = content.find(old_text) else {
+        return Err("no_match");
+    };
+    let next = start + content[start..].chars().next().map_or(1, char::len_utf8);
+    if content[next..].contains(old_text) {
+        return Err("ambiguous_match");
+    }
+    let edited = [
+        &content[..start],
+        new_text,
+        &content[start + old_text.len()..],
+    ]
+    .concat();
+    if edited.len() > MAX_EDIT_FILE_BYTES {
+        return Err("file_too_large");
+    }
+    Ok(edited)
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -607,6 +751,7 @@ mod tests {
             prepare("list_dir", "", false),
             Prepared::Audited {
                 arguments: "{}".into(),
+                audit: "{}".into(),
                 request: Ok(Request::ListDir { path: "".into() })
             }
         );
@@ -614,6 +759,7 @@ mod tests {
             prepare("list_dir", r#"{"path":"./src/"}"#, false),
             Prepared::Audited {
                 arguments: r#"{"path":"./src/"}"#.into(),
+                audit: r#"{"path":"./src/"}"#.into(),
                 request: Ok(Request::ListDir { path: "src".into() })
             }
         );
@@ -638,6 +784,110 @@ mod tests {
         assert_eq!(
             prepare("list_dir", &large, false),
             Prepared::Rejected { named: true }
+        );
+    }
+
+    #[test]
+    fn write_calls_keep_their_content_for_the_model_and_only_its_size_for_the_audit() {
+        let content = "x".repeat(MAX_WRITE_BYTES);
+        let raw = json!({ "path": "src/a.rs", "content": content }).to_string();
+
+        let Prepared::Audited {
+            arguments,
+            audit,
+            request,
+        } = prepare("write_file", &raw, false)
+        else {
+            panic!("rejected");
+        };
+
+        assert_eq!(arguments, raw);
+        assert_eq!(audit, r#"{"content_bytes":65536,"path":"src/a.rs"}"#);
+        assert_eq!(
+            request,
+            Ok(Request::WriteFile {
+                path: "src/a.rs".into(),
+                content
+            })
+        );
+    }
+
+    #[test]
+    fn only_write_tools_accept_large_arguments_and_their_content_is_bounded() {
+        let reason = |name: &str, arguments: String| match prepare(name, &arguments, false) {
+            Prepared::Audited { request, .. } => request.map(|_| "ok").unwrap_or_else(|code| code),
+            Prepared::Rejected { .. } => "rejected",
+        };
+        let big = "x".repeat(MAX_WRITE_BYTES + 1);
+        let path = "p".repeat(MAX_ARGUMENT_BYTES);
+        assert_eq!(
+            reason("read_file", json!({ "path": "a", "x": big }).to_string()),
+            "rejected"
+        );
+        assert_eq!(
+            reason(
+                "write_file",
+                json!({ "path": "a", "content": big }).to_string()
+            ),
+            "content_too_large"
+        );
+        assert_eq!(
+            reason(
+                "write_file",
+                json!({ "path": path, "content": "" }).to_string()
+            ),
+            "rejected"
+        );
+        assert_eq!(
+            reason("write_file", "x".repeat(MAX_WRITE_ARGUMENT_BYTES + 1)),
+            "rejected"
+        );
+        assert_eq!(
+            reason(
+                "edit_file",
+                json!({ "path": "a", "old_text": "", "new_text": "b" }).to_string()
+            ),
+            "invalid_arguments"
+        );
+        assert_eq!(
+            reason(
+                "write_file",
+                json!({ "path": "", "content": "" }).to_string()
+            ),
+            "path_invalid"
+        );
+        assert_eq!(
+            reason(
+                "write_file",
+                json!({ "path": "a/.git/config", "content": "" }).to_string()
+            ),
+            "path_reserved"
+        );
+        assert_eq!(
+            reason(
+                "edit_file",
+                json!({ "path": ".env", "old_text": "a", "new_text": "" }).to_string()
+            ),
+            "path_protected"
+        );
+        assert_eq!(
+            reason("write_file", json!({ "path": "a" }).to_string()),
+            "invalid_arguments"
+        );
+    }
+
+    #[test]
+    fn an_edit_replaces_exactly_one_occurrence() {
+        assert_eq!(apply_edit("a b c", "b", "x").unwrap(), "a x c");
+        assert_eq!(apply_edit("añb", "ñ", "").unwrap(), "ab");
+        assert_eq!(apply_edit("a b", "z", "x"), Err("no_match"));
+        assert_eq!(apply_edit("b b", "b", "x"), Err("ambiguous_match"));
+        assert_eq!(apply_edit("aaa", "aa", "x"), Err("ambiguous_match"));
+        assert_eq!(apply_edit("ñaña", "ña", "x"), Err("ambiguous_match"));
+        let large = "x".repeat(MAX_EDIT_FILE_BYTES);
+        assert_eq!(
+            apply_edit(&format!("{large}y"), "y", "zz"),
+            Err("file_too_large")
         );
     }
 
