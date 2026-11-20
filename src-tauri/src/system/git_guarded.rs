@@ -862,6 +862,7 @@ mod tests {
             .arg(dir)
             .args(["-c", "user.name=t", "-c", "user.email=t@t"])
             .args(["-c", "commit.gpgsign=false"])
+            .args(["-c", "maintenance.auto=false"])
             .args(args)
             .output()
             .unwrap();

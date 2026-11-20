@@ -75,6 +75,7 @@ pub mod tests {
             .arg("-C")
             .arg(path)
             .args(["-c", "user.name=t", "-c", "user.email=t@t"])
+            .args(["-c", "maintenance.auto=false"])
             .args(args)
             .status()
             .unwrap();
