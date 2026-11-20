@@ -172,15 +172,7 @@ async function renderRoom() {
   await screen.findByRole("heading", { name: "Daily" });
 }
 
-async function ask(
-  user: ReturnType<typeof userEvent.setup>,
-  agent: string,
-  body: string,
-) {
-  await user.selectOptions(
-    screen.getByRole("combobox", { name: "Ask" }),
-    agent,
-  );
+async function ask(user: ReturnType<typeof userEvent.setup>, body: string) {
   await user.type(screen.getByLabelText("Message"), `${body}{Enter}`);
 }
 
@@ -218,12 +210,12 @@ describe("asking an agent", () => {
     const user = userEvent.setup();
     await renderRoom();
 
-    await ask(user, "Ana · QA Engineer", "Review it");
+    await ask(user, "Review it");
 
     expect(invokeMock).toHaveBeenCalledWith("send_intervention", {
       roomId: "r1",
       body: "Review it",
-      selection: { kind: "agent", agent_id: "a1" },
+      selection: { kind: "auto", agent_id: null },
       mentionIds: [],
       clientRequestId: expect.stringMatching(uuid),
     });
@@ -237,7 +229,7 @@ describe("asking an agent", () => {
     ).toBeInTheDocument();
   });
 
-  it("sends from the message by default and lets you choose nobody explicitly", async () => {
+  it("sends every message for the core to resolve the recipient", async () => {
     core({
       get_room: () => detail(),
       resolve_recipient: () => ({ kind: "nobody" }),
@@ -247,10 +239,6 @@ describe("asking an agent", () => {
     await renderRoom();
 
     await user.type(screen.getByLabelText("Message"), "Hello{Enter}");
-    await user.selectOptions(
-      screen.getByRole("combobox", { name: "Ask" }),
-      "No one, just a message",
-    );
     await user.type(
       screen.getByLabelText("Message"),
       "@Ana just a note{Enter}",
@@ -267,7 +255,7 @@ describe("asking an agent", () => {
       }),
       expect.objectContaining({
         body: "@Ana just a note",
-        selection: { kind: "nobody" },
+        selection: { kind: "auto", agent_id: null },
       }),
     ]);
   });
@@ -291,8 +279,8 @@ describe("asking an agent", () => {
     const user = userEvent.setup();
     await renderRoom();
 
-    await ask(user, "Ana · QA Engineer", "Review it");
-    await ask(user, "Bob · Developer", "Next one");
+    await ask(user, "Review it");
+    await ask(user, "Next one");
 
     const ids = invokeMock.mock.calls
       .filter(([command]) => command === "send_intervention")
@@ -321,10 +309,6 @@ describe("asking an agent", () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     await renderRoom();
 
-    await user.selectOptions(
-      screen.getByRole("combobox", { name: "Ask" }),
-      "Ana · QA Engineer",
-    );
     await user.type(screen.getByLabelText("Message"), "Review it{Enter}");
     await act(() => vi.advanceTimersByTimeAsync(15000));
 
@@ -357,7 +341,7 @@ describe("asking an agent", () => {
     const user = userEvent.setup();
     await renderRoom();
 
-    await ask(user, "Ana · QA Engineer", "@Bob review it");
+    await ask(user, "@Bob review it");
     const choice = within(
       screen.getByRole("group", {
         name: "The chosen recipient and the mention don't match. Who is it for?",
@@ -389,7 +373,7 @@ describe("asking an agent", () => {
     const user = userEvent.setup();
     await renderRoom();
 
-    await ask(user, "Ana · QA Engineer", "Review it");
+    await ask(user, "Review it");
 
     expect(screen.getByRole("alert")).toHaveTextContent(
       "That agent is still working on a request in this room.",
@@ -408,7 +392,7 @@ describe("asking an agent", () => {
     const user = userEvent.setup();
     await renderRoom();
 
-    await ask(user, "Ana · QA Engineer", "Second");
+    await ask(user, "Second");
 
     expect(
       screen.getByText("Ana is still working on a request."),
@@ -568,9 +552,6 @@ describe("following the conversation", () => {
 
     expect(screen.getByText("Replying to Bob")).toBeInTheDocument();
     expect(screen.getByText("suggested")).toBeInTheDocument();
-    expect(screen.getByRole("combobox", { name: "Ask" })).toHaveDisplayValue(
-      "From the message",
-    );
     await user.type(screen.getByLabelText("Message"), "Why PKCE?{Enter}");
 
     expect(invokeMock).toHaveBeenCalledWith(
@@ -622,12 +603,6 @@ describe("following the conversation", () => {
       expect.objectContaining({ selection: { kind: "auto", agent_id: null } }),
     );
     expect(screen.getByText("Replying to Bob")).toBeInTheDocument();
-
-    await user.selectOptions(
-      screen.getByRole("combobox", { name: "Ask" }),
-      "Ana · QA Engineer",
-    );
-    expect(screen.queryByText("Replying to Bob")).not.toBeInTheDocument();
   });
 
   it("never proposes an agent that is not in the room", async () => {
@@ -983,10 +958,6 @@ describe("following a run", () => {
     const user = userEvent.setup();
     await renderRoom();
 
-    await user.selectOptions(
-      screen.getByRole("combobox", { name: "Ask" }),
-      "The whole team, in turn",
-    );
     await user.type(screen.getByLabelText("Message"), "Thoughts?");
     expect(
       await screen.findByText("2 agents will reply in turn."),
@@ -996,13 +967,13 @@ describe("following a run", () => {
     expect(invokeMock).toHaveBeenCalledWith("resolve_recipient", {
       roomId: "r1",
       body: "Thoughts?",
-      selection: { kind: "team" },
+      selection: { kind: "auto", agent_id: null },
       mentionIds: [],
     });
     expect(invokeMock).toHaveBeenCalledWith("send_intervention", {
       roomId: "r1",
       body: "Thoughts?",
-      selection: { kind: "team" },
+      selection: { kind: "auto", agent_id: null },
       mentionIds: [],
       clientRequestId: expect.stringMatching(uuid),
     });

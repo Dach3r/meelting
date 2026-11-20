@@ -35,13 +35,6 @@ type Props = {
   onSend: (draft: Draft) => Promise<SendResult>;
 };
 
-function selectionOf(value: string, proposal: string | null): Selection {
-  if (value === "auto") return { kind: "auto", agent_id: proposal };
-  if (value === "nobody") return { kind: "nobody" };
-  if (value === "team") return { kind: "team" };
-  return { kind: "agent", agent_id: value };
-}
-
 export function MessageComposer({
   roomId,
   agents,
@@ -58,7 +51,6 @@ export function MessageComposer({
   const field = useRef<HTMLTextAreaElement>(null);
   const [body, setBody] = useState("");
   const [caret, setCaret] = useState(0);
-  const [recipient, setRecipient] = useState("auto");
   const [chosen, setChosen] = useState<ChosenMention[]>([]);
   const [highlighted, setHighlighted] = useState(0);
   const [dismissedAt, setDismissedAt] = useState<number | null>(null);
@@ -69,13 +61,10 @@ export function MessageComposer({
   const [dismissed, setDismissed] = useState<string | null>(null);
 
   const proposal = proposedAgentId !== dismissed ? proposedAgentId : null;
-  const proposedAgent =
-    recipient === "auto"
-      ? agents.find((agent) => agent.id === proposal)
-      : undefined;
-  const selection = useMemo(
-    () => selectionOf(recipient, proposal),
-    [recipient, proposal],
+  const proposedAgent = agents.find((agent) => agent.id === proposal);
+  const selection = useMemo<Selection>(
+    () => ({ kind: "auto", agent_id: proposal }),
+    [proposal],
   );
   const mentionIdsKey = keptMentionIds(body, chosen).join(",");
   const mentionIds = useMemo(
@@ -97,13 +86,11 @@ export function MessageComposer({
   const following =
     proposedAgent !== undefined && (!preview || preview.kind === "proposed");
   const targetId =
-    selection.kind === "agent"
-      ? selection.agent_id
-      : preview && (preview.kind === "agent" || preview.kind === "proposed")
-        ? preview.agent_id
-        : following
-          ? proposal
-          : null;
+    preview && (preview.kind === "agent" || preview.kind === "proposed")
+      ? preview.agent_id
+      : following
+        ? proposal
+        : null;
   const target = agents.find((agent) => agent.id === targetId);
   const busy = target !== undefined && busyAgentIds.includes(target.id);
   const disabled = length === 0 || tooLong || sending || busy;
@@ -111,14 +98,14 @@ export function MessageComposer({
   function status() {
     if (busy && target)
       return translateWith(locale, "agentRun.busy", { agent: target.name });
-    if (!preview || selection.kind === "nobody") return null;
+    if (!preview) return null;
     if (preview.kind === "choose")
       return t(`agentRun.preview.${preview.reason}`);
     if (preview.kind === "round")
       return translateWith(locale, "agentRun.preview.round", {
         count: preview.agent_ids.length,
       });
-    if (selection.kind === "agent" || preview.kind === "proposed") return null;
+    if (preview.kind === "proposed") return null;
     if (preview.kind === "agent" && target)
       return translateWith(locale, "agentRun.preview.agent", {
         agent: target.name,
@@ -209,25 +196,6 @@ export function MessageComposer({
         <p id={limitId} className="text-sm font-medium text-error">
           {t("errors.invalid_message")}
         </p>
-      )}
-      {agents.length > 0 && (
-        <label className="flex items-center gap-3 text-sm font-medium text-muted">
-          {t("agentRun.askLabel")}
-          <select
-            value={recipient}
-            onChange={(event) => setRecipient(event.target.value)}
-            className={`${fieldClasses} min-h-11 flex-1 py-2`}
-          >
-            <option value="auto">{t("agentRun.auto")}</option>
-            <option value="nobody">{t("agentRun.nobody")}</option>
-            <option value="team">{t("agentRun.team")}</option>
-            {agents.map((agent) => (
-              <option key={agent.id} value={agent.id}>
-                {agentLabel(agent)}
-              </option>
-            ))}
-          </select>
-        </label>
       )}
       {pending && (
         <div

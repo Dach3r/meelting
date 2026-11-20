@@ -29,9 +29,7 @@ type RoomDetail = {
 
 export type Selection =
   | { kind: "auto"; agent_id: string | null }
-  | { kind: "nobody" }
-  | { kind: "team" }
-  | { kind: "agent" | "confirmed"; agent_id: string };
+  | { kind: "confirmed"; agent_id: string };
 
 export type Draft = {
   body: string;
@@ -172,9 +170,8 @@ export function useRoom(roomId: string) {
     setSending(true);
     setSendErrorKey(null);
     const clientRequestId = crypto.randomUUID();
-    const tries = selection.kind === "nobody" ? 1 : interventionTries;
     try {
-      for (let attempt = 1; attempt <= tries; attempt += 1) {
+      for (let attempt = 1; attempt <= interventionTries; attempt += 1) {
         try {
           const sent = await invokeWithTimeout<InterventionSent>(
             "send_intervention",

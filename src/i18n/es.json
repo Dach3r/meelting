@@ -470,10 +470,6 @@
     }
   },
   "agentRun": {
-    "askLabel": "Pedir a",
-    "nobody": "Nadie, solo un mensaje",
-    "team": "Todo el equipo, por turnos",
-    "auto": "Según el mensaje",
     "proposal": "Respondiendo a {agent}",
     "proposed": "propuesto",
     "dismissProposal": "No dirigir este mensaje a {agent}",

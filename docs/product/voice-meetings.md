@@ -24,7 +24,7 @@
 | Room (`rooms`) | Persistent: name, participants, history | Same. Still the unit of context |
 | Messages (`messages`) | Immutable, from the user; `message:created` | Same. Agent messages are added via `AgentRun` |
 | Meeting session | Does not exist | **Temporary** core state while the room is open; leaving deletes nothing |
-| Recipient | Does not exist (the "Ask" selector arrives with `AgentRun`) | Per intervention: one agent, several, the team or a discussion |
+| Recipient | Does not exist (recipient resolves from the message) | Per intervention: one agent, several, the team or a discussion |
 | Voice | Does not exist | Push-to-talk input and per-agent voice output, optional |
 
 ## 3. Conversational modes
