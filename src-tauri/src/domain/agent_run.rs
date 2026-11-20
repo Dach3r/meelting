@@ -46,9 +46,13 @@ pub enum ErrorKind {
     ContextTooLarge,
     Cancelled,
     Expired,
+    ToolsUnsupported,
+    IterationBudgetExhausted,
+    ToolCallBudgetExhausted,
+    ToolOutputBudgetExhausted,
 }
 
-const ERROR_KINDS: [ErrorKind; 14] = [
+const ERROR_KINDS: [ErrorKind; 18] = [
     ErrorKind::RateLimited,
     ErrorKind::Timeout,
     ErrorKind::ProviderUnavailable,
@@ -63,6 +67,10 @@ const ERROR_KINDS: [ErrorKind; 14] = [
     ErrorKind::ContextTooLarge,
     ErrorKind::Cancelled,
     ErrorKind::Expired,
+    ErrorKind::ToolsUnsupported,
+    ErrorKind::IterationBudgetExhausted,
+    ErrorKind::ToolCallBudgetExhausted,
+    ErrorKind::ToolOutputBudgetExhausted,
 ];
 
 impl ErrorKind {
@@ -82,6 +90,10 @@ impl ErrorKind {
             ErrorKind::ContextTooLarge => "context_too_large",
             ErrorKind::Cancelled => "cancelled",
             ErrorKind::Expired => "expired",
+            ErrorKind::ToolsUnsupported => "tools_unsupported",
+            ErrorKind::IterationBudgetExhausted => "iteration_budget_exhausted",
+            ErrorKind::ToolCallBudgetExhausted => "tool_call_budget_exhausted",
+            ErrorKind::ToolOutputBudgetExhausted => "tool_output_budget_exhausted",
         }
     }
 
@@ -250,7 +262,8 @@ mod tests {
                 format!("\"{}\"", kind.as_str())
             );
         }
-        let schema = include_str!("../../migrations/20261119000003_create_agent_runs.sql");
+        let schema =
+            include_str!("../../migrations/20261130000002_rebuild_agent_runs_for_tool_budgets.sql");
         for kind in ERROR_KINDS {
             assert!(schema.contains(&format!("'{}'", kind.as_str())));
         }

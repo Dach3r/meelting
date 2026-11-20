@@ -57,7 +57,7 @@ src-tauri/src/
 │   ├── team_create.rs     ✅ creates a team and returns the updated list
 │   ├── agent_create.rs    ✅ validates and creates an agent (custom or from a template) and returns the updated list
 │   ├── agent_get.rs       ✅ full detail of an agent in the current workspace
-│   ├── availability_check.rs ✅ availability of a room's agents: local based on the server and installed models (localhost), cloud based on the catalog, the keychain key and the last in-memory connection failure; no network calls to the cloud
+│   ├── availability_check.rs ✅ availability of a room's agents: local based on the server and installed models (localhost), cloud based on the catalog, the keychain key and the last in-memory connection failure; no network calls to the cloud; also reports each agent's tool capability (declared in the catalog for cloud, detected for installed local models)
 │   ├── agent_update.rs    ✅ validates and edits an agent's name, role, description, instructions, team, provider and model (the pair is validated against the catalog only if it changes)
 │   ├── agent_delete.rs    ✅ deletes an agent from the current workspace and returns the updated list; with messages or runs it fails with agent_has_activity
 │   ├── rooms_list.rs      ✅ rooms of the current workspace by recent activity, with their agents and the last 3 messages of the first one
@@ -99,6 +99,10 @@ src-tauri/src/
 │   ├── intervention_send.rs ✅ send_intervention: validates, deduplicates by client_request_id, resolves the recipient with domain/recipient inside the transaction and saves the user message (with the queued run if there is an agent) or returns the candidates to choose from without saving anything
 │   ├── agent_run_engine.rs ✅ execution engine: pool, registry, catalog, limits, local (1) and cloud (4) semaphores and event emitter; launches each run as a tokio task
 │   ├── agent_run_execute.rs ✅ a run's task: slot wait, claim, frozen context, adapter call, tokens batched every 50 ms, retries with the slot released, maximum duration, atomic success and failures
+│   ├── tool_loop.rs       ✅ 5A tool loop of a run: model turn, call validation, budgets, sequential audited execution racing cancellation and deadline, no retry once a tool ran
+│   ├── tool_files.rs      ✅ 5A filesystem tools: `list_dir`, `read_file` (bounded windows, safe offsets) and in-process `search` with file, byte, folder and depth limits and a stop flag; every open goes through `safe_file`
+│   ├── tool_git.rs        ✅ 5A Git tools: under the repository lock, identity check, `Guard` with branch check, `review_status` or `diff_file`, state and config unchanged afterwards; fixed error codes
+│   ├── tool_environment.rs ✅ 5A tool access of a run: the single eligible task of the room for the agent, its ready environment (identity verified) the per-call revalidation of the authorization and the model gate (Chat Completions, declared tools, cloud consent); returns the note the prompt gives the model
 │   ├── agent_run_registry.rs ✅ in-memory registry of accepted runs (attempt text bounded by L1, sequence, frozen prompt and cancellation token), last agent that replied in each room (D19) and providers whose last connection failed
 │   ├── agent_run_cancel.rs ✅ idempotent cancellation filtered by workspace
 │   ├── round_advance.rs   ✅ queues the next turn of a team round when the previous run ends (succeeded, passed or failed), skipping agents that left, are busy or were deleted
@@ -113,7 +117,7 @@ src-tauri/src/
 ├── system/                Layer 3: OS integration, no business rules
 │   ├── git.rs             ✅ git via tokio::process without a shell and without inherited `GIT_DIR`-style variables: read-only queries (bare, layout with `--path-format=absolute`, commits, submodules, local branches, symbolic refs), and the worktree operations (exact branch commit, branch existence, effective `filter` attributes with `check-attr --source`, filter drivers, `worktree add`, `worktree list`, `HEAD`, tracked check with a `:(literal)` pathspec, `worktree remove` without `--force`, and for the trash `worktree move`, `worktree remove --force` and `branch -D`). Every call disables hooks (`core.hooksPath` to `/dev/null` or `NUL`) and fsmonitor, sets `GIT_TERMINAL_PROMPT=0` and `GIT_OPTIONAL_LOCKS=0`, drops inherited `GIT_*` location and config variables and, on Windows, enables long paths and hides the console. No other module spawns processes: the Phase 0 `run_in_worktree` spike (shell command in a PTY) was removed in 4B (D27)
 │   ├── child_limit.rs     ✅ operating system limit that forbids a spawned process from creating children (RLIMIT_NPROC on Unix, job object on Windows); used by the guarded Git executor (BR-17 P5d); fails closed when the limit cannot be enforced
-│   ├── git_guarded.rs     ✅ guarded Git queries inside a worktree (BR-17): explicit admin dir from the shared registry, controlled environment and configuration, pinned attributes, `info/attributes`, configuration-include and executable-filter checks, filter neutralization, verified admin dir for identity checks, timeout and output limits, process group kill, configuration re-check; used by the removal check. Its review queries (`review_status`, `review_folder`, `review_state`, `diff_numstat`, `diff_file` with literal pathspecs and the review limits) are used by the review services; it refuses to run when process isolation cannot be guaranteed
+│   ├── git_guarded.rs     ✅ guarded Git queries inside a worktree (BR-17): also describes the main repository (layout, registered worktrees) through the same isolated executor (used by `verify_identity`) and reads the filters used by the base commit (`filters_used`, bounded stdin); explicit admin dir from the shared registry, controlled environment and configuration, pinned attributes, `info/attributes`, configuration-include and executable-filter checks, filter neutralization, verified admin dir for identity checks, timeout and output limits, process group kill, configuration re-check; used by the removal check. Its review queries (`review_status`, `review_folder`, `review_state`, `diff_numstat`, `diff_file` with literal pathspecs and the review limits) are used by the review services; it refuses to run when process isolation cannot be guaranteed
 │   ├── llm_stream.rs      ✅ HTTP + SSE shared by the adapters: connection (marks unreachable if it could not connect), inactivity, HTTP errors by status and code, retry-after
 │   ├── anthropic_messages.rs ✅ Anthropic Messages API adapter
 │   ├── openai_responses.rs ✅ OpenAI Responses API adapter
@@ -121,7 +125,8 @@ src-tauri/src/
 │   ├── llm_call.rs        ✅ picks the adapter for the catalog provider's protocol and streams the request; shared by the engine and key verification
 │   ├── local_models.rs    ✅ lists the models of a local provider (GET /models)
 │   ├── keychain.rs        ✅ OS keychain (crate keyring)
-│   ├── safe_file.rs       ✅ symlink-safe file access below a folder: `openat` + `O_NOFOLLOW` segment by segment, `mkdirat` and `O_EXCL` on Unix; reparse-point checks and `FILE_FLAG_OPEN_REPARSE_POINT` on Windows; copy with a size limit
+│   ├── tool_support.rs    ✅ 5A local capability detection: `POST /api/show` (Ollama) and `GET /api/v1/models` (LM Studio) on the configured endpoint only, short timeouts, bounded body, any failure is `unknown`
+│   ├── safe_file.rs       ✅ symlink-safe file access below a folder: `openat` + `O_NOFOLLOW` segment by segment, `mkdirat` and `O_EXCL` on Unix; reparse-point checks and `FILE_FLAG_OPEN_REPARSE_POINT` on Windows; copy with a size limit; folder listing and `open_for_read` through held handles (`openat` per segment and `fdopendir` on Unix, non-shareable handles and reparse-point checks on Windows)
 │   └── storage.rs         ✅ fixed local storage check: synchronized folders, then `statfs` + `diskutil` (macOS), `/proc/self/mountinfo` + `/sys` (Linux) or `GetDriveTypeW` + `IOCTL_STORAGE_QUERY_PROPERTY` (Windows)
 ├── repositories/          SQLite access (sqlx); migrations live in src-tauri/migrations
 │   ├── database.rs        ✅ opens the pool (WAL, foreign keys) and applies migrations
@@ -135,13 +140,17 @@ src-tauri/src/
 │   ├── messages.rs        ✅ messages table queries
 │   ├── git_repositories.rs ✅ repositories table queries (named so the module does not repeat its parent `repositories`)
 │   ├── tasks.rs           ✅ tasks table queries (with the origin room name) and the schema integrity tests of tasks and task_agents
-│   ├── task_room_links.rs ✅ task_room_links table queries: list with room names and idempotent insert
+│   ├── task_room_links.rs ✅ task_room_links table queries: list with room names, idempotent insert and the open tasks of a room assigned to an agent (at most two, to detect ambiguity)
+│   ├── tool_calls.rs      ✅ 5A `tool_calls` audit: insert `running`, close once, cancel the ones left running at startup
 │   ├── task_agents.rs     ✅ task_agents table queries: list, assign (idempotent) and keep only a given set
 │   ├── task_worktree_file_copies.rs ✅ copies of the active worktrees of a workspace and the copy record (upsert)
 │   ├── task_worktrees.rs  ✅ task_worktrees queries: active per task or workspace, transient rows for recovery, `preparing` insert, guarded transitions, trash location, environments with their task and repository, expired trash and deletion of removed history
 │   └── agent_runs.rs      ✅ agent_runs queries and guarded transitions, and the schema integrity tests
 ├── domain/                Pure models and logic, no I/O
 │   ├── agent_run.rs       ✅ states, error_kind, run, snapshot, injectable internal limits and retry policy
+│   ├── tools.rs           ✅ 5A tool domain: limits (D54), `list_dir`, `read_file`, `search`, `git_status` and `git_diff` definitions, call preparation, text windows, search report, status and diff rendering (auditable vs not), listing rendering, run budget
+│   ├── tool_support.rs    ✅ 5A `supported` / `unsupported` / `unknown` and the parsers of the Ollama and LM Studio capability answers
+│   ├── path_jail.rs       ✅ 5A lexical path rules for tools: relative only, no `..`, `.git`, device names, secret names, `:` or `\\`
 │   ├── recipient.rs       ✅ recipient resolution: selection (automatic, nobody, team, agent, confirmed), the team round (up to 4 agents in room order) and the team vocative («equipo», «team», «todos»), @ mentions by name or role ignoring case and accents, leading vocative, ambiguity, multiple agents and conflict
 │   ├── prompt.rs          ✅ BuildPrompt: instructions, framing, labeled history (author and, in the user's questions, the agent they were addressed to) and budget; context_too_large if the minimum does not fit
 │   ├── provider_error.rs  ✅ normalization of provider errors by HTTP status and code

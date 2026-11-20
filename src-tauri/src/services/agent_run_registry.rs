@@ -1,5 +1,6 @@
 use crate::domain::agent_run::{Partial, TokenChunk};
 use crate::domain::prompt::Prompt;
+use crate::domain::tools::ToolContext;
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::{Arc, Mutex, MutexGuard};
 use tokio_util::sync::CancellationToken;
@@ -12,6 +13,7 @@ struct Entry {
     text: String,
     pending: String,
     prompt: Option<Arc<Prompt>>,
+    tools: Option<Arc<ToolContext>>,
     cancel: CancellationToken,
 }
 
@@ -79,6 +81,7 @@ impl Registry {
                 text: String::new(),
                 pending: String::new(),
                 prompt: None,
+                tools: None,
                 cancel: cancel.clone(),
             },
         );
@@ -159,11 +162,23 @@ impl Registry {
             .and_then(|entry| entry.prompt.clone())
     }
 
-    pub fn set_prompt(&self, run_id: &str, prompt: Prompt) -> Option<Arc<Prompt>> {
+    pub fn tools(&self, run_id: &str) -> Option<Arc<ToolContext>> {
+        self.lock()
+            .get(run_id)
+            .and_then(|entry| entry.tools.clone())
+    }
+
+    pub fn set_prompt(
+        &self,
+        run_id: &str,
+        prompt: Prompt,
+        tools: Option<ToolContext>,
+    ) -> Option<Arc<Prompt>> {
         let mut entries = self.lock();
         let entry = entries.get_mut(run_id)?;
         let prompt = Arc::new(prompt);
         entry.prompt = Some(prompt.clone());
+        entry.tools = tools.map(Arc::new);
         Some(prompt)
     }
 
@@ -338,12 +353,21 @@ mod tests {
             turns: vec![],
         };
 
-        registry.set_prompt("run1", prompt.clone());
+        let tools = ToolContext {
+            workspace_id: "w1".into(),
+            task_id: "t1".into(),
+            worktree_id: "k1".into(),
+            root: "/wt".into(),
+        };
+
+        registry.set_prompt("run1", prompt.clone(), Some(tools.clone()));
         registry.start_attempt("run1", 2);
 
         assert_eq!(registry.prompt("run1").as_deref(), Some(&prompt));
+        assert_eq!(registry.tools("run1").as_deref(), Some(&tools));
         registry.remove("run1");
         assert_eq!(registry.prompt("run1"), None);
-        assert_eq!(registry.set_prompt("run1", prompt), None);
+        assert_eq!(registry.tools("run1"), None);
+        assert_eq!(registry.set_prompt("run1", prompt, None), None);
     }
 }

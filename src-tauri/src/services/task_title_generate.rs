@@ -35,6 +35,7 @@ async fn run(engine: &Engine, task: &Task) -> Option<Task> {
     let Target {
         provider,
         model_max,
+        ..
     } = resolve(&engine.providers, &agent.provider, &agent.model)?;
     let api_key = match provider.location {
         Location::Local => None,

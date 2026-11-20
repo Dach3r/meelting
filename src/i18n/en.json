@@ -505,6 +505,10 @@
       "output_truncated": "The agent's response was too long and was not saved.",
       "invalid_response": "{provider} sent a response Meelting couldn't read.",
       "context_too_large": "The agent's instructions and this request are too long for this model. Shorten the instructions or use another model.",
+      "tools_unsupported": "This model can't use the environment tools. Use another model or continue without them.",
+      "iteration_budget_exhausted": "The agent stopped: it used all its steps for this request.",
+      "tool_call_budget_exhausted": "The agent stopped: it made too many tool calls for this request.",
+      "tool_output_budget_exhausted": "The agent stopped: the tools returned more data than allowed for this request.",
       "cancelled": "Cancelled.",
       "expired": "Stopped because Meelting was closed.",
       "unknown": "The request to {provider} failed."

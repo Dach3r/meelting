@@ -979,6 +979,7 @@ mod tests {
             h.engine.pool.clone(),
             h.engine.providers.clone(),
             fast_limits(),
+            crate::services::repository_locks::RepositoryLocks::default(),
             std::sync::Arc::new(|_| {}),
         );
         let after_restart =

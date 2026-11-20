@@ -1,4 +1,7 @@
 use crate::catalogs::llm::{Protocol, Provider};
+use crate::domain::agent_run::ErrorKind;
+use crate::domain::tools::Definition;
+use crate::system::chat_completions::RawCall;
 use crate::system::llm_stream::{Failure, OnText, StreamRequest, Usage};
 use crate::system::{anthropic_messages, chat_completions, openai_responses};
 
@@ -15,6 +18,27 @@ pub async fn stream(
                 .output_tokens_param
                 .map_or("max_tokens", |param| param.as_str());
             chat_completions::stream(request, output_tokens_param, on_text).await
+        }
+    }
+}
+
+pub async fn stream_turn(
+    provider: &Provider,
+    request: &StreamRequest<'_>,
+    tools: &[Definition],
+    exchange: &[serde_json::Value],
+    on_text: &mut OnText<'_>,
+) -> Result<(Usage, Vec<RawCall>), Failure> {
+    match provider.protocol {
+        Protocol::ChatCompletions => {
+            let output_tokens_param = provider
+                .output_tokens_param
+                .map_or("max_tokens", |param| param.as_str());
+            chat_completions::stream_turn(request, output_tokens_param, tools, exchange, on_text)
+                .await
+        }
+        Protocol::AnthropicMessages | Protocol::OpenaiResponses => {
+            Err(ErrorKind::ToolsUnsupported.into())
         }
     }
 }
@@ -69,6 +93,27 @@ mod tests {
                 Some(crate::domain::agent_run::ErrorKind::ProviderAuthFailed),
                 "{endpoint}"
             );
+        }
+    }
+
+    #[tokio::test]
+    async fn only_chat_completions_offers_tools() {
+        let prompt = prompt();
+        for protocol in [Protocol::AnthropicMessages, Protocol::OpenaiResponses] {
+            let provider = provider(protocol, "http://127.0.0.1:1".into());
+            let mut on_text = |_: &str| Ok(());
+
+            let failure = stream_turn(
+                &provider,
+                &request("http://127.0.0.1:1", &prompt),
+                &[],
+                &[],
+                &mut on_text,
+            )
+            .await
+            .unwrap_err();
+
+            assert_eq!(failure.kind, ErrorKind::ToolsUnsupported);
         }
     }
 }

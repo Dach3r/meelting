@@ -65,6 +65,7 @@ mod tests {
             models: vec![Model {
                 key: "gpt-6.1-sol".into(),
                 max_output_tokens: 128000,
+                tools: false,
             }],
         };
 

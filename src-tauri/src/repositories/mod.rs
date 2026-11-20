@@ -13,6 +13,5 @@ pub mod task_worktree_file_copies;
 pub mod task_worktrees;
 pub mod tasks;
 pub mod teams;
-#[cfg(test)]
-mod tool_calls;
+pub mod tool_calls;
 pub mod workspaces;

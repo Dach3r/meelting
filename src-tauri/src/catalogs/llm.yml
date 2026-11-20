@@ -38,8 +38,10 @@
   models:
     - key: deepseek-flash
       max_output_tokens: 393216
+      tools: true
     - key: deepseek-v4-pro
       max_output_tokens: 393216
+      tools: true
 - key: ollama
   name: Ollama
   location: local

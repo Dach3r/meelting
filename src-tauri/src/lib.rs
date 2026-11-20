@@ -44,7 +44,7 @@ pub fn run() {
             tauri::async_runtime::block_on(agent_runs_expire::run(&pool))?;
             let locks = RepositoryLocks::default();
             tauri::async_runtime::block_on(worktrees_reconcile::run(&pool, &locks))?;
-            app.manage(locks);
+            app.manage(locks.clone());
             app.manage(CopySelections::default());
             app.manage(ReviewRegistry::default());
             let emit = commands::agent_runs::emitter(app.handle().clone());
@@ -52,6 +52,7 @@ pub fn run() {
                 pool.clone(),
                 llm::providers(),
                 Limits::default(),
+                locks,
                 emit,
             ));
             app.manage(pool);

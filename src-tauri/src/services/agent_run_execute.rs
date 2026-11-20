@@ -3,13 +3,14 @@ use crate::domain::agent_run::{
     AgentRun, ErrorKind, LocationLimits, NextStep, TOKEN_FLUSH, after_failure, is_pass,
 };
 use crate::domain::locale::Locale;
-use crate::domain::prompt::{self, Author, Budget, HistoryMessage, Prompt, PromptInput};
+use crate::domain::prompt::{self, Author, Budget, HistoryMessage, Prompt, PromptInput, ToolsNote};
 use crate::domain::provider_key;
 use crate::repositories::{agent_runs, agents, messages, profile, room_agents, rooms};
 use crate::services::agent_run_engine::{Engine, RunEvent};
-use crate::services::round_advance;
+use crate::services::worktree_remove::verify_identity;
+use crate::services::{round_advance, tool_environment, tool_loop};
 use crate::system::llm_stream::{Failure, StreamRequest, Usage};
-use crate::system::{keychain, llm_call};
+use crate::system::{keychain, llm_call, storage};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::time::{Instant, MissedTickBehavior};
@@ -20,11 +21,13 @@ use uuid::Uuid;
 pub(crate) struct Target<'a> {
     pub(crate) provider: &'a Provider,
     pub(crate) model_max: Option<u32>,
+    pub(crate) tools: bool,
 }
 
 enum Outcome {
     Succeeded(Usage),
     Failed(Failure),
+    FailedAfterTools(Failure),
     DeadlineExceeded,
     Cancelled,
     Aborted,
@@ -59,6 +62,12 @@ pub async fn run(engine: Arc<Engine>, run: AgentRun, cancel: CancellationToken) 
             Outcome::Succeeded(usage) => {
                 engine.registry.reached(&run.provider, true);
                 return complete(&engine, &claimed, usage).await;
+            }
+            Outcome::FailedAfterTools(failure) => {
+                if failure.unreachable {
+                    engine.registry.reached(&run.provider, false);
+                }
+                return finish_failed(&engine, &run.id, failure.kind).await;
             }
             Outcome::Failed(failure) => {
                 if failure.unreachable {
@@ -102,6 +111,7 @@ pub(crate) fn resolve<'a>(
         Location::Local => Some(Target {
             provider,
             model_max: None,
+            tools: false,
         }),
         Location::Cloud => provider
             .models
@@ -110,6 +120,7 @@ pub(crate) fn resolve<'a>(
             .map(|entry| Target {
                 provider,
                 model_max: Some(entry.max_output_tokens),
+                tools: entry.tools,
             }),
     }
 }
@@ -134,7 +145,7 @@ async fn attempt(
     };
     let prompt = match engine.registry.prompt(&run.id) {
         Some(prompt) => prompt,
-        None => match freeze_context(engine, run, limits).await {
+        None => match freeze_context(engine, run, target, limits).await {
             Ok(prompt) => prompt,
             Err(outcome) => return outcome,
         },
@@ -159,6 +170,36 @@ async fn attempt(
     };
     let registry = &engine.registry;
     let max_bytes = engine.limits.max_response_bytes;
+    if let Some(context) = registry.tools(&run.id) {
+        let session = tool_loop::Session {
+            engine,
+            run,
+            provider: target.provider,
+            request: &request,
+            context: &context,
+            deadline,
+            cancel,
+        };
+        return match tool_loop::run(&session).await {
+            tool_loop::Outcome::Final { text, usage } => {
+                match registry.push(&run.id, &text, max_bytes) {
+                    Ok(()) => Outcome::Succeeded(usage),
+                    Err(_) => Outcome::Failed(ErrorKind::OutputTruncated.into()),
+                }
+            }
+            tool_loop::Outcome::Failed {
+                failure,
+                after_tools: false,
+            } => Outcome::Failed(failure),
+            tool_loop::Outcome::Failed {
+                failure,
+                after_tools: true,
+            } => Outcome::FailedAfterTools(failure),
+            tool_loop::Outcome::DeadlineExceeded => Outcome::DeadlineExceeded,
+            tool_loop::Outcome::Cancelled => Outcome::Cancelled,
+            tool_loop::Outcome::Aborted => Outcome::Aborted,
+        };
+    }
     let mut on_text = |text: &str| {
         registry
             .push(&run.id, text, max_bytes)
@@ -191,13 +232,25 @@ async fn attempt(
 async fn freeze_context(
     engine: &Engine,
     run: &AgentRun,
+    target: Target<'_>,
     limits: &LocationLimits,
 ) -> Result<Arc<Prompt>, Outcome> {
-    let input = load_context(engine, run, limits)
+    let (mut input, workspace_id) = load_context(engine, run, limits)
         .await
         .ok()
         .flatten()
         .ok_or(Outcome::Aborted)?;
+    let access = tool_environment::resolve(
+        &engine.pool,
+        &workspace_id,
+        &run.room_id,
+        &run.agent_id,
+        async || tool_environment::model_can_use_tools(engine, target, &run.model).await,
+        async |repository, worktree| verify_identity(repository, worktree, &storage::check).await,
+    )
+    .await
+    .map_err(|_| Outcome::Aborted)?;
+    input.tools = access.note;
     let budget = Budget {
         chars: limits.prompt_chars,
         messages: limits.history_messages,
@@ -206,7 +259,7 @@ async fn freeze_context(
         .map_err(|_| Outcome::Failed(ErrorKind::ContextTooLarge.into()))?;
     engine
         .registry
-        .set_prompt(&run.id, prompt)
+        .set_prompt(&run.id, prompt, access.context)
         .ok_or(Outcome::Aborted)
 }
 
@@ -214,7 +267,7 @@ async fn load_context(
     engine: &Engine,
     run: &AgentRun,
     limits: &LocationLimits,
-) -> Result<Option<PromptInput>, sqlx::Error> {
+) -> Result<Option<(PromptInput, String)>, sqlx::Error> {
     let mut transaction = engine.pool.begin().await?;
     let Some(workspace_id) = rooms::workspace_id(&mut *transaction, &run.room_id).await? else {
         return Ok(None);
@@ -293,7 +346,7 @@ async fn load_context(
             .find(|participant| participant.id == *id)
             .map(|participant| (participant.name.clone(), participant.role.clone()))
     });
-    Ok(Some(PromptInput {
+    let input = PromptInput {
         agent_name: agent.name,
         agent_role: agent.role,
         instructions: agent.instructions,
@@ -304,7 +357,9 @@ async fn load_context(
         request: request.body,
         request_from,
         round: engine.registry.is_round(&run.id),
-    }))
+        tools: ToolsNote::Off,
+    };
+    Ok(Some((input, workspace_id)))
 }
 
 async fn read_key(pool: &sqlx::SqlitePool, run: &AgentRun) -> Option<String> {
@@ -1223,6 +1278,7 @@ mod tests {
             pool.clone(),
             crate::services::agent_run_engine::testing::providers_at(&server.uri()),
             fast_limits(),
+            crate::services::repository_locks::RepositoryLocks::default(),
             Arc::new(move |event| {
                 let pool = checked.clone();
                 let problem = tokio::task::block_in_place(|| {
