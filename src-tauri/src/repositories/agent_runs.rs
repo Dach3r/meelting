@@ -1127,6 +1127,159 @@ mod tests {
             .unwrap();
         assert_eq!(integrity, "ok");
     }
+
+    #[tokio::test]
+    async fn rebuilding_for_tool_budgets_keeps_every_run_and_index_and_adds_the_new_kinds() {
+        let dir = tempfile::tempdir().unwrap();
+        let options = sqlx::sqlite::SqliteConnectOptions::new()
+            .filename(dir.path().join("test.db"))
+            .create_if_missing(true)
+            .foreign_keys(true);
+        let pool = SqlitePool::connect_with(options).await.unwrap();
+        let full: Migrator = sqlx::migrate!("./migrations");
+        let mut before = sqlx::migrate!("./migrations");
+        before.migrations = Cow::Owned(
+            full.migrations
+                .iter()
+                .filter(|migration| migration.version < 20261130000002)
+                .cloned()
+                .collect(),
+        );
+        before.run(&pool).await.unwrap();
+        for sql in SEED {
+            sqlx::query(sql).execute(&pool).await.unwrap();
+        }
+        let finished = [("attempts", "1"), ("started_at", T1), ("finished_at", T2)];
+        for overrides in [
+            vec![],
+            [
+                vec![
+                    ("id", "'run2'"),
+                    ("agent_id", "'a2'"),
+                    ("request_message_id", "'u2'"),
+                    (
+                        "client_request_id",
+                        "'0196f3a0-0000-7000-8000-000000000002'",
+                    ),
+                    ("status", "'succeeded'"),
+                    ("response_message_id", "'g2'"),
+                    ("input_tokens", "12"),
+                    ("output_tokens", "7"),
+                ],
+                finished.to_vec(),
+            ]
+            .concat(),
+            [
+                vec![
+                    ("id", "'run3'"),
+                    ("room_id", "'r2'"),
+                    ("request_message_id", "'u3'"),
+                    (
+                        "client_request_id",
+                        "'0196f3a0-0000-7000-8000-000000000003'",
+                    ),
+                    ("status", "'failed'"),
+                    ("error_kind", "'timeout'"),
+                ],
+                finished.to_vec(),
+            ]
+            .concat(),
+            vec![
+                ("id", "'run4'"),
+                ("agent_id", "'a4'"),
+                (
+                    "client_request_id",
+                    "'0196f3a0-0000-7000-8000-000000000004'",
+                ),
+                ("status", "'running'"),
+                ("attempts", "1"),
+                ("started_at", T1),
+            ],
+            [
+                vec![
+                    ("id", "'run5'"),
+                    ("request_message_id", "'u2'"),
+                    (
+                        "client_request_id",
+                        "'0196f3a0-0000-7000-8000-000000000005'",
+                    ),
+                    ("status", "'passed'"),
+                ],
+                finished.to_vec(),
+            ]
+            .concat(),
+        ] {
+            exec(&pool, &run(&overrides)).await.unwrap();
+        }
+        let snapshot = format!(
+            "SELECT json_object({}) FROM agent_runs ORDER BY id",
+            COLUMNS
+                .iter()
+                .map(|column| format!("'{column}', {column}"))
+                .collect::<Vec<_>>()
+                .join(", ")
+        );
+        let indexes = "SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = 'agent_runs' AND name NOT LIKE 'sqlite_%' ORDER BY name";
+        let rows_before: Vec<String> = sqlx::query_scalar(sqlx::AssertSqlSafe(snapshot.clone()))
+            .fetch_all(&pool)
+            .await
+            .unwrap();
+        let indexes_before: Vec<String> =
+            sqlx::query_scalar(indexes).fetch_all(&pool).await.unwrap();
+
+        full.run(&pool).await.unwrap();
+
+        let rows_after: Vec<String> = sqlx::query_scalar(sqlx::AssertSqlSafe(snapshot))
+            .fetch_all(&pool)
+            .await
+            .unwrap();
+        let indexes_after: Vec<String> =
+            sqlx::query_scalar(indexes).fetch_all(&pool).await.unwrap();
+        assert_eq!(rows_before.len(), 5);
+        assert_eq!(rows_after, rows_before);
+        let mut expected = indexes_before;
+        expected.push("agent_runs_id_room_id".to_string());
+        expected.sort();
+        assert_eq!(indexes_after, expected);
+        assert_eq!(foreign_key_violations(&pool).await, 0);
+        let integrity: String = sqlx::query_scalar("PRAGMA integrity_check")
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+        assert_eq!(integrity, "ok");
+
+        let failed = |kind: &str| {
+            let kind = format!("'{kind}'");
+            let mut overrides = vec![
+                ("id", "'k1'"),
+                ("agent_id", "'a4'"),
+                ("request_message_id", "'u2'"),
+                (
+                    "client_request_id",
+                    "'0196f3a0-0000-7000-8000-000000000009'",
+                ),
+                ("status", "'failed'"),
+            ];
+            overrides.extend(finished);
+            (kind, overrides)
+        };
+        for kind in [
+            "tools_unsupported",
+            "iteration_budget_exhausted",
+            "tool_call_budget_exhausted",
+            "tool_output_budget_exhausted",
+        ] {
+            let (value, mut overrides) = failed(kind);
+            overrides.push(("error_kind", value.as_str()));
+            exec(&pool, &run(&overrides)).await.unwrap();
+            exec(&pool, "DELETE FROM agent_runs WHERE id = 'k1'")
+                .await
+                .unwrap();
+        }
+        let (value, mut overrides) = failed("budget_exhausted");
+        overrides.push(("error_kind", value.as_str()));
+        assert!(exec(&pool, &run(&overrides)).await.is_err());
+    }
 }
 
 #[cfg(test)]
