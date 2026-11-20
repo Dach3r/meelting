@@ -57,3 +57,34 @@ export function keptMentionIds(body: string, chosen: ChosenMention[]) {
     ),
   ];
 }
+
+export type DraftSegment = { text: string; agent: Participant | null };
+
+export function draftSegments(
+  body: string,
+  agents: Participant[],
+): DraftSegment[] {
+  const names = agents
+    .map((agent) => agent.name)
+    .sort((a, b) => b.length - a.length)
+    .map((name) => name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  if (names.length === 0) return [{ text: body, agent: null }];
+  const pattern = new RegExp(
+    `(?<![\\p{L}\\p{N}])@(${names.join("|")})(?![\\p{L}\\p{N}])`,
+    "gu",
+  );
+  const segments: DraftSegment[] = [];
+  let last = 0;
+  for (const match of body.matchAll(pattern)) {
+    if (match.index > last)
+      segments.push({ text: body.slice(last, match.index), agent: null });
+    segments.push({
+      text: match[0],
+      agent: agents.find((agent) => agent.name === match[1]) ?? null,
+    });
+    last = match.index + match[0].length;
+  }
+  if (last < body.length)
+    segments.push({ text: body.slice(last), agent: null });
+  return segments;
+}

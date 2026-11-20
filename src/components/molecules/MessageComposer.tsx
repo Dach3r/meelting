@@ -1,5 +1,6 @@
 import { SendHorizontal, X } from "lucide-react";
 import {
+  type CSSProperties,
   useId,
   useMemo,
   useRef,
@@ -13,12 +14,14 @@ import { useRecipientPreview } from "../../hooks/useRecipientPreview";
 import type { Choice, Draft, Selection, SendResult } from "../../hooks/useRoom";
 import type { Participant } from "../../hooks/useRooms";
 import { Button } from "../atoms/Button";
+import { hueOf } from "../atoms/Avatar";
 import { fieldClasses } from "../atoms/Field";
 import { MentionSuggestions, mentionOptionId } from "./MentionSuggestions";
 import { agentLabel } from "./agentLabel";
 import {
   type ChosenMention,
   activeMention,
+  draftSegments,
   insertMention,
   keptMentionIds,
   matchingAgents,
@@ -49,6 +52,7 @@ export function MessageComposer({
   const choiceId = useId();
   const listId = useId();
   const field = useRef<HTMLTextAreaElement>(null);
+  const backdrop = useRef<HTMLDivElement>(null);
   const [body, setBody] = useState("");
   const [caret, setCaret] = useState(0);
   const [chosen, setChosen] = useState<ChosenMention[]>([]);
@@ -267,32 +271,62 @@ export function MessageComposer({
             onPick={pick}
           />
         )}
-        <textarea
-          ref={field}
-          role="combobox"
-          aria-label={t("rooms.chat.message")}
-          aria-invalid={tooLong}
-          aria-describedby={
-            [tooLong ? limitId : null, statusText ? statusId : null]
-              .filter(Boolean)
-              .join(" ") || undefined
-          }
-          aria-autocomplete="list"
-          aria-expanded={open}
-          aria-controls={open ? listId : undefined}
-          aria-activedescendant={
-            open ? mentionOptionId(listId, active) : undefined
-          }
-          value={body}
-          onChange={(event) =>
-            edit(event.target.value, event.target.selectionStart)
-          }
-          onSelect={(event) => setCaret(event.currentTarget.selectionStart)}
-          onKeyDown={onKeyDown}
-          rows={1}
-          placeholder={t("rooms.chat.placeholder")}
-          className={`${fieldClasses} field-sizing-content max-h-40 min-h-14 resize-none py-3.5`}
-        />
+        <div
+          className={`${fieldClasses} relative grid min-h-14 p-0 focus-within:bg-[color-mix(in_srgb,var(--color-raised)_75%,var(--color-surface))]`}
+        >
+          <div
+            ref={backdrop}
+            aria-hidden
+            className="pointer-events-none col-start-1 row-start-1 max-h-40 overflow-hidden px-4 py-3.5 break-words whitespace-pre-wrap text-transparent"
+          >
+            {draftSegments(body, agents).map((segment, index) =>
+              segment.agent ? (
+                <mark
+                  key={index}
+                  style={
+                    { "--mention-hue": hueOf(segment.agent.name) } as CSSProperties
+                  }
+                  className="rounded bg-[hsl(var(--mention-hue)_70%_55%/0.3)] text-transparent"
+                >
+                  {segment.text}
+                </mark>
+              ) : (
+                <span key={index}>{segment.text}</span>
+              ),
+            )}
+            {"\n"}
+          </div>
+          <textarea
+            ref={field}
+            role="combobox"
+            aria-label={t("rooms.chat.message")}
+            aria-invalid={tooLong}
+            aria-describedby={
+              [tooLong ? limitId : null, statusText ? statusId : null]
+                .filter(Boolean)
+                .join(" ") || undefined
+            }
+            aria-autocomplete="list"
+            aria-expanded={open}
+            aria-controls={open ? listId : undefined}
+            aria-activedescendant={
+              open ? mentionOptionId(listId, active) : undefined
+            }
+            value={body}
+            onChange={(event) =>
+              edit(event.target.value, event.target.selectionStart)
+            }
+            onSelect={(event) => setCaret(event.currentTarget.selectionStart)}
+            onScroll={(event) => {
+              if (backdrop.current)
+                backdrop.current.scrollTop = event.currentTarget.scrollTop;
+            }}
+            onKeyDown={onKeyDown}
+            rows={1}
+            placeholder={t("rooms.chat.placeholder")}
+            className="col-start-1 row-start-1 max-h-40 min-h-14 resize-none overflow-y-auto bg-transparent px-4 py-3.5 text-base text-ink outline-none placeholder:text-muted"
+          />
+        </div>
         <button
           type="submit"
           aria-label={t("rooms.chat.send")}
