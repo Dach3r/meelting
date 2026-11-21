@@ -44,7 +44,7 @@ function Group({ title, rows }: { title: string; rows: Row[] }) {
       <h3 className="px-1 text-xs font-semibold tracking-wide text-muted uppercase">
         {title}
       </h3>
-      <dl className="grid overflow-hidden rounded-2xl bg-raised text-sm">
+      <dl className="grid overflow-hidden rounded-2xl bg-hi text-sm">
         {rows.map((row) => (
           <div
             key={row.label}
@@ -76,7 +76,7 @@ function Lifecycle({ title, steps }: { title: string; steps: Step[] }) {
       <h3 className="px-1 text-xs font-semibold tracking-wide text-muted uppercase">
         {title}
       </h3>
-      <ol className="grid rounded-2xl bg-raised px-5 pt-5 pb-1">
+      <ol className="grid rounded-2xl bg-hi px-5 pt-5 pb-1">
         {steps.map((step, index) => (
           <li key={step.label} className="flex gap-4">
             <span className="flex flex-col items-center">
