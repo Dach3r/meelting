@@ -184,8 +184,8 @@ describe("files", () => {
     );
   });
 
-  it("empties every ready environment at once and skips the ones that are not ready", async () => {
-    const calls = core([
+  it("does not allow moving an environment that is not ready", async () => {
+    core([
       environment("t1", "Login"),
       environment("t2", "Broken", {
         status: "failed",
@@ -205,18 +205,6 @@ describe("files", () => {
         ) as HTMLButtonElement
       ).disabled,
     ).toBe(true);
-    await user.click(screen.getByRole("button", { name: "Empty all" }));
-    await user.click(
-      within(
-        screen.getByRole("dialog", { name: "Move 2 to the trash?" }),
-      ).getByRole("button", { name: "Move to trash" }),
-    );
-
-    await waitFor(() =>
-      expect(calls).toEqual([
-        { command: "trash_task_environments", taskIds: ["t1", "t3"] },
-      ]),
-    );
   });
 
   it("explains each environment that could not be moved", async () => {

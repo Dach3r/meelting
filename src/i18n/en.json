@@ -751,7 +751,6 @@
       "repository": "Repository",
       "commit": "Base commit"
     },
-    "trashAll": "Empty all",
     "cancel": "Cancel",
     "failed": "{count} could not be processed:",
     "trashDialog": {

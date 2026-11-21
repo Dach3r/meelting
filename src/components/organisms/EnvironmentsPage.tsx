@@ -140,37 +140,21 @@ export function EnvironmentsPage({ mode }: { mode: "files" | "trash" }) {
               aside={aside}
             />
           ) : null)}
-        <div className="sticky bottom-0 mt-auto flex flex-wrap items-center justify-end gap-2 rounded-full border border-line bg-surface p-2 shadow-2xl">
-          {inTrash ? (
-            <>
-              <Button
-                type="button"
-                variant="destructive"
-                size="pill"
-                disabled={busy || candidates.length === 0}
-                onClick={() =>
-                  setPending({ action: "purge", taskIds: candidates })
-                }
-              >
-                {t("trash.emptyTrash")}
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button
-                type="button"
-                variant="destructive"
-                size="pill"
-                disabled={busy || candidates.length === 0}
-                onClick={() =>
-                  setPending({ action: "trash", taskIds: candidates })
-                }
-              >
-                {t("files.trashAll")}
-              </Button>
-            </>
-          )}
-        </div>
+        {inTrash && (
+          <div className="sticky bottom-0 mt-auto flex flex-wrap items-center justify-end gap-2 rounded-full border border-line bg-surface p-2 shadow-2xl">
+            <Button
+              type="button"
+              variant="destructive"
+              size="pill"
+              disabled={busy || candidates.length === 0}
+              onClick={() =>
+                setPending({ action: "purge", taskIds: candidates })
+              }
+            >
+              {t("trash.emptyTrash")}
+            </Button>
+          </div>
+        )}
       </section>
       {focused ? (
         <EnvironmentDetail
