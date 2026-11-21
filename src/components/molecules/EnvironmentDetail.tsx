@@ -90,88 +90,92 @@ export function EnvironmentDetail({
   return (
     <aside
       aria-label={environment.task_title}
-      className="flex min-h-0 min-w-0 flex-1 flex-col gap-6 overflow-y-auto rounded-3xl border border-line bg-pill p-6"
+      className="flex min-h-0 min-w-0 flex-1 flex-col gap-4 rounded-3xl border border-line bg-pill p-6"
     >
-      <div className="flex items-start gap-4">
-        <span className="grid size-16 shrink-0 place-items-center rounded-2xl bg-raised text-ink">
-          <FolderTileIcon className="h-8 w-10" />
-        </span>
-        <div className="grid min-w-0 flex-1 justify-items-start gap-2">
-          {status}
-          <h2 className="text-xl leading-tight font-bold text-ink">
-            {environment.task_title}
-          </h2>
+      <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto">
+        <div className="flex items-start gap-4">
+          <span className="grid size-16 shrink-0 place-items-center rounded-2xl bg-raised text-ink">
+            <FolderTileIcon className="h-8 w-10" />
+          </span>
+          <div className="grid min-w-0 flex-1 justify-items-start gap-2">
+            {status}
+            <h2 className="text-xl leading-tight font-bold text-ink">
+              {environment.task_title}
+            </h2>
+          </div>
+          <button
+            type="button"
+            aria-label={t("teams.close")}
+            onClick={onClose}
+            className="grid size-10 shrink-0 cursor-pointer place-items-center rounded-full bg-raised text-muted transition-colors hover:bg-hi hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+          >
+            <CloseIcon />
+          </button>
         </div>
-        <button
-          type="button"
-          aria-label={t("teams.close")}
-          onClick={onClose}
-          className="grid size-10 shrink-0 cursor-pointer place-items-center rounded-full bg-raised text-muted transition-colors hover:bg-hi hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
-        >
-          <CloseIcon />
-        </button>
+        <Group
+          title={t("files.detail.git")}
+          rows={[
+            {
+              label: t("files.detail.repository"),
+              value: environment.repository_name,
+            },
+            { label: t("tasks.environment.base"), value: worktree.base_ref },
+            {
+              label: t("files.detail.commit"),
+              value: worktree.base_commit_sha.slice(0, 12),
+              mono: true,
+              copy: true,
+            },
+            {
+              label: t("tasks.environment.branch"),
+              value: worktree.branch_name,
+              mono: true,
+              copy: true,
+            },
+          ]}
+        />
+        <Group
+          title={t("files.detail.location")}
+          rows={[
+            {
+              label: t("tasks.environment.path"),
+              value: worktree.trash_path ?? worktree.path,
+              mono: true,
+              copy: true,
+            },
+          ]}
+        />
+        <Group title={t("files.detail.activity")} rows={activity} />
+        {worktree.copies.length > 0 && (
+          <section className="grid gap-3">
+            <h3 className="text-sm font-semibold text-ink">
+              {t("tasks.environment.copy.copied")}
+            </h3>
+            <ul className="grid overflow-hidden rounded-2xl border border-line text-sm">
+              {worktree.copies.map((copy) => (
+                <li
+                  key={copy.relative_path}
+                  className="flex min-w-0 items-center justify-between gap-4 border-b border-line px-5 py-3 last:border-b-0"
+                >
+                  <code className="min-w-0 truncate text-ink">
+                    {copy.relative_path}
+                  </code>
+                  <span className="shrink-0 text-xs text-muted">
+                    {formatBytes(locale, copy.size_bytes)} ·{" "}
+                    {formatDateTime(locale, copy.copied_at, timeFormat)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <p className="text-xs text-muted">
+              {t("tasks.environment.copy.copiedHint")}
+            </p>
+          </section>
+        )}
       </div>
-      <div className="flex flex-wrap gap-2">{actions}</div>
-      <Group
-        title={t("files.detail.git")}
-        rows={[
-          {
-            label: t("files.detail.repository"),
-            value: environment.repository_name,
-          },
-          { label: t("tasks.environment.base"), value: worktree.base_ref },
-          {
-            label: t("files.detail.commit"),
-            value: worktree.base_commit_sha.slice(0, 12),
-            mono: true,
-            copy: true,
-          },
-          {
-            label: t("tasks.environment.branch"),
-            value: worktree.branch_name,
-            mono: true,
-            copy: true,
-          },
-        ]}
-      />
-      <Group
-        title={t("files.detail.location")}
-        rows={[
-          {
-            label: t("tasks.environment.path"),
-            value: worktree.trash_path ?? worktree.path,
-            mono: true,
-            copy: true,
-          },
-        ]}
-      />
-      <Group title={t("files.detail.activity")} rows={activity} />
-      {worktree.copies.length > 0 && (
-        <section className="grid gap-3">
-          <h3 className="text-sm font-semibold text-ink">
-            {t("tasks.environment.copy.copied")}
-          </h3>
-          <ul className="grid overflow-hidden rounded-2xl border border-line text-sm">
-            {worktree.copies.map((copy) => (
-              <li
-                key={copy.relative_path}
-                className="flex min-w-0 items-center justify-between gap-4 border-b border-line px-5 py-3 last:border-b-0"
-              >
-                <code className="min-w-0 truncate text-ink">
-                  {copy.relative_path}
-                </code>
-                <span className="shrink-0 text-xs text-muted">
-                  {formatBytes(locale, copy.size_bytes)} ·{" "}
-                  {formatDateTime(locale, copy.copied_at, timeFormat)}
-                </span>
-              </li>
-            ))}
-          </ul>
-          <p className="text-xs text-muted">
-            {t("tasks.environment.copy.copiedHint")}
-          </p>
-        </section>
-      )}
+      <div className="flex shrink-0 flex-wrap gap-2 border-t border-line pt-4">
+        {actions}
+      </div>
     </aside>
   );
 }
