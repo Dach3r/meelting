@@ -751,8 +751,6 @@
       "repository": "Repository",
       "commit": "Base commit"
     },
-    "selectAll": "Select all",
-    "trash": "Move to trash ({count})",
     "trashAll": "Empty all",
     "cancel": "Cancel",
     "failed": "{count} could not be processed:",
@@ -772,8 +770,6 @@
       "deleted": "Deleted with its branch"
     },
     "restoreOne": "Restore",
-    "restore": "Restore ({count})",
-    "purge": "Delete permanently ({count})",
     "emptyTrash": "Empty trash",
     "daysLeft": "Deleted in {days} days",
     "purgeDialog": {

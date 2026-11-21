@@ -29,7 +29,6 @@ export function EnvironmentsPage({ mode }: { mode: "files" | "trash" }) {
   const { t, locale } = useI18n();
   const { environments, errorKey, failures, busy, trash, restore, purge } =
     useEnvironments();
-  const [selected, setSelected] = useState<Set<string>>(new Set());
   const [pending, setPending] = useState<Pending | null>(null);
   const [focusedId, setFocusedId] = useState<string | null>(null);
   const [titles, setTitles] = useState<Map<string, string>>(new Map());
@@ -43,21 +42,6 @@ export function EnvironmentsPage({ mode }: { mode: "files" | "trash" }) {
     (environment) => environment.task_id === focusedId,
   );
   const candidates = shown.filter(selectable).map((item) => item.task_id);
-  const chosen = candidates.filter((taskId) => selected.has(taskId));
-
-  function toggle(taskId: string) {
-    setSelected((current) => {
-      const next = new Set(current);
-      if (!next.delete(taskId)) next.add(taskId);
-      return next;
-    });
-  }
-
-  function toggleAll() {
-    setSelected(
-      chosen.length === candidates.length ? new Set() : new Set(candidates),
-    );
-  }
 
   async function run(
     action: (taskIds: string[]) => Promise<void>,
@@ -66,7 +50,6 @@ export function EnvironmentsPage({ mode }: { mode: "files" | "trash" }) {
     setPending(null);
     setTitles(new Map(shown.map((item) => [item.task_id, item.task_title])));
     await action(ids);
-    setSelected(new Set());
   }
 
   function statusClass(worktree: Environment["worktree"]) {
@@ -152,39 +135,14 @@ export function EnvironmentsPage({ mode }: { mode: "files" | "trash" }) {
             <EnvironmentList
               label={t(`${mode}.title`)}
               environments={shown}
-              selected={selected}
-              selectable={selectable}
               focusedId={focused?.task_id ?? null}
               onFocus={setFocusedId}
-              onToggle={toggle}
-              onToggleAll={toggleAll}
               aside={aside}
             />
           ) : null)}
         <div className="sticky bottom-0 mt-auto flex flex-wrap items-center justify-end gap-2 rounded-full border border-line bg-surface p-2 shadow-2xl">
           {inTrash ? (
             <>
-              <Button
-                type="button"
-                variant="ghost"
-                size="pill"
-                className="border-line"
-                disabled={busy || chosen.length === 0}
-                onClick={() => run(restore, chosen)}
-              >
-                {translateWith(locale, "trash.restore", {
-                  count: chosen.length,
-                })}
-              </Button>
-              <Button
-                type="button"
-                variant="danger"
-                size="pill"
-                disabled={busy || chosen.length === 0}
-                onClick={() => setPending({ action: "purge", taskIds: chosen })}
-              >
-                {translateWith(locale, "trash.purge", { count: chosen.length })}
-              </Button>
               <Button
                 type="button"
                 variant="destructive"
@@ -199,15 +157,6 @@ export function EnvironmentsPage({ mode }: { mode: "files" | "trash" }) {
             </>
           ) : (
             <>
-              <Button
-                type="button"
-                variant="danger"
-                size="pill"
-                disabled={busy || chosen.length === 0}
-                onClick={() => setPending({ action: "trash", taskIds: chosen })}
-              >
-                {translateWith(locale, "files.trash", { count: chosen.length })}
-              </Button>
               <Button
                 type="button"
                 variant="destructive"

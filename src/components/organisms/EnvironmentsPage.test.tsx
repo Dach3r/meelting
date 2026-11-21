@@ -89,8 +89,13 @@ describe("files", () => {
     await user.click(screen.getByRole("button", { name: "Close" }));
     expect(screen.queryByRole("complementary", { name: "Login" })).toBeNull();
 
-    await user.click(screen.getByRole("checkbox", { name: "Login" }));
-    await user.click(screen.getByRole("button", { name: "Move to trash (1)" }));
+    await user.click(screen.getByRole("button", { name: /Login/ }));
+    await user.click(
+      within(screen.getByRole("complementary", { name: "Login" })).getByRole(
+        "button",
+        { name: "Move to trash" },
+      ),
+    );
     const dialog = screen.getByRole("dialog", { name: "Move 1 to the trash?" });
     await user.click(
       within(dialog).getByRole("button", { name: "Move to trash" }),
@@ -191,10 +196,14 @@ describe("files", () => {
     const user = userEvent.setup();
     renderPage("files");
 
-    await screen.findByRole("checkbox", { name: "Login" });
+    await user.click(await screen.findByRole("button", { name: /Broken/ }));
     expect(
-      (screen.getByRole("checkbox", { name: "Broken" }) as HTMLInputElement)
-        .disabled,
+      (
+        within(screen.getByRole("complementary", { name: "Broken" })).getByRole(
+          "button",
+          { name: "Move to trash" },
+        ) as HTMLButtonElement
+      ).disabled,
     ).toBe(true);
     await user.click(screen.getByRole("button", { name: "Empty all" }));
     await user.click(
@@ -218,10 +227,13 @@ describe("files", () => {
     const user = userEvent.setup();
     renderPage("files");
 
-    expect(screen.queryByRole("checkbox", { name: "Select all" })).toBeNull();
-    await user.click(await screen.findByRole("checkbox", { name: "Login" }));
-    expect(screen.getByRole("checkbox", { name: "Select all" })).toBeTruthy();
-    await user.click(screen.getByRole("button", { name: "Move to trash (1)" }));
+    await user.click(await screen.findByRole("button", { name: /Login/ }));
+    await user.click(
+      within(screen.getByRole("complementary", { name: "Login" })).getByRole(
+        "button",
+        { name: "Move to trash" },
+      ),
+    );
     await user.click(
       within(screen.getByRole("dialog")).getByRole("button", {
         name: "Move to trash",
@@ -247,8 +259,13 @@ describe("trash", () => {
     expect(within(list).getByText("Deleted in 25 days")).toBeTruthy();
     expect(screen.queryByText("Active")).toBeNull();
 
-    await user.click(screen.getByRole("checkbox", { name: "Login" }));
-    await user.click(screen.getByRole("button", { name: "Restore (1)" }));
+    await user.click(screen.getByRole("button", { name: /Login/ }));
+    await user.click(
+      within(screen.getByRole("complementary", { name: "Login" })).getByRole(
+        "button",
+        { name: "Restore" },
+      ),
+    );
 
     await waitFor(() =>
       expect(calls).toEqual([
@@ -288,7 +305,7 @@ describe("trash", () => {
     const user = userEvent.setup();
     renderPage("trash");
 
-    await screen.findByRole("checkbox", { name: "Login" });
+    await screen.findByRole("button", { name: /Login/ });
     await user.click(screen.getByRole("button", { name: "Empty trash" }));
     const dialog = screen.getByRole("dialog", {
       name: "Delete 2 permanently?",

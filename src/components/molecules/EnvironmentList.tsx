@@ -1,53 +1,24 @@
 import type { ReactNode } from "react";
-import { useI18n } from "../../i18n/I18nProvider";
 import type { Environment } from "../../hooks/useEnvironments";
 import { FolderTileIcon } from "../atoms/Icons";
 
 type Props = {
   label: string;
   environments: Environment[];
-  selected: Set<string>;
-  selectable: (environment: Environment) => boolean;
   focusedId: string | null;
   onFocus: (taskId: string) => void;
-  onToggle: (taskId: string) => void;
-  onToggleAll: () => void;
   aside: (environment: Environment) => ReactNode;
 };
-
-const checkbox =
-  "size-[1.125rem] shrink-0 cursor-pointer accent-error disabled:cursor-not-allowed";
 
 export function EnvironmentList({
   label,
   environments,
-  selected,
-  selectable,
   focusedId,
   onFocus,
-  onToggle,
-  onToggleAll,
   aside,
 }: Props) {
-  const { t } = useI18n();
-  const candidates = environments.filter(selectable);
-  const allSelected =
-    candidates.length > 0 &&
-    candidates.every((environment) => selected.has(environment.task_id));
-  const selecting = selected.size > 0;
   return (
     <div className="grid gap-1">
-      {selecting && (
-        <label className="flex cursor-pointer items-center gap-3 px-4 py-2 text-sm font-medium text-muted">
-          <input
-            type="checkbox"
-            className={checkbox}
-            checked={allSelected}
-            onChange={onToggleAll}
-          />
-          {t("files.selectAll")}
-        </label>
-      )}
       <ul
         aria-label={label}
         className="grid grid-cols-[repeat(auto-fill,minmax(13rem,1fr))] gap-3"
@@ -57,16 +28,8 @@ export function EnvironmentList({
           return (
             <li
               key={environment.task_id}
-              className={`group relative grid min-w-0 rounded-3xl transition-colors ${focused ? "bg-hi ring-1 ring-ink/40" : "bg-raised hover:bg-pill-hover"}`}
+              className={`relative grid min-w-0 rounded-3xl transition-colors ${focused ? "bg-hi ring-1 ring-ink/40" : "bg-raised hover:bg-pill-hover"}`}
             >
-              <input
-                type="checkbox"
-                className={`${checkbox} absolute top-4 left-4 z-10 transition-opacity focus-visible:opacity-100 ${selecting ? "" : "opacity-0 group-hover:opacity-100"}`}
-                aria-label={environment.task_title}
-                checked={selected.has(environment.task_id)}
-                disabled={!selectable(environment)}
-                onChange={() => onToggle(environment.task_id)}
-              />
               <button
                 type="button"
                 aria-current={focused}
