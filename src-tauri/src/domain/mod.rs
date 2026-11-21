@@ -16,6 +16,8 @@ pub mod room;
 pub mod session;
 #[cfg(target_os = "macos")]
 pub mod speech;
+#[cfg(target_os = "macos")]
+pub mod speech_model;
 pub mod storage;
 pub mod task;
 pub mod team;

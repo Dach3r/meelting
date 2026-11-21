@@ -493,6 +493,7 @@
       "aloudOn": "Respuestas en voz alta",
       "aloudOff": "Respuestas silenciadas",
       "setupTitle": "Háblale a tus agentes",
+      "setupModel": "Recomendado para tu Mac ({chip} · {memory} GB): {name}",
       "setupBody": "Meelting necesita un modelo de voz de {size} MB. Se descarga una sola vez desde Hugging Face y se verifica. Tu voz se procesa en esta computadora y nunca se envía a ningún sitio. Las respuestas se leen con las voces del sistema.",
       "download": "Descargar y activar",
       "progress": "Descargando desde Hugging Face · {done} de {total} MB",

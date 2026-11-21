@@ -258,6 +258,15 @@ export function RoomView({
                 size: Math.round((voice.status?.model_bytes ?? 0) / 1_000_000),
               })}
             </p>
+            {voice.status?.model_name && (
+              <p className="text-sm font-semibold text-ink">
+                {translateWith(locale, "rooms.voice.setupModel", {
+                  name: voice.status.model_name,
+                  chip: voice.status.chip,
+                  memory: Math.round(voice.status.memory_bytes / 1024 ** 3),
+                })}
+              </p>
+            )}
             {voice.errorKey && (
               <Alert message={translateError(locale, voice.errorKey)} />
             )}

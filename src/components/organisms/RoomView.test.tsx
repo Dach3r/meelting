@@ -1546,7 +1546,14 @@ describe("agent tools in the meeting", () => {
 });
 
 describe("talking with voice", () => {
-  const ready = { available: true, model_ready: true, model_bytes: 59_707_625 };
+  const ready = {
+    available: true,
+    model_ready: true,
+    model_name: "Whisper large-v3 turbo",
+    model_bytes: 574_041_195,
+    chip: "Apple M1 Max",
+    memory_bytes: 34_359_738_368,
+  };
 
   it("offers to download the speech model before the first time you talk", async () => {
     const download = vi.fn(() => ready);
@@ -1560,7 +1567,12 @@ describe("talking with voice", () => {
     await renderRoom();
 
     await user.click(await screen.findByRole("button", { name: "Talk" }));
-    expect(screen.getByText(/60 MB/)).toBeInTheDocument();
+    expect(screen.getByText(/574 MB/)).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Recommended for your Mac (Apple M1 Max · 32 GB): Whisper large-v3 turbo",
+      ),
+    ).toBeInTheDocument();
     await user.click(
       screen.getByRole("button", { name: "Download and turn on" }),
     );
@@ -1587,17 +1599,17 @@ describe("talking with voice", () => {
     await user.click(
       screen.getByRole("button", { name: "Download and turn on" }),
     );
-    emit("voice:download_progress", 30_000_000);
+    emit("voice:download_progress", 287_020_598);
 
     expect(screen.getByRole("progressbar")).toHaveAttribute(
       "aria-valuenow",
       "50",
     );
     expect(
-      screen.getByText("Downloading from Hugging Face · 30 of 60 MB"),
+      screen.getByText("Downloading from Hugging Face · 287 of 574 MB"),
     ).toBeInTheDocument();
 
-    emit("voice:download_progress", 59_707_625);
+    emit("voice:download_progress", 574_041_195);
     expect(screen.getByText("Checking the model…")).toBeInTheDocument();
     finish(ready);
   });

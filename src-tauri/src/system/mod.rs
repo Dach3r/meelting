@@ -9,6 +9,8 @@ pub mod keychain;
 pub mod llm_call;
 pub mod llm_stream;
 pub mod local_models;
+#[cfg(target_os = "macos")]
+pub mod machine;
 pub mod openai_responses;
 pub mod safe_file;
 #[cfg(target_os = "macos")]

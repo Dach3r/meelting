@@ -50,6 +50,7 @@ pub fn run() {
             #[cfg(target_os = "macos")]
             app.manage(std::sync::Arc::new(services::voice::Voice::new(
                 &data_dir.join("models"),
+                system::machine::detect(),
                 commands::voice::playback_emitter(app.handle().clone()),
             )));
             let emit = commands::agent_runs::emitter(app.handle().clone());

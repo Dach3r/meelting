@@ -132,6 +132,7 @@ src-tauri/src/
 │   ├── audio_capture.rs   ✅ D57 microphone capture with `cpal` on its own thread, 60 s cap (macOS)
 │   ├── speech_recognition.rs ✅ D57 whisper.cpp through `whisper-rs` (Metal): load the model, transcribe 16 kHz mono (macOS)
 │   ├── speech_synthesis.rs ✅ D57 system `say`: list voices, speak text from stdin as a killable child (macOS)
+│   ├── machine.rs         ✅ D60 chip, memory and Apple Silicon read with `sysctlbyname` (macOS)
 │   ├── safe_file.rs       ✅ symlink-safe file access below a folder: `openat` + `O_NOFOLLOW` segment by segment, `mkdirat` and `O_EXCL` on Unix; reparse-point checks and `FILE_FLAG_OPEN_REPARSE_POINT` on Windows; copy with a size limit; folder listing and `open_for_read` through held handles (`openat` per segment and `fdopendir` on Unix, non-shareable handles and reparse-point checks on Windows)
 │   └── storage.rs         ✅ fixed local storage check: synchronized folders, then `statfs` + `diskutil` (macOS), `/proc/self/mountinfo` + `/sys` (Linux) or `GetDriveTypeW` + `IOCTL_STORAGE_QUERY_PROPERTY` (Windows)
 ├── repositories/          SQLite access (sqlx); migrations live in src-tauri/migrations
@@ -157,6 +158,7 @@ src-tauri/src/
 │   ├── tools.rs           ✅ 5A tool domain: limits (D54), `list_dir`, `read_file`, `search`, `git_status` and `git_diff` definitions, call preparation, text windows, search report, status and diff rendering (auditable vs not), listing rendering, run budget
 │   ├── tool_support.rs    ✅ 5A `supported` / `unsupported` / `unknown` and the parsers of the Ollama and LM Studio capability answers
 │   ├── speech.rs          ✅ D57 voice listing parsing, stable voice per agent, text made speakable, mono 16 kHz resampling (macOS)
+│   ├── speech_model.rs    ✅ D60 Whisper model catalog (large-v3 turbo, small) and the recommendation by chip and comfortable memory (macOS)
 │   ├── path_jail.rs       ✅ 5A lexical path rules for tools: relative only, no `..`, `.git`, device names, secret names, `:` or `\\`
 │   ├── recipient.rs       ✅ recipient resolution: selection (automatic, nobody, team, agent, confirmed), the team round (up to 4 agents in room order) and the team vocative («equipo», «team», «todos»), @ mentions by name or role ignoring case and accents, leading vocative, ambiguity, multiple agents and conflict
 │   ├── prompt.rs          ✅ BuildPrompt: instructions, framing, labeled history (author and, in the user's questions, the agent they were addressed to) and budget; context_too_large if the minimum does not fit

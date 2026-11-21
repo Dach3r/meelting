@@ -493,6 +493,7 @@
       "aloudOn": "Replies aloud",
       "aloudOff": "Replies muted",
       "setupTitle": "Talk to your agents",
+      "setupModel": "Recommended for your Mac ({chip} · {memory} GB): {name}",
       "setupBody": "Meelting needs a {size} MB speech model. It is downloaded once from Hugging Face and checked. Your voice is processed on this computer and never sent anywhere. Replies are read aloud with your system voices.",
       "download": "Download and turn on",
       "progress": "Downloading from Hugging Face · {done} of {total} MB",

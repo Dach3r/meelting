@@ -1,10 +1,13 @@
 use serde::Serialize;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct VoiceStatus {
     pub available: bool,
     pub model_ready: bool,
+    pub model_name: &'static str,
     pub model_bytes: u64,
+    pub chip: String,
+    pub memory_bytes: u64,
 }
 
 #[cfg(not(target_os = "macos"))]
@@ -12,7 +15,10 @@ pub fn unsupported() -> VoiceStatus {
     VoiceStatus {
         available: false,
         model_ready: false,
+        model_name: "",
         model_bytes: 0,
+        chip: String::new(),
+        memory_bytes: 0,
     }
 }
 
@@ -24,6 +30,7 @@ mod macos {
     use super::VoiceStatus;
     use crate::domain::locale::Locale;
     use crate::domain::speech::{self, Heard, RECOGNITION_RATE, SystemVoice};
+    use crate::domain::speech_model::{self, Machine, SpeechModel};
     use crate::repositories::messages;
     use crate::services::session_load::{self, SessionError};
     use crate::system::audio_capture::Capture;
@@ -39,11 +46,6 @@ mod macos {
     use tokio_util::sync::CancellationToken;
     use whisper_rs::WhisperContext;
 
-    const MODEL_FILE: &str = "ggml-base-q5_1.bin";
-    const MODEL_URL: &str =
-        "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base-q5_1.bin";
-    const MODEL_SHA256: &str = "422f1ae452ade6f30a004d7e5c6a43195e4433bc370bf23fac9cc591f01a8898";
-    pub const MODEL_BYTES: u64 = 59_707_625;
     const MIN_SPEECH_SAMPLES: usize = RECOGNITION_RATE as usize / 4;
 
     #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -57,6 +59,8 @@ mod macos {
     pub type EmitPlayback = Arc<dyn Fn(Playback) + Send + Sync>;
 
     pub struct Voice {
+        machine: Machine,
+        model: &'static SpeechModel,
         model_path: PathBuf,
         recognizer: tokio::sync::Mutex<Option<Arc<WhisperContext>>>,
         download: tokio::sync::Mutex<()>,
@@ -68,9 +72,12 @@ mod macos {
     }
 
     impl Voice {
-        pub fn new(models_dir: &Path, emit: EmitPlayback) -> Voice {
+        pub fn new(models_dir: &Path, machine: Machine, emit: EmitPlayback) -> Voice {
+            let model = speech_model::recommended(&machine);
             Voice {
-                model_path: models_dir.join(MODEL_FILE),
+                machine,
+                model,
+                model_path: models_dir.join(model.file),
                 recognizer: tokio::sync::Mutex::new(None),
                 download: tokio::sync::Mutex::new(()),
                 capture: Mutex::new(None),
@@ -85,7 +92,10 @@ mod macos {
             VoiceStatus {
                 available: true,
                 model_ready: self.model_path.is_file(),
-                model_bytes: MODEL_BYTES,
+                model_name: self.model.name,
+                model_bytes: self.model.bytes,
+                chip: self.machine.chip.clone(),
+                memory_bytes: self.machine.memory_bytes,
             }
         }
 
@@ -98,7 +108,7 @@ mod macos {
                 return Ok(self.status());
             }
             let partial = self.model_path.with_extension("part");
-            let result = fetch(&self.model_path, &partial, &on_progress).await;
+            let result = fetch(self.model, &self.model_path, &partial, &on_progress).await;
             if result.is_err() {
                 let _ = tokio::fs::remove_file(&partial).await;
             }
@@ -256,6 +266,7 @@ mod macos {
     }
 
     async fn fetch(
+        model: &SpeechModel,
         target: &Path,
         partial: &Path,
         on_progress: &impl Fn(u64),
@@ -264,7 +275,7 @@ mod macos {
         if let Some(folder) = target.parent() {
             tokio::fs::create_dir_all(folder).await.map_err(failed)?;
         }
-        let response = reqwest::get(MODEL_URL)
+        let response = reqwest::get(speech_model::download_url(model))
             .await
             .and_then(reqwest::Response::error_for_status)
             .map_err(|_| SessionError::VoiceModelDownloadFailed)?;
@@ -276,12 +287,12 @@ mod macos {
         while let Some(chunk) = body.next().await {
             let chunk = chunk.map_err(|_| SessionError::VoiceModelDownloadFailed)?;
             written += chunk.len() as u64;
-            if written > MODEL_BYTES {
+            if written > model.bytes {
                 return Err(SessionError::VoiceModelDownloadFailed);
             }
             hasher.update(&chunk);
             file.write_all(&chunk).await.map_err(failed)?;
-            let percent = written * 100 / MODEL_BYTES;
+            let percent = written * 100 / model.bytes;
             if percent != reported_percent {
                 reported_percent = percent;
                 on_progress(written);
@@ -294,7 +305,7 @@ mod macos {
             .iter()
             .map(|byte| format!("{byte:02x}"))
             .collect();
-        if written != MODEL_BYTES || digest != MODEL_SHA256 {
+        if written != model.bytes || digest != model.sha256 {
             return Err(SessionError::VoiceModelDownloadFailed);
         }
         tokio::fs::rename(partial, target).await.map_err(failed)
@@ -304,8 +315,16 @@ mod macos {
     mod tests {
         use super::*;
 
+        fn machine() -> Machine {
+            Machine {
+                chip: "Apple M1".into(),
+                memory_bytes: 8 * 1024 * 1024 * 1024,
+                apple_silicon: true,
+            }
+        }
+
         fn voice(dir: &Path) -> Voice {
-            Voice::new(dir, Arc::new(|_| {}))
+            Voice::new(dir, machine(), Arc::new(|_| {}))
         }
 
         #[test]
@@ -318,7 +337,10 @@ mod macos {
                 VoiceStatus {
                     available: true,
                     model_ready: false,
-                    model_bytes: MODEL_BYTES
+                    model_name: "Whisper large-v3 turbo",
+                    model_bytes: 574_041_195,
+                    chip: "Apple M1".into(),
+                    memory_bytes: 8 * 1024 * 1024 * 1024,
                 }
             );
             assert!(matches!(
@@ -326,7 +348,7 @@ mod macos {
                 Err(SessionError::VoiceModelMissing)
             ));
 
-            std::fs::write(dir.path().join(MODEL_FILE), b"model").unwrap();
+            std::fs::write(dir.path().join("ggml-large-v3-turbo-q5_0.bin"), b"model").unwrap();
             assert!(voice.status().model_ready);
         }
 
@@ -342,13 +364,13 @@ mod macos {
         }
 
         #[tokio::test]
-        #[ignore = "downloads the 57 MiB speech model from Hugging Face; set MEELTING_VOICE_MODEL_DIR to keep it"]
+        #[ignore = "downloads the speech model recommended for this Mac from Hugging Face; set MEELTING_VOICE_MODEL_DIR to keep it"]
         async fn downloads_and_verifies_the_model_then_transcribes_spoken_spanish() {
             let dir = tempfile::tempdir().unwrap();
             let models = std::env::var("MEELTING_VOICE_MODEL_DIR")
                 .map(PathBuf::from)
                 .unwrap_or_else(|_| dir.path().to_path_buf());
-            let voice = voice(&models);
+            let voice = Voice::new(&models, crate::system::machine::detect(), Arc::new(|_| {}));
 
             assert!(voice.download_model(|_| {}).await.unwrap().model_ready);
 

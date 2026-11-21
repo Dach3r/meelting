@@ -6,7 +6,10 @@ import type { Message } from "./useRooms";
 type VoiceStatus = {
   available: boolean;
   model_ready: boolean;
+  model_name: string;
   model_bytes: number;
+  chip: string;
+  memory_bytes: number;
 };
 
 type Playback = {
@@ -56,7 +59,14 @@ export function useVoice(roomId: string, messages: Message[] | null) {
       })
       .catch(() => {
         if (current)
-          setStatus({ available: false, model_ready: false, model_bytes: 0 });
+          setStatus({
+            available: false,
+            model_ready: false,
+            model_name: "",
+            model_bytes: 0,
+            chip: "",
+            memory_bytes: 0,
+          });
       });
     const subscription = listen<Playback>("voice:playback", (event) => {
       const playback = event.payload;
