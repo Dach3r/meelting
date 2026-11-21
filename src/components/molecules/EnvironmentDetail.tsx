@@ -68,6 +68,41 @@ function Group({ title, rows }: { title: string; rows: Row[] }) {
   );
 }
 
+type Step = { label: string; note: string; done: boolean };
+
+function Lifecycle({ title, steps }: { title: string; steps: Step[] }) {
+  return (
+    <section className="grid gap-2">
+      <h3 className="px-1 text-xs font-semibold tracking-wide text-muted uppercase">
+        {title}
+      </h3>
+      <ol className="grid rounded-2xl bg-raised px-5 pt-5 pb-1">
+        {steps.map((step, index) => (
+          <li key={step.label} className="flex gap-4">
+            <span className="flex flex-col items-center">
+              <span
+                aria-hidden
+                className={`mt-1 size-3 shrink-0 rounded-full ${step.done ? "bg-success" : "border-2 border-muted"}`}
+              />
+              {index < steps.length - 1 && (
+                <span aria-hidden className="my-1 w-0.5 flex-1 bg-line" />
+              )}
+            </span>
+            <div className="grid gap-0.5 pb-5">
+              <span
+                className={`text-sm font-semibold ${step.done ? "text-ink" : "text-muted"}`}
+              >
+                {step.label}
+              </span>
+              <span className="text-sm text-muted">{step.note}</span>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
 export function EnvironmentDetail({
   environment,
   status,
@@ -77,16 +112,25 @@ export function EnvironmentDetail({
   const { t, locale, timeFormat } = useI18n();
   const { worktree } = environment;
   const date = (iso: string) => formatDateTime(locale, iso, timeFormat);
-  const activity: Row[] = [
-    { label: t("files.detail.created"), value: date(worktree.created_at) },
-    { label: t("files.detail.updated"), value: date(worktree.updated_at) },
-  ];
-  if (worktree.trashed_at) {
-    activity.push({
+  const steps: Step[] = [
+    {
+      label: t("files.detail.created"),
+      note: date(worktree.created_at),
+      done: true,
+    },
+    {
+      label: t("files.detail.updated"),
+      note: date(worktree.updated_at),
+      done: true,
+    },
+    {
       label: t("files.detail.trashed"),
-      value: date(worktree.trashed_at),
-    });
-  }
+      note: worktree.trashed_at
+        ? date(worktree.trashed_at)
+        : t("files.detail.trashHint"),
+      done: Boolean(worktree.trashed_at),
+    },
+  ];
   return (
     <aside
       aria-label={environment.task_title}
@@ -112,6 +156,7 @@ export function EnvironmentDetail({
             <CloseIcon />
           </button>
         </div>
+        <Lifecycle title={t("files.detail.lifecycle")} steps={steps} />
         <Group
           title={t("files.detail.git")}
           rows={[
@@ -145,7 +190,6 @@ export function EnvironmentDetail({
             },
           ]}
         />
-        <Group title={t("files.detail.activity")} rows={activity} />
         {worktree.copies.length > 0 && (
           <section className="grid gap-3">
             <h3 className="text-sm font-semibold text-ink">

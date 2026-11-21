@@ -166,7 +166,9 @@ describe("files", () => {
     expect(within(detail).getByText("/w/t1")).toBeTruthy();
     expect(within(detail).getByText("Created")).toBeTruthy();
     expect(within(detail).getByText("Last updated")).toBeTruthy();
-    expect(within(detail).queryByText("Moved to trash")).toBeNull();
+    expect(
+      within(detail).getByText("Deleted completely 30 days after entering"),
+    ).toBeTruthy();
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, "clipboard", {
       value: { writeText },
