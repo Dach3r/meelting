@@ -149,20 +149,28 @@ pub enum SessionError {
     AutostartUnavailable,
     #[error("agent_tools_unsupported_platform")]
     AgentToolsUnsupportedPlatform,
+    #[cfg(target_os = "macos")]
     #[error("voice_model_missing")]
     VoiceModelMissing,
+    #[cfg(target_os = "macos")]
     #[error("voice_model_unavailable")]
     VoiceModelUnavailable,
+    #[cfg(target_os = "macos")]
     #[error("voice_model_download_failed")]
     VoiceModelDownloadFailed,
+    #[cfg(target_os = "macos")]
     #[error("microphone_unavailable")]
     MicrophoneUnavailable,
+    #[cfg(target_os = "macos")]
     #[error("microphone_failed")]
     MicrophoneFailed,
+    #[cfg(target_os = "macos")]
     #[error("not_capturing")]
     NotCapturing,
+    #[cfg(target_os = "macos")]
     #[error("nothing_heard")]
     NothingHeard,
+    #[cfg(target_os = "macos")]
     #[error("transcription_failed")]
     TranscriptionFailed,
 }
