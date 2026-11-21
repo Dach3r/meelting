@@ -22,18 +22,18 @@ export function EnvironmentDetail({ environment, status, actions }: Props) {
   return (
     <aside
       aria-label={environment.task_title}
-      className="flex min-h-0 min-w-0 flex-1 flex-col gap-7 overflow-y-auto rounded-3xl border border-line bg-pill p-7"
+      className="flex min-h-0 w-104 shrink-0 flex-col gap-6 overflow-y-auto rounded-3xl border border-line bg-pill p-6"
     >
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="grid justify-items-start gap-3">
           {status}
-          <h2 className="text-3xl font-bold text-ink">
+          <h2 className="text-2xl font-bold text-ink">
             {environment.task_title}
           </h2>
         </div>
         <div className="flex flex-wrap gap-2">{actions}</div>
       </div>
-      <dl className="grid grid-cols-[9rem_minmax(0,1fr)] overflow-hidden rounded-2xl border border-line text-sm">
+      <dl className="grid grid-cols-[7rem_minmax(0,1fr)] overflow-hidden rounded-2xl border border-line text-sm">
         {rows.map(([label, value], index) => {
           const edge = index === 0 ? "" : "border-t border-line";
           return (

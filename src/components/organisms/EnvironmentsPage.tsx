@@ -111,7 +111,7 @@ export function EnvironmentsPage({ mode }: { mode: "files" | "trash" }) {
 
   return (
     <div className="flex min-h-0 flex-1 gap-3">
-      <section className="flex min-h-0 w-100 shrink-0 flex-col gap-5 overflow-y-auto rounded-3xl border border-line bg-pill p-3">
+      <section className="flex min-h-0 min-w-0 flex-1 flex-col gap-5 overflow-y-auto rounded-3xl border border-line bg-pill p-3">
         <div className="grid gap-2 px-4 pt-3">
           <h1 className="text-2xl leading-6 font-bold text-ink">
             {t(`${mode}.title`)}
@@ -160,14 +160,14 @@ export function EnvironmentsPage({ mode }: { mode: "files" | "trash" }) {
               aside={aside}
             />
           ) : null)}
-        <div className="mt-auto grid gap-2 pt-2">
+        <div className="sticky bottom-0 mt-auto flex flex-wrap items-center justify-end gap-2 rounded-full border border-line bg-surface p-2 shadow-2xl">
           {inTrash ? (
             <>
               <Button
                 type="button"
                 variant="ghost"
                 size="pill"
-                className="w-full border-line"
+                className="border-line"
                 disabled={busy || chosen.length === 0}
                 onClick={() => run(restore, chosen)}
               >
@@ -179,7 +179,6 @@ export function EnvironmentsPage({ mode }: { mode: "files" | "trash" }) {
                 type="button"
                 variant="danger"
                 size="pill"
-                className="w-full"
                 disabled={busy || chosen.length === 0}
                 onClick={() => setPending({ action: "purge", taskIds: chosen })}
               >
@@ -189,7 +188,6 @@ export function EnvironmentsPage({ mode }: { mode: "files" | "trash" }) {
                 type="button"
                 variant="destructive"
                 size="pill"
-                className="w-full"
                 disabled={busy || candidates.length === 0}
                 onClick={() =>
                   setPending({ action: "purge", taskIds: candidates })
@@ -204,7 +202,6 @@ export function EnvironmentsPage({ mode }: { mode: "files" | "trash" }) {
                 type="button"
                 variant="danger"
                 size="pill"
-                className="w-full"
                 disabled={busy || chosen.length === 0}
                 onClick={() => setPending({ action: "trash", taskIds: chosen })}
               >
@@ -214,7 +211,6 @@ export function EnvironmentsPage({ mode }: { mode: "files" | "trash" }) {
                 type="button"
                 variant="destructive"
                 size="pill"
-                className="w-full"
                 disabled={busy || candidates.length === 0}
                 onClick={() =>
                   setPending({ action: "trash", taskIds: candidates })
