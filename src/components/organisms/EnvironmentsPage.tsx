@@ -95,67 +95,74 @@ export function EnvironmentsPage({ mode }: { mode: "files" | "trash" }) {
 
   return (
     <div className="flex min-h-0 flex-1 gap-3">
-      <section className="flex min-h-0 min-w-0 flex-1 flex-col gap-5 overflow-y-auto rounded-3xl border border-line bg-pill p-3">
-        <div className="grid gap-2 px-4 pt-3">
-          <h1 className="text-2xl leading-6 font-bold text-ink">
-            {t(`${mode}.title`)}
-          </h1>
-          <p className="text-sm text-muted">{t(`${mode}.description`)}</p>
-        </div>
-        {errorKey && (
-          <div className="px-4">
-            <Alert message={translateError(locale, errorKey)} />
+      {!(
+        environments &&
+        shown.length === 0 &&
+        !errorKey &&
+        failures.length === 0
+      ) && (
+        <section className="flex min-h-0 min-w-0 flex-1 flex-col gap-5 overflow-y-auto rounded-3xl border border-line bg-pill p-3">
+          <div className="grid gap-2 px-4 pt-3">
+            <h1 className="text-2xl leading-6 font-bold text-ink">
+              {t(`${mode}.title`)}
+            </h1>
+            <p className="text-sm text-muted">{t(`${mode}.description`)}</p>
           </div>
-        )}
-        {failures.length > 0 && (
-          <div
-            role="alert"
-            className="mx-4 grid gap-2 rounded-2xl border border-error p-4"
-          >
-            <p className="text-sm font-semibold text-error">
-              {translateWith(locale, "files.failed", {
-                count: failures.length,
-              })}
-            </p>
-            <ul className="grid gap-1 text-sm">
-              {failures.map((failure) => (
-                <li key={failure.task_id} className="text-ink">
-                  <span className="font-medium">
-                    {titles.get(failure.task_id) ?? failure.task_id}
-                  </span>
-                  {": "}
-                  {translateError(locale, failure.error)}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-        {environments &&
-          (shown.length > 0 ? (
-            <EnvironmentList
-              label={t(`${mode}.title`)}
-              environments={shown}
-              focusedId={focused?.task_id ?? null}
-              onFocus={setFocusedId}
-              aside={aside}
-            />
-          ) : null)}
-        {inTrash && (
-          <div className="sticky bottom-0 mt-auto flex flex-wrap items-center justify-end gap-2 rounded-full border border-line bg-surface p-2 shadow-2xl">
-            <Button
-              type="button"
-              variant="destructive"
-              size="pill"
-              disabled={busy || candidates.length === 0}
-              onClick={() =>
-                setPending({ action: "purge", taskIds: candidates })
-              }
+          {errorKey && (
+            <div className="px-4">
+              <Alert message={translateError(locale, errorKey)} />
+            </div>
+          )}
+          {failures.length > 0 && (
+            <div
+              role="alert"
+              className="mx-4 grid gap-2 rounded-2xl border border-error p-4"
             >
-              {t("trash.emptyTrash")}
-            </Button>
-          </div>
-        )}
-      </section>
+              <p className="text-sm font-semibold text-error">
+                {translateWith(locale, "files.failed", {
+                  count: failures.length,
+                })}
+              </p>
+              <ul className="grid gap-1 text-sm">
+                {failures.map((failure) => (
+                  <li key={failure.task_id} className="text-ink">
+                    <span className="font-medium">
+                      {titles.get(failure.task_id) ?? failure.task_id}
+                    </span>
+                    {": "}
+                    {translateError(locale, failure.error)}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {environments &&
+            (shown.length > 0 ? (
+              <EnvironmentList
+                label={t(`${mode}.title`)}
+                environments={shown}
+                focusedId={focused?.task_id ?? null}
+                onFocus={setFocusedId}
+                aside={aside}
+              />
+            ) : null)}
+          {inTrash && (
+            <div className="sticky bottom-0 mt-auto flex flex-wrap items-center justify-end gap-2 rounded-full border border-line bg-surface p-2 shadow-2xl">
+              <Button
+                type="button"
+                variant="destructive"
+                size="pill"
+                disabled={busy || candidates.length === 0}
+                onClick={() =>
+                  setPending({ action: "purge", taskIds: candidates })
+                }
+              >
+                {t("trash.emptyTrash")}
+              </Button>
+            </div>
+          )}
+        </section>
+      )}
       {focused ? (
         <EnvironmentDetail
           environment={focused}
