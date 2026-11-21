@@ -749,7 +749,15 @@
     },
     "detail": {
       "repository": "Repository",
-      "commit": "Base commit"
+      "commit": "Base commit",
+      "git": "Git",
+      "location": "Location",
+      "activity": "Activity",
+      "created": "Created",
+      "updated": "Last updated",
+      "trashed": "Moved to trash",
+      "copy": "Copy",
+      "copied": "Copied"
     },
     "cancel": "Cancel",
     "failed": "{count} could not be processed:",

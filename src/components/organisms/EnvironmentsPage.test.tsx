@@ -164,6 +164,18 @@ describe("files", () => {
     const detail = screen.getByRole("complementary", { name: "Login" });
     expect(within(detail).getByText("my-app")).toBeTruthy();
     expect(within(detail).getByText("/w/t1")).toBeTruthy();
+    expect(within(detail).getByText("Created")).toBeTruthy();
+    expect(within(detail).getByText("Last updated")).toBeTruthy();
+    expect(within(detail).queryByText("Moved to trash")).toBeNull();
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText },
+      configurable: true,
+    });
+    await user.click(
+      within(detail).getAllByRole("button", { name: "Copy" })[2],
+    );
+    expect(writeText).toHaveBeenCalledWith("/w/t1");
 
     await user.click(screen.getByRole("button", { name: /Payments/ }));
     const next = screen.getByRole("complementary", { name: "Payments" });
