@@ -14,9 +14,9 @@ export function CloseIcon() {
   );
 }
 
-export function FolderTileIcon() {
+export function FolderTileIcon({ className = "h-20 w-24" }: { className?: string }) {
   return (
-    <svg width="96" height="80" viewBox="0 0 116 96" fill="currentColor" aria-hidden>
+    <svg className={className} viewBox="0 0 116 96" fill="currentColor" aria-hidden>
       <path
         opacity=".6"
         d="M6 18a8 8 0 0 1 8-8h26l10 10h52a8 8 0 0 1 8 8v52a8 8 0 0 1-8 8H14a8 8 0 0 1-8-8z"

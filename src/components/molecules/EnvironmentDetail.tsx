@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
 import { formatBytes, formatDateTime } from "../../i18n/translate";
+import { FolderTileIcon } from "../atoms/Icons";
 import type { Environment } from "../../hooks/useEnvironments";
 
 type Props = {
@@ -12,11 +13,13 @@ type Props = {
 export function EnvironmentDetail({ environment, status, actions }: Props) {
   const { t, locale, timeFormat } = useI18n();
   const { worktree } = environment;
-  const rows = [
+  const short = [
     [t("files.detail.repository"), environment.repository_name],
-    [t("tasks.environment.branch"), worktree.branch_name],
     [t("tasks.environment.base"), worktree.base_ref],
     [t("files.detail.commit"), worktree.base_commit_sha.slice(0, 12)],
+  ];
+  const long = [
+    [t("tasks.environment.branch"), worktree.branch_name],
     [t("tasks.environment.path"), worktree.trash_path ?? worktree.path],
   ];
   return (
@@ -24,29 +27,43 @@ export function EnvironmentDetail({ environment, status, actions }: Props) {
       aria-label={environment.task_title}
       className="flex min-h-0 w-104 shrink-0 flex-col gap-6 overflow-y-auto rounded-3xl border border-line bg-pill p-6"
     >
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div className="grid justify-items-start gap-3">
+      <div className="flex items-start gap-4">
+        <span className="grid size-16 shrink-0 place-items-center rounded-2xl bg-raised text-error">
+          <FolderTileIcon className="h-8 w-10" />
+        </span>
+        <div className="grid min-w-0 justify-items-start gap-2">
           {status}
-          <h2 className="text-2xl font-bold text-ink">
+          <h2 className="text-xl leading-tight font-bold text-ink">
             {environment.task_title}
           </h2>
         </div>
-        <div className="flex flex-wrap gap-2">{actions}</div>
       </div>
-      <dl className="grid grid-cols-[7rem_minmax(0,1fr)] overflow-hidden rounded-2xl border border-line text-sm">
-        {rows.map(([label, value], index) => {
-          const edge = index === 0 ? "" : "border-t border-line";
-          return (
-            <div key={label} className="contents">
-              <dt className={`${edge} bg-shell px-5 py-4 text-muted`}>
-                {label}
-              </dt>
-              <dd className={`${edge} px-5 py-4`}>
-                <code className="break-all text-ink">{value}</code>
-              </dd>
-            </div>
-          );
-        })}
+      <div className="flex flex-wrap gap-2">{actions}</div>
+      <dl className="grid grid-cols-2 gap-2 text-sm">
+        {short.map(([label, value], index) => (
+          <div
+            key={label}
+            className={`grid min-w-0 content-start gap-1 rounded-2xl bg-raised px-4 py-3 ${index === 0 ? "col-span-2" : ""}`}
+          >
+            <dt className="text-xs text-muted">{label}</dt>
+            <dd>
+              <code className="break-all text-ink">{value}</code>
+            </dd>
+          </div>
+        ))}
+        {long.map(([label, value]) => (
+          <div
+            key={label}
+            className="col-span-2 grid min-w-0 content-start gap-1 rounded-2xl bg-raised px-4 py-3"
+          >
+            <dt className="text-xs text-muted">{label}</dt>
+            <dd>
+              <code className="text-xs leading-relaxed break-all text-ink">
+                {value}
+              </code>
+            </dd>
+          </div>
+        ))}
       </dl>
       {worktree.copies.length > 0 && (
         <section className="grid gap-3">
