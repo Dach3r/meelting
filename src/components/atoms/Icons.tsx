@@ -14,14 +14,19 @@ export function CloseIcon() {
   );
 }
 
-export function FolderTileIcon({ className = "h-20 w-24" }: { className?: string }) {
+export function FolderTileIcon({
+  className = "h-20 w-24",
+}: {
+  className?: string;
+}) {
   return (
-    <svg className={className} viewBox="0 0 116 96" fill="currentColor" aria-hidden>
-      <path
-        opacity=".6"
-        d="M6 18a8 8 0 0 1 8-8h26l10 10h52a8 8 0 0 1 8 8v52a8 8 0 0 1-8 8H14a8 8 0 0 1-8-8z"
-      />
-      <path d="M6 34a8 8 0 0 1 8-8h88a8 8 0 0 1 8 8v48a8 8 0 0 1-8 8H14a8 8 0 0 1-8-8z" />
+    <svg
+      className={className}
+      viewBox="0 0 116 96"
+      fill="currentColor"
+      aria-hidden
+    >
+      <path d="M6 18a8 8 0 0 1 8-8h26l10 10h52a8 8 0 0 1 8 8v54a8 8 0 0 1-8 8H14a8 8 0 0 1-8-8z" />
     </svg>
   );
 }
