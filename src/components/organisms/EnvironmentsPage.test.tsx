@@ -83,7 +83,11 @@ describe("files", () => {
     const list = await screen.findByRole("list", { name: "Files" });
     expect(within(list).getAllByRole("listitem")).toHaveLength(2);
     expect(screen.queryByText("Old")).toBeNull();
+    expect(screen.queryByRole("complementary", { name: "Login" })).toBeNull();
+    await user.click(screen.getByRole("button", { name: /Login/ }));
     expect(screen.getByText("/w/t1")).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "Close" }));
+    expect(screen.queryByRole("complementary", { name: "Login" })).toBeNull();
 
     await user.click(screen.getByRole("checkbox", { name: "Login" }));
     await user.click(screen.getByRole("button", { name: "Move to trash (1)" }));
@@ -127,7 +131,10 @@ describe("files", () => {
     ]);
     renderPage("files");
 
-    const detail = await screen.findByRole("complementary", { name: "Login" });
+    await userEvent
+      .setup()
+      .click(await screen.findByRole("button", { name: /Login/ }));
+    const detail = screen.getByRole("complementary", { name: "Login" });
     expect(within(detail).getByText("Copied files")).toBeTruthy();
     expect(within(detail).getByText(".env")).toBeTruthy();
     await userEvent
@@ -148,7 +155,8 @@ describe("files", () => {
     const user = userEvent.setup();
     renderPage("files");
 
-    const detail = await screen.findByRole("complementary", { name: "Login" });
+    await user.click(await screen.findByRole("button", { name: /Login/ }));
+    const detail = screen.getByRole("complementary", { name: "Login" });
     expect(within(detail).getByText("my-app")).toBeTruthy();
     expect(within(detail).getByText("/w/t1")).toBeTruthy();
 
@@ -237,7 +245,6 @@ describe("trash", () => {
 
     const list = await screen.findByRole("list", { name: "Trash" });
     expect(within(list).getByText("Deleted in 25 days")).toBeTruthy();
-    expect(screen.getByText("/w/.trash/t1")).toBeTruthy();
     expect(screen.queryByText("Active")).toBeNull();
 
     await user.click(screen.getByRole("checkbox", { name: "Login" }));

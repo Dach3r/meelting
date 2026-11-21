@@ -1,16 +1,22 @@
 import type { ReactNode } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
 import { formatBytes, formatDateTime } from "../../i18n/translate";
-import { FolderTileIcon } from "../atoms/Icons";
+import { CloseIcon, FolderTileIcon } from "../atoms/Icons";
 import type { Environment } from "../../hooks/useEnvironments";
 
 type Props = {
   environment: Environment;
   status: ReactNode;
   actions: ReactNode;
+  onClose: () => void;
 };
 
-export function EnvironmentDetail({ environment, status, actions }: Props) {
+export function EnvironmentDetail({
+  environment,
+  status,
+  actions,
+  onClose,
+}: Props) {
   const { t, locale, timeFormat } = useI18n();
   const { worktree } = environment;
   const short = [
@@ -27,6 +33,14 @@ export function EnvironmentDetail({ environment, status, actions }: Props) {
       aria-label={environment.task_title}
       className="flex min-h-0 w-104 shrink-0 flex-col gap-6 overflow-y-auto rounded-3xl border border-line bg-pill p-6"
     >
+      <button
+        type="button"
+        aria-label={t("teams.close")}
+        onClick={onClose}
+        className="grid size-10 shrink-0 cursor-pointer place-items-center self-end rounded-full bg-raised text-muted transition-colors hover:bg-hi hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+      >
+        <CloseIcon />
+      </button>
       <div className="flex items-start gap-4">
         <span className="grid size-16 shrink-0 place-items-center rounded-2xl bg-raised text-ink">
           <FolderTileIcon className="h-8 w-10" />

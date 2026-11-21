@@ -39,8 +39,9 @@ export function EnvironmentsPage({ mode }: { mode: "files" | "trash" }) {
   );
   const selectable = (environment: Environment) =>
     inTrash || environment.worktree.status === "ready";
-  const focused =
-    shown.find((environment) => environment.task_id === focusedId) ?? shown[0];
+  const focused = shown.find(
+    (environment) => environment.task_id === focusedId,
+  );
   const candidates = shown.filter(selectable).map((item) => item.task_id);
   const chosen = candidates.filter((taskId) => selected.has(taskId));
 
@@ -147,13 +148,13 @@ export function EnvironmentsPage({ mode }: { mode: "files" | "trash" }) {
           </div>
         )}
         {environments &&
-          (focused ? (
+          (shown.length > 0 ? (
             <EnvironmentList
               label={t(`${mode}.title`)}
               environments={shown}
               selected={selected}
               selectable={selectable}
-              focusedId={focused.task_id}
+              focusedId={focused?.task_id ?? null}
               onFocus={setFocusedId}
               onToggle={toggle}
               onToggleAll={toggleAll}
@@ -226,6 +227,7 @@ export function EnvironmentsPage({ mode }: { mode: "files" | "trash" }) {
         <EnvironmentDetail
           environment={focused}
           status={pill(focused)}
+          onClose={() => setFocusedId(null)}
           actions={
             inTrash ? (
               <>
@@ -267,11 +269,8 @@ export function EnvironmentsPage({ mode }: { mode: "files" | "trash" }) {
           }
         />
       ) : environments ? (
-        mode === "trash" ? (
-          <TrashEmptyCalendar />
-        ) : (
-          <EnvironmentsEmptyGuide />
-        )
+        shown.length === 0 &&
+        (mode === "trash" ? <TrashEmptyCalendar /> : <EnvironmentsEmptyGuide />)
       ) : (
         <aside
           aria-hidden

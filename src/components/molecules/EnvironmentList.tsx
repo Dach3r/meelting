@@ -8,7 +8,7 @@ type Props = {
   environments: Environment[];
   selected: Set<string>;
   selectable: (environment: Environment) => boolean;
-  focusedId: string;
+  focusedId: string | null;
   onFocus: (taskId: string) => void;
   onToggle: (taskId: string) => void;
   onToggleAll: () => void;
