@@ -34,18 +34,20 @@ export function EnvironmentList({
   const allSelected =
     candidates.length > 0 &&
     candidates.every((environment) => selected.has(environment.task_id));
+  const selecting = selected.size > 0;
   return (
     <div className="grid gap-1">
-      <label className="flex cursor-pointer items-center gap-3 px-4 py-2 text-sm font-medium text-muted">
-        <input
-          type="checkbox"
-          className={checkbox}
-          checked={allSelected}
-          disabled={candidates.length === 0}
-          onChange={onToggleAll}
-        />
-        {t("files.selectAll")}
-      </label>
+      {selecting && (
+        <label className="flex cursor-pointer items-center gap-3 px-4 py-2 text-sm font-medium text-muted">
+          <input
+            type="checkbox"
+            className={checkbox}
+            checked={allSelected}
+            onChange={onToggleAll}
+          />
+          {t("files.selectAll")}
+        </label>
+      )}
       <ul
         aria-label={label}
         className="grid grid-cols-[repeat(auto-fill,minmax(13rem,1fr))] gap-3"
@@ -55,11 +57,11 @@ export function EnvironmentList({
           return (
             <li
               key={environment.task_id}
-              className={`relative grid min-w-0 rounded-3xl transition-colors ${focused ? "bg-hi ring-1 ring-ink/40" : "bg-raised hover:bg-pill-hover"}`}
+              className={`group relative grid min-w-0 rounded-3xl transition-colors ${focused ? "bg-hi ring-1 ring-ink/40" : "bg-raised hover:bg-pill-hover"}`}
             >
               <input
                 type="checkbox"
-                className={`${checkbox} absolute top-4 left-4 z-10`}
+                className={`${checkbox} absolute top-4 left-4 z-10 transition-opacity focus-visible:opacity-100 ${selecting ? "" : "opacity-0 group-hover:opacity-100"}`}
                 aria-label={environment.task_title}
                 checked={selected.has(environment.task_id)}
                 disabled={!selectable(environment)}

@@ -218,9 +218,9 @@ describe("files", () => {
     const user = userEvent.setup();
     renderPage("files");
 
-    await user.click(
-      await screen.findByRole("checkbox", { name: "Select all" }),
-    );
+    expect(screen.queryByRole("checkbox", { name: "Select all" })).toBeNull();
+    await user.click(await screen.findByRole("checkbox", { name: "Login" }));
+    expect(screen.getByRole("checkbox", { name: "Select all" })).toBeTruthy();
     await user.click(screen.getByRole("button", { name: "Move to trash (1)" }));
     await user.click(
       within(screen.getByRole("dialog")).getByRole("button", {
