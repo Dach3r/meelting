@@ -52,6 +52,19 @@ pub struct RoomDetail {
     pub runs: Vec<AgentRun>,
     pub partials: Vec<Partial>,
     pub proposed_agent_id: Option<String>,
+    pub tool_calls: Vec<ToolActivity>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, sqlx::FromRow)]
+pub struct ToolActivity {
+    pub id: String,
+    pub run_id: String,
+    pub room_id: String,
+    pub task_id: String,
+    pub tool: Option<String>,
+    pub path: Option<String>,
+    pub status: String,
+    pub error_code: Option<String>,
 }
 
 pub fn normalize_body(raw: &str) -> Option<String> {

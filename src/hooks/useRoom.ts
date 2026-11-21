@@ -25,6 +25,18 @@ type RoomDetail = {
   runs: AgentRun[];
   partials: RunSnapshot[];
   proposed_agent_id: string | null;
+  tool_calls: ToolActivity[];
+};
+
+export type ToolActivity = {
+  id: string;
+  run_id: string;
+  room_id: string;
+  task_id: string;
+  tool: string | null;
+  path: string | null;
+  status: "running" | "succeeded" | "failed" | "cancelled";
+  error_code: string | null;
 };
 
 export type Selection =
@@ -59,6 +71,7 @@ type RoomState = {
   messages: Message[];
   runs: RunState;
   proposal: string | null;
+  toolCalls: ToolActivity[];
 };
 
 type Update = (state: RoomState) => RoomState;
@@ -67,6 +80,12 @@ function withMessage(messages: Message[], message: Message) {
   return messages.some((known) => known.id === message.id)
     ? messages
     : [...messages, message].slice(-recentMessages);
+}
+
+function withToolCall(calls: ToolActivity[], activity: ToolActivity) {
+  return calls.some((known) => known.id === activity.id)
+    ? calls.map((known) => (known.id === activity.id ? activity : known))
+    : [...calls, activity];
 }
 
 function withStatus(state: RoomState, run: AgentRun): RoomState {
@@ -100,6 +119,7 @@ export function useRoom(roomId: string) {
     messages: [],
     runs: emptyRunState,
     proposal: null,
+    toolCalls: [],
   });
   const [errorKey, setErrorKey] = useState<string | null>(null);
   const [sendErrorKey, setSendErrorKey] = useState<string | null>(null);
@@ -118,7 +138,12 @@ export function useRoom(roomId: string) {
       else waiting.push(change);
     };
     setRoom(null);
-    setState({ messages: [], runs: emptyRunState, proposal: null });
+    setState({
+      messages: [],
+      runs: emptyRunState,
+      proposal: null,
+      toolCalls: [],
+    });
     const subscriptions = Promise.all([
       listen<Message>("message:created", (event) => {
         const message = event.payload;
@@ -131,6 +156,14 @@ export function useRoom(roomId: string) {
       listen<AgentRun>("agent_run:status", (event) => {
         const run = event.payload;
         if (run.room_id === roomId) receive((s) => withStatus(s, run));
+      }),
+      listen<ToolActivity>("tool_call:status", (event) => {
+        const activity = event.payload;
+        if (activity.room_id === roomId)
+          receive((s) => ({
+            ...s,
+            toolCalls: withToolCall(s.toolCalls, activity),
+          }));
       }),
       listen<TokenChunk>("agent_run:token", (event) => {
         const chunk = event.payload;
@@ -150,6 +183,7 @@ export function useRoom(roomId: string) {
             messages: detail.messages,
             runs: loadRunState(detail.runs, detail.partials),
             proposal: detail.proposed_agent_id,
+            toolCalls: detail.tool_calls,
           }),
         );
       })
@@ -260,6 +294,7 @@ export function useRoom(roomId: string) {
         messages: state.messages,
         runs: state.runs,
         proposal,
+        toolCalls: state.toolCalls,
       }
     : null;
 

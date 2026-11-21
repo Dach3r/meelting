@@ -2,7 +2,7 @@ use crate::catalogs::llm::Provider;
 use crate::domain::agent_run::{AgentRun, ErrorKind};
 use crate::domain::tools::{self, Budget, Prepared, Request, ToolContext};
 use crate::repositories::tool_calls::{self, Closing, NewCall, NewRejected};
-use crate::services::agent_run_engine::Engine;
+use crate::services::agent_run_engine::{Engine, RunEvent};
 use crate::services::{tool_environment, tool_files, tool_git};
 use crate::system::chat_completions::{RawCall, assistant_message, tool_message};
 use crate::system::llm_call;
@@ -225,6 +225,7 @@ async fn execute(session: &Session<'_>, state: &mut State, call: &Call) -> Resul
             .await
             .map_err(|_| Outcome::Aborted)?;
             state.executed = true;
+            announce(session, &row_id).await;
             return Ok(error_text("invalid_arguments"));
         }
         Prepared::Audited { audit, request, .. } => (audit, request),
@@ -248,11 +249,12 @@ async fn execute(session: &Session<'_>, state: &mut State, call: &Call) -> Resul
     .await
     .map_err(|_| Outcome::Aborted)?;
     state.executed = true;
+    announce(session, &row_id).await;
 
     let request = match request {
         Ok(request) => request.clone(),
         Err(code) => {
-            close(pool, &row_id, &Closing::Failed { code }).await?;
+            close(session, &row_id, &Closing::Failed { code }).await?;
             return Ok(error_text(code));
         }
     };
@@ -277,11 +279,11 @@ async fn execute(session: &Session<'_>, state: &mut State, call: &Call) -> Resul
                         result_bytes: i64::try_from(text.len()).unwrap_or(i64::MAX),
                         truncated,
                     };
-                    close(pool, &row_id, &closing).await?;
+                    close(session, &row_id, &closing).await?;
                     Ok(text)
                 }
                 Err(code) => {
-                    close(pool, &row_id, &Closing::Failed { code }).await?;
+                    close(session, &row_id, &Closing::Failed { code }).await?;
                     Ok(error_text(code))
                 }
             };
@@ -289,18 +291,22 @@ async fn execute(session: &Session<'_>, state: &mut State, call: &Call) -> Resul
     };
     stop.store(true, Ordering::Relaxed);
     let _ = tool_calls::close(pool, &row_id, &Closing::Cancelled).await;
+    announce(session, &row_id).await;
     Err(interrupted.unwrap_or(Outcome::Cancelled))
 }
 
-async fn close(
-    pool: &sqlx::SqlitePool,
-    row_id: &str,
-    closing: &Closing<'_>,
-) -> Result<(), Outcome> {
-    tool_calls::close(pool, row_id, closing)
+async fn close(session: &Session<'_>, row_id: &str, closing: &Closing<'_>) -> Result<(), Outcome> {
+    tool_calls::close(&session.engine.pool, row_id, closing)
         .await
-        .map(|_| ())
-        .map_err(|_| Outcome::Aborted)
+        .map_err(|_| Outcome::Aborted)?;
+    announce(session, row_id).await;
+    Ok(())
+}
+
+async fn announce(session: &Session<'_>, row_id: &str) {
+    if let Ok(Some(activity)) = tool_calls::activity(&session.engine.pool, row_id).await {
+        session.engine.emit(RunEvent::ToolCall(activity));
+    }
 }
 
 async fn perform(root: &Path, request: Request, stop: Arc<AtomicBool>) -> tool_files::ToolResult {

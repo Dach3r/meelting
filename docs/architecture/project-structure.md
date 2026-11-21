@@ -31,11 +31,12 @@ src-tauri/src/
 ├── lib.rs                 Tauri builder, single-instance, window state and dialog plugins, run expiry and worktree recovery at startup, an hourly purge of environments 30 days in the trash, execution engine and repository locks as state, and command registration
 ├── commands/              Layer 1: Tauri commands (thin)
 │   ├── provider_keys.rs   ✅ list_provider_keys, save_provider_key, check_provider_key, delete_provider_key (take only the provider; the core resolves the workspace)
-│   ├── agent_runs.rs      ✅ send_intervention, resolve_recipient, check_agent_availability, cancel_agent_run, stop_intervention and the engine's event emitter (agent_run:status, agent_run:token, message:created)
+│   ├── agent_runs.rs      ✅ send_intervention, resolve_recipient, check_agent_availability, cancel_agent_run, stop_intervention, get_agent_tools, change_agent_tools and the engine's event emitter (agent_run:status, agent_run:token, message:created)
 │   ├── dialog.rs          ✅ native folder and multiple-file dialogs opened from Rust (`tauri-plugin-dialog`); the webview never sends a path
 │   ├── app_settings.rs    ✅ get_open_at_login, change_open_at_login (OS login item through `tauri-plugin-autostart`), open_data_folder (`tauri-plugin-opener`)
 │   ├── repositories.rs    ✅ list_repositories, register_repository (folder dialog; `None` if cancelled), unregister_repository, list_repository_branches
 │   ├── worktrees.rs       ✅ get_worktrees_root, change_worktrees_root (folder dialog; `None` if cancelled), prepare_task_environment, discard_task_environment, check_task_environment_removal, remove_task_environment, pick_task_environment_files (file dialog in the repository; `None` if cancelled), copy_task_environment_files (selection id and secret confirmation only), list_task_environments, trash_task_environments, restore_task_environments, purge_task_environments (task ids only; each returns the per-task failures)
+│   ├── voice.rs           ✅ get_voice_status (all OSes), download_voice_model, start_voice_capture, finish_voice_capture, cancel_voice_capture, speak_message, stop_speaking (macOS only, D57) and the `voice:playback` emitter
 │   ├── tasks.rs           ✅ list_tasks, create_task, update_task, change_task_status, link_task_to_room, delete_task (create_task and update_task also start the title generation)
 │   ├── rooms.rs           ✅ list_rooms, create_room, get_room (with runs, snapshots and agents who left), finish_room, add_room_agents, remove_room_agent
 │   └── session.rs         ✅ load_session, complete_first_launch, create_workspace, switch_workspace, list_teams, create_team, create_agent, get_agent, update_agent, delete_agent, save_canvas_positions, reset_canvas_positions, list_agent_templates, list_agent_roles, list_llm_providers, detect_local_models, change_locale, change_theme, change_ui_scale, change_loading_enabled, change_time_format, change_reduce_motion, change_notification
@@ -75,6 +76,7 @@ src-tauri/src/
 │   ├── repository_register.rs ✅ checks a folder with read-only git (not bare, not a linked worktree, with commits, without submodules) and the storage of its top level and `git_common_dir`, and registers them; never writes to the repository
 │   ├── worktrees_root_get.rs ✅ resolves the worktree root (`profile.worktrees_root` or `~/Meelting/worktrees`) and its storage status
 │   ├── worktrees_root_change.rs ✅ validates a chosen root (exists, canonical, outside every registered repository, fixed local storage) and saves it
+│   ├── voice.rs           ✅ D57 voice session (macOS): speech model download with size and SHA-256 checks, push-to-talk capture, local transcription with a lazily loaded model, ordered playback queue with stop; `get_voice_status` reports `available: false` elsewhere
 │   ├── repository_locks.rs ✅ in-memory lock per `git_common_dir`, managed as Tauri state, held by every worktree operation and released on drop
 │   ├── worktree_prepare.rs ✅ prepares a task worktree: read-only checks (identity, storage, exact commit, Git 2.40+, submodules, executable filters), folders, `preparing` row in `BEGIN IMMEDIATE`, `git worktree add` under the lock and verification
 │   ├── worktree_discard.rs ✅ marks a `failed` or `missing` environment `removed` once its folder and Git registration are gone; never prunes
@@ -112,6 +114,7 @@ src-tauri/src/
 │   ├── canvas_positions_reset.rs ✅ deletes the org chart positions of the current workspace and returns the updated list
 │   ├── agent_roles_list.rs ✅ predefined roles from the catalog, grouped by area
 │   ├── agent_templates_list.rs ✅ catalog templates in the profile language
+│   ├── agent_tools_change.rs ✅ the in-memory agent tools switch of the engine (D56): off at every launch, refused outside macOS, never touches the cloud consent
 │   ├── llm_providers_list.rs ✅ catalog providers and models
 │   └── local_models_detect.rs ✅ queries the catalog's local providers and returns whether they are running and their models
 ├── system/                Layer 3: OS integration, no business rules
@@ -126,6 +129,9 @@ src-tauri/src/
 │   ├── local_models.rs    ✅ lists the models of a local provider (GET /models)
 │   ├── keychain.rs        ✅ OS keychain (crate keyring)
 │   ├── tool_support.rs    ✅ 5A local capability detection: `POST /api/show` (Ollama) and `GET /api/v1/models` (LM Studio) on the configured endpoint only, short timeouts, bounded body, any failure is `unknown`
+│   ├── audio_capture.rs   ✅ D57 microphone capture with `cpal` on its own thread, 60 s cap (macOS)
+│   ├── speech_recognition.rs ✅ D57 whisper.cpp through `whisper-rs` (Metal): load the model, transcribe 16 kHz mono (macOS)
+│   ├── speech_synthesis.rs ✅ D57 system `say`: list voices, speak text from stdin as a killable child (macOS)
 │   ├── safe_file.rs       ✅ symlink-safe file access below a folder: `openat` + `O_NOFOLLOW` segment by segment, `mkdirat` and `O_EXCL` on Unix; reparse-point checks and `FILE_FLAG_OPEN_REPARSE_POINT` on Windows; copy with a size limit; folder listing and `open_for_read` through held handles (`openat` per segment and `fdopendir` on Unix, non-shareable handles and reparse-point checks on Windows)
 │   └── storage.rs         ✅ fixed local storage check: synchronized folders, then `statfs` + `diskutil` (macOS), `/proc/self/mountinfo` + `/sys` (Linux) or `GetDriveTypeW` + `IOCTL_STORAGE_QUERY_PROPERTY` (Windows)
 ├── repositories/          SQLite access (sqlx); migrations live in src-tauri/migrations
@@ -141,7 +147,7 @@ src-tauri/src/
 │   ├── git_repositories.rs ✅ repositories table queries (named so the module does not repeat its parent `repositories`)
 │   ├── tasks.rs           ✅ tasks table queries (with the origin room name) and the schema integrity tests of tasks and task_agents
 │   ├── task_room_links.rs ✅ task_room_links table queries: list with room names, idempotent insert and the open tasks of a room assigned to an agent (at most two, to detect ambiguity)
-│   ├── tool_calls.rs      ✅ 5A `tool_calls` audit: insert `running`, close once, cancel the ones left running at startup
+│   ├── tool_calls.rs      ✅ 5A `tool_calls` audit: insert `running`, close once, cancel the ones left running at startup; activity of one call and of a room for the meeting (D58)
 │   ├── task_agents.rs     ✅ task_agents table queries: list, assign (idempotent) and keep only a given set
 │   ├── task_worktree_file_copies.rs ✅ copies of the active worktrees of a workspace and the copy record (upsert)
 │   ├── task_worktrees.rs  ✅ task_worktrees queries: active per task or workspace, transient rows for recovery, `preparing` insert, guarded transitions, trash location, environments with their task and repository, expired trash and deletion of removed history
@@ -150,6 +156,7 @@ src-tauri/src/
 │   ├── agent_run.rs       ✅ states, error_kind, run, snapshot, injectable internal limits and retry policy
 │   ├── tools.rs           ✅ 5A tool domain: limits (D54), `list_dir`, `read_file`, `search`, `git_status` and `git_diff` definitions, call preparation, text windows, search report, status and diff rendering (auditable vs not), listing rendering, run budget
 │   ├── tool_support.rs    ✅ 5A `supported` / `unsupported` / `unknown` and the parsers of the Ollama and LM Studio capability answers
+│   ├── speech.rs          ✅ D57 voice listing parsing, stable voice per agent, text made speakable, mono 16 kHz resampling (macOS)
 │   ├── path_jail.rs       ✅ 5A lexical path rules for tools: relative only, no `..`, `.git`, device names, secret names, `:` or `\\`
 │   ├── recipient.rs       ✅ recipient resolution: selection (automatic, nobody, team, agent, confirmed), the team round (up to 4 agents in room order) and the team vocative («equipo», «team», «todos»), @ mentions by name or role ignoring case and accents, leading vocative, ambiguity, multiple agents and conflict
 │   ├── prompt.rs          ✅ BuildPrompt: instructions, framing, labeled history (author and, in the user's questions, the agent they were addressed to) and budget; context_too_large if the minimum does not fit
@@ -169,7 +176,7 @@ src-tauri/src/
 │   ├── review.rs          ✅ (4C) parsers that keep path bytes: `git status --porcelain=v2 -z` with staged and unstaged apart, renames, conflicts, untracked and ignored entries; `diff --numstat -z`; a single-file patch into hunks; entry, line and width limits and an explicit `complete` flag. It also holds the review contract types (entries, drift, protected paths, folder children) shared with the webview
 │   ├── repository.rs      ✅ registered repository, branches, name from the folder and default branch suggestion
 │   ├── task.rs            ✅ task, status machine, priority, draft validation (title 1–120, description up to 10,000, base branch only with a repository) and origin
-│   ├── room.rs            ✅ room, participant, message and their lists; body validation and agent deduplication
+│   ├── room.rs            ✅ room, participant, message, tool activity (D58) and their lists; body validation and agent deduplication
 │   ├── session.rs         ✅ profile + workspaces received by the UI
 │   ├── team.rs            ✅ team and agent (summary) received by the UI; AgentDraft and its validation
 │   └── workspace.rs       ✅ workspace and name validation
@@ -233,14 +240,16 @@ src/
 │   ├── agentRunState.ts   ✅ pure run state: logical state order (queued n = 2n, running n = 2n − 1, final last), tokens by (attempt, seq), snapshots and live text
 │   ├── useAgentTemplates.ts ✅ invoke list_agent_templates (reloads when the language changes)
 │   ├── useAgentRoles.ts   ✅ invoke list_agent_roles
+│   ├── useAgentTools.ts   ✅ invoke get_agent_tools and change_agent_tools
 │   ├── useOpenAtLogin.ts  ✅ invoke get_open_at_login and change_open_at_login
+│   ├── useVoice.ts        ✅ voice status, model download, push-to-talk, replies read aloud for new agent messages, `voice:playback` speaking state
 │   └── useDataFolder.ts   ✅ invoke open_data_folder
 ├── test/setup.ts          Vitest configuration (jest-dom)
 ├── test/review.ts         builders for review entries, reviews, diffs, worktrees and tasks that follow the Rust contracts
 └── components/            Atomic design (overview.md §8)
     ├── atoms/             Avatar, Button, CardSelect, Field, Icons, Logo, Select (native select with label), Switch (on/off switch), SelectField
-    ├── molecules/         AgentPicker, AgentRunStatus, AgentTemplateDetail, Alert, ChangesList (grouped files of a review with untracked folder expansion), ChatMessage, ConfirmDialog, DiffViewer (read-only unified diff table), DriftNotice (informational base branch notice), EnvironmentDetail (details and actions of the focused environment), EnvironmentList (selectable environment rows), EnginePicker, InviteAgentsForm, IslandMenu, LocalProviderRow, LocaleSwitcher, MentionSuggestions, MessageComposer, Modal, NavItem, OrgAgentCard, OrgCard, OrgDrawer, OrgNode, ParticipantTile, FileCopyDialog, ProviderKeyRow, RepositoryList, RoomCard, RoomForm, RoomTasks (tasks tied to the room with their status), TaskBadges, TaskCard, TaskEnvironment, TaskForm, SegmentedControl, SettingsGroup (titled card of settings), SettingsRow, TransitionOverlay, TeamForm, TeamPicker, ThemeSwitcher, UiScaleSwitcher, WorkspaceSwitcher, ZoomControls; agentLabel.ts omits the role when it repeats the name; mentionDraft.ts detects the mention in progress, filters agents by name or role and inserts the chosen one
-    ├── organisms/         AgentCatalogPage, AgentEditForm, AgentForm, EnvironmentsPage (Files and Trash views of the rail), NewWorkspacePage, OrgChart, ProvidersPage, Rail, RoomChat, RoomView, RoomsPage, SettingsPage (sections with one card per group), OpenAtLoginSetting, DataFolderSetting, TaskChanges (Changes section: header, drift, groups, diff and states), TaskDetail, TaskDialog (task form with repositories and saving, shared by TasksPage and RoomView, which opens it from «Create task» and from «Turn into task» in ChatMessage), TasksPage, TeamsPage, Topbar, WorktreesRootSetting (Settings › Environments); authorName.ts resolves a message's author among present agents and those who left
+    ├── molecules/         AgentPicker, AgentRunStatus, AgentTemplateDetail, Alert, ChangesList (grouped files of a review with untracked folder expansion), ChatMessage, ConfirmDialog, DiffViewer (read-only unified diff table), DriftNotice (informational base branch notice), EnvironmentDetail (details and actions of the focused environment), EnvironmentList (selectable environment rows), EnginePicker, InviteAgentsForm, IslandMenu, LocalProviderRow, LocaleSwitcher, MentionSuggestions, MessageComposer (also sends a voice transcript), Modal, NavItem, OrgAgentCard, OrgCard, OrgDrawer, OrgNode, ParticipantTile (states, speaking bars), FileCopyDialog, ProviderKeyRow, RepositoryList, RoomCard, RoomForm, RoomTasks (tasks tied to the room with their status, environment state, «Prepare environment» and «View changes»), TaskBadges, TaskCard, TaskEnvironment, TaskForm, ToolActivityList (agent operations under a request, «View changes»), SegmentedControl, SettingsGroup (titled card of settings), SettingsRow, TransitionOverlay, TeamForm, TeamPicker, ThemeSwitcher, UiScaleSwitcher, WorkspaceSwitcher, ZoomControls; agentLabel.ts omits the role when it repeats the name; mentionDraft.ts detects the mention in progress, filters agents by name or role and inserts the chosen one
+    ├── organisms/         AgentCatalogPage, AgentEditForm, AgentForm, EnvironmentsPage (Files and Trash views of the rail), NewWorkspacePage, OrgChart, ProvidersPage, Rail, RoomChat, RoomView, RoomsPage, SettingsPage (sections with one card per group), AgentToolsSetting (Settings › Advanced › Agents), OpenAtLoginSetting, DataFolderSetting, TaskChanges (Changes section: header, drift, groups, diff and states), TaskDetail, TaskDialog (task form with repositories and saving, shared by TasksPage and RoomView, which opens it from «Create task» and from «Turn into task» in ChatMessage), TasksPage, TeamsPage, Topbar, WorktreesRootSetting (Settings › Environments); authorName.ts resolves a message's author among present agents and those who left
     └── templates/         Workspace (rail + topbar + content)
 ```
 

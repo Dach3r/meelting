@@ -6,6 +6,21 @@
 
 Phase 0 complete (2026-11-17): Tauri 2 scaffold (React + TypeScript + Vite), spikes for the keychain, `git worktree` + PTY with live output and SSE streaming (Chat Completions), validated on the three OSes from CI and with real tests against Ollama and DeepSeek. Phase 1 complete (2026-11-17): SQLite with `profile` and `workspaces`, first launch (language and workspace), shell (rail + topbar), workspace switching and creation, Grafito tokens and `es`/`en` i18n. Phase 2 complete (2026-11-18): teams, custom agents, template catalog and hiring with a wizard; agents can now be edited (including the team) and deleted with confirmation, and org chart nodes can be dragged with persisted positions; local models (Ollama and LM Studio) are now detected. Phase 3 in progress (2026-11-18): rooms, participants and persistent chat built; `AgentRun` built (engine with persisted states, streaming, retries, cancellation and expiry at startup; adapters for the five providers tested with `wiremock`; "Ask" in the room) and tested with a real Ollama model; Phase 3 complete (2026-11-18) with the "AI providers" screen in Settings (keys verified before saving, per workspace, in the keychain). See [../architecture/overview.md](../architecture/overview.md).
 
+## Meeting MVP (product phase)
+
+Since 2026-11-20 the priority is the meeting itself: a room like a video call where the supervisor talks by voice and chat with a team of agents that can work on tasks (decisions D57–D59). The goal is a functional product with essential safety; deferred work is in [stabilization-backlog.md](stabilization-backlog.md).
+
+| Delivery | Status | What exists |
+|---|---|---|
+| A — Meeting view | ✅ built | Participant tiles with avatar, role, engine and state (available, queued, working, current tool operation, speaking with bars, listening, transcribing, problem with reason), main area, chat with tasks tab, control bar (talk, replies aloud, invite, create task, check again, hang up) |
+| B — Voice turns | ✅ built, microphone check pending (S-01) | Push-to-talk → local whisper.cpp → message → agent → system voice; one-time model download with consent; stop listening and stop speaking; errors for microphone, model and transcription. macOS only |
+| C — Several agents | ✅ built (reused R1/R2) | Selection, `@` mentions, a spoken or typed vocative («Ana, …») and «Team» rounds; one agent at a time |
+| D — Tools in the meeting | ✅ built | Agent tools switch (D56), also turned on from the room when it is off; «No tools» on tiles whose model cannot use them; activity of each call under the request and on the tile; environment preparation and «View changes» from the room's Tasks tab |
+
+**Criterion for the phase:** open Meelting, enter a room, talk by text and voice with a real agent, take turns with other agents, delegate a task and review its result from the meeting. Everything is in place; the voice part needs the manual microphone check (S-01) on a machine with a person at the screen, with the debug app bundle (under `tauri dev` macOS asks the permission for the terminal).
+
+**Not in this phase:** Windows and Linux voice and tools, cloud voice, autonomous coordination, simultaneous conversation, continuous listening, approvals for commands and commits (see the backlog).
+
 ## Phase 0 — Validation spike (1 week)
 
 **Goal:** prove the riskiest parts before committing.
@@ -87,6 +102,7 @@ flowchart LR
 - **Next stage if:** discussions always end within the budget and "Stop" leaves the room idle.
 
 ### R3 — Voice output
+- **Status (2026-11-20):** MVP built on macOS by D57 (system voices, one per agent, queue, stop); subtitles are the chat itself; `agent_voices` and Settings › Voice are not built (S-16).
 - **Goal:** hear each agent with its own voice.
 - **Includes:** native TTS per platform (recommended, S3); playback queue with a single voice at a time; mute, subtitles and "play again"; per-agent voice (D8); "interrupted" and "not played" marks in memory (D7).
 - **Modules:** TTS and playback `system/`, queue service, Settings › Voice, `useVoice`.
@@ -98,6 +114,7 @@ flowchart LR
 - **Next stage if:** S1 and S2 are approved.
 
 ### R4 — Voice input (push-to-talk) · spoken meeting MVP
+- **Status (2026-11-20):** MVP built on macOS by D57 (local whisper.cpp, push-to-talk button, transcript sent as a message); cloud STT, the keyboard shortcut and other OSes are deferred (F-01, S-12, S-10).
 - **Goal:** talk to the agents.
 - **Includes:** capture in the core, push-to-talk (D5), configurable local or cloud STT (D6), permissions and indicator, send or draft (P4), stop the voice on press.
 - **Modules:** capture and STT `system/`, transcription service, macOS entitlements, `useVoice`.
@@ -113,6 +130,7 @@ flowchart LR
 - **Excludes:** speech-to-speech as the foundation (it would only be evaluated per agent after a spike).
 
 ### R6 — Meeting with real work
+- **Status (2026-11-20):** first version built (D58): tasks are created and linked from the meeting, the agent's file and Git operations show live in the room, and the changes open from it; commands and commits wait for approvals.
 - **Depends on:** Phases 4–5 (tasks, worktrees, tools, approvals).
 - **Goal:** create tasks from the meeting and have the agent explain its progress.
 - **Rule:** the conversation never authorizes tools.

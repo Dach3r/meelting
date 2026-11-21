@@ -1,6 +1,7 @@
 import { SendHorizontal, X } from "lucide-react";
 import {
   type CSSProperties,
+  useEffect,
   useId,
   useMemo,
   useRef,
@@ -29,12 +30,15 @@ import {
 
 const bodyMaxChars = 4000;
 
+export type VoiceDraft = { id: number; text: string };
+
 type Props = {
   roomId: string;
   agents: Participant[];
   proposedAgentId: string | null;
   busyAgentIds: string[];
   sending: boolean;
+  voiceDraft: VoiceDraft | null;
   onSend: (draft: Draft) => Promise<SendResult>;
 };
 
@@ -44,6 +48,7 @@ export function MessageComposer({
   proposedAgentId,
   busyAgentIds,
   sending,
+  voiceDraft,
   onSend,
 }: Props) {
   const { t, locale } = useI18n();
@@ -145,6 +150,15 @@ export function MessageComposer({
     }
     setPending({ draft, choice: result });
   }
+
+  const voiceDraftId = voiceDraft?.id;
+  useEffect(() => {
+    if (!voiceDraft) return;
+    const text = voiceDraft.text.slice(0, bodyMaxChars);
+    edit(text, text.length);
+    setChosen([]);
+    deliver({ body: text, selection, mentionIds: [] });
+  }, [voiceDraftId]);
 
   function send() {
     if (disabled) return;

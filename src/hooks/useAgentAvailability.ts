@@ -9,6 +9,7 @@ export type AgentAvailability = {
   provider: string;
   availability: Availability;
   reason: string | null;
+  tools: "supported" | "unsupported" | "unknown";
 };
 
 export function useAgentAvailability(roomId: string, finishedRuns: number) {

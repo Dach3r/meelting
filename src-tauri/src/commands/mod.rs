@@ -7,4 +7,5 @@ pub mod review;
 pub mod rooms;
 pub mod session;
 pub mod tasks;
+pub mod voice;
 pub mod worktrees;

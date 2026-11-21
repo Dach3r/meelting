@@ -5,13 +5,14 @@ import { roleRepeatsName } from "./agentLabel";
 
 export type ParticipantStatus = {
   label: string;
-  tone: "active" | "calm" | "problem";
+  tone: "speaking" | "active" | "calm" | "problem";
   detail?: string;
 };
 
 type Removal = { label: string; disabled: boolean; onRemove: () => void };
 
 const toneClasses = {
+  speaking: "text-accent",
   active: "text-accent",
   calm: "text-muted",
   problem: "text-error",
@@ -30,7 +31,8 @@ export function ParticipantTile({
   status?: ParticipantStatus;
   removal?: Removal;
 }) {
-  const active = status?.tone === "active";
+  const speaking = status?.tone === "speaking";
+  const active = speaking || status?.tone === "active";
   return (
     <li
       style={{ "--tile-hue": hueOf(name) } as CSSProperties}
@@ -51,8 +53,22 @@ export function ParticipantTile({
       <Avatar
         seed={name}
         label={name}
-        className={`size-24 rounded-3xl text-4xl ${active ? "animate-pulse" : ""}`}
+        className={`size-24 rounded-3xl text-4xl ${active && !speaking ? "animate-pulse" : ""}`}
       />
+      {speaking && (
+        <span
+          aria-hidden
+          className="absolute bottom-14 flex h-5 items-end gap-1"
+        >
+          {["h-2", "h-5", "h-3", "h-4"].map((height, index) => (
+            <span
+              key={index}
+              style={{ animationDelay: `${index * 0.15}s` }}
+              className={`w-1 animate-equalizer rounded-full bg-accent motion-reduce:animate-none ${height}`}
+            />
+          ))}
+        </span>
+      )}
       {status && (
         <p
           title={status.detail}

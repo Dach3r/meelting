@@ -23,6 +23,7 @@ import { SettingsGroup } from "../molecules/SettingsGroup";
 import { SettingsRow } from "../molecules/SettingsRow";
 import { ThemeSwitcher } from "../molecules/ThemeSwitcher";
 import { UiScaleSwitcher } from "../molecules/UiScaleSwitcher";
+import { AgentToolsSetting } from "./AgentToolsSetting";
 import { DataFolderSetting } from "./DataFolderSetting";
 import { OpenAtLoginSetting } from "./OpenAtLoginSetting";
 import { WorktreesRootSetting } from "./WorktreesRootSetting";
@@ -272,6 +273,10 @@ export function SettingsPage({
       },
     ],
     advanced: [
+      {
+        key: "agents",
+        rows: [{ key: "agentTools", node: <AgentToolsSetting /> }],
+      },
       {
         key: "data",
         rows: [

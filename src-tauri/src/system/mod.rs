@@ -1,4 +1,6 @@
 pub mod anthropic_messages;
+#[cfg(target_os = "macos")]
+pub mod audio_capture;
 pub mod chat_completions;
 pub mod child_limit;
 pub mod git;
@@ -9,5 +11,9 @@ pub mod llm_stream;
 pub mod local_models;
 pub mod openai_responses;
 pub mod safe_file;
+#[cfg(target_os = "macos")]
+pub mod speech_recognition;
+#[cfg(target_os = "macos")]
+pub mod speech_synthesis;
 pub mod storage;
 pub mod tool_support;

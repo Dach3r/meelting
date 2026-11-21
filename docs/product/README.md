@@ -23,7 +23,9 @@ This product replaces the original Rails SaaS (repository `meelting`), which sta
 | [settings.md](settings.md) | Settings: sections, groups, defaults and behavior |
 | [decisions.md](decisions.md) | Log of approved, pending and discarded decisions |
 | [users.md](users.md) | Target users and main experience (journey) |
-| [roadmap.md](roadmap.md) | Phases, scope and what is not built |
+| [roadmap.md](roadmap.md) | Phases, scope, the meeting MVP status and what is not built |
+| [stabilization-backlog.md](stabilization-backlog.md) | Deferred work to go from the MVP to a robust product, by class and priority |
+| [tools-and-approvals.md](tools-and-approvals.md) | Agent tools, limits, gate and approvals |
 | [integrations.md](integrations.md) | Planned integrations (GitHub, Slack, ClickUp) |
 | [metrics-and-business.md](metrics-and-business.md) | Success indicators and business model |
 | [feature-template.md](feature-template.md) | Standard format for documenting features and decision rules |

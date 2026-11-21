@@ -68,13 +68,22 @@
     "environment_branch_not_deleted": "The environment was deleted, but Git could not delete its branch.",
     "data_folder_unavailable": "Meelting could not open the data folder.",
     "autostart_unavailable": "Meelting could not change the login item of this computer.",
+    "agent_tools_unsupported_platform": "Agent tools are available on macOS only for now.",
     "environment_filters_apply": "This repository uses Git filters that run programs (for example Git LFS), so its changes cannot be reviewed safely. Nothing was run.",
     "environment_config_unsafe": "The Git configuration of this repository includes other files, changed during the review or asked Git to run a program, so the review was refused. Nothing was run.",
     "review_timeout": "Git took too long to answer, so the review was stopped. Try again.",
     "review_stale": "The environment changed since this review was made. Refresh the review.",
     "invalid_review_entry": "That file is not part of the current review. Refresh the review.",
     "protected_file": "This file may hold secrets, so its contents are not shown.",
-    "diff_too_large": "The changes in this file are too large to show."
+    "diff_too_large": "The changes in this file are too large to show.",
+    "voice_model_missing": "Download the speech recognition model before talking.",
+    "voice_model_unavailable": "The speech recognition model could not be loaded. Download it again from the room.",
+    "voice_model_download_failed": "The speech recognition model could not be downloaded or did not match its checksum. Nothing was kept. Try again.",
+    "microphone_unavailable": "Meelting could not open the microphone. Check that one is connected and that Meelting may use it in System Settings › Privacy & Security › Microphone.",
+    "microphone_failed": "The microphone stopped unexpectedly. Try again.",
+    "not_capturing": "The microphone was not listening.",
+    "nothing_heard": "Nothing was heard. Speak a bit louder or longer and try again.",
+    "transcription_failed": "What you said could not be transcribed. Try again."
   },
   "newWorkspace": {
     "title": "Create your workspace",
@@ -286,6 +295,7 @@
       }
     },
     "groups": {
+      "agents": "Agents",
       "languageRegion": "Language and region",
       "startup": "Startup",
       "theme": "Theme",
@@ -301,6 +311,11 @@
       "auto": "Automatic",
       "12h": "12 h",
       "24h": "24 h"
+    },
+    "agentTools": {
+      "title": "Agent tools",
+      "description": "Lets agents with a local model (Ollama or LM Studio) read, search and edit files in the environments of their tasks. They cannot run commands or commit. Turns off every time Meelting opens.",
+      "unavailable": "Available on macOS only for now."
     },
     "openAtLogin": {
       "title": "Open at login",
@@ -467,7 +482,25 @@
       "confirmTitle": "Invite to the room?",
       "confirmBody": "These agents will join the room: {names}.",
       "confirm": "Invite"
-    }
+    },
+    "voice": {
+      "talk": "Talk",
+      "send": "Send what I said",
+      "cancel": "Discard recording",
+      "listening": "Listening",
+      "transcribing": "Transcribing…",
+      "speaking": "Speaking",
+      "aloudOn": "Replies aloud",
+      "aloudOff": "Replies muted",
+      "setupTitle": "Talk to your agents",
+      "setupBody": "Meelting needs a {size} MB speech model. It is downloaded once from Hugging Face and checked. Your voice is processed on this computer and never sent anywhere. Replies are read aloud with your system voices.",
+      "download": "Download and turn on",
+      "progress": "Downloading from Hugging Face · {done} of {total} MB",
+      "verifying": "Checking the model…",
+      "notNow": "Not now",
+      "starting": "Opening the microphone…"
+    },
+    "changesTitle": "Changes · {title}"
   },
   "agentRun": {
     "proposal": "Replying to {agent}",
@@ -837,5 +870,41 @@
       "rewritten": "Rewritten",
       "unavailable": "Unavailable"
     }
+  },
+  "tools": {
+    "title": "Agent activity",
+    "failed": "failed",
+    "viewChanges": "View changes",
+    "status": {
+      "running": "In progress",
+      "succeeded": "Done",
+      "failed": "Failed",
+      "cancelled": "Stopped"
+    },
+    "live": {
+      "list_dir": "Looking at {path}",
+      "read_file": "Reading {path}",
+      "search": "Searching the files",
+      "git_status": "Checking Git status",
+      "git_diff": "Reviewing changes in {path}",
+      "write_file": "Writing {path}",
+      "edit_file": "Editing {path}",
+      "unknown": "Using {tool}"
+    },
+    "done": {
+      "list_dir": "Looked at {path}",
+      "read_file": "Read {path}",
+      "search": "Searched the files",
+      "git_status": "Checked Git status",
+      "git_diff": "Reviewed changes in {path}",
+      "write_file": "Wrote {path}",
+      "edit_file": "Edited {path}",
+      "unknown": "Used {tool}"
+    },
+    "off": "Agent tools are off: agents can talk, but cannot read or edit files.",
+    "enable": "Turn on tools",
+    "none": "No tools",
+    "unsupported": "This model cannot use tools: it can only talk.",
+    "cloud": "Cloud models do not use tools yet: they can only talk."
   }
 }

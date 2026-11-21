@@ -1307,7 +1307,7 @@ mod tests {
                                 .unwrap();
                                 (!exists).then(|| format!("message {}", message.id))
                             }
-                            RunEvent::Token(_) => None,
+                            RunEvent::Token(_) | RunEvent::ToolCall(_) => None,
                         }
                     })
                 });

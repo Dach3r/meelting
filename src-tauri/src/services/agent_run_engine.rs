@@ -1,6 +1,6 @@
 use crate::catalogs::llm::{Location, Provider};
 use crate::domain::agent_run::{AgentRun, Limits, TokenChunk};
-use crate::domain::room::Message;
+use crate::domain::room::{Message, ToolActivity};
 use crate::services::agent_run_execute;
 use crate::services::agent_run_registry::Registry;
 use crate::services::repository_locks::RepositoryLocks;
@@ -14,6 +14,7 @@ pub enum RunEvent {
     Status(AgentRun),
     Token(TokenChunk),
     MessageCreated(Message),
+    ToolCall(ToolActivity),
 }
 
 pub type Emit = Arc<dyn Fn(RunEvent) + Send + Sync>;
@@ -61,9 +62,8 @@ impl Engine {
         self.cloud_tools_consent.load(Ordering::Relaxed)
     }
 
-    #[cfg(test)]
-    pub fn enable_tools(&self) {
-        self.tools_enabled.store(true, Ordering::Relaxed);
+    pub fn set_tools_enabled(&self, enabled: bool) {
+        self.tools_enabled.store(enabled, Ordering::Relaxed);
     }
 
     #[cfg(test)]

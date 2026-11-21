@@ -197,8 +197,45 @@ describe("notifications", () => {
 });
 
 describe("advanced", () => {
+  const off = { enabled: false, available: true };
+
+  it("turns agent tools on through the core", async () => {
+    core({
+      get_agent_tools: () => off,
+      change_agent_tools: (args) => ({
+        enabled: (args as { enabled: boolean }).enabled,
+        available: true,
+      }),
+    });
+    renderPage();
+    const user = userEvent.setup();
+    await user.click(nav().getByRole("button", { name: "Advanced" }));
+    const toggle = screen.getByRole("switch", { name: "Agent tools" });
+    await waitFor(() => expect(toggle).toBeEnabled());
+    expect(toggle).toHaveAttribute("aria-checked", "false");
+
+    await user.click(toggle);
+
+    expect(invokeMock).toHaveBeenCalledWith("change_agent_tools", {
+      enabled: true,
+    });
+    await waitFor(() => expect(toggle).toHaveAttribute("aria-checked", "true"));
+  });
+
+  it("disables agent tools where the core does not offer them", async () => {
+    core({ get_agent_tools: () => ({ enabled: false, available: false }) });
+    renderPage();
+    const user = userEvent.setup();
+    await user.click(nav().getByRole("button", { name: "Advanced" }));
+
+    expect(
+      await screen.findByText("Available on macOS only for now."),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("switch", { name: "Agent tools" })).toBeDisabled();
+  });
+
   it("opens the data folder through the core", async () => {
-    core({ open_data_folder: () => undefined });
+    core({ get_agent_tools: () => off, open_data_folder: () => undefined });
     renderPage();
     const user = userEvent.setup();
     await user.click(nav().getByRole("button", { name: "Advanced" }));
@@ -212,6 +249,7 @@ describe("advanced", () => {
 
   it("shows a translated error when the folder cannot be opened", async () => {
     core({
+      get_agent_tools: () => off,
       open_data_folder: () => {
         throw "data_folder_unavailable";
       },

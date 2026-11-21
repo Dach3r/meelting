@@ -147,6 +147,24 @@ pub enum SessionError {
     DataFolderUnavailable,
     #[error("autostart_unavailable")]
     AutostartUnavailable,
+    #[error("agent_tools_unsupported_platform")]
+    AgentToolsUnsupportedPlatform,
+    #[error("voice_model_missing")]
+    VoiceModelMissing,
+    #[error("voice_model_unavailable")]
+    VoiceModelUnavailable,
+    #[error("voice_model_download_failed")]
+    VoiceModelDownloadFailed,
+    #[error("microphone_unavailable")]
+    MicrophoneUnavailable,
+    #[error("microphone_failed")]
+    MicrophoneFailed,
+    #[error("not_capturing")]
+    NotCapturing,
+    #[error("nothing_heard")]
+    NothingHeard,
+    #[error("transcription_failed")]
+    TranscriptionFailed,
 }
 
 impl From<crate::domain::storage::StorageIssue> for SessionError {

@@ -19,13 +19,15 @@ A left navigation that lists the sections as inset rounded rows, each with an ic
 | | | Run failed | on, off (on) |
 | | Sound | Sound | on, off (on) |
 | Environments | Location | Environments folder | native folder dialog ([D39](decisions.md)) |
-| Advanced | Data | Data folder | opens the folder in the file manager |
+| Advanced | Agents | Agent tools | on, off (off at every launch; macOS only, [D56](decisions.md)) |
+| | Data | Data folder | opens the folder in the file manager |
 | | | Provider keys | information only: they live in the operating system keychain |
 
 ## Behavior
 
 - **Time format:** `Automatic` uses the language's own convention; `12 h` and `24 h` force it everywhere a time is shown.
 - **Open at login:** the state is read from and written to the operating system (login item on macOS, startup entry on Windows, autostart file on Linux). It is not stored in `profile`, so it cannot drift from what the system really does.
+- **Agent tools:** lets agents with a local model (Ollama, LM Studio) use the tools in the environment of their task: list, read, search, Git status and diff, write and edit files. No commands and no commits. The switch lives in the engine's memory, not in `profile`, so every launch starts with it off. Outside macOS it is shown disabled and the core refuses it (`agent_tools_unsupported_platform`). Cloud agents stay plain text whatever its state. See [local-tools-switch-proposal.md](local-tools-switch-proposal.md).
 - **Reduce motion:** `Automatic` follows the system preference; `On` and `Off` override it. It affects the animations that already honor `motion-reduce` (equalizer, fade, flyout, transition overlay).
 - **Notifications:** a system notification is shown when an agent run reaches `succeeded` or `failed` and the Meelting window is not focused. Title is the agent's name and the body a short sentence in the profile language. Runs cancelled by the user or expired at startup never notify. Each event and the sound have their own switch. The notification permission of the operating system still applies.
 - **Data folder:** opens the application data folder, where the local database lives. Nothing in it is edited by the app from this screen.

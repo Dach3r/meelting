@@ -504,7 +504,7 @@ mod tests {
             .mount(&server)
             .await;
         let engine = engine(&office, &server.uri());
-        engine.enable_tools();
+        engine.set_tools_enabled(true);
         engine.grant_cloud_tools_consent();
 
         let run = ask(&engine, &office).await;
@@ -561,7 +561,7 @@ mod tests {
             .mount(&server)
             .await;
         let engine = engine(&office, &server.uri());
-        engine.enable_tools();
+        engine.set_tools_enabled(true);
         engine.grant_cloud_tools_consent();
 
         let run = ask(&engine, &office).await;
@@ -645,7 +645,7 @@ mod tests {
         )
         .await;
         let engine = engine(&office, &server.uri());
-        engine.enable_tools();
+        engine.set_tools_enabled(true);
 
         let run = ask(&engine, &office).await;
 
@@ -688,7 +688,7 @@ mod tests {
             )
             .await;
             let engine = engine(&office, &server.uri());
-            engine.enable_tools();
+            engine.set_tools_enabled(true);
 
             let run = ask(&engine, &office).await;
 
@@ -734,7 +734,7 @@ mod tests {
         let office = office("ollama", "qwen3:4b").await;
         let server = local_server(vec![], vec![chat(&["hello"])]).await;
         let engine = engine(&office, &server.uri());
-        engine.enable_tools();
+        engine.set_tools_enabled(true);
 
         let run = ask(&engine, &office).await;
 
@@ -759,7 +759,7 @@ mod tests {
         )
         .await;
         let engine = engine(&office, &server.uri());
-        engine.enable_tools();
+        engine.set_tools_enabled(true);
 
         let first = ask(&engine, &office).await;
         finished(&engine, &office.room_id, &first.id).await;
@@ -775,22 +775,16 @@ mod tests {
         assert!(!chats[1].contains(r#""tools""#) && chats[1].contains("cannot use tools"));
     }
 
-    #[tokio::test]
-    #[ignore = "needs a running local runtime: MEELTING_LOCAL_PROVIDER (ollama or lmstudio), MEELTING_LOCAL_BASE_URL and MEELTING_LOCAL_MODEL naming an installed model that declares native tool support; set MEELTING_LOCAL_EXPECT_TOOLS to require a successful tool call"]
-    async fn a_real_local_model_runs_the_whole_tool_cycle_in_a_real_environment() {
+    struct RealRun {
+        engine: Arc<Engine>,
+        run: AgentRun,
+        calls: Vec<(String, String, Option<String>)>,
+        reply: Option<String>,
+    }
+
+    async fn real_local_run(office: &Office, body: &str) -> RealRun {
         let key = std::env::var("MEELTING_LOCAL_PROVIDER").unwrap();
         let base_url = std::env::var("MEELTING_LOCAL_BASE_URL").unwrap();
-        let model = std::env::var("MEELTING_LOCAL_MODEL").unwrap();
-        let office = office(&key, &model).await;
-        let task = office.task(true, true).await;
-        let path = PathBuf::from(office.prepared(&task).await);
-        std::fs::create_dir_all(path.join("src")).unwrap();
-        std::fs::write(
-            path.join("src/main.rs"),
-            "fn main() { println!(\"hello\"); }\n",
-        )
-        .unwrap();
-        std::fs::write(path.join("README.md"), "Test project\nedited line\n").unwrap();
         let providers = llm::providers()
             .into_iter()
             .map(|mut provider| {
@@ -807,13 +801,13 @@ mod tests {
             office.fixture.locks.clone(),
             Arc::new(|_: RunEvent| {}),
         );
-        engine.enable_tools();
+        engine.set_tools_enabled(true);
         let selection = Selection::Agent(office.agent_id.clone());
         let InterventionSent::Sent { run: Some(run), .. } = intervention_send::run(
             &engine,
             Intervention {
                 room_id: &office.room_id,
-                body: "Use your tools. List the files in the repository root, read README.md, and show the git status. Then tell me the first line of README.md.",
+                body,
                 selection: &selection,
                 mention_ids: &[],
                 client_request_id: &Uuid::now_v7().to_string(),
@@ -836,30 +830,135 @@ mod tests {
             }
             tokio::time::sleep(Duration::from_millis(100)).await;
         }
-        let done = done.expect("the run never finished in 5 minutes");
-        let calls: Vec<(String, String, Option<String>)> = sqlx::query_as(
+        let run = done.expect("the run never finished in 5 minutes");
+        let calls = sqlx::query_as(
             "SELECT ifnull(tool, '-'), status, error_code FROM tool_calls ORDER BY position",
         )
         .fetch_all(&engine.pool)
         .await
         .unwrap();
-        let reply: Option<String> = sqlx::query_scalar(
+        let reply = sqlx::query_scalar(
             "SELECT body FROM messages WHERE agent_id IS NOT NULL ORDER BY created_at DESC LIMIT 1",
         )
         .fetch_optional(&engine.pool)
         .await
         .unwrap();
-        assert_eq!(done.status, RunStatus::Succeeded, "{:?}", done.error_kind);
-        assert!(calls.iter().all(|call| call.1 != "running"), "{calls:?}");
-        if std::env::var("MEELTING_LOCAL_EXPECT_TOOLS").is_ok() {
-            assert!(
-                calls.iter().any(|call| call.1 == "succeeded"),
-                "the model called no tool successfully: {calls:?}"
-            );
-        }
-        println!("run {:?} error {:?}", done.status, done.error_kind);
+        println!("run {:?} error {:?}", run.status, run.error_kind);
         println!("tool calls: {calls:?}");
         println!("reply: {reply:?}");
+        RealRun {
+            engine,
+            run,
+            calls,
+            reply,
+        }
+    }
+
+    #[tokio::test]
+    #[ignore = "needs a running local runtime: MEELTING_LOCAL_PROVIDER (ollama or lmstudio), MEELTING_LOCAL_BASE_URL and MEELTING_LOCAL_MODEL naming an installed model that declares native tool support; set MEELTING_LOCAL_EXPECT_TOOLS to require a successful tool call"]
+    async fn a_real_local_model_runs_the_whole_tool_cycle_in_a_real_environment() {
+        let key = std::env::var("MEELTING_LOCAL_PROVIDER").unwrap();
+        let model = std::env::var("MEELTING_LOCAL_MODEL").unwrap();
+        let office = office(&key, &model).await;
+        let task = office.task(true, true).await;
+        let path = PathBuf::from(office.prepared(&task).await);
+        std::fs::create_dir_all(path.join("src")).unwrap();
+        std::fs::write(
+            path.join("src/main.rs"),
+            "fn main() { println!(\"hello\"); }\n",
+        )
+        .unwrap();
+        std::fs::write(path.join("README.md"), "Test project\nedited line\n").unwrap();
+
+        let real = real_local_run(
+            &office,
+            "Use your tools. List the files in the repository root, read README.md, and show the git status. Then tell me the first line of README.md.",
+        )
+        .await;
+
+        assert_eq!(
+            real.run.status,
+            RunStatus::Succeeded,
+            "{:?}",
+            real.run.error_kind
+        );
+        assert!(
+            real.calls.iter().all(|call| call.1 != "running"),
+            "{:?}",
+            real.calls
+        );
+        if std::env::var("MEELTING_LOCAL_EXPECT_TOOLS").is_ok() {
+            assert!(
+                real.calls.iter().any(|call| call.1 == "succeeded"),
+                "the model called no tool successfully: {:?}",
+                real.calls
+            );
+        }
+    }
+
+    #[tokio::test]
+    #[ignore = "needs a running local runtime: MEELTING_LOCAL_PROVIDER (ollama or lmstudio), MEELTING_LOCAL_BASE_URL and MEELTING_LOCAL_MODEL naming an installed model that declares native tool support"]
+    async fn a_real_local_model_changes_a_file_that_changes_shows_and_the_repository_keeps() {
+        let key = std::env::var("MEELTING_LOCAL_PROVIDER").unwrap();
+        let model = std::env::var("MEELTING_LOCAL_MODEL").unwrap();
+        let office = office(&key, &model).await;
+        let task = office.task(true, true).await;
+        let path = PathBuf::from(office.prepared(&task).await);
+
+        let real = real_local_run(
+            &office,
+            "Use your tools to change README.md in the task environment: replace its first line with exactly `Hello from Ada`. Then confirm what you changed.",
+        )
+        .await;
+
+        assert_eq!(
+            real.run.status,
+            RunStatus::Succeeded,
+            "{:?}",
+            real.run.error_kind
+        );
+        assert!(real.reply.is_some());
+        assert!(
+            real.calls
+                .iter()
+                .any(|call| matches!(call.0.as_str(), "write_file" | "edit_file")
+                    && call.1 == "succeeded"),
+            "{:?}",
+            real.calls
+        );
+        let readme = std::fs::read_to_string(path.join("README.md")).unwrap();
+        assert_eq!(readme.lines().next(), Some("Hello from Ada"), "{readme:?}");
+        assert_eq!(
+            std::fs::read_to_string(office.fixture.repo.join("README.md")).unwrap(),
+            "hello\n"
+        );
+        let original = std::process::Command::new("git")
+            .args(["status", "--porcelain"])
+            .current_dir(&office.fixture.repo)
+            .output()
+            .unwrap();
+        assert!(
+            original.stdout.is_empty(),
+            "{:?}",
+            String::from_utf8_lossy(&original.stdout)
+        );
+        let review = crate::services::environment_review::run(
+            &real.engine.pool,
+            &office.fixture.locks,
+            &crate::services::review_registry::ReviewRegistry::default(),
+            &task,
+            async |_: &std::path::Path| Ok(()),
+        )
+        .await
+        .unwrap();
+        assert!(
+            review
+                .entries
+                .iter()
+                .any(|entry| entry.path == "README.md" && entry.unstaged.is_some()),
+            "{:?}",
+            review.entries
+        );
     }
 
     #[tokio::test]
@@ -886,8 +985,20 @@ mod tests {
             vec![first, chat(&["All five worked."])],
         )
         .await;
-        let engine = engine(&office, &server.uri());
-        engine.enable_tools();
+        let recorded = Arc::new(std::sync::Mutex::new(Vec::new()));
+        let sink = recorded.clone();
+        let engine = Engine::new(
+            office.fixture.pool.clone(),
+            providers_at(&server.uri()),
+            fast_limits(),
+            office.fixture.locks.clone(),
+            Arc::new(move |event: RunEvent| {
+                if let RunEvent::ToolCall(activity) = event {
+                    sink.lock().unwrap().push(activity);
+                }
+            }),
+        );
+        engine.set_tools_enabled(true);
 
         let run = ask(&engine, &office).await;
         let done = finished(&engine, &office.room_id, &run.id).await;
@@ -944,5 +1055,36 @@ mod tests {
         assert!(second.contains("error: invalid_arguments"));
         assert!(!second.contains("SECRET"));
         assert!(!engine.cloud_tools_consent());
+        let announced = recorded.lock().unwrap().clone();
+        let running = announced.iter().filter(|a| a.status == "running").count();
+        assert_eq!(running, 5, "{announced:?}");
+        let finals: Vec<&str> = announced
+            .iter()
+            .filter(|a| a.status != "running")
+            .map(|a| a.status.as_str())
+            .collect();
+        assert_eq!(
+            finals,
+            [
+                "succeeded",
+                "succeeded",
+                "succeeded",
+                "succeeded",
+                "succeeded",
+                "failed"
+            ]
+        );
+        let detail =
+            crate::services::room_get::run(&engine.pool, &engine.registry, &office.room_id)
+                .await
+                .unwrap();
+        assert_eq!(detail.tool_calls.len(), 6);
+        assert_eq!(detail.tool_calls[1].tool.as_deref(), Some("read_file"));
+        assert_eq!(detail.tool_calls[1].path.as_deref(), Some("README.md"));
+        assert_eq!(detail.tool_calls[5].path, None);
+        assert_eq!(
+            detail.tool_calls[5].error_code.as_deref(),
+            Some("invalid_arguments")
+        );
     }
 }

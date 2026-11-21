@@ -9,14 +9,15 @@ import {
   liveText,
 } from "../../hooks/agentRunState";
 import type { LlmProvider } from "../../hooks/useLlmProviders";
-import type { Draft, SendResult } from "../../hooks/useRoom";
+import type { Draft, SendResult, ToolActivity } from "../../hooks/useRoom";
 import type { Message, Participant, Room } from "../../hooks/useRooms";
 import type { Task } from "../../hooks/useTasks";
 import { Button } from "../atoms/Button";
 import { Alert } from "../molecules/Alert";
 import { AgentRunStatus } from "../molecules/AgentRunStatus";
 import { ChatMessage } from "../molecules/ChatMessage";
-import { MessageComposer } from "../molecules/MessageComposer";
+import { MessageComposer, type VoiceDraft } from "../molecules/MessageComposer";
+import { ToolActivityList } from "../molecules/ToolActivityList";
 import { RoomTasks } from "../molecules/RoomTasks";
 import { SegmentedControl } from "../molecules/SegmentedControl";
 import { authorName } from "./authorName";
@@ -35,6 +36,12 @@ type Props = {
   onCancel: (runId: string) => void;
   onStop: () => void;
   onCreateTask: (message: Message) => void;
+  toolCalls: ToolActivity[];
+  voiceDraft: VoiceDraft | null;
+  onOpenChanges: (taskId: string) => void;
+  tasksBusy: boolean;
+  tasksErrorMessage: string | null;
+  onPrepareEnvironment: (taskId: string) => void;
 };
 
 export function RoomChat({
@@ -51,6 +58,12 @@ export function RoomChat({
   onCancel,
   onStop,
   onCreateTask,
+  toolCalls,
+  voiceDraft,
+  onOpenChanges,
+  tasksBusy,
+  tasksErrorMessage,
+  onPrepareEnvironment,
 }: Props) {
   const { t, locale } = useI18n();
   const [tab, setTab] = useState<"chat" | "tasks">("chat");
@@ -66,7 +79,7 @@ export function RoomChat({
 
   useEffect(() => {
     end.current?.scrollIntoView({ block: "end" });
-  }, [lastMessageId, lastLive]);
+  }, [lastMessageId, lastLive, toolCalls.length]);
 
   const provider = (run: AgentRun) =>
     providers.find((entry) => entry.key === run.provider);
@@ -105,7 +118,13 @@ export function RoomChat({
         ]}
       />
       {tab === "tasks" ? (
-        <RoomTasks tasks={tasks} />
+        <RoomTasks
+          tasks={tasks}
+          busy={tasksBusy}
+          errorMessage={tasksErrorMessage}
+          onPrepare={onPrepareEnvironment}
+          onOpenChanges={onOpenChanges}
+        />
       ) : messages.length === 0 ? (
         <p className="flex-1 text-sm text-muted">{t("rooms.noMessages")}</p>
       ) : (
@@ -140,6 +159,13 @@ export function RoomChat({
                     onCancel={() => onCancel(run.id)}
                   />
                 ))}
+                {requested.map((run) => (
+                  <ToolActivityList
+                    key={`tools-${run.id}`}
+                    calls={toolCalls.filter((call) => call.run_id === run.id)}
+                    onOpenChanges={onOpenChanges}
+                  />
+                ))}
               </Fragment>
             );
           })}
@@ -166,6 +192,7 @@ export function RoomChat({
           proposedAgentId={proposedAgentId}
           busyAgentIds={busyAgentIds}
           sending={sending}
+          voiceDraft={voiceDraft}
           onSend={onSend}
         />
       )}

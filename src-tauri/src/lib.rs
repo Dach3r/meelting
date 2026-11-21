@@ -47,6 +47,11 @@ pub fn run() {
             app.manage(locks.clone());
             app.manage(CopySelections::default());
             app.manage(ReviewRegistry::default());
+            #[cfg(target_os = "macos")]
+            app.manage(std::sync::Arc::new(services::voice::Voice::new(
+                &data_dir.join("models"),
+                commands::voice::playback_emitter(app.handle().clone()),
+            )));
             let emit = commands::agent_runs::emitter(app.handle().clone());
             app.manage(Engine::new(
                 pool.clone(),
@@ -106,6 +111,21 @@ pub fn run() {
             commands::agent_runs::check_agent_availability,
             commands::agent_runs::cancel_agent_run,
             commands::agent_runs::stop_intervention,
+            commands::agent_runs::get_agent_tools,
+            commands::agent_runs::change_agent_tools,
+            commands::voice::get_voice_status,
+            #[cfg(target_os = "macos")]
+            commands::voice::download_voice_model,
+            #[cfg(target_os = "macos")]
+            commands::voice::start_voice_capture,
+            #[cfg(target_os = "macos")]
+            commands::voice::finish_voice_capture,
+            #[cfg(target_os = "macos")]
+            commands::voice::cancel_voice_capture,
+            #[cfg(target_os = "macos")]
+            commands::voice::speak_message,
+            #[cfg(target_os = "macos")]
+            commands::voice::stop_speaking,
             commands::provider_keys::list_provider_keys,
             commands::provider_keys::save_provider_key,
             commands::provider_keys::check_provider_key,

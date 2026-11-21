@@ -2,6 +2,7 @@ use crate::domain::agent_run::{AgentRun, RunStatus};
 use crate::domain::recipient::{Resolution, Selection};
 use crate::services::agent_run_cancel;
 use crate::services::agent_run_engine::{Emit, Engine, RunEvent};
+use crate::services::agent_tools_change::{self, AgentTools};
 use crate::services::availability_check::{self, AgentAvailability};
 use crate::services::intervention_send::{self, Intervention, InterventionSent};
 use crate::services::intervention_stop;
@@ -22,6 +23,7 @@ pub fn emitter(app: AppHandle) -> Emit {
             }
             RunEvent::Token(chunk) => app.emit("agent_run:token", chunk),
             RunEvent::MessageCreated(message) => app.emit("message:created", message),
+            RunEvent::ToolCall(activity) => app.emit("tool_call:status", activity),
         };
     })
 }
@@ -86,6 +88,19 @@ pub async fn resolve_recipient(
     mention_ids: Vec<String>,
 ) -> Result<Resolution, SessionError> {
     recipient_resolve::run(&engine.pool, &room_id, &body, &selection, &mention_ids).await
+}
+
+#[tauri::command]
+pub fn get_agent_tools(engine: State<'_, Arc<Engine>>) -> AgentTools {
+    agent_tools_change::current(&engine)
+}
+
+#[tauri::command]
+pub fn change_agent_tools(
+    engine: State<'_, Arc<Engine>>,
+    enabled: bool,
+) -> Result<AgentTools, SessionError> {
+    agent_tools_change::run(&engine, enabled)
 }
 
 #[tauri::command]

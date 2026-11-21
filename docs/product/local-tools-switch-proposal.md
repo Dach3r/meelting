@@ -1,6 +1,6 @@
 # Agent tools for local models on macOS (proposal)
 
-> **Proposal, not approved (D56, pending).** No migration and no schema change. Nothing changes in the code until the product owner approves it.
+> **Approved (D56, option A, 2026-11-20) and built.** No migration and no schema change. Status and evidence at the end of this document.
 
 ## Context
 - The tool engine is built (5A stages A–E, 5B `write_file` and `edit_file`): `list_dir`, `read_file`, `search`, `git_status`, `git_diff`, `write_file`, `edit_file`. See [tools-and-approvals.md](tools-and-approvals.md).
@@ -67,3 +67,22 @@
 
 **Priority:** Must Have (first time an agent does real work).
 **Success metric:** runs with tools that end `succeeded`, and runs after which the supervisor opened **Changes**.
+
+## Status (2026-11-20)
+
+**Built:** `Engine::set_tools_enabled` (production), `services/agent_tools_change.rs` (macOS check at compile time, returns `enabled` and `available`), commands `get_agent_tools` and `change_agent_tools`, hook `useAgentTools`, the **Agent tools** card in Settings › Advanced › Agents and its `es`/`en` copy. Cloud consent keeps its test-only setter. Local providers point at fixed `http://localhost:` URLs from the embedded catalog (pinned by a catalog test), so tools only reach a runtime on this machine.
+
+**Tests:** the switch (off at start, on and off on macOS, refused elsewhere: that case runs on Windows and Linux CI), the Settings card (turning it on through the core, disabled where unavailable), and two opt-in tests against a real runtime in `tool_environment.rs`.
+
+**Real check (macOS arm64, LM Studio `google/gemma-4-e4b`):** asked to replace the first line of `README.md`, the agent called `read_file`, `edit_file` and `read_file` (all `succeeded`), the run ended `succeeded`, the worktree file starts with `Hello from Ada`, the original repository is unchanged and clean, and the Changes review (`review_task_environment`) lists `README.md` as modified. The read-only opt-in test still passes after it was refactored to share the setup.
+
+**D55 on real data:** the migration was applied by the running development app at 2026-11-20 18:06:59, before the backup could be made; the backup `backups/meelting-2026-11-20-before-agent-tools.db` in the data folder was taken afterwards with `sqlite3 .backup` (integrity `ok`), and the real database passes `integrity_check` and `foreign_key_check`.
+
+**Not done here:** the click-through in the running app (it was checked through the same services the commands call); Windows and Linux (refused by design).
+
+**Later iterations (not blocking this flow):**
+- ~~Show tool activity in the room (5C)~~: built by D58.
+- Tell the user in the room when tools are off or the model is not `supported` (today only the model is told).
+- ~~A direct link to **Changes** from the room~~: «View changes» under the activity (D58).
+- Checking the switch before every call, so turning it off also stops a run that is already using tools.
+- Persisting the switch (option B), once activity is visible.

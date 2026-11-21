@@ -1,10 +1,11 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type EventCallback } from "@tauri-apps/api/event";
-import { act, render, screen, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AgentRun, RunSnapshot } from "../../hooks/agentRunState";
 import type { Message, Participant, Room } from "../../hooks/useRooms";
+import type { ToolActivity } from "../../hooks/useRoom";
 import type { Agent } from "../../hooks/useTeams";
 import { I18nProvider } from "../../i18n/I18nProvider";
 import { RoomView } from "./RoomView";
@@ -129,6 +130,7 @@ type Detail = {
   runs: AgentRun[];
   partials: RunSnapshot[];
   proposed_agent_id: string | null;
+  tool_calls: ToolActivity[];
 };
 
 function core(
@@ -137,6 +139,8 @@ function core(
   invokeMock.mockImplementation(async (command, args) => {
     if (command === "list_llm_providers") return providers;
     if (command === "list_tasks" && !handlers.list_tasks) return [];
+    if (command === "get_agent_tools" && !handlers.get_agent_tools)
+      return { enabled: false, available: false };
     const handler = handlers[command];
     if (!handler) throw new Error(`unexpected ${command}`);
     return handler((args ?? {}) as Record<string, unknown>);
@@ -151,6 +155,7 @@ function detail(overrides: Partial<Detail> = {}): Detail {
     runs: [],
     partials: [],
     proposed_agent_id: null,
+    tool_calls: [],
     ...overrides,
   };
 }
@@ -1288,10 +1293,7 @@ describe("creating tasks from the room", () => {
 
     await user.click(screen.getByRole("button", { name: "Create task" }));
     const dialog = within(screen.getByRole("dialog", { name: "New task" }));
-    await user.type(
-      await dialog.findByLabelText("Description"),
-      "Fix login",
-    );
+    await user.type(await dialog.findByLabelText("Description"), "Fix login");
     await user.click(dialog.getByRole("button", { name: "Create task" }));
 
     expect(create).toHaveBeenCalledWith({
@@ -1444,5 +1446,294 @@ describe("room tasks tab", () => {
     expect(screen.getByText("Blocked")).toBeInTheDocument();
     expect(screen.queryByText("Elsewhere")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Message")).not.toBeInTheDocument();
+  });
+
+  it("prepares a task environment and opens its changes without leaving the room", async () => {
+    const task = {
+      ...base,
+      id: "t1",
+      title: "Fix login",
+      repository_id: "repo1",
+      base_ref: "main",
+      origin_room_id: "r1",
+      origin_room_name: "Daily",
+      linked_rooms: [],
+    };
+    const prepare = vi.fn(() => ({
+      ...task,
+      worktree: {
+        id: "w1",
+        path: "/tmp/w1",
+        branch_name: "meelting/fix-login",
+        base_ref: "main",
+        base_commit_sha: "abc",
+        status: "ready",
+        error_code: null,
+        copies: [],
+        trash_path: null,
+        trashed_at: null,
+        created_at: "2026-11-24T10:00:00.000Z",
+        updated_at: "2026-11-24T10:00:00.000Z",
+      },
+    }));
+    core({
+      get_room: () => detail(),
+      list_tasks: () => [task],
+      prepare_task_environment: prepare,
+      review_task_environment: () => new Promise(() => {}),
+    });
+    const user = userEvent.setup();
+    await renderRoom();
+
+    await user.click(screen.getByRole("button", { name: "Tasks" }));
+    await user.click(
+      await screen.findByRole("button", { name: "Prepare environment" }),
+    );
+
+    expect(prepare).toHaveBeenCalledWith({ taskId: "t1" });
+    expect(await screen.findByText("Environment · Ready")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "View changes" }));
+    expect(
+      await screen.findByRole("dialog", { name: "Changes · Fix login" }),
+    ).toBeInTheDocument();
+  });
+});
+
+describe("agent tools in the meeting", () => {
+  it("says when tools are off and turns them on from the room", async () => {
+    const change = vi.fn(() => ({ enabled: true, available: true }));
+    core({
+      get_room: () => detail(),
+      get_agent_tools: () => ({ enabled: false, available: true }),
+      change_agent_tools: change,
+    });
+    const user = userEvent.setup();
+    await renderRoom();
+
+    await user.click(
+      await screen.findByRole("button", { name: "Turn on tools" }),
+    );
+
+    expect(change).toHaveBeenCalledWith({ enabled: true });
+    await waitFor(() =>
+      expect(
+        screen.queryByText(/Agent tools are off/),
+      ).not.toBeInTheDocument(),
+    );
+  });
+
+  it("marks agents whose model cannot use tools", async () => {
+    core({
+      get_room: () => detail(),
+      get_agent_tools: () => ({ enabled: true, available: true }),
+      check_agent_availability: () => [
+        {
+          agent_id: "a1",
+          provider: "ollama",
+          availability: "available",
+          reason: null,
+          tools: "unsupported",
+        },
+      ],
+    });
+    await renderRoom();
+
+    expect(await screen.findByText("No tools")).toHaveAttribute(
+      "title",
+      "This model cannot use tools: it can only talk.",
+    );
+  });
+});
+
+describe("talking with voice", () => {
+  const ready = { available: true, model_ready: true, model_bytes: 59_707_625 };
+
+  it("offers to download the speech model before the first time you talk", async () => {
+    const download = vi.fn(() => ready);
+    core({
+      get_room: () => detail(),
+      get_voice_status: () => ({ ...ready, model_ready: false }),
+      download_voice_model: download,
+      start_voice_capture: () => undefined,
+    });
+    const user = userEvent.setup();
+    await renderRoom();
+
+    await user.click(await screen.findByRole("button", { name: "Talk" }));
+    expect(screen.getByText(/60 MB/)).toBeInTheDocument();
+    await user.click(
+      screen.getByRole("button", { name: "Download and turn on" }),
+    );
+
+    expect(download).toHaveBeenCalled();
+    await user.click(screen.getByRole("button", { name: "Talk" }));
+    expect(invokeMock).toHaveBeenCalledWith("start_voice_capture");
+  });
+
+  it("shows the model download progress and then that it is being checked", async () => {
+    let finish: (value: typeof ready) => void = () => undefined;
+    core({
+      get_room: () => detail(),
+      get_voice_status: () => ({ ...ready, model_ready: false }),
+      download_voice_model: () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    });
+    const user = userEvent.setup();
+    await renderRoom();
+
+    await user.click(await screen.findByRole("button", { name: "Talk" }));
+    await user.click(
+      screen.getByRole("button", { name: "Download and turn on" }),
+    );
+    emit("voice:download_progress", 30_000_000);
+
+    expect(screen.getByRole("progressbar")).toHaveAttribute(
+      "aria-valuenow",
+      "50",
+    );
+    expect(
+      screen.getByText("Downloading from Hugging Face · 30 of 60 MB"),
+    ).toBeInTheDocument();
+
+    emit("voice:download_progress", 59_707_625);
+    expect(screen.getByText("Checking the model…")).toBeInTheDocument();
+    finish(ready);
+  });
+
+  it("sends what you said as a message, reads the reply aloud and shows who speaks", async () => {
+    const reply = message("m2", "Done, I checked it.", { agent_id: "a1" });
+    core({
+      get_room: () => detail(),
+      get_voice_status: () => ready,
+      start_voice_capture: () => undefined,
+      finish_voice_capture: () => "Ana, check the login",
+      send_intervention: () =>
+        sent(message("m1", "Ana, check the login"), run("queued", 0)),
+      speak_message: () => undefined,
+    });
+    const user = userEvent.setup();
+    await renderRoom();
+    const participants = within(
+      screen.getByRole("region", { name: "Participants" }),
+    );
+
+    await user.click(await screen.findByRole("button", { name: "Talk" }));
+    expect(participants.getByText("Listening")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Send what I said" }));
+
+    await waitFor(() =>
+      expect(invokeMock).toHaveBeenCalledWith(
+        "send_intervention",
+        expect.objectContaining({ body: "Ana, check the login" }),
+      ),
+    );
+    emit("message:created", reply);
+    await waitFor(() =>
+      expect(invokeMock).toHaveBeenCalledWith("speak_message", {
+        roomId: "r1",
+        messageId: "m2",
+      }),
+    );
+    emit("voice:playback", {
+      room_id: "r1",
+      message_id: "m2",
+      agent_id: "a1",
+      speaking: true,
+    });
+    expect(participants.getByText("Speaking")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Replies aloud" }));
+    expect(invokeMock).toHaveBeenCalledWith("stop_speaking");
+    expect(participants.queryByText("Speaking")).not.toBeInTheDocument();
+  });
+
+  it("shows why the microphone could not start", async () => {
+    core({
+      get_room: () => detail(),
+      get_voice_status: () => ready,
+      start_voice_capture: () => {
+        throw "microphone_unavailable";
+      },
+    });
+    const user = userEvent.setup();
+    await renderRoom();
+
+    await user.click(await screen.findByRole("button", { name: "Talk" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "could not open the microphone",
+    );
+  });
+});
+
+describe("agent activity in the room", () => {
+  const task = {
+    id: "t1",
+    title: "Fix login",
+    description: "",
+    status: "in_progress",
+    priority: "medium",
+    repository_id: null,
+    base_ref: null,
+    origin_room_id: "r1",
+    origin_room_name: "Daily",
+    origin_message_id: null,
+    linked_rooms: [],
+    agent_ids: ["a1"],
+    worktree: null,
+    completed_at: null,
+    created_at: "2026-11-24T10:00:00.000Z",
+    updated_at: "2026-11-24T10:00:00.000Z",
+  };
+  const call = (
+    id: string,
+    tool: string,
+    status: ToolActivity["status"],
+  ): ToolActivity => ({
+    id,
+    run_id: "run1",
+    room_id: "r1",
+    task_id: "t1",
+    tool,
+    path: "README.md",
+    status,
+    error_code: null,
+  });
+
+  it("shows what the agent is doing and opens the changes it made", async () => {
+    core({
+      get_room: () =>
+        detail({
+          messages: [message("m1", "Ana, fix the readme")],
+          runs: [run("running", 1)],
+          tool_calls: [call("c1", "read_file", "succeeded")],
+        }),
+      list_tasks: () => [task],
+    });
+    const user = userEvent.setup();
+    await renderRoom();
+    const activity = within(
+      screen.getByRole("list", { name: "Agent activity" }),
+    );
+    expect(activity.getByText("Read README.md")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "View changes" }),
+    ).not.toBeInTheDocument();
+
+    emit("tool_call:status", call("c2", "edit_file", "running"));
+    expect(
+      within(screen.getByRole("region", { name: "Participants" })).getByText(
+        "Editing README.md",
+      ),
+    ).toBeInTheDocument();
+    emit("tool_call:status", call("c2", "edit_file", "succeeded"));
+    expect(activity.getByText("Edited README.md")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "View changes" }));
+    expect(
+      screen.getByRole("heading", { name: "Changes · Fix login" }),
+    ).toBeInTheDocument();
   });
 });

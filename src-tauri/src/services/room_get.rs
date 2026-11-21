@@ -1,5 +1,5 @@
 use crate::domain::room::{RECENT_MESSAGES, RoomDetail};
-use crate::repositories::{agent_runs, messages, room_agents, rooms};
+use crate::repositories::{agent_runs, messages, room_agents, rooms, tool_calls};
 use crate::services::agent_run_registry::Registry;
 use crate::services::rooms_list::with_agents;
 use crate::services::session_load::{self, SessionError};
@@ -20,6 +20,7 @@ pub async fn run(
     let former_agents = room_agents::former(&mut *transaction, &workspace_id, room_id).await?;
     let messages = messages::recent(&mut *transaction, room_id, RECENT_MESSAGES).await?;
     let runs = agent_runs::for_room(&mut *transaction, room_id, RECENT_MESSAGES).await?;
+    let tool_calls = tool_calls::for_room(&mut *transaction, room_id).await?;
     transaction.commit().await?;
     let room = with_agents(vec![row], participants).remove(0);
     let proposed_agent_id = registry
@@ -32,6 +33,7 @@ pub async fn run(
         runs,
         partials,
         proposed_agent_id,
+        tool_calls,
     })
 }
 

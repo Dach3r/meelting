@@ -34,6 +34,10 @@ Meelting is not just a chatbot, a video call tool or a task manager. It is a spa
 
 **Differentiator:** the user observes and directs the work as if coordinating a real team.
 
+## Target experience: the meeting
+
+Meelting feels like a video call with a work team, not like a chatbot. The supervisor opens a room and sees the agents as participants with their state (available, working, speaking, listening). They talk by voice or chat, address an agent by name or the whole team, and one agent answers at a time, aloud and in the chat. When asked, an agent works on a task in its own worktree; the room shows what it is doing and the supervisor reviews the changes without leaving the meeting. The end goal is a team the supervisor can delegate real work to, with control over every change. The current state is in [roadmap.md](roadmap.md#meeting-mvp-product-phase) and the work still needed for a robust product in [stabilization-backlog.md](stabilization-backlog.md).
+
 ## Principles
 
 | Principle | Meaning |

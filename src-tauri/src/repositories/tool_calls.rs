@@ -1,6 +1,36 @@
+use crate::domain::room::ToolActivity;
 use sqlx::SqliteExecutor;
 
 const NOW: &str = "strftime('%Y-%m-%dT%H:%M:%fZ', 'now')";
+const ACTIVITY: &str = "SELECT id, run_id, room_id, task_id, tool, \
+     CASE WHEN json_type(arguments, '$.path') = 'text' THEN json_extract(arguments, '$.path') END AS path, \
+     status, error_code FROM tool_calls";
+pub const ROOM_ACTIVITY_LIMIT: i64 = 400;
+
+pub async fn activity<'e>(
+    executor: impl SqliteExecutor<'e>,
+    id: &str,
+) -> Result<Option<ToolActivity>, sqlx::Error> {
+    sqlx::query_as(sqlx::AssertSqlSafe(format!("{ACTIVITY} WHERE id = ?")))
+        .bind(id)
+        .fetch_optional(executor)
+        .await
+}
+
+pub async fn for_room<'e>(
+    executor: impl SqliteExecutor<'e>,
+    room_id: &str,
+) -> Result<Vec<ToolActivity>, sqlx::Error> {
+    let mut rows: Vec<ToolActivity> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
+        "{ACTIVITY} WHERE room_id = ? ORDER BY started_at DESC, position DESC LIMIT ?"
+    )))
+    .bind(room_id)
+    .bind(ROOM_ACTIVITY_LIMIT)
+    .fetch_all(executor)
+    .await?;
+    rows.reverse();
+    Ok(rows)
+}
 
 pub struct NewCall<'a> {
     pub id: &'a str,

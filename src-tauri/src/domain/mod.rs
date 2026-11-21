@@ -14,6 +14,8 @@ pub mod repository;
 pub mod review;
 pub mod room;
 pub mod session;
+#[cfg(target_os = "macos")]
+pub mod speech;
 pub mod storage;
 pub mod task;
 pub mod team;

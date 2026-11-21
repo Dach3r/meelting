@@ -68,13 +68,22 @@
     "environment_branch_not_deleted": "El entorno se eliminó, pero Git no pudo borrar su rama.",
     "data_folder_unavailable": "Meelting no pudo abrir la carpeta de datos.",
     "autostart_unavailable": "Meelting no pudo cambiar el inicio automático de este equipo.",
+    "agent_tools_unsupported_platform": "Por ahora las herramientas de agentes solo están disponibles en macOS.",
     "environment_filters_apply": "Este repositorio usa filtros de Git que ejecutan programas (por ejemplo, Git LFS), así que sus cambios no se pueden revisar de forma segura. No se ejecutó nada.",
     "environment_config_unsafe": "La configuración de Git de este repositorio incluye otros archivos, cambió durante la revisión o pidió a Git ejecutar un programa, así que se rechazó la revisión. No se ejecutó nada.",
     "review_timeout": "Git tardó demasiado en responder, así que se detuvo la revisión. Inténtalo de nuevo.",
     "review_stale": "El entorno cambió desde que se hizo esta revisión. Actualiza la revisión.",
     "invalid_review_entry": "Ese archivo no forma parte de la revisión actual. Actualiza la revisión.",
     "protected_file": "Este archivo puede contener secretos, así que no se muestra su contenido.",
-    "diff_too_large": "Los cambios de este archivo son demasiado grandes para mostrarlos."
+    "diff_too_large": "Los cambios de este archivo son demasiado grandes para mostrarlos.",
+    "voice_model_missing": "Descarga el modelo de reconocimiento de voz antes de hablar.",
+    "voice_model_unavailable": "No se pudo cargar el modelo de reconocimiento de voz. Descárgalo de nuevo desde la sala.",
+    "voice_model_download_failed": "No se pudo descargar el modelo de reconocimiento de voz o no coincidió con su suma de verificación. No se guardó nada. Inténtalo de nuevo.",
+    "microphone_unavailable": "Meelting no pudo abrir el micrófono. Comprueba que hay uno conectado y que Meelting puede usarlo en Ajustes del Sistema › Privacidad y seguridad › Micrófono.",
+    "microphone_failed": "El micrófono se detuvo de forma inesperada. Inténtalo de nuevo.",
+    "not_capturing": "El micrófono no estaba escuchando.",
+    "nothing_heard": "No se escuchó nada. Habla un poco más fuerte o durante más tiempo e inténtalo de nuevo.",
+    "transcription_failed": "No se pudo transcribir lo que dijiste. Inténtalo de nuevo."
   },
   "newWorkspace": {
     "title": "Crea tu workspace",
@@ -286,6 +295,7 @@
       }
     },
     "groups": {
+      "agents": "Agentes",
       "languageRegion": "Idioma y región",
       "startup": "Inicio",
       "theme": "Tema",
@@ -301,6 +311,11 @@
       "auto": "Automático",
       "12h": "12 h",
       "24h": "24 h"
+    },
+    "agentTools": {
+      "title": "Herramientas de agentes",
+      "description": "Permite a los agentes con un modelo local (Ollama o LM Studio) leer, buscar y editar archivos en los entornos de sus tareas. No pueden ejecutar comandos ni hacer commits. Se apaga cada vez que abres Meelting.",
+      "unavailable": "Por ahora solo está disponible en macOS."
     },
     "openAtLogin": {
       "title": "Abrir al iniciar sesión",
@@ -467,7 +482,25 @@
       "confirmTitle": "¿Invitar a la sala?",
       "confirmBody": "Estos agentes se unirán a la sala: {names}.",
       "confirm": "Invitar"
-    }
+    },
+    "voice": {
+      "talk": "Hablar",
+      "send": "Enviar lo que dije",
+      "cancel": "Descartar grabación",
+      "listening": "Escuchando",
+      "transcribing": "Transcribiendo…",
+      "speaking": "Hablando",
+      "aloudOn": "Respuestas en voz alta",
+      "aloudOff": "Respuestas silenciadas",
+      "setupTitle": "Háblale a tus agentes",
+      "setupBody": "Meelting necesita un modelo de voz de {size} MB. Se descarga una sola vez desde Hugging Face y se verifica. Tu voz se procesa en esta computadora y nunca se envía a ningún sitio. Las respuestas se leen con las voces del sistema.",
+      "download": "Descargar y activar",
+      "progress": "Descargando desde Hugging Face · {done} de {total} MB",
+      "verifying": "Verificando el modelo…",
+      "notNow": "Ahora no",
+      "starting": "Abriendo el micrófono…"
+    },
+    "changesTitle": "Cambios · {title}"
   },
   "agentRun": {
     "proposal": "Respondiendo a {agent}",
@@ -837,5 +870,41 @@
       "rewritten": "Reescrita",
       "unavailable": "No disponible"
     }
+  },
+  "tools": {
+    "title": "Actividad del agente",
+    "failed": "falló",
+    "viewChanges": "Ver cambios",
+    "status": {
+      "running": "En curso",
+      "succeeded": "Hecho",
+      "failed": "Falló",
+      "cancelled": "Detenido"
+    },
+    "live": {
+      "list_dir": "Mirando {path}",
+      "read_file": "Leyendo {path}",
+      "search": "Buscando en los archivos",
+      "git_status": "Revisando el estado de Git",
+      "git_diff": "Revisando cambios en {path}",
+      "write_file": "Escribiendo {path}",
+      "edit_file": "Editando {path}",
+      "unknown": "Usando {tool}"
+    },
+    "done": {
+      "list_dir": "Miró {path}",
+      "read_file": "Leyó {path}",
+      "search": "Buscó en los archivos",
+      "git_status": "Revisó el estado de Git",
+      "git_diff": "Revisó cambios en {path}",
+      "write_file": "Escribió {path}",
+      "edit_file": "Editó {path}",
+      "unknown": "Usó {tool}"
+    },
+    "off": "Las herramientas de agentes están apagadas: los agentes conversan, pero no pueden leer ni editar archivos.",
+    "enable": "Activar herramientas",
+    "none": "Sin herramientas",
+    "unsupported": "Este modelo no puede usar herramientas: solo conversa.",
+    "cloud": "Los modelos en la nube todavía no usan herramientas: solo conversan."
   }
 }

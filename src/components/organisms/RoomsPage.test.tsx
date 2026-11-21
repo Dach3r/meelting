@@ -96,6 +96,8 @@ function core(
   handlers: Record<string, (args: Record<string, unknown>) => unknown>,
 ) {
   invokeMock.mockImplementation(async (command, args) => {
+    if (command === "get_agent_tools" && !handlers.get_agent_tools)
+      return { enabled: false, available: false };
     const handler = handlers[command];
     if (!handler) throw new Error(`unexpected ${command}`);
     return handler((args ?? {}) as Record<string, unknown>);
@@ -221,6 +223,7 @@ describe("creating a room", () => {
         messages: [],
         runs: [],
         partials: [],
+        tool_calls: [],
       }),
     });
     const user = userEvent.setup();
@@ -275,6 +278,7 @@ describe("creating a room", () => {
         messages: [],
         runs: [],
         partials: [],
+        tool_calls: [],
       }),
     });
     const user = userEvent.setup();
@@ -329,6 +333,7 @@ describe("inside a room", () => {
         messages: [message("m1", "Hello team")],
         runs: [],
         partials: [],
+        tool_calls: [],
       }),
       ...handlers,
     });
@@ -348,6 +353,7 @@ describe("inside a room", () => {
         messages: [],
         runs: [],
         partials: [],
+        tool_calls: [],
       }),
     });
     const user = userEvent.setup();
@@ -370,6 +376,7 @@ describe("inside a room", () => {
         messages: [],
         runs: [],
         partials: [],
+        tool_calls: [],
       }),
     });
     const user = userEvent.setup();
@@ -427,6 +434,7 @@ describe("inside a room", () => {
         runs: [],
         partials: [],
         proposed_agent_id: null,
+        tool_calls: [],
       }),
       send_intervention: () => plain(sent),
     });
