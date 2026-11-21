@@ -28,7 +28,7 @@ export function EnvironmentDetail({ environment, status, actions }: Props) {
       className="flex min-h-0 w-104 shrink-0 flex-col gap-6 overflow-y-auto rounded-3xl border border-line bg-pill p-6"
     >
       <div className="flex items-start gap-4">
-        <span className="grid size-16 shrink-0 place-items-center rounded-2xl bg-raised text-error">
+        <span className="grid size-16 shrink-0 place-items-center rounded-2xl bg-raised text-ink">
           <FolderTileIcon className="h-8 w-10" />
         </span>
         <div className="grid min-w-0 justify-items-start gap-2">

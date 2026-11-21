@@ -55,7 +55,7 @@ export function EnvironmentList({
           return (
             <li
               key={environment.task_id}
-              className={`relative grid min-w-0 rounded-3xl transition-colors ${focused ? "bg-hi ring-1 ring-error/60" : "bg-raised hover:bg-pill-hover"}`}
+              className={`relative grid min-w-0 rounded-3xl transition-colors ${focused ? "bg-hi ring-1 ring-ink/40" : "bg-raised hover:bg-pill-hover"}`}
             >
               <input
                 type="checkbox"
@@ -72,7 +72,7 @@ export function EnvironmentList({
                 className="grid min-w-0 cursor-pointer content-start gap-4 rounded-3xl px-5 pt-5 pb-5 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
               >
                 <span
-                  className={`grid h-28 place-items-center ${focused ? "text-error" : "text-muted"}`}
+                  className={`grid h-28 place-items-center ${focused ? "text-ink" : "text-muted"}`}
                 >
                   <FolderTileIcon />
                 </span>
