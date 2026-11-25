@@ -1,0 +1,31 @@
+en:
+  activerecord:
+    attributes:
+      access_token:
+        name: "Name"
+        scopes: "Permissions"
+        expires_at: "Expires at"
+  access_tokens:
+    scopes:
+      git_read: "Clone and fetch over Git"
+      git_write: "Push over Git"
+      api: "API access"
+    index:
+      title: "Access tokens"
+      new: "New token"
+      empty: "You have no access tokens yet."
+      copy_now: "Copy your new token now. You won't be able to see it again."
+      last_used: "Last used %{time}"
+      never_used: "Never used"
+      expires: "expires %{time}"
+      expired: "Expired"
+      revoked: "Revoked"
+      revoke: "Revoke"
+      back: "Back"
+    new:
+      title: "New access token"
+      expires_hint: "Leave empty for a token that never expires."
+      submit: "Create token"
+      cancel: "Cancel"
+    destroy:
+      revoked: "Token revoked."

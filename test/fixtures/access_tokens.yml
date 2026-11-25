@@ -1,0 +1,25 @@
+git:
+  user: one
+  name: Laptop
+  token_digest: <%= AccessToken.digest("mlt_fixture_git") %>
+  scopes: [git_read, git_write]
+
+revoked:
+  user: one
+  name: Old laptop
+  token_digest: <%= AccessToken.digest("mlt_fixture_revoked") %>
+  scopes: [git_read]
+  revoked_at: <%= 1.day.ago.to_fs(:db) %>
+
+expired:
+  user: one
+  name: Expired
+  token_digest: <%= AccessToken.digest("mlt_fixture_expired") %>
+  scopes: [git_read]
+  expires_at: <%= 1.day.ago.to_fs(:db) %>
+
+other_user:
+  user: two
+  name: Other
+  token_digest: <%= AccessToken.digest("mlt_fixture_other") %>
+  scopes: [api]

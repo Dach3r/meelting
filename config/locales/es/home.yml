@@ -3,3 +3,4 @@ es:
     index:
       greeting: "¡Hola %{name}!"
       sign_out: "Cerrar sesión"
+      access_tokens: "Tokens de acceso"
