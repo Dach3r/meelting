@@ -1,2 +1,10 @@
 require:
   - rubocop-kode
+
+inherit_mode:
+  merge:
+    - Exclude
+
+AllCops:
+  Exclude:
+    - bin/docker-entrypoint

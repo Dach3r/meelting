@@ -88,6 +88,7 @@ production:
   primary: &primary_production
     <<: *default
     database: meelting_production
+    host: <%= ENV["DATABASE_HOST"] %>
     username: meelting
     password: <%= ENV["MEELTING_DATABASE_PASSWORD"] %>
   cache:

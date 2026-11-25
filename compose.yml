@@ -1,0 +1,38 @@
+services:
+  db:
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: meelting
+      POSTGRES_PASSWORD: ${MEELTING_DATABASE_PASSWORD:?set MEELTING_DATABASE_PASSWORD in .env}
+      POSTGRES_DB: meelting_production
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U meelting -d meelting_production"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      RAILS_ENV: production
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE:?set SECRET_KEY_BASE in .env}
+      DATABASE_HOST: db
+      MEELTING_DATABASE_PASSWORD: ${MEELTING_DATABASE_PASSWORD}
+      SOLID_QUEUE_IN_PUMA: "true"
+      FORCE_SSL: ${FORCE_SSL:-false}
+      APP_HOST: ${APP_HOST:-localhost}
+    volumes:
+      - storage_data:/rails/storage
+
+volumes:
+  postgres_data:
+  storage_data:
