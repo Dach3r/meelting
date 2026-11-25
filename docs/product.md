@@ -213,7 +213,7 @@ Done when: `docker compose up` starts the app from a clean checkout.
 
 - [x] Agree on technical conventions with David (defined in `CLAUDE.md`)
 - [x] Rails 8 app with Hotwire, PostgreSQL and Solid Queue (initial scaffold committed)
-- [ ] Users with the Rails 8 authentication generator, plus personal access tokens
+- [x] Users with the Rails 8 authentication generator, plus personal access tokens
 - [ ] Docker Compose for self-hosting
 - [ ] Public repository with AGPL-3.0 license, README, contribution guide and DCO
 
