@@ -1,0 +1,5 @@
+en:
+  home:
+    index:
+      greeting: "Hello, %{name}!"
+      sign_out: "Sign out"
