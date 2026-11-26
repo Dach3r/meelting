@@ -1,1 +1,48 @@
 @import "tailwindcss";
+
+/* Berth design tokens. Inter everywhere; warm-neutral light canvas with a deep teal hero. */
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  --color-canvas: #f7fbfa;
+  --color-surface: #ffffff;
+  --color-ink: #0b1f1f;
+  --color-muted: #52706d;
+  --color-line: #d9e7e4;
+
+  --color-accent: #0b7f70;
+  --color-accent-bright: #0f9d8a;
+
+  --color-deep: #0b2a2a;
+  --color-deep-surface: #0b2a2ab3;
+  --color-deep-ink: #f2fbf9;
+  --color-deep-muted: #7fa8a3;
+  --color-deep-line: #1d4543;
+  --color-signal: #17c3ab;
+  --color-signal-ink: #04211d;
+
+  --radius-ui: 4px;
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    font-feature-settings: "cv11", "ss03";
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+  }
+
+  pre {
+    font-feature-settings: "calt" 0, "zero", "cv11";
+    font-variant-ligatures: none;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent-bright);
+    outline-offset: 2px;
+  }
+}

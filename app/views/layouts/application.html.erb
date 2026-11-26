@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html>
+<html lang="<%= I18n.locale %>">
   <head>
-    <title><%= content_for(:title) || "Meelting" %></title>
+    <title><%= content_for(:title) || t("navbar.brand") %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="application-name" content="Meelting">
+    <meta name="application-name" content="<%= t("navbar.brand") %>">
     <meta name="mobile-web-app-capable" content="yes">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
@@ -18,14 +18,17 @@
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/icon.png">
 
+    <link rel="preload" href="<%= asset_path("inter-latin-wght-normal.woff2") %>" as="font" type="font/woff2" crossorigin>
     <%# Includes all stylesheet files in app/assets/stylesheets %>
     <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
   </head>
 
   <body>
-    <%= render Organisms::Navbar::Component.new(authenticated: authenticated?) %>
-    <main class="container mx-auto mt-28 px-5 flex">
+    <% unless content_for?(:bare_navbar) %>
+      <%= render Organisms::Navbar::Component.new(authenticated: authenticated?) %>
+    <% end %>
+    <main class="<%= content_for(:main_class) || "container mx-auto mt-28 px-5 flex" %>">
       <%= yield %>
     </main>
   </body>
