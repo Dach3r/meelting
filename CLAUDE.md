@@ -31,6 +31,7 @@ Rails 8.1 app (repo dir `meelting`). Product scope is being redefined: ask befor
 - Model = domain rules, validations, scopes, enums.
 - Service (`app/services/<domain>/<verb>.rb`): only when logic spans several models or external APIs; plain Ruby, one verb, `.call`.
 - Jobs: thin, idempotent wrappers over a model or service.
+- Components (ViewComponent, atomic design): `app/components/{atoms|molecules|organisms|...}/<name>/component.{rb,html.erb}`, class `<Level>::<Name>::Component`. Tests mirror the path: `test/components/<level>/<name>/component_test.rb`.
 - Views: no queries or business rules. Stimulus controllers in `app/javascript/controllers`.
 
 ## Git

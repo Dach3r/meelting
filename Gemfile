@@ -1,5 +1,6 @@
 source "https://rubygems.org"
 
+gem "bcrypt", "~> 3.1"
 gem "bootsnap", require: false
 gem "dotenv-rails"
 gem "image_processing", "~> 1.2"
@@ -16,6 +17,7 @@ gem "tailwindcss-rails"
 gem "thruster", require: false
 gem "turbo-rails"
 gem "tzinfo-data", platforms: %i[windows jruby]
+gem "view_component", "~> 4.25"
 
 group :development, :test do
   gem "brakeman", require: false
@@ -27,6 +29,3 @@ end
 group :development do
   gem "web-console"
 end
-gem "bcrypt", "~> 3.1"
-
-gem "view_component", "~> 4.25"
