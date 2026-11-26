@@ -24,6 +24,7 @@
   </head>
 
   <body>
+    <%= render Organisms::NavbarComponent.new(authenticated: authenticated?) %>
     <main class="container mx-auto mt-28 px-5 flex">
       <%= yield %>
     </main>

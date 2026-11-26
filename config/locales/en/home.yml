@@ -2,5 +2,3 @@ en:
   home:
     index:
       greeting: "Hello, %{name}!"
-      sign_out: "Sign out"
-      access_tokens: "Access tokens"

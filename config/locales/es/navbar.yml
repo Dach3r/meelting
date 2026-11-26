@@ -1,0 +1,9 @@
+es:
+  navbar:
+    label: "Navegación principal"
+    brand: "Meelting"
+    repositories: "Repositorios"
+    access_tokens: "Tokens de acceso"
+    sign_out: "Cerrar sesión"
+    sign_in: "Iniciar sesión"
+    sign_up: "Registrarse"

@@ -1,7 +1,1 @@
-<div class="flex items-center justify-between w-full">
-  <p class="text-2xl font-bold"><%= t(".greeting", name: Current.user.full_name) %></p>
-  <div class="flex items-center gap-4">
-    <%= link_to t(".access_tokens"), access_tokens_path, class: "text-gray-600 underline" %>
-    <%= button_to t(".sign_out"), session_path, method: :delete, class: "text-gray-600 underline cursor-pointer" %>
-  </div>
-</div>
+<p class="text-2xl font-bold"><%= t(".greeting", name: Current.user.full_name) %></p>
