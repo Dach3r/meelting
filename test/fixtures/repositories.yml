@@ -1,0 +1,15 @@
+meelting:
+  user: one
+  license: agpl
+  name: Meelting
+  slug: meelting
+  description: Open source forge for working with AI agents
+  visibility: private
+  default_branch: main
+
+public_notes:
+  user: two
+  name: Notes
+  slug: notes
+  visibility: public
+  default_branch: main

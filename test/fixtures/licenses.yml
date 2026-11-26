@@ -1,0 +1,20 @@
+mit:
+  key: mit
+  name: MIT License
+  description: A short, permissive license that only requires preserving the copyright and license notices.
+  body: MIT License text
+  status: active
+
+agpl:
+  key: agpl-3.0
+  name: GNU Affero General Public License v3.0
+  description: Strong copyleft license that also covers use over a network.
+  body: AGPL-3.0 license text
+  status: active
+
+retired:
+  key: retired-1.0
+  name: Retired License
+  description: No longer offered for new repositories.
+  body: Retired license text
+  status: inactive

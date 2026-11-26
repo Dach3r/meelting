@@ -1,0 +1,27 @@
+es:
+  activerecord:
+    attributes:
+      repository:
+        name: "Nombre"
+        slug: "Slug"
+        description: "Descripción"
+        visibility: "Visibilidad"
+        license_id: "Licencia"
+        default_branch: "Rama por defecto"
+  repositories:
+    visibilities:
+      private: "Privado"
+      public: "Público"
+    index:
+      title: "Repositorios"
+      new: "Nuevo repositorio"
+      empty: "Aún no tienes repositorios."
+      back: "Volver"
+    new:
+      title: "Nuevo repositorio"
+      slug_hint: "Minúsculas, números, puntos, guiones y guiones bajos."
+      no_license: "Sin licencia"
+      submit: "Crear repositorio"
+      cancel: "Cancelar"
+    create:
+      created: "Repositorio creado."

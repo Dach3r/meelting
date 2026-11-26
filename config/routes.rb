@@ -11,12 +11,15 @@ Rails.application.routes.draw do
     resource :registration, only: %i[new create]
     resources :passwords, param: :token
   end
-  resources :access_tokens, only: %i[index new create destroy]
-  get "up" => "rails/health#show", as: :rails_health_check
 
   constraints(AuthenticatedConstraint.new) do
     root "home#index"
   end
 
   root "auth/sessions#new", as: :unauthenticated_root
+
+  get "up" => "rails/health#show", as: :rails_health_check
+
+  resources :access_tokens, only: %i[index new create destroy]
+  resources :repositories, only: %i[index new create]
 end

@@ -1,0 +1,27 @@
+en:
+  activerecord:
+    attributes:
+      repository:
+        name: "Name"
+        slug: "Slug"
+        description: "Description"
+        visibility: "Visibility"
+        license_id: "License"
+        default_branch: "Default branch"
+  repositories:
+    visibilities:
+      private: "Private"
+      public: "Public"
+    index:
+      title: "Repositories"
+      new: "New repository"
+      empty: "You have no repositories yet."
+      back: "Back"
+    new:
+      title: "New repository"
+      slug_hint: "Lowercase letters, numbers, dots, dashes and underscores."
+      no_license: "No license"
+      submit: "Create repository"
+      cancel: "Cancel"
+    create:
+      created: "Repository created."
