@@ -3,7 +3,7 @@ require "test_helper"
 module Auth
   class RegistrationsControllerTest < ActionDispatch::IntegrationTest
     def valid_params(overrides = {})
-      { user: { first_name: "Grace", last_name: "Hopper", email_address: "new@example.com", password: "password123", password_confirmation: "password123" }.merge(overrides) }
+      { user: { username: "grace", first_name: "Grace", last_name: "Hopper", email_address: "new@example.com", password: "password123" }.merge(overrides) }
     end
 
     test "new renders sign up form" do
@@ -62,21 +62,14 @@ module Auth
 
     test "create with short password fails" do
       assert_no_difference "User.count" do
-        post registration_path, params: valid_params(password: "short", password_confirmation: "short")
-      end
-      assert_response :unprocessable_entity
-    end
-
-    test "create with mismatched confirmation fails" do
-      assert_no_difference "User.count" do
-        post registration_path, params: valid_params(password_confirmation: "different123")
+        post registration_path, params: valid_params(password: "short")
       end
       assert_response :unprocessable_entity
     end
 
     test "failed create does not start session" do
       assert_no_difference "Session.count" do
-        post registration_path, params: valid_params(password: "short", password_confirmation: "short")
+        post registration_path, params: valid_params(password: "short")
       end
     end
   end

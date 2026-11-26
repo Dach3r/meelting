@@ -20,7 +20,7 @@ module Auth
 
     private
     def user_params
-      params.expect(user: %i[first_name last_name email_address password password_confirmation])
+      params.expect(user: %i[username first_name last_name email_address password])
     end
   end
 end

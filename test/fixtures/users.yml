@@ -1,10 +1,12 @@
 one:
+  username: ada
   first_name: Ada
   last_name: Lovelace
   email_address: one@example.com
   password_digest: <%= BCrypt::Password.create("password123", cost: 4) %>
 
 two:
+  username: alan
   first_name: Alan
   last_name: Turing
   email_address: two@example.com

@@ -1,6 +1,6 @@
 module SessionTestHelper
   def sign_in_as(user, password: "password123")
-    post session_path, params: { email_address: user.email_address, password: password }
+    post session_path, params: { username: user.username, password: password }
   end
 
   def sign_out
