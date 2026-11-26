@@ -1,7 +1,10 @@
 en:
   navbar:
     label: "Main navigation"
-    brand: "Meelting"
+    brand: "Berth"
+    product: "Product"
+    memory: "Memory"
+    self_host: "Self-host"
     repositories: "Repositories"
     access_tokens: "Access tokens"
     sign_out: "Sign out"

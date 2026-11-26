@@ -1,9 +1,17 @@
 module Molecules
   module Brand
     class Component < ViewComponent::Base
-      def call
-        link_to t("navbar.brand"), root_path, class: "text-lg font-bold text-gray-900"
+      TONES = {
+        light: { text: "text-ink", mark: "text-accent-bright" },
+        deep: { text: "text-deep-ink", mark: "text-signal" }
+      }.freeze
+
+      def initialize(tone: :light)
+        @tone = TONES.fetch(tone)
       end
+
+      private
+      attr_reader :tone
     end
   end
 end

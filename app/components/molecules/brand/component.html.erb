@@ -1,0 +1,7 @@
+<%= link_to root_path, class: "inline-flex items-center gap-2 text-lg font-bold tracking-tight #{tone[:text]}" do %>
+  <svg viewBox="0 0 24 24" fill="currentColor" class="size-6 <%= tone[:mark] %>" aria-hidden="true">
+    <path d="M3 15h18l-2.5 5h-13z"/>
+    <rect x="8" y="5" width="8" height="8" rx="1" opacity=".6"/>
+  </svg>
+  <%= t("navbar.brand") %>
+<% end %>

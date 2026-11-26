@@ -23,7 +23,16 @@ class Organisms::Navbar::ComponentTest < ViewComponent::TestCase
     [true, false].each do |authenticated|
       nav = render_inline(Organisms::Navbar::Component.new(authenticated: authenticated))
 
-      assert_equal "Meelting", nav.css("a[href='/']").text
+      assert_equal "Berth", nav.css("a[href='/']").text.strip
     end
+  end
+
+  test "floating variant adds section anchors for guests" do
+    nav = render_inline(Organisms::Navbar::Component.new(authenticated: false, variant: :floating))
+
+    assert_equal 1, nav.css("a[href='#features']").size
+    assert_equal 1, nav.css("a[href='#memory']").size
+    assert_equal 1, nav.css("a[href='#self-host']").size
+    assert_equal 1, nav.css("a[href='/registration/new']").size
   end
 end
