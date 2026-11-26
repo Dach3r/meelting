@@ -11,8 +11,7 @@ RUN apt-get update -qq && \
 ENV RAILS_ENV="production" \
     BUNDLE_DEPLOYMENT="1" \
     BUNDLE_PATH="/usr/local/bundle" \
-    BUNDLE_WITHOUT="development:test" \
-    LD_PRELOAD="/usr/lib/x86_64-linux-gnu/libjemalloc.so.2"
+    BUNDLE_WITHOUT="development:test"
 
 FROM base AS build
 

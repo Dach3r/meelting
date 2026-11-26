@@ -2,7 +2,7 @@
 
 export LD_PRELOAD="${LD_PRELOAD:-$(find /usr/lib -name libjemalloc.so.2 -print -quit)}"
 
-if [ "${@: -2:1}" == "./bin/rails" ] && [ "${@: -1:1}" == "server" ]; then
+if [ "$1" == "./bin/rails" ] && [ "$2" == "server" ]; then
   ./bin/rails db:prepare
 fi
 
