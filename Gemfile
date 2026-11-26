@@ -28,3 +28,5 @@ group :development do
   gem "web-console"
 end
 gem "bcrypt", "~> 3.1"
+
+gem "view_component", "~> 4.25"
