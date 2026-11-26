@@ -16,7 +16,7 @@ Rails.application.routes.draw do
     root "home#index"
   end
 
-  root "auth/sessions#new", as: :unauthenticated_root
+  root "landing#show", as: :unauthenticated_root
 
   get "up" => "rails/health#show", as: :rails_health_check
 

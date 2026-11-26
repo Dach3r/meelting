@@ -1,0 +1,25 @@
+<section id="memory" class="mx-auto grid max-w-6xl scroll-mt-6 items-center gap-12 px-5 py-20 md:grid-cols-2 md:py-28">
+  <div class="flex flex-col items-start gap-5">
+    <%= render Atoms::Chip::Component.new(upper: true) do %><%= t("landing.memory.label") %><% end %>
+    <h2 class="text-4xl leading-[1.05] tracking-[-0.03em] md:text-5xl"><%= t("landing.memory.title") %></h2>
+    <p class="max-w-md text-muted"><%= t("landing.memory.description") %></p>
+    <ul class="flex flex-col gap-3">
+      <% self.class::POINTS.each do |point| %>
+        <li class="flex gap-3 text-muted">
+          <%= render Atoms::Icon::Component.new(name: :check, class: "mt-0.5 size-5 shrink-0 text-accent") %>
+          <span><%= t("landing.memory.points.#{point}") %></span>
+        </li>
+      <% end %>
+    </ul>
+  </div>
+
+  <%= render Molecules::Panel::Component.new(title: "AGENTS.md", meta: t("landing.memory.panel_meta")) do %>
+    <pre class="overflow-x-auto px-4 py-3 font-sans text-[13px] leading-7 text-muted"><span class="text-accent">&lt;!-- berth:start --&gt;</span>
+<span class="font-medium text-ink">## <%= t("landing.memory.block_title") %></span>
+- <%= t("landing.memory.block_architecture") %>: .project/architecture.md
+- <%= t("landing.memory.block_decisions") %>
+<span class="text-accent">&lt;!-- berth:end --&gt;</span>
+
+<%= t("landing.memory.handwritten") %></pre>
+  <% end %>
+</section>

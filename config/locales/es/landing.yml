@@ -1,0 +1,111 @@
+es:
+  landing:
+    title: "Berth: un amarre seguro para cada ejecución de agente"
+    hero:
+      promo_tag: "Open source"
+      promo: "Un experimento de colaboración nativa para agentes"
+      title: "Un amarre seguro"
+      title_dim: "para cada ejecución."
+      description: "Berth contiene a los agentes autónomos para que construyas, revises y mergees con confianza."
+      cta_primary: "Empezar"
+      cta_secondary: "Iniciar sesión"
+      copy: "Copiar"
+      copied: "Copiado"
+      built_for: "Pensado para"
+      chips:
+        read: "Agente 1 · lee .project/"
+        edit: "Agente 2 · edita app/models"
+        tests: "Agente 3 · tests pasaron"
+        approval: "Agente 4 · esperando aprobación"
+    why:
+      label: "Por qué Berth"
+      title: "Los agentes pueden escribir el código."
+      title_dim: "Solo tu proyecto sabe explicarles por qué."
+      aside: "Berth es el lugar donde cada agente y cada persona pueden entender, construir y mantener software, con el conocimiento guardado en el repositorio."
+    features:
+      label: "Producto"
+      title: "Diseñado alrededor del trabajo de agentes,"
+      title_dim: "no añadido encima."
+      aside: "Los agentes tienen acceso contextual al proyecto y participan en su proceso. No son un chat al lado de un repositorio."
+      memory:
+        title: "Project Memory"
+        description: "Decisiones, convenciones y restricciones viven en .project/, versionadas con tu código y legibles por cualquier agente, incluso fuera de Berth."
+        panel: "Project Memory"
+        indexed: "Indexada"
+        cited: "citada por el run #42"
+        decision_title: "0007 · Limitar la tasa de los endpoints que crean cuentas o envían correo"
+        decision_source: "Decidido · Fuente: PR #31, issue #29"
+      autonomy:
+        title: "Autonomía controlada"
+        description: "Tú decides qué puede hacer cada agente y qué acciones requieren aprobación. Cada run se detiene en una puerta antes de abrir el pull request."
+      traceable:
+        title: "Runs trazables"
+        description: "Cada archivo leído, edición y comando se guarda y se muestra en vivo en la interfaz. Sin cajas negras."
+    steps:
+      label: "Cómo funciona"
+      title: "Del issue al pull request"
+      title_dim: "mergeado."
+      description: "El primer agente es Claude Code en modo headless, dentro de un sandbox y con tu propia API key."
+      items:
+        assign:
+          title: "Asigna un issue"
+          description: "Dáselo a un agente como se lo darías a un compañero."
+        sandbox:
+          title: "Ejecuta en un sandbox"
+          description: "Un contenedor Docker por run, con .project/ como contexto."
+        approve:
+          title: "Aprueba la puerta"
+          description: "El run espera tu aprobación antes de abrir un pull request."
+        merge:
+          title: "Mergea y recuerda"
+          description: "Revisa, mergea y deja que el pull request actualice la memoria del proyecto."
+    memory:
+      label: "Project Memory"
+      title: "Explica tu proyecto una sola vez."
+      description: "La memoria es Markdown versionado en el repositorio. Berth solo la indexa, así que si te vas, la memoria se va con tu código."
+      points:
+        versioned: "Markdown plano en Git, legible por Claude Code o Codex sin integración."
+        propose: "Los agentes proponen cambios en sus propios pull requests y las personas aprueban."
+        index: "El índice vive en PostgreSQL y se puede reconstruir desde el repositorio en cualquier momento."
+      panel_meta: "Bloque generado"
+      block_title: "Memoria del proyecto"
+      block_architecture: "Arquitectura"
+      block_decisions: "Decisiones: 7 registros, 1 nuevo en revisión"
+      handwritten: "Las reglas escritas a mano no se tocan."
+    open:
+      label: "Abierto y self-hosted"
+      title: "Tu servidor, tus claves,"
+      title_dim: "tu Git."
+      description: "Código AGPL-3.0, self-hosting primero, cualquier proveedor de modelos. Git estándar, así que tus herramientas siguen funcionando."
+      facts:
+        license:
+          value: "AGPL-3.0"
+          label: "Código abierto"
+        byok:
+          value: "BYOK"
+          label: "Tus claves de modelo"
+        git:
+          value: "Git"
+          label: "HTTPS estándar"
+      terminal_title: "Terminal"
+      terminal_meta: "Docker Compose"
+      ready: "app y postgres están listos"
+      cloned: "Clonado con .project/ incluido"
+    stats:
+      sandbox:
+        value: "1"
+        label: "contenedor sandbox por run"
+      secrets:
+        value: "0"
+        label: "secretos del host dentro del sandbox"
+      providers:
+        value: "3"
+        label: "proveedores de modelos: Anthropic, OpenAI, Ollama"
+      license:
+        value: "AGPL"
+        label: "código abierto, self-hosted primero"
+    band:
+      title: "Amarra a tu primer agente."
+      description: "Crea una cuenta y empieza a usarlo en tus propios proyectos."
+      primary: "Crear cuenta"
+      secondary: "Iniciar sesión"

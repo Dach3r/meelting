@@ -1,10 +1,11 @@
 require "test_helper"
 
 class HomeRoutingTest < ActionDispatch::IntegrationTest
-  test "root without session renders sessions#new" do
+  test "root without session renders the landing" do
     get root_path
     assert_response :success
-    assert_select "h1", "Sign in"
+    assert_equal "landing", @controller.controller_name
+    assert_select "h1", /Un amarre seguro/
   end
 
   test "root with session renders home#index" do
@@ -15,18 +16,18 @@ class HomeRoutingTest < ActionDispatch::IntegrationTest
     assert_equal "home", @controller.controller_name
   end
 
-  test "root with stale session cookie falls back to sign in" do
+  test "root with stale session cookie falls back to the landing" do
     sign_in_as users(:one)
     Session.destroy_all
     get root_path
-    assert_select "h1", "Sign in"
+    assert_equal "landing", @controller.controller_name
   end
 
-  test "root after sign out renders sign in" do
+  test "root after sign out renders the landing" do
     sign_in_as users(:one)
     sign_out
     get root_path
-    assert_select "h1", "Sign in"
+    assert_equal "landing", @controller.controller_name
   end
 
   test "home greets the user and offers sign out" do

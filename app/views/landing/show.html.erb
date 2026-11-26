@@ -1,0 +1,13 @@
+<% content_for :title, t("landing.title") %>
+<% content_for :bare_navbar, true %>
+<% content_for :main_class, "block" %>
+
+<%= render Organisms::LandingHero::Component.new %>
+<%= render Organisms::LandingWhy::Component.new %>
+<%= render Organisms::LandingFeatures::Component.new %>
+<%= render Organisms::LandingSteps::Component.new %>
+<%= render Organisms::LandingMemory::Component.new %>
+<%= render Organisms::LandingOpen::Component.new %>
+<%= render Organisms::LandingStats::Component.new %>
+<%= render Organisms::LandingBand::Component.new %>
+<%= render Organisms::Footer::Component.new %>

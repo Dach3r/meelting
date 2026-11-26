@@ -1,0 +1,52 @@
+<header class="relative overflow-hidden rounded-b-[36px] bg-deep text-deep-ink">
+  <div class="mx-auto max-w-6xl px-4 pt-4">
+    <%= render Organisms::Navbar::Component.new(authenticated: false, variant: :floating) %>
+  </div>
+
+  <div class="pointer-events-none absolute inset-0 hidden lg:block" aria-hidden="true">
+    <% self.class::CHIPS.each do |chip| %>
+      <span class="absolute <%= chip[:position] %> inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-deep-line bg-deep-surface px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-deep-muted">
+        <span class="size-1.5 rounded-full <%= chip[:accent] ? "bg-deep-muted" : "bg-signal" %>"></span>
+        <%= t("landing.hero.chips.#{chip[:key]}") %>
+      </span>
+    <% end %>
+  </div>
+
+  <div class="relative mx-auto max-w-6xl px-5">
+    <div class="grid gap-10 py-20 md:grid-cols-[1.35fr_1fr] md:items-end md:py-28">
+      <div class="flex flex-col items-start gap-7">
+        <%= render Atoms::Chip::Component.new(tone: :deep, class: "text-xs") do %>
+          <strong class="text-[10px] font-bold uppercase tracking-wider text-signal"><%= t("landing.hero.promo_tag") %></strong>
+          <%= t("landing.hero.promo") %>
+        <% end %>
+
+        <h1 class="text-5xl font-normal leading-[1.02] tracking-[-0.03em] text-balance md:text-7xl">
+          <%= t("landing.hero.title") %><br>
+          <span class="text-deep-muted"><%= t("landing.hero.title_dim") %></span>
+        </h1>
+
+        <div class="flex flex-wrap gap-2">
+          <%= render Atoms::LinkButton::Component.new(href: new_registration_path, variant: :signal, size: :lg) do %><%= t("landing.hero.cta_primary") %><% end %>
+          <%= render Atoms::LinkButton::Component.new(href: new_session_path, variant: :deep, size: :lg) do %><%= t("landing.hero.cta_secondary") %><% end %>
+        </div>
+
+        <div class="inline-flex items-center gap-3 rounded-ui border border-deep-line bg-deep-surface py-1.5 pl-3.5 pr-1.5 text-sm"
+             data-controller="clipboard"
+             data-clipboard-text-value="<%= command %>"
+             data-clipboard-copied-value="<%= t("landing.hero.copied") %>">
+          <code class="font-sans font-medium"><%= command %></code>
+          <button type="button" data-action="clipboard#copy" class="cursor-pointer rounded-[3px] bg-deep-line px-2.5 py-1 text-xs text-deep-muted hover:text-deep-ink">
+            <span data-clipboard-target="label"><%= t("landing.hero.copy") %></span>
+          </button>
+        </div>
+      </div>
+
+      <p class="max-w-sm text-base text-deep-muted md:ml-auto md:text-right"><%= t("landing.hero.description") %></p>
+    </div>
+
+    <div class="flex flex-wrap items-center justify-center gap-x-8 gap-y-2 border-t border-deep-line py-5 text-sm text-deep-muted">
+      <strong class="font-semibold text-deep-ink"><%= t("landing.hero.built_for") %></strong>
+      <% self.class::BUILT_FOR.each do |name| %><span><%= name %></span><% end %>
+    </div>
+  </div>
+</header>
