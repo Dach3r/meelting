@@ -1,8 +1,8 @@
 require "test_helper"
 
-class Organisms::NavbarComponentTest < ViewComponent::TestCase
+class Organisms::Navbar::ComponentTest < ViewComponent::TestCase
   test "renders sign in and sign up links when unauthenticated" do
-    nav = render_inline(Organisms::NavbarComponent.new(authenticated: false))
+    nav = render_inline(Organisms::Navbar::Component.new(authenticated: false))
 
     assert_equal 1, nav.css("a[href='/session/new']").size
     assert_equal 1, nav.css("a[href='/registration/new']").size
@@ -11,7 +11,7 @@ class Organisms::NavbarComponentTest < ViewComponent::TestCase
   end
 
   test "renders navigation and sign out button when authenticated" do
-    nav = render_inline(Organisms::NavbarComponent.new(authenticated: true))
+    nav = render_inline(Organisms::Navbar::Component.new(authenticated: true))
 
     assert_equal 1, nav.css("a[href='/repositories']").size
     assert_equal 1, nav.css("a[href='/access_tokens']").size
@@ -21,7 +21,7 @@ class Organisms::NavbarComponentTest < ViewComponent::TestCase
 
   test "brand links to root in both states" do
     [true, false].each do |authenticated|
-      nav = render_inline(Organisms::NavbarComponent.new(authenticated: authenticated))
+      nav = render_inline(Organisms::Navbar::Component.new(authenticated: authenticated))
 
       assert_equal "Meelting", nav.css("a[href='/']").text
     end
