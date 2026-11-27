@@ -43,6 +43,6 @@ class Organisms::Sidebar::ComponentTest < ViewComponent::TestCase
     root = node.css("[data-controller=sidebar]").first
 
     assert_equal ApplicationHelper::CONFIG[:name], root.css("a[href='/']").first.text.strip
-    %w[lg:fixed lg:inset-y-5 lg:left-0].each { |css_class_| assert_includes root["class"], css_class_ }
+    %w[lg:fixed lg:inset-y-5 lg:left-5].each { |css_class_| assert_includes root["class"], css_class_ }
   end
 end
