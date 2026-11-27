@@ -1,7 +1,7 @@
 # Meelting — Product Vision
 
 > Source of truth for what Meelting is, why it exists, what has been decided, and what to build first.
-> Last updated: 2026-11-25 · Owner: David
+> Last updated: 2026-11-27 · Owner: David
 
 ## How to use this document (for Claude Code)
 
@@ -71,6 +71,7 @@ What Meelting bets on, which neither offers today:
 | Project Memory | The project's knowledge, stored as versioned Markdown in `.project/` and indexed by Meelting |
 | Decision record | One file in `.project/decisions/` describing a decision, its context, consequences and sources |
 | BYOK | Bring your own key: model API keys belong to the user, not to Meelting |
+| Inbox | The authenticated home: the list of things that need a human decision (see "Authenticated home and navigation") |
 
 Suggested core entities for the first milestone. This is a starting point, not a schema: propose the actual schema to David before creating migrations.
 
@@ -114,6 +115,11 @@ Suggested core entities for the first milestone. This is a starting point, not a
 | Evaluation date | Not set | Without a date the experiment is never evaluated (see risks) | Open |
 | Sandbox network policy | Not set | Claude Code needs to reach the model provider, so "no network" is not an option; decide before Phase 3 | Open |
 | BYOK key inside the sandbox | Not set | Environment variable vs a proxy that injects the key outside the container; see risks | Open |
+| App navigation | Persistent sidebar: Inbox, Runs, repositories (each expands in place to Code, Issues, Pull requests, Runs, Memory) and Settings | With one or two repositories in the first milestone, expanding in place keeps everything one click away without an extra tab level | Decided |
+| Authenticated home | The home is the Inbox: things that need a decision, plus runs in progress. Nothing else | Notifications are out of scope, so the home is the only place a run waiting at the gate is seen; anything that is not a decision makes it harder to see | Decided |
+| Rejected run | The run stays in history as rejected and leaves the Inbox; its issue goes back to pending, ready to reassign. No automatic retry | Keeps the gate simple and inside the milestone; retry with feedback can come later | Decided |
+| Home placeholder data | The navigation shell and home are built before Phases 2–3 using placeholder data from one clearly labelled source; no models or migrations for future-phase entities | Lets the layout be built and reviewed early without creating schema ahead of its phase | Proposed |
+| Visual style | shadcn/ui-inspired look (zinc neutrals, 1px borders, 8px radius, Geist) built with Hotwire, without React | Quiet and dense for daily use; the look is adopted, not the React components | Proposed |
 
 ## Architecture
 
@@ -147,7 +153,7 @@ SSH (later, Go)  ┄┄┄▶   Agent runs (Solid Queue jobs)  ─────�
 3. The agent (Claude Code in headless mode, using the user's API key) works on the issue with `.project/` available as context.
 4. Every step is stored as a RunEvent and streamed to the UI with Turbo Streams.
 5. When the agent finishes, the run waits at the approval gate.
-6. On approval, Meelting pushes the branch and opens a pull request with a structured description.
+6. On approval, Meelting pushes the branch and opens a pull request with a structured description. On rejection, the run is kept as rejected and its issue goes back to pending.
 7. The sandbox is destroyed.
 
 A pull request opened by an agent includes: objective, summary of changes, files affected, decisions made, tests run and their results, risks identified, and proposed changes to `.project/`.
@@ -181,6 +187,61 @@ Rules:
 
 Open question: the exact format of each file (frontmatter, required fields of a decision record) must be defined before writing the indexer.
 
+## Authenticated home and navigation
+
+The home answers one question: what needs me right now? Notifications are out of scope in the first milestone, so the home is the only place where a finished, failed or waiting run is seen. Anything that is not a pending decision lives somewhere else.
+
+### Sidebar
+
+Always visible for an authenticated user, top to bottom:
+
+| Item | Shows | Notes |
+| --- | --- | --- |
+| Inbox | Badge with the number of Inbox items | This is the home (`/`) |
+| Runs | Dot with the number of runs in progress | Global list of runs; the weekly summary lives in its header |
+| Repositories | One entry per repository, with a mirror status dot (ok, failing, none) | Clicking a repository expands it in place: Code, Issues, Pull requests, Runs, Memory. Only one repository is expanded at a time |
+| New repository | Link | |
+| Settings | Warning dot when a configuration problem exists | Access tokens, model keys, mirrors |
+| Account | User name, sign out | |
+
+### Home blocks
+
+Exactly two blocks, in this order.
+
+**1. Inbox.** One list, sorted by how long each item has been waiting (oldest first). Each row has a type label, a title, one context line (repository · agent · relative time), at most one flag, and one action.
+
+| Type | When it appears | Flag (only when true) | Action | Leaves the Inbox when |
+| --- | --- | --- | --- | --- |
+| Approve | A run is waiting at the approval gate | "Tests failed" | Review → run page | Approved or rejected |
+| Merge | An agent pull request is open | "Modifies .project/" or "Has conflicts" | Open → pull request | Merged or closed |
+| Failed | A run ended with an error (tests, sandbox timeout, agent CLI error) | — | View run → run page | Dismissed, or a new run starts on the same issue |
+
+Details (diff size, cost, tests run, memory used) belong on the run and pull request pages, not on the row.
+
+**2. In progress.** Up to three running runs, each with its issue, elapsed time and last run event, updated live. A "View all" link goes to Runs when there are more.
+
+### States
+
+- **Empty Inbox.** "Nothing needs you" with one action: "Assign an issue", which goes to the repository's open issues.
+- **First visit.** Until setup is complete, a checklist replaces both blocks: create an access token, create a repository and push to it, configure the GitHub mirror, add a model key, write `.project/overview.md`, assign a first issue to an agent. Each step is checked automatically when it is true. The checklist never appears next to the Inbox.
+- **Configuration problem.** A missing model key, an unreachable Docker daemon or a failing mirror shows a dot on Settings (or on the repository) and, only when it blocks runs or puts the repository at risk, one banner above the Inbox with a link to fix it.
+
+### Not on the home
+
+- Activity feeds (commits, comments, pushes).
+- "Assigned to me" filters: there is a single user in the first milestone.
+- A separate memory block: memory changes arrive as pull requests and are flagged in the Inbox.
+- Charts. The weekly summary (runs finished, runs merged, model spend) is one line in the Runs header.
+- Search or a command palette: later.
+
+### Placeholder data until Phases 2–3
+
+The shell and home are built before issues, pull requests and runs exist. Until each entity lands:
+
+- Placeholder data comes from one source, separate from models, and is visibly labelled in the UI as preview data.
+- No models, tables or migrations are created for Issue, PullRequest, AgentRun or RunEvent ahead of their phase.
+- Each block switches to real data in the phase that introduces it, and its placeholder is deleted then. Repositories, tokens and model keys use real data as soon as they exist.
+
 ## First milestone: Meelting hosts itself
 
 The milestone is done when Meelting's own repository lives in Meelting and a real issue ends in a pull request generated by an agent and merged there. It is the shortest path to the success criterion, because from then on every improvement is developed inside the product.
@@ -193,6 +254,7 @@ In scope:
 - One agent (Claude Code headless) that takes an issue, works in a sandbox and opens an explained pull request.
 - Live agent activity and human approval before the pull request is opened.
 - Project Memory v0: `.project/` read by the agent at the start of every task.
+- The navigation sidebar and the Inbox home described above.
 
 Out of scope:
 
@@ -200,6 +262,7 @@ Out of scope:
 - Own agent runtime, parallel agents and specialized agents.
 - Public instance.
 - Merge strategies other than merge commit, and conflict resolution in the UI.
+- Cancelling a running run, retrying a rejected run with feedback, and a command palette.
 
 Safeguard: a push mirror to GitHub while the forge matures, so a bug cannot put the project's own repository at risk.
 
@@ -221,6 +284,7 @@ Done when: `docker compose up` starts the app from a clean checkout.
 
 Done when: Meelting's repository lives in Meelting, with a push mirror to GitHub.
 
+- [x] Navigation sidebar and Inbox home with placeholder data (see "Authenticated home and navigation")
 - [ ] Create bare repositories on disk
 - [ ] Push and clone over HTTPS with a token (`git http-backend`)
 - [ ] File browser with syntax highlighting, commit history and per-commit diff
@@ -233,6 +297,7 @@ Done when: a pull request is merged without leaving Meelting.
 - [ ] Issues with title, description, state and comments
 - [ ] Pull requests between branches of the same repository, with diff and general comments
 - [ ] Merge commit from the UI (`git merge-tree` + `git commit-tree`, per-repository lock)
+- [ ] Inbox "Merge" items and the empty-state "Assign an issue" link use real data
 
 ### Phase 3 — First agent: issue to pull request
 
@@ -244,6 +309,7 @@ Done when: a real Meelting issue ends in a pull request generated by the agent a
 - [ ] Live activity with Turbo Streams: what it reads, what it edits, which commands it runs
 - [ ] Human approval before the pull request is opened
 - [ ] Pull request with objective, summary of changes, decisions, tests run and risks
+- [ ] Inbox "Approve" and "Failed" items, "In progress" and sidebar counts use real data, updated live
 
 ### Phase 4 — Project Memory v0
 
@@ -301,6 +367,7 @@ If David is still developing outside Meelting on the evaluation date, that is th
 | GitHub and GitLab close the memory gap before Meelting matures | In-repo memory stays useful even then, because any agent can read it |
 | Limited maintainer time (solo side project) with no fixed hours or evaluation date | Closed milestone scope; set an evaluation date once pace is known, otherwise the experiment is never judged |
 | Claude Code headless output format changes and breaks RunEvents | Isolate parsing in one adapter; pin the CLI version in the sandbox image |
+| Placeholder data outlives its phase and hides missing features | One labelled source, deleted in the phase that brings the real data (see "Placeholder data until Phases 2–3") |
 
 Open questions:
 
@@ -311,3 +378,4 @@ Open questions:
 - [ ] How a post-receive hook reaches Solid Queue (HTTP callback vs `bin/rails runner`)
 - [ ] Exact `.project/` format (frontmatter, decision record fields)
 - [ ] Which UI locales ship (all copy goes through i18n per `CLAUDE.md`)
+- [ ] Whether a running run can be cancelled before the first milestone ends
