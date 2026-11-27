@@ -1,18 +1,22 @@
-<section class="flex flex-1 flex-col justify-center gap-14 pb-10 sm:gap-16">
-  <div class="grid justify-items-center gap-6 text-center">
-    <h1 class="max-w-[780px] text-balance text-[clamp(2.25rem,4.8vw,3.75rem)] font-extrabold leading-[1.05] tracking-[-0.04em]"><%= t("landing.hero.title") %></h1>
-  </div>
+<section class="flex flex-1 flex-col justify-center gap-16 py-10 pl-5 pr-2">
+  <h1 class="text-[clamp(2.75rem,8vw,7.25rem)] font-extrabold leading-[1.02] tracking-[-0.055em]">
+    <%= t("landing.hero.title_before") %>
+    <span class="inline-block rounded-full bg-sun-400 px-[0.28em] pb-[0.06em]"><%= t("landing.hero.title_highlight") %></span>
+    <%= t("landing.hero.title_middle") %>
+    <span class="inline-flex size-[0.8em] items-center justify-center rounded-full bg-graphite-900 align-middle text-sun-400"><%= render Atoms::Icon::Component.new(name: :arrow_right, class: "size-[52%]", "stroke-width": 2.6) %></span>
+    <%= t("landing.hero.title_after") %>
+  </h1>
 
-  <ul class="mx-auto grid w-full max-w-[800px] gap-3">
-    <% POINTS.zip(PILLS).each_with_index do |(point, pill), index| %>
-      <li class="flex items-center gap-[18px] rounded-full py-3 pl-7 pr-3 <%= pill[:surface] %>">
-        <h2 class="shrink-0 text-[22px] font-bold tracking-[-0.02em] sm:w-32"><%= t("landing.hero.points.#{point}.title") %></h2>
-        <p class="min-w-0 flex-1 text-[15px] <%= pill[:text] %>"><%= t("landing.hero.points.#{point}.text") %></p>
-        <span class="hidden h-3 w-60 shrink-0 overflow-hidden rounded-full sm:block <%= pill[:track] %>" aria-hidden="true">
-          <span class="block h-full bg-sun-400 <%= pill[:fill] %>"></span>
-        </span>
-        <span class="flex size-11 shrink-0 items-center justify-center rounded-full font-extrabold <%= pill[:badge] %>" aria-hidden="true"><%= index + 1 %></span>
-      </li>
-    <% end %>
-  </ul>
+  <div class="flex flex-wrap items-center justify-between gap-8 rounded-full bg-graphite-50 p-2">
+    <ul class="flex flex-wrap items-center pl-2">
+      <% POINTS.each_with_index do |point, index| %>
+        <li class="inline-flex items-center gap-3 pr-9 text-[18px] font-bold leading-[normal] tracking-[-0.02em] <%= index.zero? ? "pl-0" : "border-l-2 border-graphite-100 pl-9" %>">
+          <span class="flex size-10 items-center justify-center rounded-full bg-graphite-900 text-base font-extrabold text-sun-400" aria-hidden="true"><%= index + 1 %></span>
+          <%= t("landing.hero.points.#{point}") %>
+        </li>
+      <% end %>
+    </ul>
+
+    <%= render Atoms::LinkButton::Component.new(href: new_registration_path, variant: :primary, size: :cta, class: "gap-2.5 border-0") do %><%= t("landing.hero.cta_primary") %><%= render Atoms::Icon::Component.new(name: :arrow_right, class: "size-[18px]", "stroke-width": 2.2) %><% end %>
+  </div>
 </section>

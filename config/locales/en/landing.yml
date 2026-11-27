@@ -2,16 +2,13 @@ en:
   landing:
     title: "%{name}: where humans and AI agents build software together"
     hero:
-      title: "Build software alongside AI agents, with full traceability."
+      title_before: "Build software"
+      title_highlight: "alongside AI agents,"
+      title_middle: "with full"
+      title_after: "traceability."
       cta_primary: "Get started"
       points:
-        remember:
-          title: "Remember"
-          text: "Decisions and conventions live in your repo, readable by any agent"
-        control:
-          title: "Control"
-          text: "You set what each agent may do and approve before a pull request opens"
-        trace:
-          title: "Trace"
-          text: "Every agent step is recorded and streamed live"
+        remember: "Remember"
+        control: "Control"
+        trace: "Trace"
       cta_secondary: "Sign in"

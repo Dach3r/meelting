@@ -2,16 +2,13 @@ es:
   landing:
     title: "%{name}: donde personas y agentes de IA construyen software juntos"
     hero:
-      title: "Construye software junto a agentes de IA, con trazabilidad total."
+      title_before: "Construye software"
+      title_highlight: "junto a agentes"
+      title_middle: "de IA, con trazabilidad"
+      title_after: "total."
       cta_primary: "Empezar"
       points:
-        remember:
-          title: "Recuerda"
-          text: "Las decisiones y convenciones viven en tu repo, legibles por cualquier agente"
-        control:
-          title: "Controla"
-          text: "Tú defines qué puede hacer cada agente y apruebas antes de abrir un pull request"
-        trace:
-          title: "Rastrea"
-          text: "Cada paso del agente queda registrado y se transmite en vivo"
+        remember: "Recuerda"
+        control: "Controla"
+        trace: "Rastrea"
       cta_secondary: "Iniciar sesión"
