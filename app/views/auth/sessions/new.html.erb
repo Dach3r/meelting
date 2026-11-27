@@ -8,10 +8,10 @@
 
   <%= render Atoms::SubmitButton::Component.new do %><%= t(".submit") %><% end %>
 
-  <div class="flex items-center gap-4 text-sm leading-[normal] text-graphite-500" role="separator">
-    <span class="h-px flex-1 bg-graphite-100"></span>
+  <div class="flex items-center gap-4 py-1 text-xs font-medium uppercase leading-[normal] tracking-widest text-graphite-400" role="separator">
+    <span class="h-px flex-1 bg-gradient-to-r from-transparent to-graphite-100"></span>
     <span><%= t(".or") %></span>
-    <span class="h-px flex-1 bg-graphite-100"></span>
+    <span class="h-px flex-1 bg-gradient-to-l from-transparent to-graphite-100"></span>
   </div>
 
   <%= render Atoms::LinkButton::Component.new(href: new_registration_path, variant: :secondary, size: :block) do %><%= t(".sign_up") %><% end %>
