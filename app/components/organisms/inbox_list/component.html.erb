@@ -1,0 +1,26 @@
+<div class="flex flex-col gap-6">
+  <% if inbox.decisions.any? %>
+    <%= render Molecules::Tray::Component.new(title: t("home.sections.decisions"), count: inbox.decisions.size, id: "decisions") do %>
+      <% inbox.decisions.each do |item| %>
+        <%= render Molecules::InboxRow::Component.new(item: item, href: root_path(item: item.id), selected: item == inbox.selected) %>
+      <% end %>
+    <% end %>
+  <% end %>
+
+  <% if inbox.working.any? %>
+    <%= render Molecules::Tray::Component.new(title: t("home.sections.working"), count: inbox.working.size, id: "working") do %>
+      <% inbox.working.each do |item| %>
+        <%= render Molecules::InboxRow::Component.new(item: item) %>
+      <% end %>
+    <% end %>
+  <% end %>
+
+  <%= render Molecules::Tray::Component.new(title: t("home.sections.issues"), count: inbox.issues.size) do %>
+    <% if inbox.issues.empty? %>
+      <p class="rounded-[22px] bg-white px-5 py-6 text-graphite-500"><%= t("home.empty.issues") %></p>
+    <% end %>
+    <% inbox.issues.each do |item| %>
+      <%= render Molecules::InboxRow::Component.new(item: item) %>
+    <% end %>
+  <% end %>
+</div>

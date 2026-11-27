@@ -1,0 +1,8 @@
+<%= tag.section **html_options do %>
+  <h2 class="mb-3 ml-1 text-[22px] font-extrabold leading-none tracking-[-0.035em]">
+    <%= title %><% if count %> <span class="text-graphite-400"><%= count %></span><% end %>
+  </h2>
+  <div class="flex flex-col gap-1 rounded-[30px] bg-graphite-50 p-1.5">
+    <%= content %>
+  </div>
+<% end %>

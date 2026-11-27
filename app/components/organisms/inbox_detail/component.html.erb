@@ -1,0 +1,70 @@
+<div class="rounded-[30px] bg-graphite-50 p-2">
+  <div class="px-6 pb-4 pt-6">
+    <div class="mb-3 flex flex-wrap items-center gap-2 text-xs text-graphite-500">
+      <%= render Atoms::StatusChip::Component.new(tone: state_tone) do %><%= t("home.detail.states.#{item.state}") %><% end %>
+      <span><%= reference %></span>
+    </div>
+    <h2 class="text-balance text-[34px] font-extrabold leading-[1.05] tracking-[-0.045em]"><%= item.title %></h2>
+    <p class="mt-3 flex items-center gap-2 text-sm text-graphite-500">
+      <%= render Atoms::AgentAvatar::Component.new(size: :sm) %>
+      <span class="font-semibold text-graphite-900">claude-code</span>
+      <span class="inline-flex h-[18px] items-center rounded-full bg-graphite-900 px-2 text-[10px] font-extrabold tracking-[0.07em] text-sun-400"><%= t("home.agent_tag") %></span>
+      <% if item.run? %><span><%= t("home.detail.finished_ago", time: time_ago_in_words(item.detail(:finished_at))) %></span><% end %>
+    </p>
+  </div>
+
+  <div class="mx-2 grid rounded-[22px] bg-white sm:grid-cols-3">
+    <div class="px-5 py-3.5">
+      <p class="text-xs text-graphite-500"><%= t("home.detail.changes") %></p>
+      <p class="mt-0.5 font-mono text-[12.5px] font-medium"><span class="text-sun-700">+<%= item.detail(:additions) %></span> <span class="text-coral-700">−<%= item.detail(:deletions) %></span> · <%= t("home.detail.files", count: item.detail(:files)) %></p>
+    </div>
+    <div class="px-5 py-3.5">
+      <% if item.run? %>
+        <p class="text-xs text-graphite-500"><%= t("home.detail.commands_label") %></p>
+        <p class="mt-0.5 text-sm font-bold"><%= commands_summary %></p>
+      <% else %>
+        <p class="text-xs text-graphite-500"><%= t("home.detail.tests_label") %></p>
+        <p class="mt-0.5 text-sm font-bold"><%= t("home.detail.tests_passed", count: item.detail(:tests)) %></p>
+      <% end %>
+    </div>
+    <div class="px-5 py-3.5">
+      <p class="text-xs text-graphite-500"><%= t("home.detail.cost_time") %></p>
+      <p class="mt-0.5 font-mono text-[13px] font-semibold"><%= helpers.format_cents(item.cost_cents) %> · <%= helpers.format_duration(item.duration_seconds) %></p>
+    </div>
+  </div>
+
+  <% if item.run? %>
+    <div class="px-6 py-5">
+      <p class="mb-2.5 text-xs font-bold text-graphite-500"><%= t("home.detail.last_steps") %></p>
+      <ol class="grid gap-2 text-sm">
+        <% item.detail(:steps).each do |step| %>
+          <li class="flex items-center gap-2">
+            <span class="<%= class_names("flex size-7 shrink-0 items-center justify-center rounded-full", step.kind == :command ? "bg-graphite-900 text-sun-400" : "bg-white text-graphite-700") %>"><%= render Atoms::Icon::Component.new(name: STEP_ICONS.fetch(step.kind), class: "size-3.5") %></span>
+            <span class="<%= class_names("min-w-0 flex-1 truncate", "font-mono text-xs" => step.kind == :command) %>"><%= step.text %></span>
+            <span class="font-mono text-xs text-graphite-400"><%= helpers.format_clock(step.seconds) %></span>
+          </li>
+        <% end %>
+      </ol>
+
+      <p class="mb-2.5 mt-4 text-xs font-bold text-graphite-500"><%= t("home.detail.memory_used") %></p>
+      <ul class="flex flex-wrap gap-2">
+        <% item.detail(:memory_files).each do |path| %>
+          <li class="inline-flex h-[26px] items-center gap-1.5 rounded-full bg-white px-3 text-xs font-semibold text-graphite-700"><%= render Atoms::Icon::Component.new(name: :book_open, class: "size-3.5") %><%= path %></li>
+        <% end %>
+      </ul>
+    </div>
+
+    <div class="flex flex-wrap items-center justify-end gap-2 px-2 pb-2 pt-1">
+      <%= render Atoms::PillButton::Component.new do %><%= t("home.actions.view_diff") %><% end %>
+      <%= render Atoms::PillButton::Component.new(variant: :danger) do %><%= t("home.actions.reject") %><% end %>
+      <%= render Atoms::PillButton::Component.new(variant: :primary, size: :pill) do %><%= render Atoms::Icon::Component.new(name: :git_pull_request, class: "size-4") %><%= t("home.actions.approve") %><% end %>
+    </div>
+  <% else %>
+    <div class="flex flex-wrap items-center justify-end gap-2 px-2 pb-2 pt-4">
+      <%= render Atoms::PillButton::Component.new(variant: :primary, size: :pill) do %><%= t("home.actions.review_pull_request") %><% end %>
+    </div>
+  <% end %>
+</div>
+<% if item.run? %>
+  <p class="px-3 text-xs text-graphite-500"><%= t("home.detail.approval_caption") %></p>
+<% end %>

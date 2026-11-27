@@ -8,12 +8,12 @@ class HomeRoutingTest < ActionDispatch::IntegrationTest
     assert_select "h1", /Construye software\s+junto a agentes/
   end
 
-  test "root with session renders repositories#index" do
+  test "root with session renders home#show" do
     sign_in_as users(:one)
     get root_path
     assert_response :success
     assert_select "h1", text: /Construye software/, count: 0
-    assert_equal "repositories", @controller.controller_name
+    assert_equal "home", @controller.controller_name
   end
 
   test "root with stale session cookie falls back to the landing" do

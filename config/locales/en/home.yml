@@ -1,0 +1,57 @@
+en:
+  home:
+    show:
+      title: "Home"
+      nothing_to_decide: "Nothing needs your decision right now."
+    agent_tag: "AGENT"
+    sections:
+      decisions: "Needs your decision"
+      working: "Agents working"
+      issues: "Your open issues"
+      repositories: "Repositories"
+      memory: "Memory touched"
+    states:
+      awaiting_approval: "Approval"
+      ready_to_merge: "Mergeable"
+      conflicts: "Conflicts"
+      assigned: "Run #%{number}"
+    subtitles:
+      run: "Run #%{number} · %{files} files · %{commands} commands"
+      pull_request_ready: "PR #%{number} · no conflicts · %{tests} tests ok"
+      pull_request_conflicts: "PR #%{number} · conflict in %{file}"
+      issue: "#%{number}"
+    actions:
+      assign: "Assign"
+      view_diff: "View diff"
+      reject: "Reject"
+      approve: "Approve and open PR"
+      review_pull_request: "Review pull request"
+    detail:
+      states:
+        awaiting_approval: "Awaiting approval"
+        ready_to_merge: "Ready to merge"
+        conflicts: "Conflicts with main"
+      run_reference: "Run #%{number} · issue #%{issue}"
+      pull_request_reference: "PR #%{number} · run #%{run}"
+      finished_ago: "finished %{time} ago"
+      changes: "Changes"
+      files:
+        one: "%{count} file"
+        other: "%{count} files"
+      commands_label: "Commands"
+      commands: "%{count}"
+      commands_retried: "%{count} · 1 failed, retried"
+      tests_label: "Tests"
+      tests_passed: "%{count} tests, 0 failures"
+      cost_time: "Cost · time"
+      last_steps: "Last steps"
+      memory_used: "Memory used"
+      approval_caption: "Approving opens the pull request. It does not limit or undo what ran in the sandbox."
+    mirror:
+      in_sync: "In sync · %{time}"
+      failed: "Push failed · %{time}"
+    memory:
+      proposed: "proposed"
+    empty:
+      issues: "You have no open issues."
+      memory: "Nothing indexed yet."

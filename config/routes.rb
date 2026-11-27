@@ -14,7 +14,7 @@ Rails.application.routes.draw do
   end
 
   constraints(AuthenticatedConstraint.new) do
-    root "repositories#index"
+    root "home#show"
   end
 
   root "landing#show", as: :unauthenticated_root

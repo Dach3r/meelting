@@ -1,0 +1,57 @@
+es:
+  home:
+    show:
+      title: "Inicio"
+      nothing_to_decide: "Nada necesita tu decisión por ahora."
+    agent_tag: "AGENTE"
+    sections:
+      decisions: "Necesita tu decisión"
+      working: "Agentes trabajando"
+      issues: "Tus issues abiertos"
+      repositories: "Repositorios"
+      memory: "Memoria tocada"
+    states:
+      awaiting_approval: "Aprobación"
+      ready_to_merge: "Mergeable"
+      conflicts: "Conflictos"
+      assigned: "Run #%{number}"
+    subtitles:
+      run: "Run #%{number} · %{files} archivos · %{commands} comandos"
+      pull_request_ready: "PR #%{number} · sin conflictos · %{tests} tests ok"
+      pull_request_conflicts: "PR #%{number} · conflicto en %{file}"
+      issue: "#%{number}"
+    actions:
+      assign: "Asignar"
+      view_diff: "Ver diff"
+      reject: "Rechazar"
+      approve: "Aprobar y abrir PR"
+      review_pull_request: "Revisar pull request"
+    detail:
+      states:
+        awaiting_approval: "Esperando aprobación"
+        ready_to_merge: "Listo para merge"
+        conflicts: "Conflictos con main"
+      run_reference: "Run #%{number} · issue #%{issue}"
+      pull_request_reference: "PR #%{number} · run #%{run}"
+      finished_ago: "terminó hace %{time}"
+      changes: "Cambios"
+      files:
+        one: "%{count} archivo"
+        other: "%{count} archivos"
+      commands_label: "Comandos"
+      commands: "%{count}"
+      commands_retried: "%{count} · 1 falló, reintentado"
+      tests_label: "Tests"
+      tests_passed: "%{count} tests, 0 fallas"
+      cost_time: "Costo · tiempo"
+      last_steps: "Últimos pasos"
+      memory_used: "Memoria usada"
+      approval_caption: "Aprobar abre el pull request. No limita ni deshace lo que se ejecutó en el sandbox."
+    mirror:
+      in_sync: "Sincronizado · %{time}"
+      failed: "Push fallido · %{time}"
+    memory:
+      proposed: "propuesta"
+    empty:
+      issues: "No tienes issues abiertos."
+      memory: "Nada indexado todavía."

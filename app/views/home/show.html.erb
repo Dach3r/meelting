@@ -1,0 +1,19 @@
+<% content_for :title, t(".title") %>
+<% content_for :main_class, "nb-container flex flex-col pb-16" %>
+
+<h1 class="sr-only"><%= t(".title") %></h1>
+
+<div class="flex flex-wrap items-start gap-6">
+  <div class="min-w-[22rem] flex-[0_1_31rem]">
+    <%= render Organisms::InboxList::Component.new(inbox: @inbox) %>
+  </div>
+
+  <div class="flex min-w-[26rem] flex-[1_1_34rem] flex-col gap-4">
+    <% if @inbox.selected %>
+      <%= render Organisms::InboxDetail::Component.new(item: @inbox.selected) %>
+    <% else %>
+      <p class="rounded-[30px] bg-graphite-50 px-6 py-10 text-graphite-500"><%= t(".nothing_to_decide") %></p>
+    <% end %>
+    <%= render Organisms::InboxContext::Component.new(inbox: @inbox) %>
+  </div>
+</div>
