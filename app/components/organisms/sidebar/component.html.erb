@@ -1,12 +1,12 @@
-<div class="lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:flex lg:w-64 lg:flex-col lg:bg-graphite-50" data-controller="sidebar" data-sidebar-url-value="<%= sidebar_expansion_path %>">
-<div class="flex items-center justify-between px-5 pb-3 pt-7 lg:py-7 lg:pl-6">
+<div class="lg:fixed lg:inset-y-5 lg:left-0 lg:z-30 lg:flex lg:w-64 lg:flex-col lg:overflow-hidden lg:rounded-r-[30px] lg:bg-graphite-50" data-controller="sidebar" data-sidebar-url-value="<%= sidebar_expansion_path %>">
+<div class="flex items-center justify-between px-5 pb-3 pt-7 lg:mt-2 lg:h-14 lg:py-0 lg:pl-6">
   <%= render Molecules::Brand::Component.new(tone: :graphite, size: :lg) %>
   <button type="button" class="flex cursor-pointer items-center gap-2 rounded-full bg-graphite-50 px-4 py-2.5 text-sm font-semibold lg:hidden" aria-expanded="false" aria-controls="sidebar-menu" data-sidebar-target="menuButton" data-action="sidebar#menu">
     <%= t("sidebar.menu") %>
     <%= render Atoms::Icon::Component.new(name: :chevron_down, class: "size-4") %>
   </button>
 </div>
-<nav id="sidebar-menu" class="mx-5 mb-3 hidden flex-col gap-0.5 rounded-[30px] bg-graphite-50 p-2.5 data-open:flex lg:mx-0 lg:mb-0 lg:flex lg:flex-1 lg:overflow-y-auto lg:rounded-none lg:bg-transparent lg:px-3 lg:pb-5 lg:pt-0" aria-label="<%= t("sidebar.label") %>" data-sidebar-target="menu">
+<nav id="sidebar-menu" class="mx-5 mb-3 hidden flex-col gap-0.5 rounded-[30px] bg-graphite-50 p-2.5 data-open:flex lg:mx-0 lg:mb-0 lg:flex lg:flex-1 lg:overflow-y-auto lg:rounded-none lg:bg-transparent lg:px-3 lg:pb-5 lg:pt-5" aria-label="<%= t("sidebar.label") %>" data-sidebar-target="menu">
   <% if workspace.placeholder? %>
     <span class="mb-1 ml-3.5 self-start rounded-full border border-dashed border-graphite-300 px-2.5 py-0.5 text-xs font-medium text-graphite-500"><%= t("sidebar.preview") %></span>
   <% end %>
