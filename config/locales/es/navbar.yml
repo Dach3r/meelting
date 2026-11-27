@@ -9,3 +9,8 @@ es:
     sign_out: "Cerrar sesión"
     sign_in: "Iniciar sesión"
     sign_up: "Registrarse"
+    search_placeholder: "Buscar o ir a…"
+    search_label: "Buscar o abrir la paleta de comandos"
+    awaiting_approval: "esperan aprobación"
+    running: "en curso"
+    user_menu: "Menú de usuario"

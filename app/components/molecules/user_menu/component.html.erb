@@ -1,0 +1,12 @@
+<details class="relative">
+  <summary class="flex h-11 cursor-pointer list-none items-center gap-2 rounded-full bg-graphite-900 pl-1.5 pr-3.5 text-sm font-semibold text-white [&::-webkit-details-marker]:hidden" aria-label="<%= t("navbar.user_menu") %>">
+    <span class="flex size-8 items-center justify-center rounded-full bg-sun-400 text-xs font-extrabold text-graphite-900"><%= user&.initials %></span>
+    <%= user&.username %>
+    <%= render Atoms::Icon::Component.new(name: :chevron_down, class: "size-4") %>
+  </summary>
+  <div class="absolute right-0 top-full z-10 mt-2 grid w-56 gap-1 rounded-3xl bg-graphite-50 p-2">
+    <%= render Atoms::Link::Component.new(href: repositories_path, tone: :menu) do %><%= t("navbar.repositories") %><% end %>
+    <%= render Atoms::Link::Component.new(href: access_tokens_path, tone: :menu) do %><%= t("navbar.access_tokens") %><% end %>
+    <%= render Atoms::Button::Component.new(href: session_path, method: :delete, tone: :menu) do %><%= t("navbar.sign_out") %><% end %>
+  </div>
+</details>
