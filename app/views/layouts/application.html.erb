@@ -17,7 +17,7 @@
   <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
   <%= javascript_importmap_tags %>
 </head>
-<body class="flex min-h-svh flex-col gap-3.5 bg-white p-5 text-graphite-900">
+<body class="flex min-h-svh flex-col gap-3.5 bg-white px-5 pb-5 text-graphite-900">
   <%= render Organisms::Navbar::Component.new(authenticated: authenticated?, user: Current.user) %>
   <main class="<%= content_for(:main_class) || "flex w-full pb-16 pl-5 pr-2" %>">
     <%= content_for?(:content) ? yield(:content) : yield %>
