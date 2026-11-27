@@ -1,7 +1,7 @@
 module Molecules
   module UserMenu
     class Component < ViewComponent::Base
-      def initialize(user: nil)
+      def initialize(user:)
         @user = user
       end
 

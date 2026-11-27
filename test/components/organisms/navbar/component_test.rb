@@ -11,7 +11,7 @@ class Organisms::Navbar::ComponentTest < ViewComponent::TestCase
   end
 
   test "renders navigation and sign out button when authenticated" do
-    nav = render_inline(Organisms::Navbar::Component.new(authenticated: true))
+    nav = render_inline(Organisms::Navbar::Component.new(authenticated: true, user: users(:one)))
 
     assert_equal 1, nav.css("a[href='/repositories']").size
     assert_equal 1, nav.css("a[href='/access_tokens']").size
@@ -21,7 +21,7 @@ class Organisms::Navbar::ComponentTest < ViewComponent::TestCase
 
   test "brand links to root in both states" do
     [true, false].each do |authenticated|
-      nav = render_inline(Organisms::Navbar::Component.new(authenticated: authenticated))
+      nav = render_inline(Organisms::Navbar::Component.new(authenticated: authenticated, user: (users(:one) if authenticated)))
 
       assert_equal ApplicationHelper::CONFIG[:name], nav.css("a[href='/']").text.strip
     end
@@ -29,7 +29,7 @@ class Organisms::Navbar::ComponentTest < ViewComponent::TestCase
 
   test "stays fixed at the top in both states" do
     [true, false].each do |authenticated|
-      header = render_inline(Organisms::Navbar::Component.new(authenticated: authenticated)).css("header")
+      header = render_inline(Organisms::Navbar::Component.new(authenticated: authenticated, user: (users(:one) if authenticated))).css("header")
 
       assert_includes header.attr("class").value, "sticky"
       assert_includes header.attr("class").value, "top-0"

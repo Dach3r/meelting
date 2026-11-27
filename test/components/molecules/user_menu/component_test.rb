@@ -10,10 +10,4 @@ class Molecules::UserMenu::ComponentTest < ViewComponent::TestCase
     assert_equal 1, menu.css("a[href='/access_tokens']").size
     assert_equal 1, menu.css("form[action='/session'] button").size
   end
-
-  test "renders without a user" do
-    menu = render_inline(Molecules::UserMenu::Component.new)
-
-    assert_equal 1, menu.css("details").size
-  end
 end
