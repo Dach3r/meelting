@@ -37,4 +37,12 @@ class Organisms::Sidebar::ComponentTest < ViewComponent::TestCase
     assert_equal "sidebar-menu", button["aria-controls"]
     assert_equal 1, node.css("nav#sidebar-menu").size
   end
+
+  test "holds the brand and stays fixed to the left on large screens" do
+    node = render_inline(Organisms::Sidebar::Component.new(workspace: workspace))
+    root = node.css("[data-controller=sidebar]").first
+
+    assert_equal ApplicationHelper::CONFIG[:name], root.css("a[href='/']").first.text.strip
+    %w[lg:fixed lg:inset-y-0 lg:left-0].each { |css_class_| assert_includes root["class"], css_class_ }
+  end
 end

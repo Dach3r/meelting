@@ -1,5 +1,7 @@
-<header class="sticky top-0 z-20 flex items-center gap-3 bg-white py-7 pl-5 pr-2">
-  <%= render Molecules::Brand::Component.new(tone: :graphite, size: :lg) %>
+<header class="<%= class_names("sticky top-0 z-20 flex items-center gap-3 bg-white py-7", "pl-5 pr-2" => !authenticated) %>">
+  <% unless authenticated %>
+    <%= render Molecules::Brand::Component.new(tone: :graphite, size: :lg) %>
+  <% end %>
   <% if authenticated %>
     <%= render Molecules::SearchTrigger::Component.new %>
   <% end %>

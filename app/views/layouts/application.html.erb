@@ -17,15 +17,20 @@
   <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
   <%= javascript_importmap_tags %>
 </head>
-<body class="flex min-h-svh flex-col bg-white px-5 pb-5 text-graphite-900">
-  <%= render Organisms::Navbar::Component.new(authenticated: authenticated?, user: Current.user) %>
-  <div class="<%= class_names("flex flex-1", "flex-col items-start gap-7 pl-5 pr-2 lg:flex-row" => authenticated?) %>">
-    <% if authenticated? %>
-      <%= render Organisms::Sidebar::Component.new(workspace: workspace, expanded_slug: session[:expanded_repository]) %>
-    <% end %>
-    <main class="<%= class_names("min-w-0 flex-1", content_for(:main_class) || (authenticated? ? "flex w-full pb-16" : "flex w-full pb-16 pl-5 pr-2")) %>">
+<body class="<%= class_names("min-h-svh bg-white text-graphite-900", "flex flex-col px-5 pb-5" => !authenticated?) %>">
+  <% if authenticated? %>
+    <%= render Organisms::Sidebar::Component.new(workspace: workspace, expanded_slug: session[:expanded_repository]) %>
+    <div class="flex min-h-svh flex-col px-5 pb-5 lg:ml-64">
+      <%= render Organisms::Navbar::Component.new(authenticated: true, user: Current.user) %>
+      <main class="<%= class_names("min-w-0 flex-1", content_for(:main_class) || "flex w-full pb-16") %>">
+        <%= content_for?(:content) ? yield(:content) : yield %>
+      </main>
+    </div>
+  <% else %>
+    <%= render Organisms::Navbar::Component.new(authenticated: false) %>
+    <main class="<%= content_for(:main_class) || "flex w-full pb-16 pl-5 pr-2" %>">
       <%= content_for?(:content) ? yield(:content) : yield %>
     </main>
-  </div>
+  <% end %>
 </body>
 </html>
