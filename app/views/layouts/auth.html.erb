@@ -1,7 +1,7 @@
 <% content_for :main_class, "flex flex-1 items-center justify-center pb-10 pt-6" %>
 
 <% content_for :content do %>
-  <div class="w-full max-w-[35rem]">
+  <div class="w-full max-w-[30rem]">
     <section class="grid gap-7">
       <%= render Molecules::AuthHeading::Component.new(title: yield(:heading).presence || yield(:title), title_dim: yield(:heading_dim).presence) %>
 
