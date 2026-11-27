@@ -250,19 +250,6 @@
     box-shadow: inset 0 0 0 1000px var(--color-graphite-50);
   }
 
-  .nb-container {
-    width: 100%;
-    max-width: 84rem;
-    margin-inline: auto;
-    padding-inline: 1.25rem;
-  }
-
-  @media (min-width: 48rem) {
-    .nb-container {
-      padding-inline: 2rem;
-    }
-  }
-
   .bg-dots {
     background-color: var(--color-paper);
     background-image: radial-gradient(color-mix(in srgb, var(--color-brand-300) 45%, transparent) 1.5px, transparent 1.5px);
