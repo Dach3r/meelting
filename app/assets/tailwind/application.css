@@ -303,12 +303,18 @@
   }
 
   :focus-visible,
-  a:focus,
+  a.nb-btn:focus,
   button:focus,
-  a:active,
+  a.nb-btn:active,
   button:active {
     outline: 5px solid color-mix(in srgb, var(--color-graphite-900) 18%, transparent);
     outline-offset: 0;
+  }
+
+  a:not(.nb-btn):focus,
+  a:not(.nb-btn):focus-visible,
+  a:not(.nb-btn):active {
+    outline: none;
   }
 
   input:-webkit-autofill,
