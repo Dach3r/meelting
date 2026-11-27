@@ -4,6 +4,7 @@ module Atoms
       TONES = {
         light: "font-bold text-ink-soft hover:text-brand-600",
         deep: "font-bold text-brand-200 hover:text-white",
+        menu: "block w-full rounded-full px-4 py-2.5 text-left font-semibold text-graphite-900 hover:bg-graphite-100",
         pill: "rounded-full bg-graphite-900 px-5 py-[11px] font-semibold leading-[normal] text-white"
       }.freeze
 

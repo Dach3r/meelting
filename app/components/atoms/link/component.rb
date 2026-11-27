@@ -5,6 +5,7 @@ module Atoms
         light: "font-bold text-ink-soft hover:text-brand-600",
         deep: "font-bold text-brand-200 hover:text-white",
         plain: "font-semibold text-graphite-900 hover:text-graphite-500",
+        menu: "block rounded-full px-4 py-2.5 font-semibold text-graphite-900 hover:bg-graphite-100",
         graphite: "font-semibold text-graphite-900 underline underline-offset-3",
         signal: "font-bold text-sun-400 underline hover:no-underline"
       }.freeze

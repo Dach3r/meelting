@@ -11,6 +11,7 @@ module Atoms
         inverse: "nb-btn-raised bg-white text-brand-700 hover:bg-brand-50 focus:outline-white/30 active:outline-white/30",
         graphite: "rounded-full border-transparent bg-graphite-900 font-semibold text-white",
         graphite_outline: "rounded-full border-transparent bg-graphite-50 font-semibold text-graphite-900 hover:bg-graphite-100",
+        danger: "rounded-full border-transparent bg-graphite-50 font-semibold text-coral-700 hover:bg-graphite-100",
         graphite_soft: "rounded-full border-transparent bg-white font-semibold text-graphite-900 hover:bg-graphite-100",
         inverse_outline: "border-white bg-transparent text-white hover:bg-white/10 focus:outline-white/30 active:outline-white/30"
       }.freeze
