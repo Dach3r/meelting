@@ -106,4 +106,8 @@ class UserTest < ActiveSupport::TestCase
   test "full_name joins first and last name" do
     assert_equal "Ada Lovelace", users(:one).full_name
   end
+
+  test "initials come from first and last name" do
+    assert_equal "AL", users(:one).initials
+  end
 end
