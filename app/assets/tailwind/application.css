@@ -3,6 +3,7 @@
 /* Soft neo-brutalist design tokens: ink borders, hard shadows, dotted paper backgrounds. */
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-brand: "Outfit", "Inter", ui-sans-serif, system-ui, sans-serif;
 
   --color-paper: #f3f8ee;
   --color-ink: #14261c;
