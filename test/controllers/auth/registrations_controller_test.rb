@@ -46,6 +46,22 @@ module Auth
       assert User.exists?(email_address: "new@example.com")
     end
 
+    test "create rejects uppercase username" do
+      assert_no_difference "User.count" do
+        post registration_path, params: valid_params(username: "Grace")
+      end
+      assert_response :unprocessable_entity
+    end
+
+    test "create rejects username with digits or hyphens" do
+      %w[grace1 grace-hopper].each do |username|
+        assert_no_difference "User.count" do
+          post registration_path, params: valid_params(username: username)
+        end
+        assert_response :unprocessable_entity
+      end
+    end
+
     test "create with duplicate email fails" do
       assert_no_difference "User.count" do
         post registration_path, params: valid_params(email_address: users(:one).email_address)

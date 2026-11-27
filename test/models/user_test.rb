@@ -56,8 +56,8 @@ class UserTest < ActiveSupport::TestCase
     assert_nil User.authenticate_by(username: "ada", password: "wrong")
   end
 
-  test "normalizes username" do
-    assert_equal "grace", User.new(username: "  Grace ").username
+  test "strips username" do
+    assert_equal "grace", User.new(username: "  grace ").username
   end
 
   test "requires username" do
@@ -66,18 +66,26 @@ class UserTest < ActiveSupport::TestCase
     assert user.errors[:username].any?
   end
 
-  test "rejects duplicate username regardless of case" do
-    user = User.new(username: users(:one).username.upcase, password: "password123")
+  test "rejects duplicate username" do
+    user = User.new(username: users(:one).username, password: "password123")
     assert_not user.valid?
     assert user.errors[:username].any?
   end
 
+  test "accepts lowercase letters and underscores" do
+    assert_empty User.username_errors("grace_hopper")
+  end
+
   test "rejects invalid username format or length" do
-    %w[ab -grace gra.ce grace!].each do |username|
+    ["ab", "Grace", "GRACE", "grace1", "grace-hopper", "gra.ce", "grace!", "gr ace", "a" * 40].each do |username|
       user = User.new(username: username, password: "password123")
       assert_not user.valid?, "#{username} should be invalid"
       assert user.errors[:username].any?
     end
+  end
+
+  test "username_errors reports taken username" do
+    assert_equal [I18n.t("activerecord.errors.models.user.attributes.username.taken")], User.username_errors(users(:one).username)
   end
 
   test "destroying user destroys repositories" do

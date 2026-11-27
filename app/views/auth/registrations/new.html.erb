@@ -17,7 +17,9 @@
   </div>
 
   <%= render Molecules::FormField::Component.new(form: form, attribute: :email_address, label: t("auth.fields.email_address"), icon: :mail, type: :email, autocomplete: "email", placeholder: t(".email_address_placeholder")) %>
-  <%= render Molecules::FormField::Component.new(form: form, attribute: :username, label: t("auth.fields.username"), icon: :user, autocapitalize: "none", autocomplete: "nickname", placeholder: t(".username_placeholder")) %>
+  <%= render Molecules::FormField::Component.new(form: form, attribute: :username, label: t("auth.fields.username"), icon: :user, autocapitalize: "none", autocomplete: "nickname", placeholder: t(".username_placeholder"), pattern: "[a-z_]+", minlength: 3, maxlength: 39, data: { controller: "username-availability", action: "input->username-availability#check", username_availability_url_value: username_availability_path, username_availability_frame_value: "username_availability" }) do |field| %>
+    <% field.with_status do %><%= turbo_frame_tag "username_availability" %><% end %>
+  <% end %>
   <%= render Molecules::FormField::Component.new(form: form, attribute: :password, label: t("auth.fields.password"), icon: :lock, type: :password, autocomplete: "new-password", placeholder: t(".password_placeholder"), maxlength: 72) %>
 
   <%= render Atoms::SubmitButton::Component.new do %><%= t(".submit") %><% end %>

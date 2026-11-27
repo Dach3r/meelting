@@ -1,0 +1,7 @@
+<%= turbo_frame_tag "username_availability" do %>
+  <% if @errors.empty? %>
+    <p class="pl-1 text-[13px] font-semibold text-brand-600" role="status"><%= t(".available") %></p>
+  <% else %>
+    <p class="pl-1 text-[13px] font-semibold text-coral-700" role="alert"><%= @errors.first %></p>
+  <% end %>
+<% end %>

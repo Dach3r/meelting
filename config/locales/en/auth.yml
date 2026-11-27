@@ -1,4 +1,15 @@
 en:
+  activerecord:
+    errors:
+      models:
+        user:
+          attributes:
+            username:
+              blank: "Enter a username"
+              taken: "This username is not available"
+              too_short: "At least %{count} characters"
+              too_long: "At most %{count} characters"
+              invalid: "Lowercase letters and underscores only"
   auth:
     fields:
       username: "Username"
@@ -26,6 +37,9 @@ en:
         email_address_placeholder: "you@company.com"
         password_placeholder: "Enter your password"
         submit: "Create account"
+    username_availabilities:
+      show:
+        available: "Username available"
     passwords:
       new:
         title: "Reset password"

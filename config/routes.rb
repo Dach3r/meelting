@@ -9,6 +9,7 @@ Rails.application.routes.draw do
   scope module: :auth do
     resource :session
     resource :registration, only: %i[new create]
+    resource :username_availability, only: :show
     resources :passwords, param: :token
   end
 

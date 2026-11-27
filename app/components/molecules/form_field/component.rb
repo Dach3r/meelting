@@ -2,6 +2,7 @@ module Molecules
   module FormField
     class Component < ViewComponent::Base
       renders_one :label_aside
+      renders_one :status
 
       INPUTS = {
         text: :text_field,

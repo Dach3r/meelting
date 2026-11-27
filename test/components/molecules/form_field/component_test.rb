@@ -31,6 +31,14 @@ class Molecules::FormField::ComponentTest < ViewComponent::TestCase
     assert_equal 1, field.css(".nb-field-shell .nb-field-shell-icon svg").size
   end
 
+  test "renders the status below the input" do
+    field = render_inline(Molecules::FormField::Component.new(form: builder, attribute: :username, label: "Username", icon: :user)) do |component|
+      component.with_status { "Checking" }
+    end
+
+    assert_equal "Checking", field.css("div.grid").first.children.last.text.strip
+  end
+
   test "renders the label aside next to the label" do
     field = render_inline(Molecules::FormField::Component.new(form: builder, attribute: :password, label: "Password", icon: :lock, type: :password)) do |component|
       component.with_label_aside { "Forgot?" }

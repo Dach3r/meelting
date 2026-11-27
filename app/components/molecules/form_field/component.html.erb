@@ -7,4 +7,5 @@
     <span class="nb-field-shell-icon"><%= render Atoms::Icon::Component.new(name: icon, class: "size-[18px]") %></span>
     <%= form.public_send(input, attribute, required: true, class: "nb-field-shell-input", **input_options) %>
   </div>
+  <%= status %>
 </div>

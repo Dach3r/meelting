@@ -1,4 +1,15 @@
 es:
+  activerecord:
+    errors:
+      models:
+        user:
+          attributes:
+            username:
+              blank: "Escribe un usuario"
+              taken: "Este usuario no está disponible"
+              too_short: "Mínimo %{count} caracteres"
+              too_long: "Máximo %{count} caracteres"
+              invalid: "Solo minúsculas y guion bajo"
   auth:
     fields:
       username: "Usuario"
@@ -26,6 +37,9 @@ es:
         email_address_placeholder: "tu@empresa.com"
         password_placeholder: "Escribe tu contraseña"
         submit: "Crear cuenta"
+    username_availabilities:
+      show:
+        available: "Usuario disponible"
     passwords:
       new:
         title: "Restablecer contraseña"
