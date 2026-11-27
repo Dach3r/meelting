@@ -19,7 +19,7 @@ module Atoms
         sm: "px-3.5 py-1.5 text-sm",
         pill: "px-5 py-[11px] text-sm leading-[normal]",
         cta: "px-[34px] py-[18px] text-[17px] leading-[normal]",
-        block: "w-full px-6 py-4 text-base leading-[normal]",
+        block: "w-full px-6 py-5 text-base leading-[normal]",
         md: "px-4 py-2.5 text-sm",
         lg: "px-6 py-3.5 text-base"
       }.freeze
