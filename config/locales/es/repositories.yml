@@ -16,7 +16,6 @@ es:
       title: "Repositorios"
       new: "Nuevo repositorio"
       empty: "Aún no tienes repositorios."
-      back: "Volver"
     new:
       title: "Nuevo repositorio"
       slug_hint: "Minúsculas, números, puntos, guiones y guiones bajos."

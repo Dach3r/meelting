@@ -24,11 +24,11 @@ class LandingTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test "signed in users get the app home instead of the landing" do
+  test "signed in users get the repositories instead of the landing" do
     sign_in_as users(:one)
     get root_path
 
-    assert_equal "home", @controller.controller_name
+    assert_equal "repositories", @controller.controller_name
     assert_select "main section h1", false
   end
 

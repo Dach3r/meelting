@@ -16,7 +16,6 @@ en:
       title: "Repositories"
       new: "New repository"
       empty: "You have no repositories yet."
-      back: "Back"
     new:
       title: "New repository"
       slug_hint: "Lowercase letters, numbers, dots, dashes and underscores."
