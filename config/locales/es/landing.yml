@@ -1,22 +1,16 @@
 es:
   landing:
-    title: "Berth: un amarre seguro para cada ejecución de agente"
+    title: "%{name}: un amarre seguro para cada ejecución de agente"
     hero:
-      promo_tag: "Open source"
-      promo: "Un experimento de colaboración nativa para agentes"
       title: "Un amarre seguro"
       title_dim: "para cada ejecución."
-      description: "Berth contiene a los agentes autónomos para que construyas, revises y mergees con confianza."
+      description: "%{name} contiene a los agentes autónomos para que construyas, revises y mergees con confianza."
       cta_primary: "Empezar"
+      points:
+        build: "Construye con agentes autónomos"
+        review: "Revisa cada cambio"
+        merge: "Mergea con confianza"
       cta_secondary: "Iniciar sesión"
-      copy: "Copiar"
-      copied: "Copiado"
-      built_for: "Pensado para"
-      chips:
-        read: "Agente 1 · lee .project/"
-        edit: "Agente 2 · edita app/models"
-        tests: "Agente 3 · tests pasaron"
-        approval: "Agente 4 · esperando aprobación"
     why:
       label: "Por qué Berth"
       title: "Los agentes pueden escribir el código."

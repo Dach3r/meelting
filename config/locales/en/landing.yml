@@ -1,22 +1,16 @@
 en:
   landing:
-    title: "Berth: a safe berth for every agent run"
+    title: "%{name}: a safe berth for every agent run"
     hero:
-      promo_tag: "Open source"
-      promo: "An experiment in agent-native collaboration"
       title: "A safe berth"
       title_dim: "for every agent run."
-      description: "Berth contains autonomous agents so you can build, review and merge with confidence."
+      description: "%{name} contains autonomous agents so you can build, review and merge with confidence."
       cta_primary: "Get started"
+      points:
+        build: "Build with autonomous agents"
+        review: "Review every change"
+        merge: "Merge with confidence"
       cta_secondary: "Sign in"
-      copy: "Copy"
-      copied: "Copied"
-      built_for: "Built for"
-      chips:
-        read: "Agent 1 · read .project/"
-        edit: "Agent 2 · edit app/models"
-        tests: "Agent 3 · tests passed"
-        approval: "Agent 4 · awaiting approval"
     why:
       label: "Why Berth"
       title: "Agents can write the code."

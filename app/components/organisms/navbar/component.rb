@@ -1,35 +1,22 @@
 module Organisms
   module Navbar
     class Component < ViewComponent::Base
-      def initialize(authenticated:, variant: :bar)
+      def initialize(authenticated:)
         @authenticated = authenticated
-        @variant = variant
       end
 
       private
-      attr_reader :authenticated, :variant
-
-      def floating?
-        variant == :floating
-      end
+      attr_reader :authenticated
 
       def tone
-        floating? ? :deep : :light
+        authenticated ? :light : :deep
       end
 
       def nav_classes
-        if floating?
-          "relative z-10 rounded-ui border border-deep-line bg-deep-surface backdrop-blur"
+        if authenticated
+          "fixed top-0 inset-x-0 z-20 border-b-nb border-ink bg-paper/90 backdrop-blur"
         else
-          "fixed top-0 inset-x-0 z-10 border-b border-line bg-canvas/90 backdrop-blur"
-        end
-      end
-
-      def inner_classes
-        if floating?
-          "flex h-12 items-center justify-between px-4"
-        else
-          "mx-auto flex h-16 max-w-6xl items-center justify-between px-5"
+          "fixed top-0 inset-x-0 z-20 border-b-nb border-brand-300/20 bg-ink"
         end
       end
     end

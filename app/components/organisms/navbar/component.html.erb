@@ -1,23 +1,15 @@
 <nav class="<%= nav_classes %>" aria-label="<%= t("navbar.label") %>">
-  <div class="<%= inner_classes %>">
+  <div class="nb-container flex h-16 items-center justify-between">
     <%= render Molecules::Brand::Component.new(tone: tone) %>
 
     <div class="flex items-center gap-5">
-      <% if floating? %>
-        <div class="hidden items-center gap-5 md:flex">
-          <%= render Atoms::Link::Component.new(href: "#features", tone: tone) do %><%= t("navbar.product") %><% end %>
-          <%= render Atoms::Link::Component.new(href: "#memory", tone: tone) do %><%= t("navbar.memory") %><% end %>
-          <%= render Atoms::Link::Component.new(href: "#self-host", tone: tone) do %><%= t("navbar.self_host") %><% end %>
-        </div>
-      <% end %>
-
       <% if authenticated %>
         <%= render Atoms::Link::Component.new(href: repositories_path, tone: tone) do %><%= t("navbar.repositories") %><% end %>
         <%= render Atoms::Link::Component.new(href: access_tokens_path, tone: tone) do %><%= t("navbar.access_tokens") %><% end %>
         <%= render Atoms::Button::Component.new(href: session_path, method: :delete, tone: tone) do %><%= t("navbar.sign_out") %><% end %>
       <% else %>
         <%= render Atoms::Link::Component.new(href: new_session_path, tone: tone) do %><%= t("navbar.sign_in") %><% end %>
-        <%= render Atoms::LinkButton::Component.new(href: new_registration_path, variant: floating? ? :signal : :primary, size: :sm) do %><%= t("navbar.sign_up") %><% end %>
+        <%= render Atoms::LinkButton::Component.new(href: new_registration_path, variant: :signal, size: :sm) do %><%= t("navbar.sign_up") %><% end %>
       <% end %>
     </div>
   </div>

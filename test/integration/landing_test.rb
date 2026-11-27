@@ -1,29 +1,25 @@
 require "test_helper"
 
 class LandingTest < ActionDispatch::IntegrationTest
-  test "guests see every landing section" do
+  test "guests see the landing header" do
     get root_path
 
     assert_response :success
     assert_select "header h1"
-    assert_select "section#features"
-    assert_select "section#memory"
-    assert_select "section#self-host"
-    assert_select "footer"
   end
 
-  test "landing uses the global navbar only inside the hero" do
+  test "landing uses the global guest navbar" do
     get root_path
 
     assert_select "nav", count: 1
-    assert_select "header nav"
+    assert_select "body > nav"
   end
 
   test "landing is available in english" do
     get root_path, headers: { "Accept-Language" => "en" }
 
     I18n.with_locale(:en) do
-      assert_equal "Berth: a safe berth for every agent run", I18n.t("landing.title")
+      assert_equal "Meelting: a safe berth for every agent run", I18n.t("landing.title", name: ApplicationHelper::CONFIG[:name])
     end
   end
 
@@ -39,7 +35,7 @@ class LandingTest < ActionDispatch::IntegrationTest
     get root_path
 
     assert_select "link[rel=preload][as=font][type='font/woff2']"
-    assert_select "title", /Berth/
+    assert_select "title", /Meelting/
   end
 
   test "sign in page keeps the standard navbar" do

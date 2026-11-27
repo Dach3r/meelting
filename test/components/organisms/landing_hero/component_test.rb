@@ -5,22 +5,19 @@ class Organisms::LandingHero::ComponentTest < ViewComponent::TestCase
     hero = render_inline(Organisms::LandingHero::Component.new)
 
     assert_includes hero.css("h1").text, "Un amarre seguro"
-    assert_equal 2, hero.css("a[href='/registration/new']").size
-    assert_operator hero.css("a[href='/session/new']").size, :>=, 1
+    assert_equal 1, hero.css("a[href='/registration/new']").size
   end
 
-  test "offers a copy button for the self-host command" do
+  test "renders the brand mark inside the rings" do
     hero = render_inline(Organisms::LandingHero::Component.new)
-    chip = hero.css("[data-controller='clipboard']")
 
-    assert_equal "docker compose up", chip.attr("data-clipboard-text-value").value
-    assert_equal 1, chip.css("button[data-action='clipboard#copy']").size
+    assert_includes hero.css("[aria-hidden='true']").text, ApplicationHelper::CONFIG[:name].first
   end
 
-  test "decorative agent chips are hidden from assistive tech" do
+  test "renders the three points and the sign in link" do
     hero = render_inline(Organisms::LandingHero::Component.new)
 
-    assert_equal 1, hero.css("div[aria-hidden='true']").size
-    assert_equal 4, hero.css("div[aria-hidden='true'] > span").size
+    assert_equal 3, hero.css("ul li").size
+    assert_equal 1, hero.css("a[href='/session/new']").size
   end
 end

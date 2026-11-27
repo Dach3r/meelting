@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="<%= I18n.locale %>">
   <head>
-    <title><%= content_for(:title) || t("navbar.brand") %></title>
+    <title><%= content_for(:title) || ApplicationHelper::CONFIG[:name] %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="application-name" content="<%= t("navbar.brand") %>">
+    <meta name="application-name" content="<%= ApplicationHelper::CONFIG[:name] %>">
     <meta name="mobile-web-app-capable" content="yes">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
@@ -25,10 +25,8 @@
   </head>
 
   <body>
-    <% unless content_for?(:bare_navbar) %>
-      <%= render Organisms::Navbar::Component.new(authenticated: authenticated?) %>
-    <% end %>
-    <main class="<%= content_for(:main_class) || "container mx-auto mt-28 px-5 flex" %>">
+    <%= render Organisms::Navbar::Component.new(authenticated: authenticated?) %>
+    <main class="<%= content_for(:main_class) || "nb-container mt-28 flex pb-16" %>">
       <%= yield %>
     </main>
   </body>

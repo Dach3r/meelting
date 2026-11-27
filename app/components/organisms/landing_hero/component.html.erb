@@ -1,52 +1,41 @@
-<header class="relative overflow-hidden bg-deep text-deep-ink">
-  <div class="mx-auto max-w-6xl px-4 pt-4">
-    <%= render Organisms::Navbar::Component.new(authenticated: false, variant: :floating) %>
-  </div>
-
-  <div class="pointer-events-none absolute inset-0 hidden lg:block" aria-hidden="true">
-    <% self.class::CHIPS.each do |chip| %>
-      <span class="absolute <%= chip[:position] %> inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-deep-line bg-deep-surface px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-deep-muted">
-        <span class="size-1.5 rounded-full <%= chip[:accent] ? "bg-deep-muted" : "bg-signal" %>"></span>
-        <%= t("landing.hero.chips.#{chip[:key]}") %>
-      </span>
-    <% end %>
-  </div>
-
-  <div class="relative mx-auto max-w-6xl px-5">
-    <div class="grid gap-10 py-20 md:grid-cols-[1.35fr_1fr] md:items-end md:py-28">
-      <div class="flex flex-col items-start gap-7">
-        <%= render Atoms::Chip::Component.new(tone: :deep, class: "text-xs") do %>
-          <strong class="text-[10px] font-bold uppercase tracking-wider text-signal"><%= t("landing.hero.promo_tag") %></strong>
-          <%= t("landing.hero.promo") %>
-        <% end %>
-
-        <h1 class="text-5xl font-normal leading-[1.02] tracking-[-0.03em] text-balance md:text-7xl">
-          <%= t("landing.hero.title") %><br>
-          <span class="text-deep-muted"><%= t("landing.hero.title_dim") %></span>
-        </h1>
-
-        <div class="flex flex-wrap gap-2">
-          <%= render Atoms::LinkButton::Component.new(href: new_registration_path, variant: :signal, size: :lg) do %><%= t("landing.hero.cta_primary") %><% end %>
-          <%= render Atoms::LinkButton::Component.new(href: new_session_path, variant: :deep, size: :lg) do %><%= t("landing.hero.cta_secondary") %><% end %>
-        </div>
-
-        <div class="inline-flex items-center gap-3 rounded-ui border border-deep-line bg-deep-surface py-1.5 pl-3.5 pr-1.5 text-sm"
-             data-controller="clipboard"
-             data-clipboard-text-value="<%= command %>"
-             data-clipboard-copied-value="<%= t("landing.hero.copied") %>">
-          <code class="font-sans font-medium"><%= command %></code>
-          <button type="button" data-action="clipboard#copy" class="cursor-pointer rounded-[3px] bg-deep-line px-2.5 py-1 text-xs text-deep-muted hover:text-deep-ink">
-            <span data-clipboard-target="label"><%= t("landing.hero.copy") %></span>
-          </button>
+<header class="bg-dots-ink relative overflow-hidden border-b-nb border-ink pt-16 text-white">
+  <div class="nb-container flex lg:min-h-[calc(100svh-4rem)] lg:items-center">
+    <div class="grid w-full items-center gap-12 py-16 lg:grid-cols-[1fr_36rem] lg:gap-6">
+      <div class="relative mx-auto aspect-square w-full max-w-[28rem] max-lg:order-2 lg:order-2 lg:max-w-none" aria-hidden="true">
+        <div class="absolute inset-[12%] rounded-full bg-brand-600/25 blur-3xl"></div>
+        <div class="absolute inset-0 rounded-full border border-brand-300/20"></div>
+        <div class="absolute inset-[9%] rounded-full border border-dashed border-brand-300/40 motion-safe:animate-[spin_120s_linear_infinite]"></div>
+        <div class="absolute inset-[20%] rounded-full border border-brand-300/35"></div>
+        <div class="absolute inset-[30%] rounded-full border border-brand-300/55 bg-brand-900/60"></div>
+        <div class="absolute inset-[37%] flex items-center justify-center rounded-full border-2 border-sun-400 bg-brand-900 text-[clamp(2.5rem,5vw,4.5rem)] font-extrabold tracking-[-0.05em]">
+          <%= initial %><span class="text-sun-400">.</span>
         </div>
       </div>
 
-      <p class="max-w-sm text-base text-deep-muted md:ml-auto md:text-right"><%= t("landing.hero.description") %></p>
-    </div>
-
-    <div class="flex flex-wrap items-center justify-center gap-x-8 gap-y-2 border-t border-deep-line py-5 text-sm text-deep-muted">
-      <strong class="font-semibold text-deep-ink"><%= t("landing.hero.built_for") %></strong>
-      <% self.class::BUILT_FOR.each do |name| %><span><%= name %></span><% end %>
+      <div class="space-y-7">
+        <h1 class="text-[clamp(2.5rem,4.8vw,4rem)] font-extrabold leading-[1] tracking-[-0.04em]">
+          <%= t("landing.hero.title") %>
+          <span class="text-brand-300"><%= t("landing.hero.title_dim") %></span>
+        </h1>
+        <p class="max-w-lg text-xl text-brand-200"><%= t("landing.hero.description", name: ApplicationHelper::CONFIG[:name]) %></p>
+        <ul class="space-y-3.5 text-lg font-semibold text-brand-100">
+          <% %w[build review merge].each do |point| %>
+            <li class="flex items-center gap-3.5">
+              <%= render Atoms::Icon::Component.new(name: :circle_check, class: "size-6 shrink-0 text-sun-400", "stroke-width": 2.4) %>
+              <%= t("landing.hero.points.#{point}") %>
+            </li>
+          <% end %>
+        </ul>
+        <div class="flex flex-wrap items-center gap-x-8 gap-y-4 pt-2">
+          <%= link_to new_registration_path, class: "group inline-flex items-center gap-4 rounded-full border-2 border-white bg-sun-400 py-2 pl-8 pr-2 text-xl font-extrabold text-ink" do %>
+            <%= t("landing.hero.cta_primary") %>
+            <span class="flex size-12 items-center justify-center rounded-full bg-ink text-sun-400 transition-transform motion-safe:group-hover:translate-x-0.5">
+              <%= render Atoms::Icon::Component.new(name: :arrow_right, "stroke-width": 2.6) %>
+            </span>
+          <% end %>
+          <%= link_to t("landing.hero.cta_secondary"), new_session_path, class: "border-b-2 border-brand-300/60 pb-1 text-lg font-semibold text-white hover:border-white" %>
+        </div>
+      </div>
     </div>
   </div>
 </header>

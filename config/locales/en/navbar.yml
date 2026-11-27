@@ -1,7 +1,6 @@
 en:
   navbar:
     label: "Main navigation"
-    brand: "Berth"
     product: "Product"
     memory: "Memory"
     self_host: "Self-host"
