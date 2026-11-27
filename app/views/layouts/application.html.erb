@@ -1,13 +1,26 @@
 <!DOCTYPE html>
 <html lang="<%= I18n.locale %>">
-  <head>
-    <%= render "layouts/head" %>
-  </head>
-
-  <body class="flex min-h-svh flex-col gap-3.5 bg-white p-5 text-graphite-900">
-    <%= render Organisms::Navbar::Component.new(authenticated: authenticated?) %>
-    <main class="<%= content_for(:main_class) || "nb-container flex pb-16" %>">
-      <%= yield %>
-    </main>
-  </body>
+<head>
+  <title><%= content_for(:title) || ApplicationHelper::CONFIG[:name] %></title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="application-name" content="<%= ApplicationHelper::CONFIG[:name] %>">
+  <meta name="mobile-web-app-capable" content="yes">
+  <%= csrf_meta_tags %>
+  <%= csp_meta_tag %>
+  <%= content_for :head %>
+  <link rel="icon" href="/icon.png" type="image/png">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/icon.png">
+  <link rel="preload" href="<%= asset_path("inter-latin-wght-normal.woff2") %>" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="<%= asset_path("outfit-latin-700-normal.woff2") %>" as="font" type="font/woff2" crossorigin>
+  <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+  <%= javascript_importmap_tags %>
+</head>
+<body class="flex min-h-svh flex-col gap-3.5 bg-white p-5 text-graphite-900">
+  <%= render Organisms::Navbar::Component.new(authenticated: authenticated?) %>
+  <main class="<%= content_for(:main_class) || "nb-container flex pb-16" %>">
+    <%= content_for?(:content) ? yield(:content) : yield %>
+  </main>
+</body>
 </html>

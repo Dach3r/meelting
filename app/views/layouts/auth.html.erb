@@ -1,28 +1,21 @@
-<!DOCTYPE html>
-<html lang="<%= I18n.locale %>">
-  <head>
-    <%= render "layouts/head" %>
-  </head>
+<% content_for :main_class, "flex flex-1 items-center justify-center pb-10 pt-6" %>
 
-  <body class="flex min-h-svh flex-col gap-3.5 bg-white p-5 text-graphite-900">
-    <%= render Organisms::Navbar::Component.new(authenticated: authenticated?) %>
+<% content_for :content do %>
+  <div class="w-full max-w-[35rem]">
+    <section class="grid gap-7 rounded-[2rem] bg-graphite-50 p-7 sm:p-10">
+      <%= render Molecules::AuthHeading::Component.new(title: yield(:heading).presence || yield(:title), title_dim: yield(:heading_dim).presence) %>
 
-    <main class="flex flex-1 items-center justify-center pb-10 pt-6">
-      <div class="w-full max-w-[35rem]">
-        <section class="grid gap-7 rounded-[2rem] bg-graphite-50 p-7 sm:p-10">
-          <%= render Molecules::AuthHeading::Component.new(title: yield(:heading).presence || yield(:title), title_dim: yield(:heading_dim).presence) %>
+      <% if flash[:alert] %>
+        <%= render Molecules::Notice::Component.new(tone: :alert, id: "alert") do %><%= flash[:alert] %><% end %>
+      <% end %>
 
-          <% if flash[:alert] %>
-            <%= render Molecules::Notice::Component.new(tone: :alert, id: "alert") do %><%= flash[:alert] %><% end %>
-          <% end %>
+      <% if flash[:notice] %>
+        <%= render Molecules::Notice::Component.new(tone: :notice, id: "notice") do %><%= flash[:notice] %><% end %>
+      <% end %>
 
-          <% if flash[:notice] %>
-            <%= render Molecules::Notice::Component.new(tone: :notice, id: "notice") do %><%= flash[:notice] %><% end %>
-          <% end %>
+      <%= yield %>
+    </section>
+  </div>
+<% end %>
 
-          <%= yield %>
-        </section>
-      </div>
-    </main>
-  </body>
-</html>
+<%= render template: "layouts/application" %>
