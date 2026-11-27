@@ -8,7 +8,7 @@ export default class extends Controller {
   }
 
   check() {
-    const value = this.element.value.toLowerCase().replace(/[^a-z0-9_]/g, "")
+    const value = this.element.value.toLowerCase().replace(/[^a-z0-9_]/g, "").replace(/^[^a-z]+/, "")
     if (value !== this.element.value) this.element.value = value
 
     clearTimeout(this.timer)

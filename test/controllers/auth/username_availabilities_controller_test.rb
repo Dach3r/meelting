@@ -19,7 +19,7 @@ module Auth
     end
 
     test "invalid format is reported" do
-      %w[Grace grace-hopper].each do |username|
+      %w[Grace grace-hopper 1grace _grace].each do |username|
         check username
         assert_select "p[role=alert]", text: I18n.t("activerecord.errors.models.user.attributes.username.invalid")
       end

@@ -53,8 +53,8 @@ module Auth
       assert_response :unprocessable_entity
     end
 
-    test "create rejects username with hyphens" do
-      %w[grace-hopper].each do |username|
+    test "create rejects username with hyphens or leading digit or underscore" do
+      %w[grace-hopper 1grace _grace].each do |username|
         assert_no_difference "User.count" do
           post registration_path, params: valid_params(username: username)
         end

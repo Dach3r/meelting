@@ -13,7 +13,7 @@ class User < ApplicationRecord
   validates :username, presence: true,
                        uniqueness: true,
                        length: { in: 3..39 },
-                       format: { with: /\A[a-z0-9_]+\z/ }
+                       format: { with: /\A[a-z][a-z0-9_]*\z/ }
   validates :password, length: { minimum: 8 }, allow_nil: true
   validates :email_address, presence: true,
                             uniqueness: true,

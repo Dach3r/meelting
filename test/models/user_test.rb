@@ -77,7 +77,7 @@ class UserTest < ActiveSupport::TestCase
   end
 
   test "rejects invalid username format or length" do
-    ["ab", "Grace", "GRACE", "grace-hopper", "gra.ce", "grace!", "gr ace", "a" * 40].each do |username|
+    ["ab", "Grace", "GRACE", "grace-hopper", "1grace", "_grace", "gra.ce", "grace!", "gr ace", "a" * 40].each do |username|
       user = User.new(username: username, password: "password123")
       assert_not user.valid?, "#{username} should be invalid"
       assert user.errors[:username].any?
