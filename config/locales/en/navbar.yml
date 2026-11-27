@@ -11,4 +11,5 @@ en:
     sign_up: "Sign up"
     search_placeholder: "Search or jump to…"
     search_label: "Search or open the command palette"
+    notifications_label: "Notifications"
     user_menu: "User menu"

@@ -37,6 +37,13 @@ class Organisms::Navbar::ComponentTest < ViewComponent::TestCase
     end
   end
 
+  test "renders notifications bell only when authenticated" do
+    label = I18n.t("navbar.notifications_label")
+
+    assert_equal 1, render_inline(Organisms::Navbar::Component.new(authenticated: true, user: users(:one))).css("button[aria-label='#{label}']").size
+    assert_empty render_inline(Organisms::Navbar::Component.new(authenticated: false)).css("button[aria-label='#{label}']")
+  end
+
   test "sign in link has the same height as the signed in controls" do
     link = render_inline(Organisms::Navbar::Component.new(authenticated: false)).css("a[href='/session/new']")
 

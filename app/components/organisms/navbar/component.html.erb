@@ -5,6 +5,7 @@
   <% end %>
   <nav class="<%= class_names("flex items-center gap-2.5", "ml-auto" => !authenticated) %>" aria-label="<%= t("navbar.label") %>">
     <% if authenticated %>
+      <button type="button" class="flex size-14 shrink-0 cursor-pointer items-center justify-center rounded-full bg-graphite-50 text-graphite-900" aria-label="<%= t("navbar.notifications_label") %>"><%= render Atoms::Icon::Component.new(name: :bell, class: "size-5") %></button>
       <%= render Molecules::UserMenu::Component.new(user: user) %>
     <% else %>
       <%= render Atoms::LinkButton::Component.new(href: new_session_path, variant: :secondary, size: :pill, class: "inline-flex h-14 items-center gap-2 px-7") do %><%= render Atoms::Icon::Component.new(name: :log_in, class: "size-4") %><%= t("navbar.sign_in") %><% end %>
