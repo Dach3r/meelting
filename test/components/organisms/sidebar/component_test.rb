@@ -26,7 +26,15 @@ class Organisms::Sidebar::ComponentTest < ViewComponent::TestCase
   test "wires the Stimulus controller with the persistence url" do
     node = render_inline(Organisms::Sidebar::Component.new(workspace: workspace))
 
-    assert_equal "sidebar", node.css("nav").first["data-controller"]
-    assert_equal "/sidebar_expansion", node.css("nav").first["data-sidebar-url-value"]
+    assert_equal "/sidebar_expansion", node.css("[data-controller=sidebar]").first["data-sidebar-url-value"]
+  end
+
+  test "offers a menu button for small screens that controls the navigation" do
+    node = render_inline(Organisms::Sidebar::Component.new(workspace: workspace))
+
+    button = node.css("button[data-action='sidebar#menu']").first
+    assert_equal "false", button["aria-expanded"]
+    assert_equal "sidebar-menu", button["aria-controls"]
+    assert_equal 1, node.css("nav#sidebar-menu").size
   end
 end

@@ -10,7 +10,7 @@ module Organisms
       attr_reader :workspace, :expanded_slug
 
       def expanded?(repository)
-        repository.slug == expanded_slug
+        repository.slug == (request.path_parameters[:repository_slug] || expanded_slug)
       end
 
       def current_page_in?(path)

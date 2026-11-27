@@ -3,8 +3,14 @@ import { Controller } from "@hotwired/stimulus"
 // Expands one repository at a time and remembers it on the server so the next page load
 // renders the same state without a flash.
 export default class extends Controller {
-  static targets = ["toggle"]
+  static targets = ["toggle", "menu", "menuButton"]
   static values = { url: String }
+
+  menu() {
+    const open = this.menuTarget.toggleAttribute("data-open")
+
+    this.menuButtonTarget.setAttribute("aria-expanded", open)
+  }
 
   toggle({ currentTarget: button }) {
     const opening = button.getAttribute("aria-expanded") !== "true"

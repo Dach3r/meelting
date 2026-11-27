@@ -1,4 +1,9 @@
-<nav class="flex w-full shrink-0 flex-col gap-0.5 rounded-[30px] bg-graphite-50 p-2.5 lg:sticky lg:top-28 lg:w-60" aria-label="<%= t("sidebar.label") %>" data-controller="sidebar" data-sidebar-url-value="<%= sidebar_expansion_path %>">
+<div class="w-full shrink-0 lg:sticky lg:top-28 lg:w-60" data-controller="sidebar" data-sidebar-url-value="<%= sidebar_expansion_path %>">
+<button type="button" class="flex w-full cursor-pointer items-center justify-between rounded-full bg-graphite-50 px-5 py-3 font-semibold lg:hidden" aria-expanded="false" aria-controls="sidebar-menu" data-sidebar-target="menuButton" data-action="sidebar#menu">
+  <%= t("sidebar.menu") %>
+  <%= render Atoms::Icon::Component.new(name: :chevron_down, class: "size-4") %>
+</button>
+<nav id="sidebar-menu" class="mt-2 hidden flex-col gap-0.5 rounded-[30px] bg-graphite-50 p-2.5 data-open:flex lg:mt-0 lg:flex" aria-label="<%= t("sidebar.label") %>" data-sidebar-target="menu">
   <% if workspace.placeholder? %>
     <span class="mb-1 ml-3.5 self-start rounded-full border border-dashed border-graphite-300 px-2.5 py-0.5 text-xs font-medium text-graphite-500"><%= t("sidebar.preview") %></span>
   <% end %>
@@ -29,3 +34,4 @@
     <% end %>
   </div>
 </nav>
+</div>

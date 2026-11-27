@@ -1,5 +1,6 @@
 es:
   sidebar:
+    menu: "Menú"
     label: "Navegación del espacio de trabajo"
     inbox: "Inbox"
     inbox_pending: "%{count} pendientes"

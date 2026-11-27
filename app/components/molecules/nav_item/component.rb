@@ -16,7 +16,7 @@ module Molecules
 
       def classes
         class_names(
-          "flex items-center gap-2.5 rounded-full px-3.5 py-2.5 font-medium hover:bg-white/60",
+          "flex items-center gap-2.5 rounded-full px-3.5 py-2.5 font-medium hover:bg-white/60 focus-visible:ring-2 focus-visible:ring-graphite-900",
           current ? "bg-white font-semibold text-graphite-900" : (muted ? "text-graphite-500" : "text-graphite-700")
         )
       end

@@ -1,7 +1,7 @@
 <% content_for :title, t(".title") %>
 <% content_for :main_class, "flex w-full flex-col pb-16" %>
 
-<div class="flex w-full max-w-4xl flex-col gap-8">
+<div class="flex w-full max-w-6xl flex-col gap-8">
   <% if workspace.first_run? %>
     <%= render Organisms::SetupChecklist::Component.new(steps: workspace.checklist) %>
   <% else %>

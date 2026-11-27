@@ -16,6 +16,10 @@ module Molecules
         "sidebar-repository-#{repository.slug}"
       end
 
+      def current_section?(section)
+        repository.real && current_page?(section_path(section))
+      end
+
       def section_path(section)
         repository.real ? repository_section_path(repository.slug, section) : repositories_path
       end

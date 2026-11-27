@@ -1,5 +1,6 @@
 en:
   sidebar:
+    menu: "Menu"
     label: "Workspace navigation"
     inbox: "Inbox"
     inbox_pending: "%{count} pending"

@@ -1,7 +1,7 @@
 <%= render Molecules::Tray::Component.new(title: t("home.in_progress.title"), count: runs.size, preview: (t("home.preview_label") if preview), link: { label: t("home.in_progress.view_all"), href: runs_path }, list: true, id: "in-progress") do %>
   <% visible_runs.each do |run| %>
     <li class="flex flex-wrap items-center gap-3.5 rounded-[22px] bg-white px-5 py-3.5">
-      <%= render Atoms::AgentAvatar::Component.new %>
+      <%= render Atoms::AgentAvatar::Component.new(size: :lg) %>
       <div class="min-w-0 flex-[1_1_16rem]">
         <p class="truncate text-[17px] font-bold tracking-[-0.02em]"><%= run.title %></p>
         <p class="truncate font-mono text-[13px] text-graphite-500">› <%= run.last_event %></p>

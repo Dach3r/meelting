@@ -3,7 +3,8 @@ module Atoms
     class Component < ViewComponent::Base
       SIZES = {
         sm: { box: "size-6 rounded-lg", icon: "size-3.5" },
-        md: { box: "size-9 rounded-xl", icon: "size-[18px]" }
+        md: { box: "size-9 rounded-xl", icon: "size-[18px]" },
+        lg: { box: "size-[52px] rounded-2xl", icon: "size-6" }
       }.freeze
 
       def initialize(size: :md)
