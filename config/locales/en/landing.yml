@@ -2,9 +2,7 @@ en:
   landing:
     title: "%{name}: where humans and AI agents build software together"
     hero:
-      title: "Your project's memory,"
-      title_dim: "shared with every agent."
-      description: "%{name} is an open source, self-hostable platform where humans and AI agents build software together, with full traceability."
+      title: "Build software alongside AI agents, with full traceability."
       cta_primary: "Get started"
       points:
         remember:

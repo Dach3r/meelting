@@ -2,9 +2,7 @@ es:
   landing:
     title: "%{name}: donde personas y agentes de IA construyen software juntos"
     hero:
-      title: "La memoria de tu proyecto,"
-      title_dim: "compartida con cada agente."
-      description: "%{name} es una plataforma open source y autoalojable donde personas y agentes de IA construyen software juntos, con trazabilidad total."
+      title: "Construye software junto a agentes de IA, con trazabilidad total."
       cta_primary: "Empezar"
       points:
         remember:

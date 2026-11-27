@@ -5,7 +5,7 @@ class HomeRoutingTest < ActionDispatch::IntegrationTest
     get root_path
     assert_response :success
     assert_equal "landing", @controller.controller_name
-    assert_select "h1", /La memoria de tu proyecto/
+    assert_select "h1", /Construye software junto a agentes de IA/
   end
 
   test "root with session renders home#index" do

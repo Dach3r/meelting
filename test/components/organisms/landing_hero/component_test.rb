@@ -4,7 +4,7 @@ class Organisms::LandingHero::ComponentTest < ViewComponent::TestCase
   test "renders the headline" do
     hero = render_inline(Organisms::LandingHero::Component.new)
 
-    assert_includes hero.css("h1").text, "La memoria de tu proyecto"
+    assert_includes hero.css("h1").text, "Construye software junto a agentes de IA"
   end
 
   test "renders the three steps with title and text" do
