@@ -2,8 +2,8 @@ module Molecules
   module Brand
     class Component < ViewComponent::Base
       TONES = {
-        light: { text: "text-ink", mark: "text-accent-bright" },
-        deep: { text: "text-deep-ink", mark: "text-signal" }
+        light: { text: "text-ink", mark: "text-brand-600" },
+        deep: { text: "text-white", mark: "text-sun-400" }
       }.freeze
 
       def initialize(tone: :light)

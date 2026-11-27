@@ -1,7 +1,7 @@
-<div class="overflow-hidden rounded-ui border border-line bg-surface">
-  <div class="flex justify-between gap-4 border-b border-line px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted">
+<div class="nb-card overflow-hidden bg-white">
+  <div class="flex justify-between gap-4 border-b-nb border-ink bg-brand-50 px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-ink">
     <span><%= title %></span>
-    <% if meta %><span><%= meta %></span><% end %>
+    <% if meta %><span class="text-ink-soft"><%= meta %></span><% end %>
   </div>
   <%= content %>
 </div>

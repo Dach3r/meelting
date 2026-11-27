@@ -2,8 +2,8 @@ module Atoms
   module Link
     class Component < ViewComponent::Base
       TONES = {
-        light: "text-muted hover:text-ink",
-        deep: "text-deep-muted hover:text-deep-ink"
+        light: "text-ink-soft hover:text-brand-600",
+        deep: "text-brand-200 hover:text-white"
       }.freeze
 
       def initialize(href:, tone: :light, **html_options)
@@ -13,7 +13,7 @@ module Atoms
       end
 
       def call
-        link_to content, @href, class: "text-sm font-medium #{TONES.fetch(@tone)}", **@html_options
+        link_to content, @href, class: class_names("text-sm font-bold", TONES.fetch(@tone), @html_options[:class]), **@html_options.except(:class)
       end
     end
   end

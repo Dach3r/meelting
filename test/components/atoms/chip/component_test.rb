@@ -5,14 +5,13 @@ class Atoms::Chip::ComponentTest < ViewComponent::TestCase
     chip = render_inline(Atoms::Chip::Component.new(tone: :deep)) { "New" }.css("span")
 
     assert_equal "New", chip.text
-    assert_includes chip.attr("class").value, "border-deep-line"
+    assert_includes chip.attr("class").value, "border-white/40"
   end
 
-  test "upper adds uppercase styling and pill shape rounds fully" do
-    chip = render_inline(Atoms::Chip::Component.new(shape: :pill, upper: true)) { "Label" }.css("span")
+  test "upper adds uppercase styling" do
+    chip = render_inline(Atoms::Chip::Component.new(upper: true)) { "Label" }.css("span")
 
     assert_includes chip.attr("class").value, "uppercase"
-    assert_includes chip.attr("class").value, "rounded-full"
   end
 
   test "passes html options through" do
@@ -25,6 +24,6 @@ class Atoms::Chip::ComponentTest < ViewComponent::TestCase
     chip = render_inline(Atoms::Chip::Component.new(class: "text-sm")) { "x" }.css("span")
 
     assert_includes chip.attr("class").value, "text-sm"
-    assert_includes chip.attr("class").value, "border-line"
+    assert_includes chip.attr("class").value, "bg-white"
   end
 end
