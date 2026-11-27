@@ -23,5 +23,11 @@ Rails.application.routes.draw do
   get "up" => "rails/health#show", as: :rails_health_check
 
   resources :access_tokens, only: %i[index new create destroy]
-  resources :repositories, only: %i[index new create]
+  resources :repositories, only: %i[index new create], param: :slug do
+    get ":section", to: "repositories/sections#show", as: :section, constraints: { section: /code|issues|pull_requests|runs|memory/ }
+  end
+
+  resources :runs, only: :index
+  resource :settings, only: :show
+  resource :sidebar_expansion, only: :update, controller: "navigation/expansions"
 end

@@ -1,0 +1,22 @@
+es:
+  sidebar:
+    label: "Navegación del espacio de trabajo"
+    inbox: "Inbox"
+    inbox_pending: "%{count} pendientes"
+    runs: "Runs"
+    runs_in_progress: "%{count} runs en curso"
+    repositories: "Repositorios"
+    new_repository: "Nuevo repositorio"
+    settings: "Configuración"
+    settings_warning: "Hay un problema de configuración"
+    preview: "Datos de ejemplo"
+    mirror:
+      ok: "Mirror al día"
+      failing: "Mirror fallando"
+      none: "Sin mirror"
+    sections:
+      code: "Código"
+      issues: "Issues"
+      pull_requests: "Pull requests"
+      runs: "Runs"
+      memory: "Memoria"

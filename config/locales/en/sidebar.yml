@@ -1,0 +1,22 @@
+en:
+  sidebar:
+    label: "Workspace navigation"
+    inbox: "Inbox"
+    inbox_pending: "%{count} pending"
+    runs: "Runs"
+    runs_in_progress: "%{count} runs in progress"
+    repositories: "Repositories"
+    new_repository: "New repository"
+    settings: "Settings"
+    settings_warning: "There is a configuration problem"
+    preview: "Preview data"
+    mirror:
+      ok: "Mirror up to date"
+      failing: "Mirror failing"
+      none: "No mirror"
+    sections:
+      code: "Code"
+      issues: "Issues"
+      pull_requests: "Pull requests"
+      runs: "Runs"
+      memory: "Memory"

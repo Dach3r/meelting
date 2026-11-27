@@ -1,0 +1,5 @@
+<div role="alert" class="flex flex-wrap items-center gap-3.5 rounded-[30px] bg-coral-100 py-2.5 pl-5 pr-2.5 text-coral-700">
+  <%= render Atoms::Icon::Component.new(name: :triangle_alert, class: "size-[22px] shrink-0") %>
+  <p class="min-w-0 flex-[1_1_20rem] font-medium"><strong class="font-bold"><%= text(:title) %></strong> <%= text(:detail) %></p>
+  <%= render Atoms::LinkButton::Component.new(href: settings_path, variant: :graphite, size: :pill) do %><%= text(:action) %><% end %>
+</div>

@@ -1,12 +1,18 @@
 module Organisms
   module InboxList
     class Component < ViewComponent::Base
-      def initialize(inbox:)
-        @inbox = inbox
+      def initialize(items:, preview:, assign_href:)
+        @items = items
+        @preview = preview
+        @assign_href = assign_href
       end
 
       private
-      attr_reader :inbox
+      attr_reader :items, :preview, :assign_href
+
+      def item_href(item)
+        item.target == :pull_request ? repositories_path : runs_path
+      end
     end
   end
 end

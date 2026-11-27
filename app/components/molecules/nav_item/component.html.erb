@@ -1,0 +1,5 @@
+<%= link_to href, class: classes, aria: { current: (current ? "page" : nil) } do %>
+  <%= render Atoms::Icon::Component.new(name: icon, class: "size-[18px] shrink-0") %>
+  <span class="min-w-0 flex-1 truncate"><%= label %></span>
+  <%= trailing %>
+<% end %>

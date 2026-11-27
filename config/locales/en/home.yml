@@ -2,56 +2,64 @@ en:
   home:
     show:
       title: "Home"
-      nothing_to_decide: "Nothing needs your decision right now."
-    agent_tag: "AGENT"
-    sections:
-      decisions: "Needs your decision"
-      working: "Agents working"
-      issues: "Your open issues"
-      repositories: "Repositories"
-      memory: "Memory touched"
-    states:
-      awaiting_approval: "Approval"
-      ready_to_merge: "Mergeable"
-      conflicts: "Conflicts"
-      assigned: "Run #%{number}"
-    subtitles:
-      run: "Run #%{number} · %{files} files · %{commands} commands"
-      pull_request_ready: "PR #%{number} · no conflicts · %{tests} tests ok"
-      pull_request_conflicts: "PR #%{number} · conflict in %{file}"
-      issue: "#%{number}"
-    actions:
-      assign: "Assign"
-      view_diff: "View diff"
-      reject: "Reject"
-      approve: "Approve and open PR"
-      review_pull_request: "Review pull request"
-    detail:
-      states:
-        awaiting_approval: "Awaiting approval"
-        ready_to_merge: "Ready to merge"
-        conflicts: "Conflicts with main"
-      run_reference: "Run #%{number} · issue #%{issue}"
-      pull_request_reference: "PR #%{number} · run #%{run}"
-      finished_ago: "finished %{time} ago"
-      changes: "Changes"
-      files:
-        one: "%{count} file"
-        other: "%{count} files"
-      commands_label: "Commands"
-      commands: "%{count}"
-      commands_retried: "%{count} · 1 failed, retried"
-      tests_label: "Tests"
-      tests_passed: "%{count} tests, 0 failures"
-      cost_time: "Cost · time"
-      last_steps: "Last steps"
-      memory_used: "Memory used"
-      approval_caption: "Approving opens the pull request. It does not limit or undo what ran in the sandbox."
-    mirror:
-      in_sync: "In sync · %{time}"
-      failed: "Push failed · %{time}"
-    memory:
-      proposed: "proposed"
-    empty:
-      issues: "You have no open issues."
-      memory: "Nothing indexed yet."
+    preview_label: "Preview data"
+    inbox:
+      title: "Needs your decision"
+      kinds:
+        approve: "Approve"
+        merge: "Merge"
+        failed: "Failed"
+      flags:
+        tests_failed: "Tests failed"
+        modifies_project: "Modifies .project/"
+        has_conflicts: "Has conflicts"
+      actions:
+        approve: "Review"
+        merge: "Open PR"
+        failed: "View run"
+      context: "%{repository} · %{agent} · %{time} ago"
+      waiting:
+        minutes: "%{count} min"
+        hours: "%{count} h"
+        days: "%{count} d"
+      empty:
+        title: "Nothing needs you"
+        body: "When an agent finishes, fails or opens a pull request, it shows up here."
+        action: "Assign an issue"
+    in_progress:
+      title: "In progress"
+      view_all: "View all runs →"
+    banner:
+      mirror_failing:
+        title: "The GitHub mirror for %{repository} is failing."
+        detail: "Changes are not being backed up to GitHub."
+        action: "Fix mirror"
+      missing_model_key:
+        title: "The model key is missing."
+        detail: "Agents cannot run without it."
+        action: "Add model key"
+      docker_unreachable:
+        title: "Docker is not responding."
+        detail: "Runs cannot start their sandbox."
+        action: "Check Docker"
+    checklist:
+      title: "Set up Meelting"
+      lead: "Six steps to your first agent pull request. Each one checks itself off when it is done."
+      progress: "%{done} of %{total}"
+      done: "Done"
+      steps:
+        access_token:
+          action: "Create token"
+          title: "Create an access token"
+        repository:
+          title: "Create a repository and push to it"
+          detail: "Clone and push over HTTPS with your token."
+          action: "Create repository"
+        mirror:
+          title: "Configure the GitHub mirror"
+        model_key:
+          title: "Add a model key"
+        overview:
+          title: "Write %{file}"
+        first_issue:
+          title: "Assign your first issue to an agent"

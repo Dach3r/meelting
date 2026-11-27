@@ -1,0 +1,13 @@
+<% content_for :title, t("placeholders.settings.title") %>
+<div class="flex w-full max-w-3xl flex-col gap-6">
+  <h1 class="text-[32px] font-extrabold leading-none tracking-[-0.04em]"><%= t("placeholders.settings.title") %></h1>
+  <div class="flex flex-col gap-1 rounded-[30px] bg-graphite-50 p-1.5">
+    <%= link_to access_tokens_path, class: "rounded-[22px] bg-white px-5 py-4 font-bold hover:bg-graphite-100" do %><%= t("placeholders.settings.access_tokens") %><% end %>
+    <% { model_keys: 3, mirrors: 1 }.each do |key, phase| %>
+      <div class="flex flex-wrap items-center justify-between gap-2 rounded-[22px] bg-white px-5 py-4">
+        <span class="font-bold"><%= t("placeholders.settings.#{key}") %></span>
+        <span class="text-sm text-graphite-500"><%= t("placeholders.phase", phase: phase) %></span>
+      </div>
+    <% end %>
+  </div>
+</div>

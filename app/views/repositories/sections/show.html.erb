@@ -1,0 +1,2 @@
+<% content_for :title, t("sidebar.sections.#{@section}") %>
+<%= render Molecules::PhaseNotice::Component.new(title: t("sidebar.sections.#{@section}"), body: t("placeholders.repository", name: @repository.name), phase: @phase) %>

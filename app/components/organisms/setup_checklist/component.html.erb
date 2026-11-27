@@ -1,0 +1,33 @@
+<div class="flex w-full max-w-3xl flex-col gap-6">
+  <div>
+    <h1 class="mb-2 ml-1 text-4xl font-extrabold leading-none tracking-[-0.045em]"><%= t("home.checklist.title") %></h1>
+    <p class="ml-1 max-w-xl leading-relaxed text-graphite-500"><%= t("home.checklist.lead") %></p>
+  </div>
+
+  <div class="mx-1.5 flex items-center gap-3.5">
+    <div class="h-2.5 flex-1 overflow-hidden rounded-full bg-graphite-50"><div class="h-full rounded-full bg-sun-400" style="width: <%= percent %>%"></div></div>
+    <span class="font-mono text-[13px] font-semibold text-graphite-500"><%= t("home.checklist.progress", done: done_count, total: steps.size) %></span>
+  </div>
+
+  <ol class="m-0 flex list-none flex-col gap-1 rounded-[30px] bg-graphite-50 p-1.5">
+    <% steps.each_with_index do |step, index| %>
+      <% is_current = step == current %>
+      <li class="<%= class_names("flex flex-wrap items-center gap-3.5 rounded-[22px] px-4 py-3.5", is_current ? "bg-sun-100 ring-2 ring-sun-400" : "bg-white") %>" <%= 'aria-current=step' if is_current %>>
+        <% if step.done %>
+          <span class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-graphite-900 text-sun-400" role="img" aria-label="<%= t("home.checklist.done") %>"><%= render Atoms::Icon::Component.new(name: :check, class: "size-4") %></span>
+        <% else %>
+          <span class="<%= class_names("flex size-9 shrink-0 items-center justify-center rounded-xl border-2 font-mono text-sm font-semibold", is_current ? "border-graphite-900 bg-white text-graphite-900" : "border-graphite-100 text-graphite-400") %>" aria-hidden="true"><%= index + 1 %></span>
+        <% end %>
+        <div class="min-w-0 flex-[1_1_16rem]">
+          <p class="<%= class_names("text-[17px] font-bold tracking-[-0.02em]", "text-graphite-400 line-through" => step.done) %>"><%= title_for(step) %></p>
+          <% if is_current && (detail = t("home.checklist.steps.#{step.key}.detail", default: "")).present? %>
+            <p class="text-sm text-graphite-500"><%= detail %></p>
+          <% end %>
+        </div>
+        <% if is_current && action_path(step) %>
+          <%= render Atoms::LinkButton::Component.new(href: action_path(step), variant: :primary, size: :pill) do %><%= t("home.checklist.steps.#{step.key}.action") %><% end %>
+        <% end %>
+      </li>
+    <% end %>
+  </ol>
+</div>

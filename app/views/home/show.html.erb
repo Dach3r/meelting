@@ -1,19 +1,20 @@
 <% content_for :title, t(".title") %>
-<% content_for :main_class, "flex w-full flex-col pb-16 pl-5 pr-2" %>
+<% content_for :main_class, "flex w-full flex-col pb-16" %>
 
-<h1 class="sr-only"><%= t(".title") %></h1>
+<div class="flex w-full max-w-4xl flex-col gap-8">
+  <% if workspace.first_run? %>
+    <%= render Organisms::SetupChecklist::Component.new(steps: workspace.checklist) %>
+  <% else %>
+    <h1 class="sr-only"><%= t(".title") %></h1>
 
-<div class="flex flex-wrap items-start gap-6">
-  <div class="min-w-[22rem] flex-[0_1_31rem]">
-    <%= render Organisms::InboxList::Component.new(inbox: @inbox) %>
-  </div>
-
-  <div class="flex min-w-[26rem] flex-[1_1_34rem] flex-col gap-4">
-    <% if @inbox.selected %>
-      <%= render Organisms::InboxDetail::Component.new(item: @inbox.selected) %>
-    <% else %>
-      <p class="rounded-[30px] bg-graphite-50 px-6 py-10 text-graphite-500"><%= t(".nothing_to_decide") %></p>
+    <% if workspace.banner_problem %>
+      <%= render Molecules::ConfigBanner::Component.new(problem: workspace.banner_problem) %>
     <% end %>
-    <%= render Organisms::InboxContext::Component.new(inbox: @inbox) %>
-  </div>
+
+    <%= render Organisms::InboxList::Component.new(items: workspace.items, preview: workspace.placeholder?, assign_href: (workspace.assign_issue_repository ? repository_section_path(workspace.assign_issue_repository.slug, :issues) : repositories_path)) %>
+
+    <% if workspace.runs.any? %>
+      <%= render Organisms::InProgress::Component.new(runs: workspace.runs, preview: workspace.placeholder?) %>
+    <% end %>
+  <% end %>
 </div>

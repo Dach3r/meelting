@@ -7,30 +7,77 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     assert_equal "landing", @controller.controller_name
   end
 
-  test "show renders the inbox with the first decision selected" do
+  test "shows the setup checklist instead of the inbox on a first visit" do
     sign_in_as users(:one)
     get root_path
 
     assert_response :success
-    assert_select "h1.sr-only", "Inicio"
-    assert_select "section#decisions a", 4
-    assert_select "a[aria-current=true]", /Configurable push mirror/
-    assert_select "h2", /Configurable push mirror to GitHub/
+    assert_select "h1", "Configura Meelting"
+    assert_select "ol li", 6
+    assert_select "section#inbox", count: 0
+    assert_select "section#in-progress", count: 0
   end
 
-  test "show selects the decision from the item param" do
+  test "checks steps off with real data" do
     sign_in_as users(:one)
-    get root_path(item: "pr_9")
+    get root_path
 
-    assert_select "a[aria-current=true]", /Push and clone over HTTPS/
-    assert_select "span", /Conflictos con main/
+    assert_select "ol li[aria-current=step]", /Crea un repositorio/
+    assert_select "ol li [aria-label=Hecho]", 1
   end
 
-  test "navbar shows the user menu without inbox counters" do
+  test "previews the inbox with sorted items and in progress runs in development" do
+    in_development do
+      sign_in_as users(:one)
+      get root_path(preview: "inbox")
+    end
+
+    assert_select "section#inbox li", 3
+    assert_select "section#inbox li:nth-child(1)", /Falló/
+    assert_select "section#inbox li:nth-child(3)", /Aprobar/
+    assert_select "section#inbox li a", 3
+    assert_select "section#inbox", /Datos de ejemplo/
+    assert_select "section#in-progress li", 1
+    assert_select "section#in-progress", /bin\/rails test/
+    assert_select "[role=alert]", count: 0
+  end
+
+  test "previews the empty inbox with a banner and no in progress block in development" do
+    in_development do
+      sign_in_as users(:one)
+      get root_path(preview: "empty")
+    end
+
+    assert_select "h3", "Nada te necesita"
+    assert_select "a", "Asignar un issue"
+    assert_select "section#in-progress", count: 0
+    assert_select "[role=alert]", /mirror de GitHub de .* está fallando/
+  end
+
+  test "previews the checklist alone in development" do
+    in_development do
+      sign_in_as users(:one)
+      get root_path(preview: "first_run")
+    end
+
+    assert_select "h1", "Configura Meelting"
+    assert_select "section#inbox", count: 0
+    assert_select "section#in-progress", count: 0
+  end
+
+  test "ignores the preview param outside development" do
+    sign_in_as users(:one)
+    get root_path(preview: "inbox")
+
+    assert_select "h1", "Configura Meelting"
+    assert_select "section#inbox", count: 0
+    assert_select "*", text: /Datos de ejemplo/, count: 0
+  end
+
+  test "navbar shows the user menu" do
     sign_in_as users(:one)
     get repositories_path
 
     assert_select "nav summary", /AL\s+Ada Lovelace/
-    assert_select "nav a[href=?]", root_path(anchor: "decisions"), count: 0
   end
 end

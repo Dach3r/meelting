@@ -1,31 +1,14 @@
-<div class="<%= class_names("relative flex min-h-[68px] items-center gap-3.5 rounded-[22px] px-5 py-3.5", selected ? "bg-sun-100" : "bg-white") %>">
-  <% if item.issue? %>
-    <%= render Atoms::Icon::Component.new(name: :circle_dot, class: "size-5 shrink-0 text-graphite-500") %>
-  <% else %>
-    <%= render Atoms::AgentAvatar::Component.new %>
-  <% end %>
-
-  <div class="min-w-0 flex-1">
-    <% if href %>
-      <%= link_to item.title, href, class: "block truncate font-bold tracking-[-0.01em] after:absolute after:inset-0 after:content-['']", data: { turbo_action: "replace" }, aria: { current: selected ? "true" : nil } %>
-    <% else %>
-      <p class="truncate font-bold tracking-[-0.01em]"><%= item.title %></p>
-    <% end %>
-    <p class="truncate text-[13px] leading-[1.4] text-graphite-500 <%= "font-mono" if item.running? %>"><%= subtitle %></p>
+<li class="flex flex-wrap items-center gap-3.5 rounded-[22px] bg-white px-5 py-3.5">
+  <span class="<%= class_names("flex size-[52px] shrink-0 items-center justify-center rounded-2xl bg-graphite-900", item.kind == :failed ? "text-coral-400" : "text-sun-400") %>" aria-hidden="true">
+    <%= render Atoms::Icon::Component.new(name: kind[:icon], class: "size-6") %>
+  </span>
+  <div class="min-w-0 flex-[1_1_16rem]">
+    <p class="truncate text-[17px] font-bold tracking-[-0.02em]"><%= item.title %></p>
+    <p class="truncate text-sm text-graphite-500"><%= context %></p>
   </div>
-
-  <% if chip || item.cost_cents %>
-    <div class="flex shrink-0 flex-col items-end gap-1">
-      <% if chip %>
-        <%= render Atoms::StatusChip::Component.new(**chip) do %><%= chip_label %><% end %>
-      <% end %>
-      <% if item.cost_cents %>
-        <span class="font-mono text-[13px] font-semibold text-graphite-700"><%= helpers.format_cents(item.cost_cents) %></span>
-      <% end %>
-    </div>
+  <% if item.flag %>
+    <%= render Atoms::StatusChip::Component.new(tone: :bad, icon: :triangle_alert) do %><%= t("home.inbox.flags.#{item.flag}") %><% end %>
   <% end %>
-
-  <% if unassigned? %>
-    <%= render Atoms::PillButton::Component.new do %><%= render Atoms::Icon::Component.new(name: :bot, class: "size-4") %><%= t("home.actions.assign") %><% end %>
-  <% end %>
-</div>
+  <%= render Atoms::StatusChip::Component.new(tone: kind[:tone]) do %><%= t("home.inbox.kinds.#{item.kind}") %><% end %>
+  <%= render Atoms::LinkButton::Component.new(href: href, variant: kind[:button], size: :pill) do %><%= t("home.inbox.actions.#{item.kind}") %><% end %>
+</li>

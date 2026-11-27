@@ -1,0 +1,31 @@
+<nav class="flex w-full shrink-0 flex-col gap-0.5 rounded-[30px] bg-graphite-50 p-2.5 lg:sticky lg:top-28 lg:w-60" aria-label="<%= t("sidebar.label") %>" data-controller="sidebar" data-sidebar-url-value="<%= sidebar_expansion_path %>">
+  <% if workspace.placeholder? %>
+    <span class="mb-1 ml-3.5 self-start rounded-full border border-dashed border-graphite-300 px-2.5 py-0.5 text-xs font-medium text-graphite-500"><%= t("sidebar.preview") %></span>
+  <% end %>
+
+  <%= render Molecules::NavItem::Component.new(label: t("sidebar.inbox"), href: root_path, icon: :inbox, current: current_page_in?(root_path)) do |item| %>
+    <% if workspace.inbox_count.positive? %>
+      <% item.with_trailing do %><span class="rounded-full bg-graphite-900 px-2 font-mono text-xs font-semibold text-sun-400" aria-label="<%= t("sidebar.inbox_pending", count: workspace.inbox_count) %>"><%= workspace.inbox_count %></span><% end %>
+    <% end %>
+  <% end %>
+
+  <%= render Molecules::NavItem::Component.new(label: t("sidebar.runs"), href: runs_path, icon: :play, current: current_page_in?(runs_path)) do |item| %>
+    <% if workspace.runs_count.positive? %>
+      <% item.with_trailing do %><span class="flex items-center gap-1.5 font-mono text-xs font-semibold text-sky-700"><%= render Atoms::StatusDot::Component.new(tone: :run, label: t("sidebar.runs_in_progress", count: workspace.runs_count)) %><%= workspace.runs_count %></span><% end %>
+    <% end %>
+  <% end %>
+
+  <p class="mx-3.5 mb-1 mt-4 text-xs font-semibold uppercase tracking-wide text-graphite-400"><%= t("sidebar.repositories") %></p>
+  <% workspace.repositories.each do |repository| %>
+    <%= render Molecules::SidebarRepository::Component.new(repository: repository, expanded: expanded?(repository)) %>
+  <% end %>
+  <%= render Molecules::NavItem::Component.new(label: t("sidebar.new_repository"), href: new_repository_path, icon: :plus, muted: true, current: current_page_in?(new_repository_path)) %>
+
+  <div class="mt-8">
+    <%= render Molecules::NavItem::Component.new(label: t("sidebar.settings"), href: settings_path, icon: :settings, current: current_page_in?(settings_path)) do |item| %>
+      <% if workspace.settings_warning? %>
+        <% item.with_trailing do %><%= render Atoms::StatusDot::Component.new(tone: :warn, label: t("sidebar.settings_warning")) %><% end %>
+      <% end %>
+    <% end %>
+  </div>
+</nav>

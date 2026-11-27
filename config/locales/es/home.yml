@@ -2,56 +2,64 @@ es:
   home:
     show:
       title: "Inicio"
-      nothing_to_decide: "Nada necesita tu decisión por ahora."
-    agent_tag: "AGENTE"
-    sections:
-      decisions: "Necesita tu decisión"
-      working: "Agentes trabajando"
-      issues: "Tus issues abiertos"
-      repositories: "Repositorios"
-      memory: "Memoria tocada"
-    states:
-      awaiting_approval: "Aprobación"
-      ready_to_merge: "Mergeable"
-      conflicts: "Conflictos"
-      assigned: "Run #%{number}"
-    subtitles:
-      run: "Run #%{number} · %{files} archivos · %{commands} comandos"
-      pull_request_ready: "PR #%{number} · sin conflictos · %{tests} tests ok"
-      pull_request_conflicts: "PR #%{number} · conflicto en %{file}"
-      issue: "#%{number}"
-    actions:
-      assign: "Asignar"
-      view_diff: "Ver diff"
-      reject: "Rechazar"
-      approve: "Aprobar y abrir PR"
-      review_pull_request: "Revisar pull request"
-    detail:
-      states:
-        awaiting_approval: "Esperando aprobación"
-        ready_to_merge: "Listo para merge"
-        conflicts: "Conflictos con main"
-      run_reference: "Run #%{number} · issue #%{issue}"
-      pull_request_reference: "PR #%{number} · run #%{run}"
-      finished_ago: "terminó hace %{time}"
-      changes: "Cambios"
-      files:
-        one: "%{count} archivo"
-        other: "%{count} archivos"
-      commands_label: "Comandos"
-      commands: "%{count}"
-      commands_retried: "%{count} · 1 falló, reintentado"
-      tests_label: "Tests"
-      tests_passed: "%{count} tests, 0 fallas"
-      cost_time: "Costo · tiempo"
-      last_steps: "Últimos pasos"
-      memory_used: "Memoria usada"
-      approval_caption: "Aprobar abre el pull request. No limita ni deshace lo que se ejecutó en el sandbox."
-    mirror:
-      in_sync: "Sincronizado · %{time}"
-      failed: "Push fallido · %{time}"
-    memory:
-      proposed: "propuesta"
-    empty:
-      issues: "No tienes issues abiertos."
-      memory: "Nada indexado todavía."
+    preview_label: "Datos de ejemplo"
+    inbox:
+      title: "Necesita tu decisión"
+      kinds:
+        approve: "Aprobar"
+        merge: "Merge"
+        failed: "Falló"
+      flags:
+        tests_failed: "Tests fallaron"
+        modifies_project: "Modifica .project/"
+        has_conflicts: "Tiene conflictos"
+      actions:
+        approve: "Revisar"
+        merge: "Abrir PR"
+        failed: "Ver run"
+      context: "%{repository} · %{agent} · hace %{time}"
+      waiting:
+        minutes: "%{count} min"
+        hours: "%{count} h"
+        days: "%{count} d"
+      empty:
+        title: "Nada te necesita"
+        body: "Cuando un agente termine, falle o abra un pull request, aparecerá aquí."
+        action: "Asignar un issue"
+    in_progress:
+      title: "En curso"
+      view_all: "Ver todos los runs →"
+    banner:
+      mirror_failing:
+        title: "El mirror de GitHub de %{repository} está fallando."
+        detail: "Los cambios no se están respaldando en GitHub."
+        action: "Arreglar mirror"
+      missing_model_key:
+        title: "Falta la model key."
+        detail: "Sin ella los agentes no pueden ejecutar runs."
+        action: "Agregar model key"
+      docker_unreachable:
+        title: "Docker no responde."
+        detail: "Los runs no pueden iniciar su sandbox."
+        action: "Revisar Docker"
+    checklist:
+      title: "Configura Meelting"
+      lead: "Seis pasos hasta tu primer pull request de un agente. Cada uno se marca solo al cumplirse."
+      progress: "%{done} de %{total}"
+      done: "Hecho"
+      steps:
+        access_token:
+          action: "Crear token"
+          title: "Crea un access token"
+        repository:
+          title: "Crea un repositorio y haz push"
+          detail: "Clona y sube por HTTPS con tu token."
+          action: "Crear repositorio"
+        mirror:
+          title: "Configura el mirror de GitHub"
+        model_key:
+          title: "Agrega una model key"
+        overview:
+          title: "Escribe %{file}"
+        first_issue:
+          title: "Asigna tu primer issue a un agente"
