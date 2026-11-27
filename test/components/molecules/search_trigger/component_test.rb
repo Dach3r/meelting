@@ -1,11 +1,12 @@
 require "test_helper"
 
 class Molecules::SearchTrigger::ComponentTest < ViewComponent::TestCase
-  test "renders an accessible button with the shortcut hint" do
+  test "renders a full width accessible button without a shortcut hint" do
     button = render_inline(Molecules::SearchTrigger::Component.new).css("button")
 
     assert_equal "button", button.attr("type").value
     assert button.attr("aria-label").value.present?
-    assert_equal "⌘K", button.css("kbd").text
+    assert_includes button.attr("class").value, "flex-1"
+    assert_empty button.css("kbd")
   end
 end

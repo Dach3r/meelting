@@ -3,12 +3,8 @@
   <% if authenticated %>
     <%= render Molecules::SearchTrigger::Component.new %>
   <% end %>
-  <nav class="ml-auto flex items-center gap-2.5" aria-label="<%= t("navbar.label") %>">
+  <nav class="<%= class_names("flex items-center gap-2.5", "ml-auto" => !authenticated) %>" aria-label="<%= t("navbar.label") %>">
     <% if authenticated %>
-      <% if counts %>
-        <%= render Molecules::CountPill::Component.new(count: counts.fetch(:awaiting_approval), label: t("navbar.awaiting_approval"), href: root_path(anchor: "decisions"), tone: counts.fetch(:awaiting_approval).positive? ? :wait : :neutral) %>
-        <%= render Molecules::CountPill::Component.new(count: counts.fetch(:running), label: t("navbar.running"), href: root_path(anchor: "working"), tone: counts.fetch(:running).positive? ? :run : :neutral) %>
-      <% end %>
       <%= render Molecules::UserMenu::Component.new(user: user) %>
     <% else %>
       <%= render Atoms::LinkButton::Component.new(href: new_session_path, variant: :secondary, size: :pill, class: "inline-flex items-center gap-2") do %><%= render Atoms::Icon::Component.new(name: :log_in, class: "size-4") %><%= t("navbar.sign_in") %><% end %>

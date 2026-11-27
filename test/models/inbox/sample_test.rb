@@ -13,10 +13,6 @@ class Inbox::SampleTest < ActiveSupport::TestCase
     assert_equal "run_31", Inbox::Sample.new("nope").selected.id
   end
 
-  test "counts runs awaiting approval and running" do
-    assert_equal({ awaiting_approval: 2, running: 1 }, Inbox::Sample.new.counts)
-  end
-
   test "items expose their kind and state" do
     sample = Inbox::Sample.new
 

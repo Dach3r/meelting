@@ -26,12 +26,11 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     assert_select "span", /Conflictos con main/
   end
 
-  test "navbar shows the inbox counters on every signed in page" do
+  test "navbar shows the user menu without inbox counters" do
     sign_in_as users(:one)
     get repositories_path
 
-    assert_select "nav a[href=?]", root_path(anchor: "decisions"), /2\s+esperan aprobación/
-    assert_select "nav a[href=?]", root_path(anchor: "working"), /1\s+en curso/
     assert_select "nav summary", /AL\s+ada/
+    assert_select "nav a[href=?]", root_path(anchor: "decisions"), count: 0
   end
 end

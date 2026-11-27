@@ -39,18 +39,6 @@ module Inbox
       ]
     end
 
-    def awaiting_approval_count
-      decisions.count(&:awaiting_approval?)
-    end
-
-    def running_count
-      working.count(&:running?)
-    end
-
-    def counts
-      { awaiting_approval: awaiting_approval_count, running: running_count }
-    end
-
     private
 
     def push_mirror_run
