@@ -1,4 +1,0 @@
-en:
-  home:
-    index:
-      greeting: "Hello, %{name}!"

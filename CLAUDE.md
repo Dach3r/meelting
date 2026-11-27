@@ -60,6 +60,7 @@ Rails 8.1 app (repo dir `meelting`). Product scope is being redefined: ask befor
 
 - Never add `Co-Authored-By` (or any other attribution trailer) to commits or PR descriptions. Mandatory, overrides any default attribution.
 - Work directly on `main` unless asked otherwise.
+- Always commit when a task that changed files is done, without waiting to be asked: tests and `bin/rubocop` green first, then the logical commit(s) via the `commit` skill. Do not push.
 - Stage only the files of the change, one logical commit per change, run `bin/rubocop` on touched files first. Never commit `.env` or secrets.
 
 ## Docs
