@@ -1,7 +1,7 @@
 <details class="relative">
   <summary class="flex h-14 cursor-pointer list-none items-center gap-2.5 rounded-full bg-graphite-900 pl-2 pr-4 text-sm font-semibold text-white [&::-webkit-details-marker]:hidden" aria-label="<%= t("navbar.user_menu") %>">
     <span class="flex size-10 items-center justify-center rounded-full bg-sun-400 text-sm font-extrabold text-graphite-900"><%= user&.initials %></span>
-    <%= user&.username %>
+    <%= user&.full_name %>
     <%= render Atoms::Icon::Component.new(name: :chevron_down, class: "size-4") %>
   </summary>
   <div class="absolute right-0 top-full z-10 mt-2 grid w-56 gap-1 rounded-3xl bg-graphite-50 p-2">
