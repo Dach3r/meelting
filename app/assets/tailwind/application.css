@@ -1,48 +1,234 @@
 @import "tailwindcss";
 
-/* Berth design tokens. Inter everywhere; warm-neutral light canvas with a deep teal hero. */
+/* Soft neo-brutalist design tokens: ink borders, hard shadows, dotted paper backgrounds. */
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 
-  --color-canvas: #f7fbfa;
-  --color-surface: #ffffff;
-  --color-ink: #0b1f1f;
-  --color-muted: #52706d;
-  --color-line: #d9e7e4;
+  --color-paper: #f3f8ee;
+  --color-ink: #14261c;
+  --color-ink-soft: #5b6e60;
+  --color-line: #d3e0d2;
 
-  --color-accent: #0b7f70;
-  --color-accent-bright: #0f9d8a;
+  --color-brand-50: #f1f8ec;
+  --color-brand-100: #d6e8d9;
+  --color-brand-200: #9fbaa6;
+  --color-brand-300: #b7f34a;
+  --color-brand-500: #3f8f52;
+  --color-brand-600: #2f6b3f;
+  --color-brand-700: #234f2f;
+  --color-brand-900: #14261c;
 
-  --color-deep: #0b2a2a;
-  --color-deep-surface: #0b2a2ab3;
-  --color-deep-ink: #f2fbf9;
-  --color-deep-muted: #7fa8a3;
-  --color-deep-line: #1d4543;
-  --color-signal: #17c3ab;
-  --color-signal-ink: #04211d;
+  --color-sun-100: #eaf9c9;
+  --color-sun-400: #b7f34a;
+  --color-sun-700: #4e6b0a;
+  --color-coral-100: #ffe1dc;
+  --color-coral-400: #ff7a66;
+  --color-coral-700: #c2410c;
+  --color-sky-100: #d6f0ff;
+  --color-sky-400: #4cc2ff;
+  --color-sky-700: #0a6a9e;
+}
 
-  --radius-ui: 4px;
+:root {
+  --nb-border-width: 1.5px;
+}
+
+@utility border-nb {
+  border-width: var(--nb-border-width);
+}
+
+@utility border-t-nb {
+  border-top-width: var(--nb-border-width);
+}
+
+@utility border-b-nb {
+  border-bottom-width: var(--nb-border-width);
+}
+
+@utility border-r-nb {
+  border-right-width: var(--nb-border-width);
+}
+
+@utility border-l-nb {
+  border-left-width: var(--nb-border-width);
+}
+
+@layer components {
+  .nb-card {
+    border: var(--nb-border-width) solid var(--color-ink);
+    border-radius: 1.5rem;
+  }
+
+  .nb-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    border: var(--nb-border-width) solid var(--color-ink);
+    border-radius: 0.75rem;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 700;
+  }
+
+  .nb-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border: var(--nb-border-width) solid var(--color-ink);
+    border-radius: 0.75rem;
+    font-weight: 700;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 150ms, transform 150ms, box-shadow 150ms;
+  }
+
+  .nb-btn-raised {
+    box-shadow: 0 1px 0 var(--color-ink);
+  }
+
+  .nb-btn-raised:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 0 var(--color-ink);
+  }
+
+  .nb-btn-raised:active {
+    transform: translateY(1px);
+    box-shadow: 0 0 0 var(--color-ink);
+  }
+
+  .nb-btn-raised-light {
+    box-shadow: 0 1px 0 white;
+  }
+
+  .nb-btn-raised-light:hover {
+    box-shadow: 0 2px 0 white;
+  }
+
+  .nb-btn-raised-light:active {
+    box-shadow: 0 0 0 white;
+  }
+
+  .nb-field {
+    display: block;
+    width: 100%;
+    margin-top: 0.5rem;
+    border: var(--nb-border-width) solid var(--color-ink);
+    border-radius: 0.75rem;
+    background-color: white;
+    padding: 0.625rem 0.875rem;
+    color: var(--color-ink);
+  }
+
+  .nb-field::placeholder {
+    color: var(--color-ink-soft);
+  }
+
+  .nb-field:focus {
+    outline: none;
+    background-color: var(--color-brand-50);
+    box-shadow: 0 2px 0 var(--color-brand-600);
+  }
+
+  .nb-container {
+    width: 100%;
+    max-width: 84rem;
+    margin-inline: auto;
+    padding-inline: 1.25rem;
+  }
+
+  @media (min-width: 48rem) {
+    .nb-container {
+      padding-inline: 2rem;
+    }
+  }
+
+  .bg-dots {
+    background-color: var(--color-paper);
+    background-image: radial-gradient(color-mix(in srgb, var(--color-brand-300) 45%, transparent) 1.5px, transparent 1.5px);
+    background-size: 28px 28px;
+  }
+
+  .bg-dots-white {
+    background-color: white;
+    background-image: radial-gradient(color-mix(in srgb, var(--color-brand-300) 45%, transparent) 1.5px, transparent 1.5px);
+    background-size: 28px 28px;
+  }
+
+  .bg-dots-coral {
+    background-color: var(--color-coral-100);
+    background-image: radial-gradient(color-mix(in srgb, var(--color-coral-700) 30%, transparent) 1.5px, transparent 1.5px);
+    background-size: 28px 28px;
+  }
+
+  .bg-dots-sky {
+    background-color: var(--color-sky-100);
+    background-image: radial-gradient(color-mix(in srgb, var(--color-sky-700) 30%, transparent) 1.5px, transparent 1.5px);
+    background-size: 28px 28px;
+  }
+
+  .bg-dots-ink {
+    background-color: var(--color-brand-900);
+    background-image: radial-gradient(color-mix(in srgb, white 14%, transparent) 1.5px, transparent 1.5px);
+    background-size: 28px 28px;
+  }
+
+  .bg-dots-brand {
+    background-color: var(--color-brand-600);
+    background-image: radial-gradient(color-mix(in srgb, white 22%, transparent) 1.5px, transparent 1.5px);
+    background-size: 28px 28px;
+  }
+
+  main > section + section {
+    border-top: var(--nb-border-width) solid var(--color-ink);
+  }
 }
 
 @layer base {
   html {
     font-family: var(--font-sans);
-    font-feature-settings: "cv11", "ss03";
+    scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
   }
 
   body {
-    background-color: var(--color-canvas);
+    background-color: var(--color-paper);
     color: var(--color-ink);
   }
 
   pre {
-    font-feature-settings: "calt" 0, "zero", "cv11";
     font-variant-ligatures: none;
   }
 
   :focus-visible {
-    outline: 2px solid var(--color-accent-bright);
+    outline: 2px solid var(--color-brand-600);
     outline-offset: 2px;
+  }
+
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus {
+    transition: background-color 600000s 0s;
+    -webkit-text-fill-color: var(--color-ink);
+    caret-color: var(--color-ink);
+    box-shadow: inset 0 0 0 1000px white;
+  }
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.3s;
+  animation-timing-function: ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none;
   }
 }
