@@ -26,4 +26,14 @@ class Organisms::Navbar::ComponentTest < ViewComponent::TestCase
       assert_equal ApplicationHelper::CONFIG[:name], nav.css("a[href='/']").text.strip
     end
   end
+
+  test "stays fixed at the top in both states" do
+    [true, false].each do |authenticated|
+      header = render_inline(Organisms::Navbar::Component.new(authenticated: authenticated)).css("header")
+
+      assert_includes header.attr("class").value, "sticky"
+      assert_includes header.attr("class").value, "top-0"
+      assert_includes header.attr("class").value, "bg-white"
+    end
+  end
 end
