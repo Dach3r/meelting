@@ -1,27 +1,27 @@
-<div class="mx-auto md:w-2/3 w-full">
+<div class="nb-card mx-auto w-full bg-white p-6 md:w-2/3 md:p-8">
   <% if notice = flash[:notice] %>
-    <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
+    <p class="nb-card mb-5 bg-sky-100 px-4 py-2.5 font-bold text-sky-700" id="notice"><%= notice %></p>
   <% end %>
 
   <div class="flex items-center justify-between">
-    <h1 class="font-bold text-4xl"><%= t(".title") %></h1>
-    <%= link_to t(".new"), new_repository_path, class: "rounded-md px-3.5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-medium" %>
+    <h1 class="text-4xl font-extrabold tracking-tight"><%= t(".title") %></h1>
+    <%= link_to t(".new"), new_repository_path, class: "nb-btn nb-btn-raised bg-brand-600 px-4 py-2.5 text-sm text-white hover:bg-brand-700" %>
   </div>
 
   <% if @repositories.empty? %>
-    <p class="my-8 text-gray-500"><%= t(".empty") %></p>
+    <p class="my-8 text-ink-soft"><%= t(".empty") %></p>
   <% else %>
-    <ul class="my-8 divide-y divide-gray-200">
+    <ul class="my-8 divide-y divide-line">
       <% @repositories.each do |repository| %>
         <li class="py-4" id="<%= dom_id(repository) %>">
-          <p class="font-medium"><%= repository.name %> <span class="text-sm text-gray-500">&middot; <%= t("repositories.visibilities.#{repository.visibility}") %></span></p>
+          <p class="font-bold"><%= repository.name %> <span class="text-sm text-ink-soft">&middot; <%= t("repositories.visibilities.#{repository.visibility}") %></span></p>
           <% if repository.description.present? %>
-            <p class="text-sm text-gray-500"><%= repository.description %></p>
+            <p class="text-sm text-ink-soft"><%= repository.description %></p>
           <% end %>
         </li>
       <% end %>
     </ul>
   <% end %>
 
-  <%= link_to t(".back"), root_path, class: "text-gray-700 underline hover:no-underline" %>
+  <%= link_to t(".back"), root_path, class: "font-bold text-brand-600 underline hover:no-underline" %>
 </div>
