@@ -3,7 +3,8 @@ module Atoms
     class Component < ViewComponent::Base
       TONES = {
         light: "text-ink-soft hover:text-brand-600",
-        deep: "text-brand-200 hover:text-white"
+        deep: "text-brand-200 hover:text-white",
+        signal: "text-sun-400 underline hover:no-underline"
       }.freeze
 
       def initialize(href:, tone: :light, **html_options)

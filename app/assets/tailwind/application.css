@@ -130,6 +130,88 @@
     box-shadow: 0 2px 0 var(--color-brand-600);
   }
 
+  .nb-field-deep {
+    display: block;
+    width: 100%;
+    border: var(--nb-border-width) solid color-mix(in srgb, var(--color-brand-300) 40%, transparent);
+    border-radius: 0.75rem;
+    background-color: color-mix(in srgb, white 6%, transparent);
+    padding: 0.625rem 0.875rem;
+    color: white;
+  }
+
+  .nb-field-deep::placeholder {
+    color: color-mix(in srgb, var(--color-brand-200) 70%, transparent);
+  }
+
+  .nb-field-deep:focus {
+    outline: none;
+    border-color: var(--color-sun-400);
+    background-color: color-mix(in srgb, var(--color-sun-400) 8%, transparent);
+    box-shadow: 0 2px 0 var(--color-sun-400);
+  }
+
+  .nb-field-deep:-webkit-autofill,
+  .nb-field-deep:-webkit-autofill:hover,
+  .nb-field-deep:-webkit-autofill:focus {
+    -webkit-text-fill-color: white;
+    caret-color: white;
+    box-shadow: inset 0 0 0 1000px var(--color-brand-900);
+  }
+
+  .nb-field-shell {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    height: 3.5rem;
+    border: var(--nb-border-width) solid var(--color-brand-500);
+    border-radius: 1rem;
+    background-color: color-mix(in srgb, white 8%, var(--color-brand-900));
+    padding-inline: 0.5rem 1.25rem;
+    transition: border-color 150ms;
+  }
+
+  .nb-field-shell:focus-within {
+    border-color: var(--color-sun-400);
+  }
+
+  .nb-field-shell-icon {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 0.75rem;
+    background-color: var(--color-brand-900);
+    color: var(--color-sun-400);
+  }
+
+  .nb-field-shell-input {
+    flex: 1;
+    width: 0;
+    min-width: 0;
+    height: 100%;
+    background: transparent;
+    color: white;
+  }
+
+  .nb-field-shell-input::placeholder {
+    color: var(--color-brand-200);
+  }
+
+  .nb-field-shell-input:focus {
+    outline: none;
+  }
+
+  .nb-field-shell-input:-webkit-autofill,
+  .nb-field-shell-input:-webkit-autofill:hover,
+  .nb-field-shell-input:-webkit-autofill:focus {
+    -webkit-text-fill-color: white;
+    caret-color: white;
+    box-shadow: inset 0 0 0 1000px color-mix(in srgb, white 8%, var(--color-brand-900));
+  }
+
   .nb-container {
     width: 100%;
     max-width: 84rem;
