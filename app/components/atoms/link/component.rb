@@ -4,6 +4,7 @@ module Atoms
       TONES = {
         light: "font-bold text-ink-soft hover:text-brand-600",
         deep: "font-bold text-brand-200 hover:text-white",
+        plain: "font-semibold text-graphite-900 hover:text-graphite-500",
         graphite: "font-semibold text-graphite-900 underline underline-offset-3",
         signal: "font-bold text-sun-400 underline hover:no-underline"
       }.freeze

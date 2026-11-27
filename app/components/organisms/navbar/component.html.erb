@@ -1,16 +1,12 @@
-<nav class="<%= nav_classes %>" aria-label="<%= t("navbar.label") %>">
-  <div class="nb-container flex h-16 items-center justify-between">
-    <%= render Molecules::Brand::Component.new(tone: tone) %>
-
-    <div class="flex items-center gap-5">
-      <% if authenticated %>
-        <%= render Atoms::Link::Component.new(href: repositories_path, tone: tone) do %><%= t("navbar.repositories") %><% end %>
-        <%= render Atoms::Link::Component.new(href: access_tokens_path, tone: tone) do %><%= t("navbar.access_tokens") %><% end %>
-        <%= render Atoms::Button::Component.new(href: session_path, method: :delete, tone: tone) do %><%= t("navbar.sign_out") %><% end %>
-      <% else %>
-        <%= render Atoms::Link::Component.new(href: new_session_path, tone: tone) do %><%= t("navbar.sign_in") %><% end %>
-        <%= render Atoms::LinkButton::Component.new(href: new_registration_path, variant: :signal, size: :sm) do %><%= t("navbar.sign_up") %><% end %>
-      <% end %>
-    </div>
-  </div>
-</nav>
+<header class="flex items-center justify-between py-2 pl-5 pr-2">
+  <%= render Molecules::Brand::Component.new(tone: :graphite) %>
+  <nav class="flex items-center gap-2.5" aria-label="<%= t("navbar.label") %>">
+    <% if authenticated %>
+      <%= render Atoms::Link::Component.new(href: repositories_path, tone: :plain, class: "px-3") do %><%= t("navbar.repositories") %><% end %>
+      <%= render Atoms::Link::Component.new(href: access_tokens_path, tone: :plain, class: "px-3") do %><%= t("navbar.access_tokens") %><% end %>
+      <%= render Atoms::Button::Component.new(href: session_path, method: :delete, tone: :pill) do %><%= t("navbar.sign_out") %><% end %>
+    <% else %>
+      <%= render Atoms::LinkButton::Component.new(href: new_session_path, variant: :secondary, size: :pill, class: "inline-flex items-center gap-2") do %><%= render Atoms::Icon::Component.new(name: :log_in, class: "size-4") %><%= t("navbar.sign_in") %><% end %>
+    <% end %>
+  </nav>
+</header>

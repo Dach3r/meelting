@@ -1,11 +1,11 @@
 require "test_helper"
 
 class Organisms::Navbar::ComponentTest < ViewComponent::TestCase
-  test "renders sign in and sign up links when unauthenticated" do
+  test "renders only the sign in link when unauthenticated" do
     nav = render_inline(Organisms::Navbar::Component.new(authenticated: false))
 
     assert_equal 1, nav.css("a[href='/session/new']").size
-    assert_equal 1, nav.css("a[href='/registration/new']").size
+    assert_empty nav.css("a[href='/registration/new']")
     assert_empty nav.css("form[action='/session']")
     assert_empty nav.css("a[href='/repositories']")
   end

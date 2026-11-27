@@ -1,8 +1,7 @@
 class LandingController < ApplicationController
-  layout "landing"
-
   allow_unauthenticated_access only: :show
 
   def show
+    render "pages/landing"
   end
 end
