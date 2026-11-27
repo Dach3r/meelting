@@ -12,7 +12,13 @@ class Atoms::LinkButton::ComponentTest < ViewComponent::TestCase
   test "defaults to the primary variant" do
     link = render_inline(Atoms::LinkButton::Component.new(href: "/go")) { "Go" }.css("a")
 
-    assert_includes link.attr("class").value, "bg-brand-600"
+    assert_includes link.attr("class").value, "bg-sun-400"
+  end
+
+  test "secondary variant is dark" do
+    link = render_inline(Atoms::LinkButton::Component.new(href: "/go", variant: :secondary)) { "Go" }.css("a")
+
+    assert_includes link.attr("class").value, "bg-graphite-900"
   end
 
   test "raises on an unknown variant" do

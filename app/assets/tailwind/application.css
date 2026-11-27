@@ -10,6 +10,7 @@
   --color-ink-soft: #5b6e60;
   --color-line: #d3e0d2;
 
+  --color-danger-500: #ff4a3d;
   --color-mist: #f4f5f6;
   --color-graphite-50: #eceef0;
   --color-graphite-100: #dfe2e5;
@@ -181,6 +182,16 @@
 
   .nb-field-shell:focus-within {
     border-color: var(--color-graphite-900);
+    box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-graphite-900) 18%, transparent);
+  }
+
+  .nb-field-shell:has(.nb-field-shell-input:user-invalid) {
+    border-color: var(--color-danger-500);
+  }
+
+  .nb-field-shell:has(.nb-field-shell-input:user-invalid):focus-within {
+    border-color: var(--color-danger-500);
+    box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-danger-500) 20%, transparent);
   }
 
   .nb-field-shell-icon {
@@ -291,9 +302,13 @@
     font-variant-ligatures: none;
   }
 
-  :focus-visible {
-    outline: 2px solid var(--color-brand-600);
-    outline-offset: 2px;
+  :focus-visible,
+  a:focus,
+  button:focus,
+  a:active,
+  button:active {
+    outline: 5px solid color-mix(in srgb, var(--color-graphite-900) 18%, transparent);
+    outline-offset: 0;
   }
 
   input:-webkit-autofill,

@@ -4,15 +4,15 @@ module Atoms
       BASE = "nb-btn".freeze
 
       VARIANTS = {
-        primary: "nb-btn-raised bg-brand-600 text-white hover:bg-brand-700",
-        secondary: "nb-btn-raised bg-white text-ink hover:bg-brand-50",
-        signal: "nb-btn-raised-light nb-btn-raised border-white bg-sun-400 text-ink",
-        deep: "border-white/40 bg-transparent text-white hover:bg-white/10",
-        inverse: "nb-btn-raised bg-white text-brand-700 hover:bg-brand-50",
+        primary: "rounded-full border-transparent bg-sun-400 font-semibold text-graphite-900 focus:outline-sun-400/40 active:outline-sun-400/40",
+        secondary: "rounded-full border-transparent bg-graphite-900 font-semibold text-white",
+        signal: "nb-btn-raised-light nb-btn-raised border-white bg-sun-400 text-ink focus:outline-sun-400/40 active:outline-sun-400/40",
+        deep: "border-white/40 bg-transparent text-white hover:bg-white/10 focus:outline-white/30 active:outline-white/30",
+        inverse: "nb-btn-raised bg-white text-brand-700 hover:bg-brand-50 focus:outline-white/30 active:outline-white/30",
         graphite: "rounded-full border-transparent bg-graphite-900 font-semibold text-white",
         graphite_outline: "rounded-full border-transparent bg-graphite-50 font-semibold text-graphite-900 hover:bg-graphite-100",
         graphite_soft: "rounded-full border-transparent bg-white font-semibold text-graphite-900 hover:bg-graphite-100",
-        inverse_outline: "border-white bg-transparent text-white hover:bg-white/10"
+        inverse_outline: "border-white bg-transparent text-white hover:bg-white/10 focus:outline-white/30 active:outline-white/30"
       }.freeze
 
       SIZES = {
