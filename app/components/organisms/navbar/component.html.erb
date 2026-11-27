@@ -7,7 +7,7 @@
     <% if authenticated %>
       <%= render Molecules::UserMenu::Component.new(user: user) %>
     <% else %>
-      <%= render Atoms::LinkButton::Component.new(href: new_session_path, variant: :secondary, size: :pill, class: "inline-flex items-center gap-2") do %><%= render Atoms::Icon::Component.new(name: :log_in, class: "size-4") %><%= t("navbar.sign_in") %><% end %>
+      <%= render Atoms::LinkButton::Component.new(href: new_session_path, variant: :secondary, size: :pill, class: "inline-flex h-14 items-center gap-2 px-7") do %><%= render Atoms::Icon::Component.new(name: :log_in, class: "size-4") %><%= t("navbar.sign_in") %><% end %>
     <% end %>
   </nav>
 </header>

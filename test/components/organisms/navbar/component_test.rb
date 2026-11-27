@@ -36,4 +36,10 @@ class Organisms::Navbar::ComponentTest < ViewComponent::TestCase
       assert_includes header.attr("class").value, "bg-white"
     end
   end
+
+  test "sign in link has the same height as the signed in controls" do
+    link = render_inline(Organisms::Navbar::Component.new(authenticated: false)).css("a[href='/session/new']")
+
+    assert_includes link.attr("class").value, "h-14"
+  end
 end
