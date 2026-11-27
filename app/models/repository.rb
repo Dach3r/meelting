@@ -6,8 +6,8 @@ class Repository < ApplicationRecord
 
   enum :visibility, { private: "private", public: "public" }, default: :private, prefix: true
 
-  normalizes :name, :description, with: ->(v) { v.strip }
-  normalizes :slug, with: ->(s) { s.strip.downcase }
+  normalizes :name, :description, with: ->(text_) { text_.strip }
+  normalizes :slug, with: ->(slug_) { slug_.strip.downcase }
 
   validates :name, presence: true
   validates :default_branch, presence: true

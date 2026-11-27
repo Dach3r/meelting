@@ -5,19 +5,14 @@ class User < ApplicationRecord
   has_many :access_tokens, dependent: :destroy
   has_many :repositories, dependent: :destroy
 
-  normalizes :username, with: ->(u) { u.strip }
-  normalizes :email_address, with: ->(e) { e.strip.downcase }
-  normalizes :first_name, :last_name, with: ->(n) { n.strip }
+  normalizes :username, with: ->(username_) { username_.strip }
+  normalizes :email_address, with: ->(email_address_) { email_address_.strip.downcase }
+  normalizes :first_name, :last_name, with: ->(name_) { name_.strip }
 
   validates :first_name, :last_name, presence: true
-  validates :username, presence: true,
-                       uniqueness: true,
-                       length: { in: 3..39 },
-                       format: { with: /\A[a-z][a-z0-9_]*\z/ }
   validates :password, length: { minimum: 8 }, allow_nil: true
-  validates :email_address, presence: true,
-                            uniqueness: true,
-                            format: { with: URI::MailTo::EMAIL_REGEXP }
+  validates :email_address, presence: true, uniqueness: true, format: { with: URI::MailTo::EMAIL_REGEXP }
+  validates :username, presence: true, uniqueness: true, length: { in: 3..39 }, format: { with: /\A[a-z][a-z0-9_]*\z/ }
 
   def self.username_errors(username)
     new(username: username).tap(&:valid?).errors[:username]
