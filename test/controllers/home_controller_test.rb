@@ -30,7 +30,7 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     sign_in_as users(:one)
     get repositories_path
 
-    assert_select "nav summary", /AL\s+ada/
+    assert_select "nav summary", /AL\s+Ada Lovelace/
     assert_select "nav a[href=?]", root_path(anchor: "decisions"), count: 0
   end
 end
