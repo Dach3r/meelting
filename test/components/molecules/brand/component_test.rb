@@ -28,4 +28,10 @@ class Molecules::Brand::ComponentTest < ViewComponent::TestCase
     assert_includes brand.css("a").attr("class").value, "text-graphite-900"
     assert_includes brand.css("a span").attr("class").value, "bg-sun-400"
   end
+
+  test "large size increases the text size" do
+    brand = render_inline(Molecules::Brand::Component.new(size: :lg))
+
+    assert_includes brand.css("a").attr("class").value, "text-[2.25rem]"
+  end
 end

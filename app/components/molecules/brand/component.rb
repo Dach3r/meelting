@@ -7,12 +7,18 @@ module Molecules
         graphite: { text: "text-graphite-900", dot: "bg-sun-400" }
       }.freeze
 
-      def initialize(tone: :light)
+      SIZES = {
+        md: "text-[1.75rem]",
+        lg: "text-[2.25rem]"
+      }.freeze
+
+      def initialize(tone: :light, size: :md)
         @tone = TONES.fetch(tone)
+        @size = SIZES.fetch(size)
       end
 
       private
-      attr_reader :tone
+      attr_reader :tone, :size
     end
   end
 end
