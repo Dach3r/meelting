@@ -21,4 +21,11 @@ class Molecules::Brand::ComponentTest < ViewComponent::TestCase
     assert_includes brand.css("a").attr("class").value, "text-white"
     assert_includes brand.css("a span").attr("class").value, "bg-sun-400"
   end
+
+  test "graphite tone uses the dark text color and a ringed lime dot" do
+    brand = render_inline(Molecules::Brand::Component.new(tone: :graphite))
+
+    assert_includes brand.css("a").attr("class").value, "text-graphite-900"
+    assert_includes brand.css("a span").attr("class").value, "bg-sun-400"
+  end
 end

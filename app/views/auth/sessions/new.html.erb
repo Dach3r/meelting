@@ -1,16 +1,18 @@
 <% content_for :title, t(".title") %>
 
-<%= render Molecules::AuthHeading::Component.new(title: t(".title"), description: t(".description")) %>
-
-<%= form_with url: session_url, class: "mt-6 grid grid-cols-1 gap-4" do |form| %>
+<%= form_with url: session_url, class: "grid grid-cols-1 gap-5" do |form| %>
   <%= render Molecules::FormField::Component.new(form: form, attribute: :username, label: t("auth.fields.username"), icon: :user, autofocus: true, autocapitalize: "none", autocomplete: "username", placeholder: t(".username_placeholder"), value: params[:username]) %>
-  <%= render Molecules::FormField::Component.new(form: form, attribute: :password, label: t("auth.fields.password"), icon: :lock, type: :password, autocomplete: "current-password", placeholder: t(".password_placeholder"), maxlength: 72) %>
+  <%= render Molecules::FormField::Component.new(form: form, attribute: :password, label: t("auth.fields.password"), icon: :lock, type: :password, autocomplete: "current-password", placeholder: t(".password_placeholder"), maxlength: 72) do |field| %>
+    <% field.with_label_aside do %><%= render Atoms::Link::Component.new(href: new_password_path, tone: :graphite, class: "text-[13px]") do %><%= t(".forgot_password") %><% end %><% end %>
+  <% end %>
 
-  <%= render Atoms::SubmitButton::Component.new(class: "mt-2") do %><%= t(".submit") %><% end %>
+  <%= render Atoms::SubmitButton::Component.new do %><%= t(".submit") %><% end %>
 
-  <div class="flex flex-wrap items-center justify-center gap-x-2.5 text-sm text-brand-200">
-    <%= render Atoms::Link::Component.new(href: new_password_path, tone: :signal) do %><%= t(".forgot_password") %><% end %>
-    <span aria-hidden="true">&middot;</span>
-    <%= render Atoms::Link::Component.new(href: new_registration_path, tone: :signal) do %><%= t(".sign_up") %><% end %>
+  <div class="flex items-center gap-4 text-sm leading-[normal] text-graphite-500" role="separator">
+    <span class="h-px flex-1 bg-graphite-100"></span>
+    <span><%= t(".or") %></span>
+    <span class="h-px flex-1 bg-graphite-100"></span>
   </div>
+
+  <%= render Atoms::LinkButton::Component.new(href: new_registration_path, variant: :graphite_soft, size: :block) do %><%= t(".sign_up") %><% end %>
 <% end %>

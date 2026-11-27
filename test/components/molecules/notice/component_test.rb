@@ -6,14 +6,14 @@ class Molecules::Notice::ComponentTest < ViewComponent::TestCase
 
     assert_equal "Nope", notice.text
     assert_equal "alert", notice.attr("role").value
-    assert_includes notice.attr("class").value, "text-coral-100"
+    assert_includes notice.attr("class").value, "text-coral-700"
   end
 
   test "notice uses the status role and sky tone" do
     notice = render_inline(Molecules::Notice::Component.new(tone: :notice)) { "Done" }.css("div")
 
     assert_equal "status", notice.attr("role").value
-    assert_includes notice.attr("class").value, "text-sky-100"
+    assert_includes notice.attr("class").value, "text-sky-700"
   end
 
   test "passes id and merges classes" do

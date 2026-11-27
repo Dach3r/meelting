@@ -1,13 +1,19 @@
 en:
   landing:
-    title: "%{name}: a safe berth for every agent run"
+    title: "%{name}: where humans and AI agents build software together"
     hero:
-      title: "A safe berth"
-      title_dim: "for every agent run."
-      description: "%{name} contains autonomous agents so you can build, review and merge with confidence."
+      title: "Your project's memory,"
+      title_dim: "shared with every agent."
+      description: "%{name} is an open source, self-hostable platform where humans and AI agents build software together, with full traceability."
       cta_primary: "Get started"
       points:
-        build: "Build with autonomous agents"
-        review: "Review every change"
-        merge: "Merge with confidence"
+        remember:
+          title: "Remember"
+          text: "Decisions and conventions live in your repo, readable by any agent"
+        control:
+          title: "Control"
+          text: "You set what each agent may do and approve before a pull request opens"
+        trace:
+          title: "Trace"
+          text: "Every agent step is recorded and streamed live"
       cta_secondary: "Sign in"

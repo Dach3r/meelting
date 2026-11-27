@@ -1,6 +1,8 @@
 module Molecules
   module FormField
     class Component < ViewComponent::Base
+      renders_one :label_aside
+
       INPUTS = {
         text: :text_field,
         email: :email_field,

@@ -1,0 +1,6 @@
+<header class="flex items-center justify-between py-2 pl-5 pr-2">
+  <%= render Molecules::Brand::Component.new(tone: :graphite) %>
+  <nav class="flex items-center gap-2.5" aria-label="<%= t("navbar.label") %>">
+    <%= render Atoms::LinkButton::Component.new(href: new_session_path, variant: :graphite, size: :pill, class: "inline-flex items-center gap-2") do %><%= render Atoms::Icon::Component.new(name: :log_in, class: "size-4") %><%= t("navbar.sign_in") %><% end %>
+  </nav>
+</header>

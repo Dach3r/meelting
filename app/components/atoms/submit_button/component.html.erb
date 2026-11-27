@@ -1,7 +1,1 @@
-<%= tag.button type: :submit, class: classes, **html_options.except(:class) do %>
-  <span class="size-10" aria-hidden="true"></span>
-  <%= content %>
-  <span class="flex size-10 items-center justify-center rounded-xl bg-ink text-sun-400 transition-transform motion-safe:group-hover:translate-x-0.5">
-    <%= render Atoms::Icon::Component.new(name: :arrow_right, "stroke-width": 2.6) %>
-  </span>
-<% end %>
+<%= tag.button content, type: :submit, class: classes, **html_options.except(:class) %>

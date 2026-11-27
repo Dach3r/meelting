@@ -1,7 +1,10 @@
-<div class="grid min-w-0 gap-1.5">
-  <%= form.label attribute, label, class: "text-[13px] font-bold text-brand-100" %>
+<div class="grid min-w-0 gap-2">
+  <div class="flex items-baseline justify-between gap-3">
+    <%= form.label attribute, label, class: "pl-1 text-[13px] font-semibold leading-[normal] text-graphite-700" %>
+    <%= label_aside %>
+  </div>
   <div class="nb-field-shell">
-    <span class="nb-field-shell-icon"><%= render Atoms::Icon::Component.new(name: icon) %></span>
+    <span class="nb-field-shell-icon"><%= render Atoms::Icon::Component.new(name: icon, class: "size-[18px]") %></span>
     <%= form.public_send(input, attribute, required: true, class: "nb-field-shell-input", **input_options) %>
   </div>
 </div>

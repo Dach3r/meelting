@@ -1,13 +1,19 @@
 es:
   landing:
-    title: "%{name}: un amarre seguro para cada ejecución de agente"
+    title: "%{name}: donde personas y agentes de IA construyen software juntos"
     hero:
-      title: "Un amarre seguro"
-      title_dim: "para cada ejecución."
-      description: "%{name} contiene a los agentes autónomos para que construyas, revises y mergees con confianza."
+      title: "La memoria de tu proyecto,"
+      title_dim: "compartida con cada agente."
+      description: "%{name} es una plataforma open source y autoalojable donde personas y agentes de IA construyen software juntos, con trazabilidad total."
       cta_primary: "Empezar"
       points:
-        build: "Construye con agentes autónomos"
-        review: "Revisa cada cambio"
-        merge: "Mergea con confianza"
+        remember:
+          title: "Recuerda"
+          text: "Las decisiones y convenciones viven en tu repo, legibles por cualquier agente"
+        control:
+          title: "Controla"
+          text: "Tú defines qué puede hacer cada agente y apruebas antes de abrir un pull request"
+        trace:
+          title: "Rastrea"
+          text: "Cada paso del agente queda registrado y se transmite en vivo"
       cta_secondary: "Iniciar sesión"

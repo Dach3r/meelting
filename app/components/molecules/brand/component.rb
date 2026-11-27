@@ -3,7 +3,8 @@ module Molecules
     class Component < ViewComponent::Base
       TONES = {
         light: { text: "text-ink", dot: "bg-brand-500" },
-        deep: { text: "text-white", dot: "bg-sun-400" }
+        deep: { text: "text-white", dot: "bg-sun-400" },
+        graphite: { text: "text-graphite-900", dot: "bg-sun-400" }
       }.freeze
 
       def initialize(tone: :light)

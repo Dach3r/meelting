@@ -11,34 +11,29 @@ en:
     sessions:
       new:
         title: "Sign in"
-        description: "Pick up where your agents left off."
-        username_placeholder: "Enter your username"
-        password_placeholder: "Enter your password"
+        username_placeholder: "your_username"
+        password_placeholder: "Your password"
         submit: "Sign in"
-        forgot_password: "Forgot password?"
-        sign_up: "Sign up"
+        forgot_password: "Forgot your password?"
+        or: "or"
+        sign_up: "Create account"
     registrations:
       new:
         title: "Create account"
-        description: "Dock your first agent in a minute."
         username_placeholder: "Choose a username"
         first_name_placeholder: "Ada"
         last_name_placeholder: "Lovelace"
         email_address_placeholder: "you@company.com"
         password_placeholder: "Enter your password"
         submit: "Create account"
-        have_account: "Already have an account?"
-        sign_in: "Sign in"
     passwords:
       new:
         title: "Reset password"
-        description: "We send a link to the email on your account."
         email_address_placeholder: "you@company.com"
         submit: "Email reset instructions"
         back_to_sign_in: "Back to sign in"
       edit:
         title: "Update your password"
-        description: "Choose a new password for your account."
         password_placeholder: "Enter new password"
         password_confirmation_placeholder: "Repeat new password"
         submit: "Save"

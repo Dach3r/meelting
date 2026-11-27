@@ -1,25 +1,26 @@
 require "test_helper"
 
 class LandingTest < ActionDispatch::IntegrationTest
-  test "guests see the landing header" do
+  test "guests see the landing hero" do
     get root_path
 
     assert_response :success
-    assert_select "header h1"
+    assert_select "main section h1"
   end
 
-  test "landing uses the global guest navbar" do
+  test "landing uses its own light header" do
     get root_path
 
-    assert_select "nav", count: 1
-    assert_select "body > nav"
+    assert_select "body > header nav", count: 1
+    assert_select "body > header nav a[href=?]", new_session_path
+    assert_select "body > nav", false
   end
 
   test "landing is available in english" do
     get root_path, headers: { "Accept-Language" => "en" }
 
     I18n.with_locale(:en) do
-      assert_equal "Meelting: a safe berth for every agent run", I18n.t("landing.title", name: ApplicationHelper::CONFIG[:name])
+      assert_equal "Meelting: where humans and AI agents build software together", I18n.t("landing.title", name: ApplicationHelper::CONFIG[:name])
     end
   end
 
@@ -28,7 +29,7 @@ class LandingTest < ActionDispatch::IntegrationTest
     get root_path
 
     assert_equal "home", @controller.controller_name
-    assert_select "header h1", false
+    assert_select "main section h1", false
   end
 
   test "layout preloads the Inter font and sets the brand title" do

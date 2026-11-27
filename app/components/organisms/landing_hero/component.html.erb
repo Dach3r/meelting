@@ -1,41 +1,22 @@
-<header class="bg-dots-ink relative overflow-hidden border-b-nb border-ink pt-16 text-white">
-  <div class="nb-container flex lg:min-h-[calc(100svh-4rem)] lg:items-center">
-    <div class="grid w-full items-center gap-12 py-16 lg:grid-cols-[1fr_36rem] lg:gap-6">
-      <div class="relative mx-auto aspect-square w-full max-w-[28rem] max-lg:order-2 lg:order-2 lg:max-w-none" aria-hidden="true">
-        <div class="absolute inset-[12%] rounded-full bg-brand-600/25 blur-3xl"></div>
-        <div class="absolute inset-0 rounded-full border border-brand-300/20"></div>
-        <div class="absolute inset-[9%] rounded-full border border-dashed border-brand-300/40 motion-safe:animate-[spin_120s_linear_infinite]"></div>
-        <div class="absolute inset-[20%] rounded-full border border-brand-300/35"></div>
-        <div class="absolute inset-[30%] rounded-full border border-brand-300/55 bg-brand-900/60"></div>
-        <div class="absolute inset-[37%] flex items-center justify-center rounded-full border-2 border-sun-400 bg-brand-900 text-[clamp(2.5rem,5vw,4.5rem)] font-extrabold tracking-[-0.05em]">
-          <%= initial %><span class="text-sun-400">.</span>
-        </div>
-      </div>
-
-      <div class="space-y-7">
-        <h1 class="text-[clamp(2.5rem,4.8vw,4rem)] font-extrabold leading-[1] tracking-[-0.04em]">
-          <%= t("landing.hero.title") %>
-          <span class="text-brand-300"><%= t("landing.hero.title_dim") %></span>
-        </h1>
-        <p class="max-w-lg text-xl text-brand-200"><%= t("landing.hero.description", name: ApplicationHelper::CONFIG[:name]) %></p>
-        <ul class="space-y-3.5 text-lg font-semibold text-brand-100">
-          <% %w[build review merge].each do |point| %>
-            <li class="flex items-center gap-3.5">
-              <%= render Atoms::Icon::Component.new(name: :circle_check, class: "size-6 shrink-0 text-sun-400", "stroke-width": 2.4) %>
-              <%= t("landing.hero.points.#{point}") %>
-            </li>
-          <% end %>
-        </ul>
-        <div class="flex flex-wrap items-center gap-x-8 gap-y-4 pt-2">
-          <%= link_to new_registration_path, class: "group inline-flex items-center gap-4 rounded-full border-2 border-white bg-sun-400 py-2 pl-8 pr-2 text-xl font-extrabold text-ink" do %>
-            <%= t("landing.hero.cta_primary") %>
-            <span class="flex size-12 items-center justify-center rounded-full bg-ink text-sun-400 transition-transform motion-safe:group-hover:translate-x-0.5">
-              <%= render Atoms::Icon::Component.new(name: :arrow_right, "stroke-width": 2.6) %>
-            </span>
-          <% end %>
-          <%= link_to t("landing.hero.cta_secondary"), new_session_path, class: "border-b-2 border-brand-300/60 pb-1 text-lg font-semibold text-white hover:border-white" %>
-        </div>
-      </div>
-    </div>
+<section class="flex flex-1 flex-col justify-center gap-14 pb-10 sm:gap-16">
+  <div class="grid justify-items-center gap-6 text-center">
+    <h1 class="max-w-[860px] text-balance text-[clamp(2.75rem,6.6vw,5.25rem)] font-extrabold leading-none tracking-[-0.045em]">
+      <%= t("landing.hero.title") %>
+      <span class="text-graphite-400"><%= t("landing.hero.title_dim") %></span>
+    </h1>
+    <p class="max-w-[520px] text-[19px] leading-[1.4] text-graphite-500"><%= t("landing.hero.description", name: ApplicationHelper::CONFIG[:name]) %></p>
   </div>
-</header>
+
+  <ul class="mx-auto grid w-full max-w-[800px] gap-3">
+    <% POINTS.zip(PILLS).each_with_index do |(point, pill), index| %>
+      <li class="flex items-center gap-[18px] rounded-full py-3 pl-7 pr-3 <%= pill[:surface] %>">
+        <h2 class="shrink-0 text-[22px] font-bold tracking-[-0.02em] sm:w-32"><%= t("landing.hero.points.#{point}.title") %></h2>
+        <p class="min-w-0 flex-1 text-[15px] <%= pill[:text] %>"><%= t("landing.hero.points.#{point}.text") %></p>
+        <span class="hidden h-3 w-60 shrink-0 overflow-hidden rounded-full sm:block <%= pill[:track] %>" aria-hidden="true">
+          <span class="block h-full bg-sun-400 <%= pill[:fill] %>"></span>
+        </span>
+        <span class="flex size-11 shrink-0 items-center justify-center rounded-full font-extrabold <%= pill[:badge] %>" aria-hidden="true"><%= index + 1 %></span>
+      </li>
+    <% end %>
+  </ul>
+</section>

@@ -1,7 +1,7 @@
 require "test_helper"
 
 class AuthLayoutTest < ActionDispatch::IntegrationTest
-  test "auth screens share the auth layout without the navbar" do
+  test "auth screens share the auth layout with the public header only" do
     [new_session_path, new_registration_path, new_password_path].each do |path|
       get path
 
