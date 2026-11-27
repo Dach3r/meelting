@@ -10,6 +10,7 @@ Rails.application.routes.draw do
     resource :session
     resource :registration, only: %i[new create]
     resource :username_availability, only: :show
+
     resources :passwords, param: :token
   end
 
