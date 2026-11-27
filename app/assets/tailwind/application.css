@@ -194,6 +194,24 @@
     box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-danger-500) 20%, transparent);
   }
 
+  .nb-field-shell:has(.nb-field-shell-input[data-availability="available"]) {
+    border-color: var(--color-brand-500);
+  }
+
+  .nb-field-shell:has(.nb-field-shell-input[data-availability="available"]):focus-within {
+    border-color: var(--color-brand-500);
+    box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-brand-500) 20%, transparent);
+  }
+
+  .nb-field-shell:has(.nb-field-shell-input[data-availability="unavailable"]) {
+    border-color: var(--color-danger-500);
+  }
+
+  .nb-field-shell:has(.nb-field-shell-input[data-availability="unavailable"]):focus-within {
+    border-color: var(--color-danger-500);
+    box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-danger-500) 20%, transparent);
+  }
+
   .nb-field-shell-icon {
     display: flex;
     flex: none;

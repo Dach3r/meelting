@@ -9,13 +9,13 @@ module Auth
     test "available username is confirmed without signing in" do
       check "grace"
       assert_response :success
-      assert_select "turbo-frame#username_availability p[role=status]", text: I18n.t("auth.username_availabilities.show.available")
+      assert_select "turbo-frame#username_availability p[role=status][data-availability=available]", text: I18n.t("auth.username_availabilities.show.available")
     end
 
     test "taken username is reported" do
       check users(:one).username
       assert_response :success
-      assert_select "turbo-frame#username_availability p[role=alert]", text: I18n.t("activerecord.errors.models.user.attributes.username.taken")
+      assert_select "turbo-frame#username_availability p[role=alert][data-availability=unavailable]", text: I18n.t("activerecord.errors.models.user.attributes.username.taken")
     end
 
     test "invalid format is reported" do
