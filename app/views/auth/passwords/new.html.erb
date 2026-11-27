@@ -1,17 +1,13 @@
-<div class="nb-card mx-auto w-full bg-white p-6 md:w-2/3 md:p-8">
-  <% if alert = flash[:alert] %>
-    <p class="nb-card mb-5 bg-coral-100 px-4 py-2.5 font-bold text-coral-700" id="alert"><%= alert %></p>
-  <% end %>
+<% content_for :title, t(".title") %>
 
-  <h1 class="text-4xl font-extrabold tracking-tight">Forgot your password?</h1>
+<%= render Molecules::AuthHeading::Component.new(title: t(".title"), description: t(".description")) %>
 
-  <%= form_with url: passwords_path, class: "contents" do |form| %>
-    <div class="my-5">
-      <%= form.email_field :email_address, required: true, autofocus: true, autocomplete: "username", placeholder: "Enter your email address", value: params[:email_address], class: "nb-field" %>
-    </div>
+<%= form_with url: passwords_path, class: "mt-6 grid grid-cols-1 gap-4" do |form| %>
+  <%= render Molecules::FormField::Component.new(form: form, attribute: :email_address, label: t("auth.fields.email_address"), icon: :mail, type: :email, autofocus: true, autocomplete: "username", placeholder: t(".email_address_placeholder"), value: params[:email_address]) %>
 
-    <div class="inline">
-      <%= form.submit "Email reset instructions", class: "nb-btn nb-btn-raised bg-brand-600 px-5 py-3 text-white hover:bg-brand-700 w-full sm:w-auto" %>
-    </div>
-  <% end %>
-</div>
+  <%= render Atoms::SubmitButton::Component.new(class: "mt-2") do %><%= t(".submit") %><% end %>
+
+  <div class="text-center text-sm text-brand-200">
+    <%= render Atoms::Link::Component.new(href: new_session_path, tone: :signal) do %><%= t(".back_to_sign_in") %><% end %>
+  </div>
+<% end %>

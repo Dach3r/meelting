@@ -1,45 +1,32 @@
-<div class="nb-card mx-auto w-full bg-white p-6 md:w-2/3 md:p-8">
-  <h1 class="text-4xl font-extrabold tracking-tight">Sign up</h1>
+<% content_for :title, t(".title") %>
 
-  <%= form_with model: @user, url: registration_path, class: "contents" do |form| %>
-    <% if @user.errors.any? %>
-      <div id="error_explanation" class="nb-card mt-5 bg-coral-100 px-4 py-2.5 font-bold text-coral-700">
-        <ul>
-          <% @user.errors.full_messages.each do |message| %>
-            <li><%= message %></li>
-          <% end %>
-        </ul>
-      </div>
+<%= render Molecules::AuthHeading::Component.new(title: t(".title"), description: t(".description")) %>
+
+<%= form_with model: @user, url: registration_path, class: "mt-6 grid grid-cols-1 gap-4" do |form| %>
+  <% if @user.errors.any? %>
+    <%= render Molecules::Notice::Component.new(tone: :alert, id: "error_explanation", class: "mb-0") do %>
+      <ul>
+        <% @user.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
     <% end %>
-
-    <div class="my-5">
-      <%= form.text_field :username, required: true, autofocus: true, autocapitalize: "none", autocomplete: "username", placeholder: "Choose a username", class: "nb-field" %>
-    </div>
-
-    <div class="my-5">
-      <%= form.text_field :first_name, required: true, autocomplete: "given-name", placeholder: "Enter your first name", class: "nb-field" %>
-    </div>
-
-    <div class="my-5">
-      <%= form.text_field :last_name, required: true, autocomplete: "family-name", placeholder: "Enter your last name", class: "nb-field" %>
-    </div>
-
-    <div class="my-5">
-      <%= form.email_field :email_address, required: true, autocomplete: "email", placeholder: "Enter your email address", class: "nb-field" %>
-    </div>
-
-    <div class="my-5">
-      <%= form.password_field :password, required: true, autocomplete: "new-password", placeholder: "Enter your password", maxlength: 72, class: "nb-field" %>
-    </div>
-
-    <div class="col-span-6 sm:flex sm:items-center sm:gap-4">
-      <div class="inline">
-        <%= form.submit "Sign up", class: "nb-btn nb-btn-raised bg-brand-600 px-5 py-3 text-white hover:bg-brand-700 w-full sm:w-auto" %>
-      </div>
-
-      <div class="mt-4 text-sm text-ink-soft sm:mt-0">
-        <%= link_to "Already have an account? Sign in", new_session_path, class: "font-bold text-brand-600 underline hover:no-underline" %>
-      </div>
-    </div>
   <% end %>
-</div>
+
+  <%= render Molecules::FormField::Component.new(form: form, attribute: :username, label: t("auth.fields.username"), icon: :user, autofocus: true, autocapitalize: "none", autocomplete: "username", placeholder: t(".username_placeholder")) %>
+
+  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+    <%= render Molecules::FormField::Component.new(form: form, attribute: :first_name, label: t("auth.fields.first_name"), icon: :user, autocomplete: "given-name", placeholder: t(".first_name_placeholder")) %>
+    <%= render Molecules::FormField::Component.new(form: form, attribute: :last_name, label: t("auth.fields.last_name"), icon: :user, autocomplete: "family-name", placeholder: t(".last_name_placeholder")) %>
+  </div>
+
+  <%= render Molecules::FormField::Component.new(form: form, attribute: :email_address, label: t("auth.fields.email_address"), icon: :mail, type: :email, autocomplete: "email", placeholder: t(".email_address_placeholder")) %>
+  <%= render Molecules::FormField::Component.new(form: form, attribute: :password, label: t("auth.fields.password"), icon: :lock, type: :password, autocomplete: "new-password", placeholder: t(".password_placeholder"), maxlength: 72) %>
+
+  <%= render Atoms::SubmitButton::Component.new(class: "mt-2") do %><%= t(".submit") %><% end %>
+
+  <div class="flex flex-wrap items-center justify-center gap-x-2 text-sm text-brand-200">
+    <%= t(".have_account") %>
+    <%= render Atoms::Link::Component.new(href: new_session_path, tone: :signal) do %><%= t(".sign_in") %><% end %>
+  </div>
+<% end %>

@@ -1,0 +1,44 @@
+es:
+  auth:
+    fields:
+      username: "Usuario"
+      password: "Contraseña"
+      new_password: "Nueva contraseña"
+      password_confirmation: "Confirma la nueva contraseña"
+      first_name: "Nombre"
+      last_name: "Apellido"
+      email_address: "Correo"
+    sessions:
+      new:
+        title: "Iniciar sesión"
+        description: "Retoma donde dejaron tus agentes."
+        username_placeholder: "Escribe tu usuario"
+        password_placeholder: "Escribe tu contraseña"
+        submit: "Iniciar sesión"
+        forgot_password: "¿Olvidaste tu contraseña?"
+        sign_up: "Registrarse"
+    registrations:
+      new:
+        title: "Crear cuenta"
+        description: "Amarra tu primer agente en un minuto."
+        username_placeholder: "Elige un usuario"
+        first_name_placeholder: "Ada"
+        last_name_placeholder: "Lovelace"
+        email_address_placeholder: "tu@empresa.com"
+        password_placeholder: "Escribe tu contraseña"
+        submit: "Crear cuenta"
+        have_account: "¿Ya tienes una cuenta?"
+        sign_in: "Iniciar sesión"
+    passwords:
+      new:
+        title: "Restablecer contraseña"
+        description: "Enviamos un enlace al correo de tu cuenta."
+        email_address_placeholder: "tu@empresa.com"
+        submit: "Enviar instrucciones"
+        back_to_sign_in: "Volver a iniciar sesión"
+      edit:
+        title: "Actualiza tu contraseña"
+        description: "Elige una nueva contraseña para tu cuenta."
+        password_placeholder: "Escribe la nueva contraseña"
+        password_confirmation_placeholder: "Repite la nueva contraseña"
+        submit: "Guardar"

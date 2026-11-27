@@ -2,7 +2,7 @@ require "test_helper"
 
 class NavbarTest < ActionDispatch::IntegrationTest
   test "shows guest links without a session" do
-    get new_session_path
+    get unauthenticated_root_path
 
     assert_select "nav a[href=?]", new_registration_path
     assert_select "nav form[action=?]", session_path, count: 0

@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="<%= I18n.locale %>">
+  <head>
+    <%= render "layouts/head" %>
+  </head>
+
+  <body class="bg-dots-ink text-white [color-scheme:dark]">
+    <main class="flex min-h-svh flex-col items-center justify-center gap-10 px-5 py-8 sm:px-10 lg:py-12">
+      <%= render Molecules::Brand::Component.new(tone: :deep) %>
+
+      <section class="nb-card w-full max-w-[28rem] border-brand-500 bg-brand-900 p-6 sm:p-8">
+        <% if flash[:alert] %>
+          <%= render Molecules::Notice::Component.new(tone: :alert, id: "alert") do %><%= flash[:alert] %><% end %>
+        <% end %>
+
+        <% if flash[:notice] %>
+          <%= render Molecules::Notice::Component.new(tone: :notice, id: "notice") do %><%= flash[:notice] %><% end %>
+        <% end %>
+
+        <%= yield %>
+      </section>
+
+    </main>
+  </body>
+</html>

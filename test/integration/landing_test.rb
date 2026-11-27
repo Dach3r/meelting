@@ -37,10 +37,4 @@ class LandingTest < ActionDispatch::IntegrationTest
     assert_select "link[rel=preload][as=font][type='font/woff2']"
     assert_select "title", /Meelting/
   end
-
-  test "sign in page keeps the standard navbar" do
-    get new_session_path
-
-    assert_select "body > nav"
-  end
 end
