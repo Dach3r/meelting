@@ -72,12 +72,12 @@ class UserTest < ActiveSupport::TestCase
     assert user.errors[:username].any?
   end
 
-  test "accepts lowercase letters and underscores" do
-    assert_empty User.username_errors("grace_hopper")
+  test "accepts lowercase letters, numbers and underscores" do
+    assert_empty User.username_errors("grace_hopper_2")
   end
 
   test "rejects invalid username format or length" do
-    ["ab", "Grace", "GRACE", "grace1", "grace-hopper", "gra.ce", "grace!", "gr ace", "a" * 40].each do |username|
+    ["ab", "Grace", "GRACE", "grace-hopper", "gra.ce", "grace!", "gr ace", "a" * 40].each do |username|
       user = User.new(username: username, password: "password123")
       assert_not user.valid?, "#{username} should be invalid"
       assert user.errors[:username].any?

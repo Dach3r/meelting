@@ -9,7 +9,7 @@ es:
               taken: "Este usuario no está disponible"
               too_short: "Mínimo %{count} caracteres"
               too_long: "Máximo %{count} caracteres"
-              invalid: "Solo minúsculas y guion bajo"
+              invalid: "Solo minúsculas, números y guion bajo"
   auth:
     fields:
       username: "Usuario"
