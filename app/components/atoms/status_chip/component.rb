@@ -3,10 +3,8 @@ module Atoms
     class Component < ViewComponent::Base
       TONES = {
         neutral: "border-ink text-ink",
-        ok: "border-lime bg-lime text-forest",
         bad: "border-danger text-danger",
-        alert: "border-danger-soft bg-danger-soft text-danger",
-        run: "border-transparent bg-cream text-ink"
+        alert: "border-danger-soft bg-danger-soft text-danger"
       }.freeze
 
       def initialize(tone: :neutral, icon: nil, **html_options)

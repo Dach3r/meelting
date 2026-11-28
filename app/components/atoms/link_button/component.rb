@@ -5,8 +5,7 @@ module Atoms
 
       VARIANTS = {
         primary: "bg-forest text-lime hover:bg-forest-active",
-        secondary: "border-ink bg-white text-ink hover:bg-cream",
-        accent: "bg-lime text-forest"
+        secondary: "border-ink bg-white text-ink hover:bg-cream"
       }.freeze
 
       SIZES = {

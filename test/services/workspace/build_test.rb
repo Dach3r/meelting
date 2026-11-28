@@ -19,8 +19,8 @@ class Workspace::BuildTest < ActiveSupport::TestCase
     state = Workspace::Build.call(user: @user)
 
     assert_equal %i[repository model_key overview first_issue], state.checklist.map(&:key)
-    assert_equal 0, state.completed_steps
-    assert_equal :repository, state.current_step.key
+    assert_equal 0, state.checklist.count(&:done)
+    assert_equal :repository, state.checklist.find(&:pending?).key
     assert_not state.checklist.last.available
     assert_equal repositories(:meelting), state.push_repository
   end
@@ -30,7 +30,7 @@ class Workspace::BuildTest < ActiveSupport::TestCase
     state = Workspace::Build.call(user: @user)
 
     assert state.checklist.first.done
-    assert_equal :model_key, state.current_step.key
+    assert_equal :model_key, state.checklist.find(&:pending?).key
   end
 
   test "checks the overview step from the default branch of a pushed repository" do

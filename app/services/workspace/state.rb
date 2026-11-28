@@ -24,14 +24,6 @@ module Workspace
       problems.first
     end
 
-    def completed_steps
-      checklist.count(&:done)
-    end
-
-    def current_step
-      checklist.find(&:pending?)
-    end
-
     def assign_issue_repository
       repositories.find(&:real)
     end
