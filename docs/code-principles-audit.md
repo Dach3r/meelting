@@ -1,6 +1,6 @@
 # Code principles audit: DRY, KISS, YAGNI, Tell Don't Ask
 
-> Last updated: 2026-11-28 · Scope: everything under `app/` and `config/routes.rb`, plus usages in `test/`. Re-checked against `main` after the forest/lime design migration, the onboarding checklist and the repository wizard. Nothing was changed; this is the list of findings to act on.
+> Last updated: 2026-11-28 · Scope: everything under `app/` and `config/routes.rb`, plus usages in `test/`. Re-checked against `main` after the forest/lime design migration, the onboarding checklist and the repository wizard. The YAGNI findings are done; the rest is the list of findings to act on.
 
 ## Summary
 
