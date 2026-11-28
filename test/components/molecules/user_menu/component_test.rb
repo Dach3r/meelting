@@ -9,5 +9,6 @@ class Molecules::UserMenu::ComponentTest < ViewComponent::TestCase
     assert_equal 1, menu.css("a[href='/repositories']").size
     assert_equal 1, menu.css("a[href='/access_tokens']").size
     assert_equal 1, menu.css("form[action='/session'] button").size
+    assert_equal 1, menu.css("details[data-controller=dropdown]").size
   end
 end

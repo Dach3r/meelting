@@ -1,4 +1,4 @@
-<details class="relative">
+<details class="relative" data-controller="dropdown" data-action="click@window->dropdown#close keydown.esc@window->dropdown#close">
   <summary class="<%= summary_classes %>" aria-label="<%= t("navbar.user_menu") %>">
     <span class="flex size-9 shrink-0 items-center justify-center rounded-full bg-lime text-sm font-bold text-ink" aria-hidden="true"><%= initial %></span>
     <% unless compact %>
