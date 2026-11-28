@@ -1,8 +1,10 @@
 <div class="grid min-w-0 gap-2">
-  <div class="flex items-baseline justify-between gap-3">
-    <%= form.label attribute, label, class: "pl-1 text-base leading-[normal] font-semibold text-forest" %>
-    <%= label_aside %>
-  </div>
+  <% if label %>
+    <div class="flex items-baseline justify-between gap-3">
+      <%= form.label attribute, label, class: "pl-1 text-base leading-[normal] font-semibold text-forest" %>
+      <%= label_aside %>
+    </div>
+  <% end %>
   <div class="<%= shell_classes %>">
     <span class="nb-field-shell-icon"><%= render Atoms::Icon::Component.new(name: icon, class: "size-[18px]", "stroke-width": 2) %></span>
     <%= control? ? control : input_tag %>

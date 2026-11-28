@@ -31,4 +31,11 @@ class Molecules::SelectMenu::ComponentTest < ViewComponent::TestCase
     assert_equal "MIT License", menu.css("[data-select-menu-target=label]").text
     assert_equal "1", menu.css("input[checked]").attr("value").value
   end
+
+  test "without a label it is named by labelledby" do
+    menu = render_inline(Molecules::SelectMenu::Component.new(form: builder, attribute: :license_id, label: nil, icon: :scale, options: OPTIONS, labelledby: "license_label"))
+
+    assert_empty menu.css("legend")
+    assert_equal "license_label", menu.css("fieldset").attr("aria-labelledby").value
+  end
 end

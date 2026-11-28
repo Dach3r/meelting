@@ -42,7 +42,9 @@ class RepositoriesControllerTest < ActionDispatch::IntegrationTest
     assert_equal %w[repository[name] repository[description] repository[visibility] repository[default_branch] repository[license_id]], fields
     assert_select "#repository_name[autofocus]"
     assert_select "input#repository_description[type=text]:not([required])"
-    assert_select "label[for=repository_description]", "Descripción (opcional)"
+    assert_select "label[for=repository_description]", "Descripción"
+    assert_select "[role=radiogroup][aria-labelledby=repository_visibility_label]"
+    assert_select "a[href=?]", user_repositories_path(@user.username), "Cancelar"
     assert_select "#repository_visibility_private[checked]"
     assert_select "#repository_visibility_public[checked]", 0
   end
@@ -76,7 +78,8 @@ class RepositoriesControllerTest < ActionDispatch::IntegrationTest
     assert_equal ["", *License::SELECTABLE_KEYS.map { |key_| License.find_by!(key: key_).id.to_s }], options.map { |option_| option_["value"] }
     assert_select "#repository_license_id_[checked]"
     assert_select "[data-select-menu-target=label]", "Sin licencia"
-    assert_select "legend", "Agregar una licencia"
+    assert_select "#repository_license_label", "Licencia"
+    assert_select "fieldset[aria-labelledby=repository_license_label]"
   end
 
   test "create derives the slug from the name and ignores a submitted one" do

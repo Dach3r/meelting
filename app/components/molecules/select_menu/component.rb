@@ -1,16 +1,17 @@
 module Molecules
   module SelectMenu
     class Component < ViewComponent::Base
-      def initialize(form:, attribute:, label:, icon:, options:)
+      def initialize(form:, attribute:, label:, icon:, options:, labelledby: nil)
         @form = form
         @attribute = attribute
         @label = label
         @icon = icon
         @options = options
+        @labelledby = labelledby
       end
 
       private
-      attr_reader :form, :attribute, :label, :icon, :options
+      attr_reader :form, :attribute, :label, :icon, :options, :labelledby
 
       def selected_value
         form.object&.public_send(attribute).to_s

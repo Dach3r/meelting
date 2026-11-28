@@ -1,5 +1,7 @@
-<fieldset class="grid min-w-0 gap-2">
-  <legend class="mb-2 pl-1 text-base leading-[normal] font-semibold text-forest"><%= label %></legend>
+<fieldset class="grid min-w-0 gap-2" <%= tag.attributes(aria: { labelledby: labelledby }) %>>
+  <% if label %>
+    <legend class="mb-2 pl-1 text-base leading-[normal] font-semibold text-forest"><%= label %></legend>
+  <% end %>
   <details class="group relative" data-controller="dropdown select-menu" data-action="click@window->dropdown#close keydown.esc@window->dropdown#close">
     <summary class="nb-field-shell cursor-pointer list-none group-open:border-forest [&::-webkit-details-marker]:hidden">
       <span class="nb-field-shell-icon"><%= render Atoms::Icon::Component.new(name: icon, class: "size-[18px]", "stroke-width": 2) %></span>

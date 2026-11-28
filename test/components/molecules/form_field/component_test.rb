@@ -67,4 +67,11 @@ class Molecules::FormField::ComponentTest < ViewComponent::TestCase
     assert_equal 1, field.css(".nb-field-shell select.custom").size
     assert_empty field.css("input")
   end
+
+  test "without a label it renders only the input" do
+    field = render_inline(Molecules::FormField::Component.new(form: builder, attribute: :username, label: nil, icon: :user))
+
+    assert_empty field.css("label")
+    assert_equal 1, field.css("input#user_username").size
+  end
 end

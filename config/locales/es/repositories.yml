@@ -25,11 +25,20 @@ es:
     new:
       title: "Nuevo repositorio"
       name_placeholder: "Mi proyecto"
-      description_label: "Descripción (opcional)"
       description_placeholder: "¿De qué trata?"
       initialization: "Inicialización"
-      license_label: "Agregar una licencia"
       no_license: "Sin licencia"
+      subtitle: "Puedes revisar todo antes de crear"
+      required: "Obligatorio"
+      name_hint: "Lo usamos para generar la URL del repositorio."
+      description_hint: "Una frase que explique para qué sirve. Máximo 350 caracteres."
+      visibility_hints:
+        private: "Solo tú tienes acceso al código, los issues y la memoria."
+        public: "Cualquiera puede ver el repositorio."
+      default_branch_hint: "La rama que se muestra al abrir el código."
+      license_hint: "Define qué pueden hacer otros con tu código. Sin licencia, nadie más puede reutilizarlo."
+      next_step_html: "Después de crearlo podrás subir tu código con <code class=\"font-mono\">git push</code>."
+      cancel: "Cancelar"
       submit: "Crear repositorio"
     create:
       created: "Repositorio creado."
