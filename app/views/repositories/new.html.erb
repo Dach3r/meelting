@@ -23,9 +23,9 @@
     <% end %>
 
     <%= render Molecules::SettingRow::Component.new(label: Repository.human_attribute_name(:visibility), id: "repository_visibility_label") do %>
-      <div class="flex gap-1 rounded-full bg-field p-1.5" role="radiogroup" aria-labelledby="repository_visibility_label">
+      <div class="flex h-16 gap-1 rounded-full bg-field p-2" role="radiogroup" aria-labelledby="repository_visibility_label">
         <% { private: :lock, public: :globe }.each do |visibility, icon| %>
-          <label class="flex h-[3.25rem] flex-1 cursor-pointer items-center justify-center gap-2.5 rounded-full text-[17px] font-semibold text-muted has-checked:bg-selected has-checked:text-on-selected has-focus-visible:ring-4 has-focus-visible:ring-ring/30 [&:has(:checked)_svg]:text-lime">
+          <label class="flex flex-1 cursor-pointer items-center justify-center gap-2.5 rounded-full text-[17px] font-semibold text-muted has-checked:bg-selected has-checked:text-on-selected has-focus-visible:ring-4 has-focus-visible:ring-ring/30 [&:has(:checked)_svg]:text-lime">
             <%= form.radio_button :visibility, visibility, class: "sr-only" %>
             <%= render Atoms::Icon::Component.new(name: icon, class: "size-[18px]", "stroke-width": 2) %>
             <span><%= t("repositories.visibilities.#{visibility}") %></span>
@@ -43,9 +43,9 @@
     <% end %>
   </div>
 
-  <div class="flex flex-wrap items-center justify-end gap-2 border-t border-line pt-7">
-    <%= link_to t(".cancel"), user_repositories_path(Current.user.username), class: "rounded-full px-[18px] py-3 font-semibold text-muted hover:bg-field" %>
-    <button type="submit" class="flex h-16 cursor-pointer items-center gap-2 rounded-full bg-lime px-8 text-[17px] font-semibold text-forest hover:bg-lime-soft">
+  <div class="flex flex-wrap items-center justify-end gap-3 border-t border-line pt-7">
+    <%= link_to t(".cancel"), user_repositories_path(Current.user.username), class: "flex h-16 min-w-48 items-center justify-center rounded-full bg-field px-8 text-[17px] font-semibold text-muted hover:text-ink" %>
+    <button type="submit" class="flex h-16 min-w-48 cursor-pointer items-center justify-center gap-2 rounded-full bg-lime px-8 text-[17px] font-semibold text-forest hover:bg-lime-soft">
       <%= t(".submit") %>
       <%= render Atoms::Icon::Component.new(name: :arrow_right, class: "size-[18px]", "stroke-width": 2) %>
     </button>
