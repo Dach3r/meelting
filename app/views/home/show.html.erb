@@ -1,13 +1,17 @@
 <% content_for :title, t(".title") %>
 <% content_for :main_class, "flex w-full flex-col" %>
 
-<div class="flex w-full flex-col gap-10">
+<div class="<%= class_names("flex w-full flex-col gap-10", "flex-1" => workspace.no_repositories?) %>">
   <% if workspace.no_repositories? %>
-    <section id="no_repositories" class="flex flex-col items-center gap-2 px-6 pt-16 pb-8 text-center">
-      <span class="mb-2 flex size-14 items-center justify-center rounded-xl bg-lime text-forest" aria-hidden="true"><%= render Atoms::Icon::Component.new(name: :folder_plus, class: "size-6", "stroke-width": 2) %></span>
-      <h1 class="text-[22px] font-bold tracking-[-0.01em]"><%= t("home.no_repositories.title") %></h1>
-      <p class="mb-3 max-w-sm leading-relaxed text-forest"><%= t("home.no_repositories.body") %></p>
-      <%= render Atoms::LinkButton::Component.new(href: new_repository_path, variant: :primary, size: :md) do %><%= t("home.no_repositories.action") %><% end %>
+    <section id="no_repositories" class="flex flex-1 flex-col items-center justify-center gap-[22px] p-5 text-center">
+      <div class="mb-2 flex size-[260px] items-center justify-center rounded-full border-[1.5px] border-dashed border-cream-line" aria-hidden="true">
+        <div class="flex size-[180px] items-center justify-center rounded-full border-[1.5px] border-dashed border-forest-soft">
+          <span class="flex size-[104px] items-center justify-center rounded-[30px] bg-lime text-forest shadow-[0_0_80px_rgba(209,244,112,0.6)]"><%= render Atoms::Icon::Component.new(name: :folder_plus, class: "size-11", "stroke-width": 1.6) %></span>
+        </div>
+      </div>
+      <h1 class="text-[44px] font-extrabold leading-[1.05] tracking-[-0.025em]"><%= t("home.no_repositories.title_html", accent: tag.span(t("home.no_repositories.title_accent"), class: "box-decoration-clone rounded-[10px] bg-lime px-[0.15em]")) %></h1>
+      <p class="max-w-[460px] text-lg leading-[1.55] text-forest-active"><%= t("home.no_repositories.body") %></p>
+      <%= render Atoms::LinkButton::Component.new(href: new_repository_path, variant: :primary, size: :xl, class: "mt-1.5") do %><%= t("home.no_repositories.action") %><% end %>
     </section>
   <% else %>
     <h1 class="sr-only"><%= t(".title") %></h1>

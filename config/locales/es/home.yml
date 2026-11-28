@@ -40,6 +40,7 @@ es:
         detail: "Los runs no pueden iniciar su sandbox."
         action: "Revisar Docker"
     no_repositories:
-      title: "Crea tu primer repositorio"
+      title_html: "Crea tu primer %{accent}"
+      title_accent: "repositorio"
       body: "Tu inbox aparece aquí cuando tengas un repositorio en el que trabajar."
       action: "Crear repositorio"

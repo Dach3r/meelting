@@ -40,6 +40,7 @@ en:
         detail: "Runs cannot start their sandbox."
         action: "Check Docker"
     no_repositories:
-      title: "Create your first repository"
+      title_html: "Create your first %{accent}"
+      title_accent: "repository"
       body: "Your inbox shows up here once you have a repository to work on."
       action: "Create repository"
