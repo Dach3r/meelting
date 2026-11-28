@@ -27,5 +27,7 @@ es:
       expires_hint: "Déjalo vacío para un token que nunca expira."
       submit: "Crear token"
       cancel: "Cancelar"
+    update:
+      updated: "Permisos actualizados."
     destroy:
       revoked: "Token revocado."

@@ -1,0 +1,7 @@
+<% if @access_token.errors.any? %>
+  <%= turbo_stream.replace "push_token_scopes" do %>
+    <%= render Molecules::TokenScopes::Component.new(access_token: @access_token) %>
+  <% end %>
+<% else %>
+  <%= turbo_stream.remove "push_token" %>
+<% end %>

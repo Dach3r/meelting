@@ -66,6 +66,7 @@ en:
         permissions: "Permissions"
         permissions_note_html: "Works for all your repositories and never expires. You can revoke it in %{tokens}."
         tokens_link: "access tokens"
+        scopes_blank: "Choose at least one permission."
       steps:
         repository:
           title: "Create a repository and push to it"

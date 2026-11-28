@@ -27,5 +27,7 @@ en:
       expires_hint: "Leave empty for a token that never expires."
       submit: "Create token"
       cancel: "Cancel"
+    update:
+      updated: "Permissions updated."
     destroy:
       revoked: "Token revoked."

@@ -66,6 +66,7 @@ es:
         permissions: "Permisos"
         permissions_note_html: "Sirve para todos tus repositorios y no expira. Puedes revocarlo en %{tokens}."
         tokens_link: "tokens de acceso"
+        scopes_blank: "Elige al menos un permiso."
       steps:
         repository:
           title: "Crea un repositorio y haz push"

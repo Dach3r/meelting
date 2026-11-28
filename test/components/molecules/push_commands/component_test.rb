@@ -21,8 +21,10 @@ class Molecules::PushCommands::ComponentTest < ViewComponent::TestCase
     assert_equal ["ada", token.plain_token], node.css("#push_token code").map(&:text)
     assert_includes node.css("#push_token").text, "credential helper"
     assert_equal "dialog", node.css("dialog#push_token").first["data-controller"]
-    assert_equal 1, node.css("form").size
-    assert_equal ["Clonar y descargar por Git", "Subir cambios por Git"], node.css("#push_token li").map { _1.text.strip }
-    assert_equal ["Aceptar"], node.css("#push_token button[data-action='dialog#close']").map(&:text)
+    assert_equal 2, node.css("form").size
+    assert_equal %w[git_read git_write], node.css("#push_token input[type=checkbox][checked]").map { _1["value"] }
+    assert_equal 3, node.css("#push_token input[type=checkbox]").size
+    assert_equal "/access_tokens/#{token.id}", node.css("#push_token form").first["action"]
+    assert_equal "Aceptar", node.css("#push_token form button[type=submit]").text
   end
 end

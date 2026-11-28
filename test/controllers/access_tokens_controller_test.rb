@@ -57,4 +57,29 @@ class AccessTokensControllerTest < ActionDispatch::IntegrationTest
     assert_response :not_found
     assert_not other.reload.revoked?
   end
+
+  test "update changes the scopes of the current user's token and closes the modal" do
+    token = access_tokens(:git)
+    patch access_token_path(token), params: { access_token: { scopes: ["", "git_read"] } }, as: :turbo_stream
+
+    assert_response :success
+    assert_equal %w[git_read], token.reload.scopes
+    assert_select "turbo-stream[action=remove][target=push_token]"
+  end
+
+  test "update keeps the modal open when every scope is unchecked" do
+    token = access_tokens(:git)
+    patch access_token_path(token), params: { access_token: { scopes: [""] } }, as: :turbo_stream
+
+    assert_response :unprocessable_entity
+    assert_not_empty token.reload.scopes
+    assert_select "turbo-stream[action=replace][target=push_token_scopes]"
+    assert_includes response.body, "Elige al menos un permiso."
+  end
+
+  test "update does not touch another user's token" do
+    patch access_token_path(access_tokens(:other_user)), params: { access_token: { scopes: %w[api] } }, as: :turbo_stream
+
+    assert_response :not_found
+  end
 end
