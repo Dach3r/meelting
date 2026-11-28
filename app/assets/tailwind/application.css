@@ -72,6 +72,7 @@
   .nb-field:focus {
     outline: none;
     border-color: var(--color-forest);
+    box-shadow: 0 0 0 4px var(--color-lime-soft);
   }
 
   .nb-field-shell {
@@ -88,6 +89,7 @@
 
   .nb-field-shell:focus-within {
     border-color: var(--color-forest);
+    box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-forest) 18%, transparent);
   }
 
   .nb-field-shell:has(.nb-field-shell-input:user-invalid),
@@ -95,8 +97,14 @@
     border-color: var(--color-danger);
   }
 
+  .nb-field-shell:has(.nb-field-shell-input:user-invalid):focus-within,
+  .nb-field-shell:has(.nb-field-shell-input[data-availability="unavailable"]):focus-within {
+    box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-danger) 18%, transparent);
+  }
+
   .nb-field-shell:has(.nb-field-shell-input[data-availability="available"]) {
     border-color: var(--color-lime);
+    box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-lime) 35%, transparent);
   }
 
   .nb-field-shell-icon {
@@ -187,6 +195,7 @@
 
   .nb-choice:focus-within {
     border-color: var(--color-forest);
+    box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-forest) 18%, transparent);
   }
 }
 
