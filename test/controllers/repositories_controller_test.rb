@@ -29,7 +29,7 @@ class RepositoriesControllerTest < ActionDispatch::IntegrationTest
     fields = css_select("form input:not([type=hidden]), form select, form textarea").map { |field| field["id"] }
     assert_equal %w[repository_name repository_description repository_visibility_private repository_visibility_public repository_default_branch repository_license_id], fields
     assert_select "#repository_name[autofocus]"
-    assert_select "#repository_description[rows='2']:not([required])"
+    assert_select "input#repository_description[type=text]:not([required])"
     assert_select "label[for=repository_description]", "Descripción (opcional)"
     assert_select "#repository_visibility_private[checked]"
     assert_select "#repository_visibility_public[checked]", 0

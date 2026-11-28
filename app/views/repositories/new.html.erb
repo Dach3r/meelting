@@ -14,7 +14,7 @@
   <% end %>
 
   <%= render Molecules::FormField::Component.new(form: form, attribute: :name, label: Repository.human_attribute_name(:name), icon: :type, autofocus: true, placeholder: t(".name_placeholder")) %>
-  <%= render Molecules::FormField::Component.new(form: form, attribute: :description, label: t(".description_label"), icon: :align_left, type: :text_area, required: false, rows: 2, maxlength: 350, placeholder: t(".description_placeholder")) %>
+  <%= render Molecules::FormField::Component.new(form: form, attribute: :description, label: t(".description_label"), icon: :align_left, required: false, maxlength: 350, placeholder: t(".description_placeholder")) %>
 
   <fieldset class="min-w-0">
     <legend class="mb-2 pl-1 text-base leading-[normal] font-semibold text-forest"><%= Repository.human_attribute_name(:visibility) %></legend>
