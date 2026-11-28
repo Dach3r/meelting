@@ -6,7 +6,7 @@
     </div>
   <% end %>
   <div class="<%= shell_classes %>">
-    <span class="nb-field-shell-icon"><%= render Atoms::Icon::Component.new(name: icon, class: "size-[18px]", "stroke-width": 2) %></span>
+    <span class="nb-field-shell-icon"><%= render Atoms::Icon::Component.new(name: icon, class: compact ? "size-4" : "size-[18px]", "stroke-width": 2) %></span>
     <%= control? ? control : input_tag %>
   </div>
   <%= status %>

@@ -12,20 +12,21 @@ module Molecules
         text_area: :text_area
       }.freeze
 
-      def initialize(form:, attribute:, label:, icon:, type: :text, **input_options)
+      def initialize(form:, attribute:, label:, icon:, type: :text, compact: false, **input_options)
         @form = form
         @attribute = attribute
         @label = label
         @icon = icon
         @input = INPUTS.fetch(type)
+        @compact = compact
         @input_options = input_options
       end
 
       private
-      attr_reader :form, :attribute, :label, :icon, :input, :input_options
+      attr_reader :form, :attribute, :label, :icon, :input, :compact, :input_options
 
       def shell_classes
-        class_names("nb-field-shell", "nb-field-shell-area" => input == :text_area)
+        class_names("nb-field-shell", "nb-field-shell-area" => input == :text_area, "nb-field-shell-compact" => compact)
       end
 
       def input_tag

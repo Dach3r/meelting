@@ -74,4 +74,10 @@ class Molecules::FormField::ComponentTest < ViewComponent::TestCase
     assert_empty field.css("label")
     assert_equal 1, field.css("input#user_username").size
   end
+
+  test "compact uses the compact shell" do
+    field = render_inline(Molecules::FormField::Component.new(form: builder, attribute: :username, label: nil, icon: :user, compact: true))
+
+    assert_equal 1, field.css(".nb-field-shell.nb-field-shell-compact input#user_username").size
+  end
 end

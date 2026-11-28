@@ -1,9 +1,17 @@
-<div class="group flex flex-wrap items-center gap-x-10 gap-y-3.5 py-6">
-  <div class="min-w-0 max-w-90 flex-[1_1_16rem]">
-    <%= content_tag label_tag_name, label, for: label_for, id: id, class: "text-[17px] font-bold text-ink" %>
+<div class="group grid gap-x-6 gap-y-2 sm:grid-cols-[11rem_minmax(0,1fr)] sm:items-center">
+  <div class="flex items-center gap-1.5">
+    <%= content_tag label_tag_name, label, for: label_for, id: id, class: "text-[15px] font-semibold text-ink" %>
+    <% if aside? %>
+      <span class="text-[15px] text-ink/45"><%= aside %></span>
+    <% end %>
     <% if hint? %>
-      <p class="mt-1.5 text-[15px] leading-normal text-ink/65"><%= hint %></p>
+      <span class="relative inline-flex">
+        <button type="button" class="peer flex size-6 cursor-help items-center justify-center rounded-full text-ink/45 hover:text-ink focus-visible:text-ink focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring/30" aria-labelledby="<%= hint_id %>">
+          <%= render Atoms::Icon::Component.new(name: :info, class: "size-4", "stroke-width": 2) %>
+        </button>
+        <span role="tooltip" id="<%= hint_id %>" class="pointer-events-none invisible absolute bottom-full left-1/2 z-30 mb-2 w-60 -translate-x-1/2 rounded-xl bg-ink px-3 py-2 text-[13px] leading-snug font-medium text-surface opacity-0 transition-opacity peer-hover:visible peer-hover:opacity-100 peer-focus:visible peer-focus:opacity-100"><%= hint %></span>
+      </span>
     <% end %>
   </div>
-  <div class="min-w-0 flex-[999_1_24rem]"><%= content %></div>
+  <div class="min-w-0"><%= content %></div>
 </div>
