@@ -13,7 +13,7 @@ class RepositoriesController < ApplicationController
     @repository = Current.user.repositories.new(repository_params)
 
     if Repositories::Create.call(@repository)
-      redirect_to repository_section_path(@repository.slug, :code), notice: t(".created")
+      redirect_to repository_path(@repository.slug), notice: t(".created")
     else
       @taken_slugs = Current.user.repositories.pluck(:slug)
       @licenses = License.selectable

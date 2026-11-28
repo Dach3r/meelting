@@ -46,7 +46,7 @@ class RepositoriesControllerTest < ActionDispatch::IntegrationTest
     assert_difference "@user.repositories.count", 1 do
       post repositories_path, params: valid_params
     end
-    assert_redirected_to repository_section_path("docs", :code)
+    assert_redirected_to repository_path("docs")
     repository = @user.repositories.find_by!(slug: "docs")
     assert repository.visibility_public?
     assert_equal licenses(:mit), repository.license
@@ -76,7 +76,7 @@ class RepositoriesControllerTest < ActionDispatch::IntegrationTest
 
   test "create derives the slug from the name and ignores a submitted one" do
     post repositories_path, params: valid_params(name: "Los de la culpa 2026", slug: "custom")
-    assert_redirected_to repository_section_path("los-de-la-culpa-2026", :code)
+    assert_redirected_to repository_path("los-de-la-culpa-2026")
   end
 
   test "new has no slug input" do

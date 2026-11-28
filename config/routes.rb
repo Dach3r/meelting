@@ -25,9 +25,10 @@ Rails.application.routes.draw do
   resources :access_tokens, only: %i[index new create update destroy]
   resources :repositories, only: %i[index new create], param: :slug do
     get "blob/*path", to: "repositories/blobs#show", as: :blob, format: false
-    get ":section", to: "repositories/sections#show", as: :section, constraints: { section: /code|issues|pull_requests|runs|memory/ }
+    get ":section", to: "repositories/sections#show", as: :section, constraints: { section: /issues|pull_requests|runs|memory/ }
     resource :push_token, only: :create, module: :repositories
   end
+  get "repositories/:repository_slug", to: "repositories/sections#show", as: :repository, defaults: { section: "code" }
 
   resources :provider_credentials, only: %i[new create destroy]
   resources :runs, only: :index

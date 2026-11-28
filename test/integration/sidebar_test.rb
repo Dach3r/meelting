@@ -16,7 +16,8 @@ class SidebarTest < ActionDispatch::IntegrationTest
     sign_in_as users(:one)
     get root_path
 
-    %w[code issues pull_requests runs memory].each do |section|
+    assert_select "#sidebar-repository-meelting a[href=?]", repository_path("meelting")
+    %w[issues pull_requests runs memory].each do |section|
       assert_select "#sidebar-repository-meelting a[href=?]", repository_section_path("meelting", section)
     end
   end
