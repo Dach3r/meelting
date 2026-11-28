@@ -33,8 +33,8 @@ class RepositoriesControllerTest < ActionDispatch::IntegrationTest
   test "new renders the fields in order with private selected" do
     get new_repository_path
     assert_response :success
-    fields = css_select("form input:not([type=hidden]), form select, form textarea").map { |field| field["id"] }
-    assert_equal %w[repository_name repository_description repository_visibility_private repository_visibility_public repository_default_branch repository_license_id], fields
+    fields = css_select("form input:not([type=hidden]), form select, form textarea").map { |field| field["name"] }.uniq
+    assert_equal %w[repository[name] repository[description] repository[visibility] repository[default_branch] repository[license_id]], fields
     assert_select "#repository_name[autofocus]"
     assert_select "input#repository_description[type=text]:not([required])"
     assert_select "label[for=repository_description]", "Descripción (opcional)"
@@ -67,10 +67,11 @@ class RepositoriesControllerTest < ActionDispatch::IntegrationTest
     License.sync_catalog
     get new_repository_path
 
-    options = css_select("#repository_license_id option")
+    options = css_select("input[type=radio][name='repository[license_id]']")
     assert_equal ["", *License::SELECTABLE_KEYS.map { |key_| License.find_by!(key: key_).id.to_s }], options.map { |option_| option_["value"] }
-    assert_equal "Sin licencia", options.first.text
-    assert_select "label[for=repository_license_id]", "Agregar una licencia"
+    assert_select "#repository_license_id_[checked]"
+    assert_select "[data-select-menu-target=label]", "Sin licencia"
+    assert_select "legend", "Agregar una licencia"
   end
 
   test "create derives the slug from the name and ignores a submitted one" do

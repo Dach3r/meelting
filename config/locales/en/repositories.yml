@@ -28,7 +28,6 @@ en:
       description_label: "Description (optional)"
       description_placeholder: "What is it about?"
       license_label: "Add a license"
-      license_hint: "A license tells others what they can and cannot do with your code."
       no_license: "No license"
       submit: "Create repository"
     create:

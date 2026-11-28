@@ -1,0 +1,19 @@
+<fieldset class="grid min-w-0 gap-2">
+  <legend class="mb-2 pl-1 text-base leading-[normal] font-semibold text-forest"><%= label %></legend>
+  <details class="group relative" data-controller="dropdown select-menu" data-action="click@window->dropdown#close keydown.esc@window->dropdown#close">
+    <summary class="nb-field-shell cursor-pointer list-none group-open:border-forest [&::-webkit-details-marker]:hidden">
+      <span class="nb-field-shell-icon"><%= render Atoms::Icon::Component.new(name: icon, class: "size-[18px]", "stroke-width": 2) %></span>
+      <span class="min-w-0 flex-1 truncate text-[17px] font-medium text-ink" data-select-menu-target="label"><%= selected_label %></span>
+      <%= render Atoms::Icon::Component.new(name: :chevron_down, class: "size-4 flex-none transition-transform group-open:rotate-180", "stroke-width": 2.4) %>
+    </summary>
+    <div class="absolute inset-x-0 top-full z-40 mt-2 grid max-h-80 gap-1 overflow-y-auto rounded-[1.75rem] border border-cream-line bg-white p-2 shadow-[0_18px_40px_-12px_rgb(33_53_36_/_0.25)]">
+      <% options.each do |text, value| %>
+        <label class="flex cursor-pointer items-center gap-3 rounded-full px-4 py-2.5 font-semibold text-ink hover:bg-cream has-checked:bg-forest has-checked:text-white has-focus-visible:ring-4 has-focus-visible:ring-forest/20" data-action="click->select-menu#pick keydown.enter->select-menu#confirm">
+          <%= form.radio_button attribute, value, checked: checked?(value), class: "peer sr-only" %>
+          <span class="min-w-0 flex-1 truncate"><%= text %></span>
+          <%= render Atoms::Icon::Component.new(name: :check, class: "invisible size-[18px] flex-none text-lime peer-checked:visible", "stroke-width": 2.4) %>
+        </label>
+      <% end %>
+    </div>
+  </details>
+</fieldset>

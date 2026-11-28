@@ -29,7 +29,6 @@ es:
       description_placeholder: "¿De qué trata?"
       initialization: "Inicialización"
       license_label: "Agregar una licencia"
-      license_hint: "Una licencia indica a otros qué pueden y qué no pueden hacer con tu código."
       no_license: "Sin licencia"
       submit: "Crear repositorio"
     create:
