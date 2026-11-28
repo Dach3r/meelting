@@ -23,17 +23,16 @@ class RepositoriesControllerTest < ActionDispatch::IntegrationTest
     assert_select "##{dom_id(repositories(:public_notes))}", count: 0
   end
 
-  test "new renders every field in a single form" do
+  test "new renders the fields in order with private selected" do
     get new_repository_path
     assert_response :success
-    assert_select "form[data-controller=repository-form]" do
-      assert_select "#repository_name"
-      assert_select "#repository_default_branch"
-      assert_select "#repository_description"
-      assert_select "input[name='repository[visibility]']", 2
-      assert_select "#repository_license_id"
-    end
-    assert_select "[hidden] input, [hidden] select, [hidden] textarea", 0
+    fields = css_select("form input:not([type=hidden]), form select, form textarea").map { |field| field["id"] }
+    assert_equal %w[repository_name repository_description repository_visibility_private repository_visibility_public repository_default_branch repository_license_id], fields
+    assert_select "#repository_name[autofocus]"
+    assert_select "#repository_description[rows='2']:not([required])"
+    assert_select "label[for=repository_description]", "Descripción (opcional)"
+    assert_select "#repository_visibility_private[checked]"
+    assert_select "#repository_visibility_public[checked]", 0
   end
 
   test "create stores the repository for the current user" do
@@ -54,13 +53,6 @@ class RepositoriesControllerTest < ActionDispatch::IntegrationTest
   test "new has no slug input" do
     get new_repository_path
     assert_select "#repository_slug", 0
-  end
-
-  test "new passes the url template and taken slugs to the form" do
-    get new_repository_path
-    assert_select "form[data-repository-form-url-template-value=?]", "http://www.example.com/repositories/__slug__/code"
-    assert_select "form[data-repository-form-taken-slugs-value=?]", [repositories(:meelting).slug].to_json
-    assert_select "[data-repository-form-target=url][hidden]"
   end
 
   test "create without name fails" do

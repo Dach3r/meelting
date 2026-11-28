@@ -19,7 +19,9 @@ es:
     new:
       title: "Nuevo repositorio"
       name_placeholder: "Mi proyecto"
+      description_label: "Descripción (opcional)"
       description_placeholder: "¿De qué trata?"
+      initialization: "Inicialización"
       no_license: "Sin licencia"
       submit: "Crear repositorio"
     create:
