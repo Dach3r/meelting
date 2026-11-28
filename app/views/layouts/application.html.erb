@@ -19,7 +19,7 @@
 <% if authenticated? %>
   <body class="group/shell min-h-svh bg-shell text-ink lg:h-svh lg:overflow-hidden lg:py-[22px]" <%= "data-sidebar-expanded" if sidebar_expanded? %>>
     <%= render Organisms::Sidebar::Component.new(workspace: workspace, user: Current.user, expanded_slug: session[:expanded_repository]) %>
-    <div class="mx-3 mb-3 flex min-h-[calc(100svh-0.75rem)] flex-col gap-[22px] lg:my-0 lg:mr-[22px] lg:ml-23 lg:h-[calc(100svh-44px)] lg:min-h-0 lg:transition-[margin-left] lg:duration-200 lg:ease-out lg:group-data-sidebar-expanded/shell:ml-66 motion-reduce:transition-none">
+    <div class="mx-3 mb-3 flex min-h-[calc(100svh-0.75rem)] flex-col gap-[22px] lg:my-0 lg:mr-[22px] lg:ml-21.5 lg:h-[calc(100svh-44px)] lg:min-h-0 lg:transition-[margin-left] lg:duration-200 lg:ease-out lg:group-data-sidebar-expanded/shell:ml-66 motion-reduce:transition-none">
       <%= render Organisms::Navbar::Component.new(authenticated: true) %>
       <main class="<%= class_names("min-h-0 min-w-0 flex-1 rounded-[28px] bg-surface p-6 sm:p-9 lg:overflow-y-auto lg:overscroll-contain", content_for(:main_class) || "flex w-full") %>">
         <%= content_for?(:content) ? yield(:content) : yield %>

@@ -1,7 +1,7 @@
 <% if compact %>
   <%= link_to section_path(:code), class: rail_classes, title: repository.name, aria: { label: repository.name, current: (current_repository? ? "page" : nil) } do %>
     <span class="flex size-[26px] items-center justify-center rounded-lg bg-forest-active text-xs font-bold text-lime" aria-hidden="true"><%= monogram %></span>
-    <span class="absolute top-[11px] right-[19px] flex rounded-full ring-2 ring-shell"><%= render Atoms::StatusDot::Component.new(tone: MIRROR_TONES.fetch(repository.mirror), label: t("sidebar.mirror.#{repository.mirror}")) %></span>
+    <span class="absolute top-[9px] right-3 flex rounded-full ring-2 ring-shell"><%= render Atoms::StatusDot::Component.new(tone: MIRROR_TONES.fetch(repository.mirror), label: t("sidebar.mirror.#{repository.mirror}")) %></span>
   <% end %>
 <% else %>
 <div>

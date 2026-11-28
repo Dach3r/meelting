@@ -16,7 +16,7 @@ module Molecules
       def summary_classes
         class_names(
           "flex cursor-pointer list-none items-center rounded-xl [&::-webkit-details-marker]:hidden",
-          compact ? "size-[50px] justify-center hover:bg-forest-active/50" : "h-[54px] gap-3.5 pr-4 pl-[9px] text-white hover:bg-forest-active/50"
+          compact ? "size-[54px] justify-center hover:bg-forest-active/50" : "h-[54px] gap-3.5 pr-4 pl-[9px] text-white hover:bg-forest-active/50"
         )
       end
 

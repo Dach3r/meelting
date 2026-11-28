@@ -37,7 +37,7 @@ module Molecules
 
       def rail_classes
         class_names(
-          "relative flex h-[50px] w-[68px] shrink-0 items-center justify-center rounded-xl",
+          "relative flex h-[46px] w-full shrink-0 items-center justify-center rounded-xl",
           current_repository? ? "bg-forest-active" : "hover:bg-forest-active/50"
         )
       end

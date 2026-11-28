@@ -21,7 +21,7 @@ module Molecules
 
       def classes
         class_names(
-          "relative flex h-[50px] w-[68px] items-center justify-center rounded-xl",
+          "relative flex h-[50px] w-full items-center justify-center rounded-xl",
           current ? "bg-forest-active text-lime" : "text-forest-muted hover:bg-forest-active/50"
         )
       end

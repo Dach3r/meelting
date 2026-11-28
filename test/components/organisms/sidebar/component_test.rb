@@ -43,7 +43,7 @@ class Organisms::Sidebar::ComponentTest < ViewComponent::TestCase
     root = node.css("[data-controller=sidebar]").first
 
     assert_equal ApplicationHelper::APP_NAME, root.css("#sidebar-menu a[href='/']").first["aria-label"]
-    %w[lg:fixed lg:inset-y-0 lg:left-0 lg:w-23 lg:group-data-sidebar-expanded/shell:w-66].each { |css_class_| assert_includes root["class"], css_class_ }
+    %w[lg:fixed lg:inset-y-0 lg:left-0 lg:w-21.5 lg:group-data-sidebar-expanded/shell:w-66].each { |css_class_| assert_includes root["class"], css_class_ }
   end
 
   test "renders an icon rail that expands and an expanded menu that collapses" do
