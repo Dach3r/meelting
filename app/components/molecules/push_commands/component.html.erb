@@ -11,7 +11,7 @@ git push -u origin <%= repository.default_branch %></code></pre>
           <div data-controller="clipboard" data-clipboard-copied-value="<%= t("home.checklist.push.copied") %>">
             <p class="mb-1.5 text-sm font-semibold text-forest"><%= t("home.checklist.push.#{field}") %></p>
             <div class="flex items-center gap-3 rounded-xl bg-forest py-2 pr-2 pl-4">
-              <code class="min-w-0 flex-1 font-mono text-sm leading-relaxed break-all text-lime select-all" data-clipboard-target="source"><%= value %></code>
+              <code class="min-w-0 flex-1 font-mono text-sm leading-relaxed whitespace-nowrap overflow-x-auto py-1 text-lime select-all [scrollbar-width:thin] [scrollbar-color:var(--color-forest-active)_transparent]" data-clipboard-target="source"><%= value %></code>
               <button type="button" class="h-9 shrink-0 cursor-pointer rounded-lg bg-lime px-3 text-sm font-bold text-forest hover:bg-lime-soft" data-action="clipboard#copy" data-clipboard-target="label"><%= t("home.checklist.push.copy") %></button>
             </div>
           </div>
