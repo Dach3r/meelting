@@ -4,7 +4,7 @@ class Molecules::Brand::ComponentTest < ViewComponent::TestCase
   test "links to root with the brand name and a lime dot" do
     brand = render_inline(Molecules::Brand::Component.new)
 
-    assert_equal ApplicationHelper::CONFIG[:name], brand.css("a[href='/']").text.strip
+    assert_equal ApplicationHelper::APP_NAME, brand.css("a[href='/']").text.strip
     assert_includes brand.css("a span[aria-hidden='true']").attr("class").value, "bg-lime"
     assert_equal 0, brand.css("a svg").size
   end

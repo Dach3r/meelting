@@ -63,17 +63,12 @@ class RepositoryTest < ActiveSupport::TestCase
     assert_raises(ArgumentError) { build(visibility: "internal") }
   end
 
-  test "archive and unarchive" do
+  test "active excludes archived repositories" do
     repository = repositories(:meelting)
-    assert_not repository.archived?
+    assert_includes Repository.active, repository
 
-    repository.archive!
-    assert repository.archived?
-    assert_includes Repository.archived, repository
+    repository.update!(archived_at: Time.current)
     assert_not_includes Repository.active, repository
-
-    repository.unarchive!
-    assert_not repository.archived?
   end
 
   test "touch_pushed sets pushed_at" do

@@ -16,19 +16,6 @@ class Repository < ApplicationRecord
   validates :slug, presence: true, uniqueness: { scope: :user_id }, length: { maximum: 100 }, format: { with: SLUG_FORMAT }
 
   scope :active, -> { where(archived_at: nil) }
-  scope :archived, -> { where.not(archived_at: nil) }
-
-  def archived?
-    archived_at.present?
-  end
-
-  def archive!
-    update!(archived_at: Time.current) unless archived?
-  end
-
-  def unarchive!
-    update!(archived_at: nil) if archived?
-  end
 
   def touch_pushed
     update_column(:pushed_at, Time.current)

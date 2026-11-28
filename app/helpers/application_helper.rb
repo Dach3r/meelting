@@ -1,5 +1,5 @@
 module ApplicationHelper
-  CONFIG = { name: "Meelting" }
+  APP_NAME = "Meelting".freeze
   SIDEBAR_COOKIE = "sidebar_expanded".freeze
 
   def sidebar_expanded?

@@ -7,7 +7,7 @@ class Workspace::BuildTest < ActiveSupport::TestCase
     state = Workspace::Build.call(user: @user)
 
     assert state.first_run?
-    assert_not state.preview?
+    assert_not state.preview
     assert_empty state.items
     assert_empty state.runs
     assert_equal ["Meelting"], state.repositories.map(&:name)
@@ -135,7 +135,7 @@ class Workspace::BuildTest < ActiveSupport::TestCase
     assert_equal state.items.map(&:waiting_seconds).sort.reverse, state.items.map(&:waiting_seconds)
     assert_equal 3, state.inbox_count
     assert_equal 1, state.runs_count
-    assert state.preview?
+    assert state.preview
     assert_not state.settings_warning?
     assert_equal %i[ok], state.repositories.map(&:mirror).uniq
   end

@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="<%= I18n.locale %>">
 <head>
-  <title><%= content_for(:title) || ApplicationHelper::CONFIG[:name] %></title>
+  <title><%= content_for(:title) || ApplicationHelper::APP_NAME %></title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="application-name" content="<%= ApplicationHelper::CONFIG[:name] %>">
+  <meta name="application-name" content="<%= ApplicationHelper::APP_NAME %>">
   <meta name="mobile-web-app-capable" content="yes">
   <%= csrf_meta_tags %>
   <%= csp_meta_tag %>

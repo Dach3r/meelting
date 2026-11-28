@@ -20,7 +20,7 @@ class LandingTest < ActionDispatch::IntegrationTest
     get root_path, headers: { "Accept-Language" => "en" }
 
     I18n.with_locale(:en) do
-      assert_equal "Meelting: where humans and AI agents build software together", I18n.t("landing.title", name: ApplicationHelper::CONFIG[:name])
+      assert_equal "Meelting: where humans and AI agents build software together", I18n.t("landing.title", name: ApplicationHelper::APP_NAME)
     end
   end
 

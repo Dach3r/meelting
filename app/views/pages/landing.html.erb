@@ -1,4 +1,4 @@
-<% content_for :title, t("landing.title", name: ApplicationHelper::CONFIG[:name]) %>
+<% content_for :title, t("landing.title", name: ApplicationHelper::APP_NAME) %>
 <% content_for :main_class, "flex flex-1 flex-col" %>
 
 <%= render Organisms::LandingHero::Component.new %>

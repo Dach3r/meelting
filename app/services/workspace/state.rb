@@ -4,10 +4,6 @@ module Workspace
       mode == :first_run
     end
 
-    def preview?
-      preview
-    end
-
     def placeholder?
       preview && !first_run?
     end

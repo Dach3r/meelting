@@ -41,10 +41,6 @@ class AccessToken < ApplicationRecord
     expires_at.present? && expires_at <= Time.current
   end
 
-  def active?
-    !revoked? && !expired?
-  end
-
   def touch_last_used
     return if last_used_at && last_used_at > LAST_USED_THROTTLE.ago
 

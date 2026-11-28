@@ -42,7 +42,7 @@ class Organisms::Sidebar::ComponentTest < ViewComponent::TestCase
     node = render_inline(Organisms::Sidebar::Component.new(workspace: workspace, user: users(:one)))
     root = node.css("[data-controller=sidebar]").first
 
-    assert_equal ApplicationHelper::CONFIG[:name], root.css("#sidebar-menu a[href='/']").first.text.strip
+    assert_equal ApplicationHelper::APP_NAME, root.css("#sidebar-menu a[href='/']").first.text.strip
     %w[lg:fixed lg:inset-y-0 lg:left-0 lg:w-23 lg:group-data-sidebar-expanded/shell:w-66].each { |css_class_| assert_includes root["class"], css_class_ }
   end
 

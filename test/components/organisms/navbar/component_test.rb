@@ -23,7 +23,7 @@ class Organisms::Navbar::ComponentTest < ViewComponent::TestCase
     guest = render_inline(Organisms::Navbar::Component.new(authenticated: false))
     member = render_inline(Organisms::Navbar::Component.new(authenticated: true))
 
-    assert_equal ApplicationHelper::CONFIG[:name], guest.css("a[href='/']").text.strip
+    assert_equal ApplicationHelper::APP_NAME, guest.css("a[href='/']").text.strip
     assert_empty member.css("a[href='/']")
   end
 
