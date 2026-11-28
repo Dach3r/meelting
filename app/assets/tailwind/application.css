@@ -36,29 +36,29 @@
   --color-on-selected-chip: var(--color-forest);
 }
 
-/* Dark mode follows the OS setting: "sage mono" palette. */
+/* Dark mode follows the OS setting: "navy lime" palette. */
 @layer base {
   @media (prefers-color-scheme: dark) {
     :root {
       color-scheme: dark;
-      --color-forest: #17221a;
-      --color-forest-active: #323b33;
-      --color-forest-muted: #8f998d;
-      --color-forest-soft: #b3bcb1;
-      --color-lime: #b9d4b4;
-      --color-lime-soft: #d3e5cf;
-      --color-lime-deep: #7f9e79;
-      --color-ink: #eaeee9;
-      --color-line: #232924;
-      --color-cream-line: #222823;
-      --color-dashed: #4a554b;
+      --color-forest: #1b2606;
+      --color-forest-active: #26355a;
+      --color-forest-muted: #828c9e;
+      --color-forest-soft: #aab6cc;
+      --color-lime: #d1f470;
+      --color-lime-soft: #e3f8a9;
+      --color-lime-deep: #92ab4e;
+      --color-ink: #ecf1fa;
+      --color-line: #1a2437;
+      --color-cream-line: #1a2438;
+      --color-dashed: #464d5b;
       --color-danger: #ff8a78;
       --color-danger-soft: #3a1a17;
-      --color-shell: #0f1210;
-      --color-canvas: #0f1210;
-      --color-surface: #161a17;
-      --color-field: #1f2420;
-      --color-chip: #222823;
+      --color-shell: #090d16;
+      --color-canvas: #090d16;
+      --color-surface: #0f1522;
+      --color-field: #172032;
+      --color-chip: #1a2438;
       --color-muted: var(--color-forest-soft);
       --color-ring: var(--color-lime);
       --color-selected: var(--color-lime);
