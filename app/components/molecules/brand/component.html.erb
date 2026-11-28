@@ -1,3 +1,4 @@
-<%= link_to root_path, class: "inline-flex shrink-0 items-baseline text-xl leading-none font-extrabold tracking-[-0.02em] #{tone}", aria: { label: ApplicationHelper::APP_NAME } do %>
-  <span aria-hidden="true" class="mr-[0.04em] font-medium tracking-normal opacity-55">{</span><span aria-hidden="true"><% before_i, after_i = name_parts %><%= before_i %><span class="relative">ı<span class="absolute top-[0.06em] left-1/2 size-[0.2em] -translate-x-1/2 rounded-full bg-lime"></span></span><%= after_i %></span><span aria-hidden="true" class="ml-[0.04em] font-medium tracking-normal opacity-55">}</span>
+<% before_i, after_i = name_parts %>
+<%= link_to root_path, class: "inline-flex shrink-0 items-baseline text-xl leading-none font-black tracking-[-0.045em] #{tone[:name]}", aria: { label: ApplicationHelper::APP_NAME } do %>
+  <span aria-hidden="true" class="mr-[0.02em] font-semibold <%= tone[:brace] %>">{</span><span aria-hidden="true"><%= before_i %><span class="bg-linear-to-b from-32% to-32% bg-clip-text text-transparent <%= tone[:dot] %>">i</span><%= after_i %></span><span aria-hidden="true" class="ml-[0.02em] font-semibold <%= tone[:brace] %>">}</span>
 <% end %>
