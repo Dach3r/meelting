@@ -28,7 +28,6 @@ en:
       description_placeholder: "What is it about?"
       no_license: "No license"
       subtitle: "You can review everything before creating it"
-      required: "Required"
       name_hint: "We use it to build the repository URL."
       description_hint: "One sentence on what it is for. Up to 350 characters."
       visibility_hints:

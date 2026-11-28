@@ -17,7 +17,7 @@
   <% end %>
 
   <div class="divide-y divide-line">
-    <%= render Molecules::SettingRow::Component.new(label: Repository.human_attribute_name(:name), label_for: "repository_name", badge: t(".required")) do |row| %>
+    <%= render Molecules::SettingRow::Component.new(label: Repository.human_attribute_name(:name), label_for: "repository_name") do |row| %>
       <% row.with_hint { t(".name_hint") } %>
       <%= render Molecules::FormField::Component.new(form: form, attribute: :name, label: nil, icon: :type, autofocus: true, placeholder: t(".name_placeholder")) %>
     <% end %>

@@ -3,15 +3,14 @@ module Molecules
     class Component < ViewComponent::Base
       renders_one :hint
 
-      def initialize(label:, label_for: nil, id: nil, badge: nil)
+      def initialize(label:, label_for: nil, id: nil)
         @label = label
         @label_for = label_for
         @id = id
-        @badge = badge
       end
 
       private
-      attr_reader :label, :label_for, :id, :badge
+      attr_reader :label, :label_for, :id
 
       def label_tag_name
         label_for ? :label : :span

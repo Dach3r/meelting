@@ -15,12 +15,11 @@ class Molecules::SettingRow::ComponentTest < ViewComponent::TestCase
     assert_empty row.css("label")
   end
 
-  test "renders the badge and hint when given" do
-    row = render_inline(Molecules::SettingRow::Component.new(label: "Name", label_for: "repository_name", badge: "Required")) do |component|
+  test "renders the hint when given" do
+    row = render_inline(Molecules::SettingRow::Component.new(label: "Name", label_for: "repository_name")) do |component|
       component.with_hint { "Used for the URL" }
     end
 
-    assert_includes row.text, "Required"
     assert_equal "Used for the URL", row.css("p").text
   end
 end

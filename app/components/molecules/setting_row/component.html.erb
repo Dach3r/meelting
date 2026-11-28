@@ -1,9 +1,6 @@
 <div class="group flex flex-wrap items-center gap-x-10 gap-y-3.5 py-6">
   <div class="min-w-0 max-w-90 flex-[1_1_16rem]">
     <%= content_tag label_tag_name, label, for: label_for, id: id, class: "text-[17px] font-bold text-ink" %>
-    <% if badge %>
-      <span class="ml-2 inline-block rounded-full bg-lime-soft px-2.5 py-0.5 align-[2px] text-xs font-bold tracking-wide text-forest uppercase"><%= badge %></span>
-    <% end %>
     <% if hint? %>
       <p class="mt-1.5 text-[15px] leading-normal text-ink/65"><%= hint %></p>
     <% end %>
