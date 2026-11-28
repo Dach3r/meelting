@@ -27,13 +27,7 @@ es:
       name_placeholder: "Mi proyecto"
       description_placeholder: "¿De qué trata?"
       initialization: "Inicialización"
-      optional: "opcional"
       no_license: "Sin licencia"
-      name_hint: "Lo usamos para generar la URL del repositorio."
-      visibility_hints:
-        private: "Solo tú tienes acceso al código, los issues y la memoria."
-        public: "Cualquiera puede ver el repositorio."
-      license_hint: "Define qué pueden hacer otros con tu código. Sin licencia, nadie más puede reutilizarlo."
       cancel: "Cancelar"
       submit: "Crear repositorio"
     create:

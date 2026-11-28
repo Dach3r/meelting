@@ -26,13 +26,7 @@ en:
       title: "New repository"
       name_placeholder: "My project"
       description_placeholder: "What is it about?"
-      optional: "optional"
       no_license: "No license"
-      name_hint: "We use it to build the repository URL."
-      visibility_hints:
-        private: "Only you can access the code, issues and memory."
-        public: "Anyone can see the repository."
-      license_hint: "Sets what others may do with your code. Without a license, nobody else may reuse it."
       cancel: "Cancel"
       submit: "Create repository"
     create:

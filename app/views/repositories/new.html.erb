@@ -1,7 +1,7 @@
 <% content_for :title, t(".title") %>
 
-<%= form_with model: @repository, class: "grid w-full max-w-3xl content-start gap-8" do |form| %>
-  <h1 class="text-[28px] leading-[1.1] font-extrabold tracking-[-0.02em]"><%= t(".title") %></h1>
+<%= form_with model: @repository, class: "grid w-full content-start gap-8" do |form| %>
+  <h1 class="text-[34px] leading-[1.05] font-extrabold tracking-[-0.02em]"><%= t(".title") %></h1>
 
   <% if @repository.errors.any? %>
     <div class="rounded-xl bg-danger-soft px-4 py-3 text-[15px] font-semibold text-danger" id="error_explanation" role="alert">
@@ -13,27 +13,21 @@
     </div>
   <% end %>
 
-  <div class="grid gap-5">
-    <%= render Molecules::SettingRow::Component.new(label: Repository.human_attribute_name(:name), label_for: "repository_name") do |row| %>
-      <% row.with_hint { t(".name_hint") } %>
-      <%= render Molecules::FormField::Component.new(form: form, attribute: :name, label: nil, icon: :type, compact: true, autofocus: true, placeholder: t(".name_placeholder")) %>
+  <div class="grid gap-6">
+    <%= render Molecules::SettingRow::Component.new(label: Repository.human_attribute_name(:name), label_for: "repository_name") do %>
+      <%= render Molecules::FormField::Component.new(form: form, attribute: :name, label: nil, icon: :type, autofocus: true, placeholder: t(".name_placeholder")) %>
     <% end %>
 
-    <%= render Molecules::SettingRow::Component.new(label: Repository.human_attribute_name(:description), label_for: "repository_description") do |row| %>
-      <% row.with_aside { t(".optional") } %>
-      <%= render Molecules::FormField::Component.new(form: form, attribute: :description, label: nil, icon: :align_left, compact: true, required: false, maxlength: 350, placeholder: t(".description_placeholder")) %>
+    <%= render Molecules::SettingRow::Component.new(label: Repository.human_attribute_name(:description), label_for: "repository_description") do %>
+      <%= render Molecules::FormField::Component.new(form: form, attribute: :description, label: nil, icon: :align_left, required: false, maxlength: 350, placeholder: t(".description_placeholder")) %>
     <% end %>
 
-    <%= render Molecules::SettingRow::Component.new(label: Repository.human_attribute_name(:visibility), id: "repository_visibility_label") do |row| %>
-      <% row.with_hint do %>
-        <span class="group-has-[#repository_visibility_public:checked]:hidden"><%= t(".visibility_hints.private") %></span>
-        <span class="hidden group-has-[#repository_visibility_public:checked]:inline"><%= t(".visibility_hints.public") %></span>
-      <% end %>
-      <div class="inline-flex gap-0.5 rounded-full bg-field p-1" role="radiogroup" aria-labelledby="repository_visibility_label">
+    <%= render Molecules::SettingRow::Component.new(label: Repository.human_attribute_name(:visibility), id: "repository_visibility_label") do %>
+      <div class="flex gap-1 rounded-full bg-field p-1.5" role="radiogroup" aria-labelledby="repository_visibility_label">
         <% { private: :lock, public: :globe }.each do |visibility, icon| %>
-          <label class="flex h-9 cursor-pointer items-center gap-2 rounded-full px-4 text-[14px] font-semibold text-muted has-checked:bg-selected has-checked:text-on-selected has-focus-visible:ring-4 has-focus-visible:ring-ring/30 [&:has(:checked)_svg]:text-lime">
+          <label class="flex h-14 flex-1 cursor-pointer items-center justify-center gap-2.5 rounded-full text-[17px] font-semibold text-muted has-checked:bg-selected has-checked:text-on-selected has-focus-visible:ring-4 has-focus-visible:ring-ring/30 [&:has(:checked)_svg]:text-lime">
             <%= form.radio_button :visibility, visibility, class: "sr-only" %>
-            <%= render Atoms::Icon::Component.new(name: icon, class: "size-[15px]", "stroke-width": 2) %>
+            <%= render Atoms::Icon::Component.new(name: icon, class: "size-[18px]", "stroke-width": 2) %>
             <span><%= t("repositories.visibilities.#{visibility}") %></span>
           </label>
         <% end %>
@@ -41,23 +35,19 @@
     <% end %>
 
     <%= render Molecules::SettingRow::Component.new(label: Repository.human_attribute_name(:default_branch), label_for: "repository_default_branch") do %>
-      <div class="max-w-60">
-        <%= render Molecules::FormField::Component.new(form: form, attribute: :default_branch, label: nil, icon: :git_branch, compact: true, autocapitalize: "none", class: "nb-field-shell-input font-mono") %>
-      </div>
+      <%= render Molecules::FormField::Component.new(form: form, attribute: :default_branch, label: nil, icon: :git_branch, autocapitalize: "none", class: "nb-field-shell-input font-mono") %>
     <% end %>
 
-    <%= render Molecules::SettingRow::Component.new(label: Repository.human_attribute_name(:license_id), id: "repository_license_label") do |row| %>
-      <% row.with_hint { t(".license_hint") } %>
-      <div class="max-w-80">
-        <%= render Molecules::SelectMenu::Component.new(form: form, attribute: :license_id, label: nil, labelledby: "repository_license_label", icon: :scale, compact: true, options: [ [ t(".no_license"), "" ], *@licenses.map { [ it.name, it.id ] } ]) %>
-      </div>
+    <%= render Molecules::SettingRow::Component.new(label: Repository.human_attribute_name(:license_id), id: "repository_license_label") do %>
+      <%= render Molecules::SelectMenu::Component.new(form: form, attribute: :license_id, label: nil, labelledby: "repository_license_label", icon: :scale, options: [ [ t(".no_license"), "" ], *@licenses.map { [ it.name, it.id ] } ]) %>
     <% end %>
   </div>
 
   <div class="flex flex-wrap items-center justify-end gap-2">
-    <%= link_to t(".cancel"), user_repositories_path(Current.user.username), class: "rounded-full px-5 py-2.5 text-[15px] font-semibold text-muted hover:bg-field" %>
-    <button type="submit" class="flex h-11 cursor-pointer items-center rounded-full bg-lime px-5 text-[15px] font-semibold text-forest hover:bg-lime-soft">
+    <%= link_to t(".cancel"), user_repositories_path(Current.user.username), class: "rounded-full px-[18px] py-3 font-semibold text-muted hover:bg-field" %>
+    <button type="submit" class="flex h-16 cursor-pointer items-center gap-2 rounded-full bg-lime px-8 text-[17px] font-semibold text-forest hover:bg-lime-soft">
       <%= t(".submit") %>
+      <%= render Atoms::Icon::Component.new(name: :arrow_right, class: "size-[18px]", "stroke-width": 2) %>
     </button>
   </div>
 <% end %>

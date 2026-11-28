@@ -38,10 +38,4 @@ class Molecules::SelectMenu::ComponentTest < ViewComponent::TestCase
     assert_empty menu.css("legend")
     assert_equal "license_label", menu.css("fieldset").attr("aria-labelledby").value
   end
-
-  test "compact uses the compact shell" do
-    menu = render_inline(Molecules::SelectMenu::Component.new(form: builder, attribute: :license_id, label: nil, icon: :scale, options: OPTIONS, compact: true))
-
-    assert_equal 1, menu.css("summary.nb-field-shell.nb-field-shell-compact").size
-  end
 end

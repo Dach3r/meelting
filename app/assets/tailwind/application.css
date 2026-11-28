@@ -169,23 +169,6 @@
     color: var(--color-lime);
   }
 
-  .nb-field-shell-compact {
-    height: 2.75rem;
-    border-radius: 0.75rem;
-    padding-inline: 0.875rem;
-  }
-
-  .nb-field-shell-compact .nb-field-shell-icon {
-    width: auto;
-    height: auto;
-    background-color: transparent;
-    color: var(--color-ring);
-  }
-
-  .nb-field-shell-compact .nb-field-shell-input {
-    font-size: 0.9375rem;
-  }
-
   .nb-field-shell-input {
     flex: 1;
     width: 0;
