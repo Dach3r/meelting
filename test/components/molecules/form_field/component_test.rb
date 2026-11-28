@@ -46,4 +46,19 @@ class Molecules::FormField::ComponentTest < ViewComponent::TestCase
 
     assert_equal "Password Forgot?", field.css("label").first.parent.text.squish
   end
+
+  test "text area type renders a textarea in an area shell" do
+    field = render_inline(Molecules::FormField::Component.new(form: builder, attribute: :username, label: "Username", icon: :user, type: :text_area, required: false))
+
+    assert_equal 1, field.css(".nb-field-shell.nb-field-shell-area textarea.nb-field-shell-input:not([required])").size
+  end
+
+  test "control replaces the default input" do
+    field = render_inline(Molecules::FormField::Component.new(form: builder, attribute: :username, label: "Username", icon: :user)) do |component|
+      component.with_control { "<select class='custom'></select>".html_safe }
+    end
+
+    assert_equal 1, field.css(".nb-field-shell select.custom").size
+    assert_empty field.css("input")
+  end
 end

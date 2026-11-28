@@ -18,9 +18,20 @@ es:
       empty: "Aún no tienes repositorios."
     new:
       title: "Nuevo repositorio"
+      progress: "Progreso"
+      steps:
+        repository: "Repositorio"
+        visibility: "Visibilidad"
+        default_branch: "Rama por defecto"
+      name_placeholder: "Mi proyecto"
+      slug_placeholder: "mi-proyecto"
       slug_hint: "Minúsculas, números, puntos, guiones y guiones bajos."
+      description_placeholder: "¿De qué trata?"
       no_license: "Sin licencia"
+      next: "Siguiente"
+      back: "Atrás"
       submit: "Crear repositorio"
+      or: "o"
       cancel: "Cancelar"
     create:
       created: "Repositorio creado."

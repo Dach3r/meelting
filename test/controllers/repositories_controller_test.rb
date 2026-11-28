@@ -23,9 +23,13 @@ class RepositoriesControllerTest < ActionDispatch::IntegrationTest
     assert_select "##{dom_id(repositories(:public_notes))}", count: 0
   end
 
-  test "new renders form" do
+  test "new renders the wizard on the first step" do
     get new_repository_path
     assert_response :success
+    assert_select "form[data-controller=repository-wizard][data-repository-wizard-step-value=1]"
+    assert_select "[data-repository-wizard-target=step]", 3
+    assert_select "[data-repository-wizard-target=step]:not([hidden]) #repository_name"
+    assert_select "[data-repository-wizard-target=step][hidden] #repository_default_branch"
   end
 
   test "create stores the repository for the current user" do
@@ -50,6 +54,13 @@ class RepositoriesControllerTest < ActionDispatch::IntegrationTest
       post repositories_path, params: valid_params(slug: repositories(:meelting).slug)
     end
     assert_response :unprocessable_entity
+  end
+
+  test "create failure reopens the wizard on the step with the first error" do
+    post repositories_path, params: valid_params(default_branch: "")
+    assert_response :unprocessable_entity
+    assert_select "form[data-repository-wizard-step-value=3]"
+    assert_select "[data-repository-wizard-target=step]:not([hidden]) #repository_default_branch"
   end
 
   test "create with inactive license fails" do
