@@ -46,6 +46,7 @@ en:
       title: "Set up Meelting"
       lead: "Six steps to your first agent pull request. Each one checks itself off when it is done."
       progress: "%{done} of %{total}"
+      progress_of: "of %{total}"
       done: "Done"
       steps:
         access_token:

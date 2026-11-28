@@ -1,6 +1,8 @@
 module Organisms
   module SetupChecklist
     class Component < ViewComponent::Base
+      RING_RADIUS = 150
+      RING_CIRCUMFERENCE = (2 * Math::PI * RING_RADIUS).round(2)
       ACTIONS = { access_token: :new_access_token_path, repository: :new_repository_path }.freeze
 
       def initialize(steps:)
@@ -23,8 +25,8 @@ module Organisms
         send(helper) if helper
       end
 
-      def percent
-        done_count * 100 / steps.size
+      def ring_dash
+        [RING_CIRCUMFERENCE * done_count / steps.size, 0.1].max.round(2)
       end
 
       def title_for(step)

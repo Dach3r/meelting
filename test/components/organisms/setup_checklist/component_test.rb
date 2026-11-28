@@ -12,6 +12,13 @@ class Organisms::SetupChecklist::ComponentTest < ViewComponent::TestCase
     assert_includes node.text, "1 de 6"
   end
 
+  test "fills the progress ring by completed steps" do
+    node = render_inline(Organisms::SetupChecklist::Component.new(steps: steps(%i[access_token repository mirror])))
+
+    assert_equal "471.24 942.48", node.css("svg circle").last["stroke-dasharray"]
+    assert_includes node.text, "de 6"
+  end
+
   test "highlights the first pending step with its action" do
     node = render_inline(Organisms::SetupChecklist::Component.new(steps: steps([:access_token])))
 

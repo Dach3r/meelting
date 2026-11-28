@@ -46,6 +46,7 @@ es:
       title: "Configura Meelting"
       lead: "Seis pasos hasta tu primer pull request de un agente. Cada uno se marca solo al cumplirse."
       progress: "%{done} de %{total}"
+      progress_of: "de %{total}"
       done: "Hecho"
       steps:
         access_token:
