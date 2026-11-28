@@ -50,7 +50,7 @@ class Organisms::Sidebar::ComponentTest < ViewComponent::TestCase
     node = render_inline(Organisms::Sidebar::Component.new(workspace: workspace, user: users(:one)))
 
     rail = node.css("nav:not(#sidebar-menu)").first
-    assert_equal [I18n.t("sidebar.inbox"), I18n.t("sidebar.runs"), I18n.t("sidebar.repositories"), I18n.t("sidebar.settings")], rail.css("a[aria-label]").map { |link_| link_["aria-label"] }.drop(1)
+    assert_equal [I18n.t("sidebar.inbox"), I18n.t("sidebar.runs"), I18n.t("sidebar.repositories")], rail.css("a[aria-label]").map { |link_| link_["aria-label"] }.drop(1)
     assert_equal I18n.t("sidebar.expand"), rail.css("button[data-action='sidebar#expand']").first["aria-label"]
     assert_equal 1, node.css("#sidebar-menu button[data-action='sidebar#collapse']").size
     assert_equal ApplicationHelper::SIDEBAR_COOKIE, node.css("[data-controller=sidebar]").first["data-sidebar-cookie-value"]

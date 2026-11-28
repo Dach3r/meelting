@@ -49,7 +49,6 @@ class Workspace::BuildTest < ActiveSupport::TestCase
     state = Workspace::Build.call(user: @user)
 
     assert state.first_run?
-    assert_not state.settings_warning?
     assert_nil state.banner_problem
   end
 
@@ -100,7 +99,7 @@ class Workspace::BuildTest < ActiveSupport::TestCase
     @user.provider_credentials.create!(api_key: "sk", status: :unverified)
     @user.complete_onboarding!
 
-    assert_not Workspace::Build.call(user: @user).settings_warning?
+    assert_nil Workspace::Build.call(user: @user).banner_problem
   end
 
   test "a rejected key shows the settings warning even during onboarding" do
@@ -125,7 +124,6 @@ class Workspace::BuildTest < ActiveSupport::TestCase
     assert_empty state.checklist
     assert_nil state.push_repository
     assert_equal :missing_model_key, state.banner_problem.kind
-    assert state.settings_warning?
   end
 
   test "inbox scenario sorts items by waiting time, oldest first" do
@@ -136,7 +134,7 @@ class Workspace::BuildTest < ActiveSupport::TestCase
     assert_equal 3, state.inbox_count
     assert_equal 1, state.runs_count
     assert state.preview
-    assert_not state.settings_warning?
+    assert_nil state.banner_problem
     assert_equal %i[ok], state.repositories.map(&:mirror).uniq
   end
 
@@ -155,7 +153,6 @@ class Workspace::BuildTest < ActiveSupport::TestCase
     assert_empty state.runs
     assert_equal :mirror_failing, state.banner_problem.kind
     assert_equal :failing, state.repositories.last.mirror
-    assert state.settings_warning?
   end
 
   test "empty scenario falls back to placeholder repositories when the user has none" do

@@ -23,11 +23,6 @@
     <%= render Molecules::RailItem::Component.new(label: t("sidebar.repositories"), href: repositories_path, icon: :git_branch, current: current_page_in?(repositories_path)) %>
   </div>
   <div class="mt-auto flex flex-col items-center gap-1 pt-8">
-    <%= render Molecules::RailItem::Component.new(label: t("sidebar.settings"), href: settings_path, icon: :settings, current: current_page_in?(settings_path)) do |item| %>
-      <% if workspace.settings_warning? %>
-        <% item.with_badge do %><span class="absolute top-3 right-[18px] flex"><%= render Atoms::StatusDot::Component.new(tone: :warn, label: t("sidebar.settings_warning")) %></span><% end %>
-      <% end %>
-    <% end %>
     <button type="button" class="flex h-11 w-[68px] cursor-pointer items-center justify-center rounded-xl text-forest-muted hover:bg-forest-active/50" aria-label="<%= t("sidebar.expand") %>" data-action="sidebar#expand">
       <%= render Atoms::Icon::Component.new(name: :chevrons_right, class: "size-5", "stroke-width": 1.75) %>
     </button>
@@ -67,11 +62,6 @@
   </div>
 
   <div class="mt-auto flex flex-col gap-1 pt-8">
-    <%= render Molecules::NavItem::Component.new(label: t("sidebar.settings"), href: settings_path, icon: :settings, current: current_page_in?(settings_path)) do |item| %>
-      <% if workspace.settings_warning? %>
-        <% item.with_trailing do %><%= render Atoms::StatusDot::Component.new(tone: :warn, label: t("sidebar.settings_warning")) %><% end %>
-      <% end %>
-    <% end %>
     <button type="button" class="hidden h-11 cursor-pointer items-center gap-3.5 rounded-xl px-4 text-left text-sm font-medium text-forest-muted hover:bg-forest-active/50 lg:flex" data-action="sidebar#collapse">
       <%= render Atoms::Icon::Component.new(name: :chevrons_left, class: "mx-px size-5 shrink-0", "stroke-width": 1.75) %>
       <span><%= t("sidebar.collapse") %></span>

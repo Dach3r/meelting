@@ -16,10 +16,6 @@ module Workspace
       runs.size
     end
 
-    def settings_warning?
-      problems.any?
-    end
-
     def banner_problem
       problems.first
     end

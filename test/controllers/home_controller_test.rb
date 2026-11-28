@@ -29,13 +29,6 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     assert_select "[role=img]", text: "1 de 4"
   end
 
-  test "hides the settings warning while the checklist is shown" do
-    sign_in_as users(:one)
-    get root_path
-
-    assert_select "[aria-label='#{I18n.t("sidebar.settings_warning")}']", count: 0
-  end
-
   test "shows the inbox instead of the checklist once onboarding is complete" do
     users(:one).complete_onboarding!
     sign_in_as users(:one)

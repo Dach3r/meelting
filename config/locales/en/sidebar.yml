@@ -7,8 +7,6 @@ en:
     runs: "Runs"
     runs_in_progress: "%{count} runs in progress"
     repositories: "Repositories"
-    settings: "Settings"
-    settings_warning: "There is a configuration problem"
     expand: "Expand menu"
     collapse: "Collapse"
     preview: "Preview data"

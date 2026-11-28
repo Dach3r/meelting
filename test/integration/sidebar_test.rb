@@ -9,7 +9,6 @@ class SidebarTest < ActionDispatch::IntegrationTest
       assert_select "a[href=?]", root_path
       assert_select "a[href=?]", runs_path
       assert_select "button[aria-expanded]", text: /Meelting/
-      assert_select "a[href=?]", settings_path
     end
   end
 
@@ -20,16 +19,6 @@ class SidebarTest < ActionDispatch::IntegrationTest
     %w[code issues pull_requests runs memory].each do |section|
       assert_select "#sidebar-repository-meelting a[href=?]", repository_section_path("meelting", section)
     end
-  end
-
-  test "settings carries a warning dot for a missing model key once onboarding is complete" do
-    sign_in_as users(:one)
-    get root_path
-    assert_select "a[href=?] [role=img][aria-label=?]", settings_path, "Hay un problema de configuración", count: 0
-
-    users(:one).complete_onboarding!
-    get root_path
-    assert_select "a[href=?] [role=img][aria-label=?]", settings_path, "Hay un problema de configuración"
   end
 
   test "renders the rail by default and the expanded sidebar when its cookie says so" do
@@ -57,17 +46,15 @@ class SidebarTest < ActionDispatch::IntegrationTest
     assert_select "a[href=?] span[aria-label=?]", root_path, "3 pendientes"
     assert_select "a[href=?] [role=img][aria-label=?]", runs_path, "1 runs en curso"
     assert_select "[role=img][aria-label=?]", "Mirror al día"
-    assert_select "a[href=?] [role=img]", settings_path, count: 0
   end
 
-  test "preview empty shows a failing mirror dot and the settings warning" do
+  test "preview empty shows a failing mirror dot" do
     in_development do
       sign_in_as users(:one)
       get root_path(preview: "empty")
     end
 
     assert_select "[role=img][aria-label=?]", "Mirror fallando"
-    assert_select "a[href=?] [role=img][aria-label=?]", settings_path, "Hay un problema de configuración"
   end
 
   test "preview first_run does not label real data as preview" do
