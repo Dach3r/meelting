@@ -2,6 +2,7 @@ import { Controller } from "@hotwired/stimulus";
 
 const NAV_ITEM_CURRENT = ["bg-cream"];
 const NAV_DOT_CURRENT = ["border-forest", "bg-forest", "text-lime"];
+const SLUG_FORMAT = /^[a-z0-9][a-z0-9._-]*$/;
 const NAV_DOT_IDLE = ["border-line", "text-ink"];
 
 export default class extends Controller {
@@ -16,6 +17,7 @@ export default class extends Controller {
     "submitLabel",
     "back",
     "name",
+    "url",
     "visibility",
     "license",
     "branch",
@@ -25,7 +27,13 @@ export default class extends Controller {
     nextLabel: String,
     submitLabel: String,
     positionLabel: String,
+    urlTemplate: String,
+    takenSlugs: Array,
   };
+
+  connect() {
+    this.refresh();
+  }
 
   stepValueChanged() {
     const current = this.stepValue;
@@ -79,6 +87,29 @@ export default class extends Controller {
       license?.text,
     ].filter(Boolean).join(" · "));
     this.#show(branch, this.branchTarget.value);
+    this.#showUrl();
+  }
+
+  #showUrl() {
+    const slug = this.#slugFor(this.nameTarget.value);
+    const valid = SLUG_FORMAT.test(slug) && !this.takenSlugsValue.includes(slug);
+
+    this.urlTarget.hidden = this.nameTarget.value.trim() === "";
+    this.urlTarget.textContent = this.urlTemplateValue.replace("__slug__", slug);
+    this.urlTarget.classList.toggle("text-forest", valid);
+    this.urlTarget.classList.toggle("text-danger", !valid);
+  }
+
+  #slugFor(name) {
+    return name
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9_-]+/gi, "-")
+      .replace(/-{2,}/g, "-")
+      .replace(/^-|-$/g, "")
+      .toLowerCase()
+      .slice(0, 100)
+      .replace(/-$/, "");
   }
 
   #show(element, value) {

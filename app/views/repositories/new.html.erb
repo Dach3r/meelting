@@ -10,7 +10,8 @@
 <%= form_with model: @repository, class: "grid w-full content-start gap-8 lg:grid-cols-[240px_minmax(0,1fr)]",
       data: { controller: "repository-wizard", action: "input->repository-wizard#refresh change->repository-wizard#refresh",
               repository_wizard_step_value: step, repository_wizard_next_label_value: t(".next"), repository_wizard_submit_label_value: t(".submit"),
-              repository_wizard_position_label_value: t(".step_position", current: "%{current}", total: "%{total}") } do |form| %>
+              repository_wizard_position_label_value: t(".step_position", current: "%{current}", total: "%{total}"),
+              repository_wizard_url_template_value: repository_section_url("__slug__", :code), repository_wizard_taken_slugs_value: @taken_slugs } do |form| %>
   <ol class="grid auto-cols-[minmax(200px,1fr)] grid-flow-col content-start gap-1 overflow-x-auto lg:grid-flow-row lg:auto-cols-auto" aria-label="<%= t(".progress") %>">
     <% steps.each_with_index do |label, index| %>
       <li class="<%= class_names("grid grid-cols-[36px_minmax(0,1fr)] items-center gap-3 rounded-[18px] p-3", "bg-cream" => index + 1 == step) %>" data-repository-wizard-target="navItem" <%= "aria-current=step" if index + 1 == step %>>
@@ -40,7 +41,9 @@
     <% end %>
 
     <div class="grid gap-5" data-repository-wizard-target="step" data-label="<%= steps[0] %>" <%= "hidden" unless step == 1 %>>
-      <%= render Molecules::FormField::Component.new(form: form, attribute: :name, label: Repository.human_attribute_name(:name), icon: :type, autofocus: step == 1, placeholder: t(".name_placeholder"), data: { repository_wizard_target: "name" }) %>
+      <%= render Molecules::FormField::Component.new(form: form, attribute: :name, label: Repository.human_attribute_name(:name), icon: :type, autofocus: step == 1, placeholder: t(".name_placeholder"), data: { repository_wizard_target: "name" }) do |field| %>
+        <% field.with_label_aside do %><p class="min-w-0 truncate font-mono text-[13px] font-semibold" data-repository-wizard-target="url" aria-live="polite" hidden></p><% end %>
+      <% end %>
       <%= render Molecules::FormField::Component.new(form: form, attribute: :description, label: Repository.human_attribute_name(:description), icon: :align_left, type: :text_area, required: false, rows: 3, maxlength: 350, placeholder: t(".description_placeholder")) %>
     </div>
 

@@ -55,6 +55,13 @@ class RepositoriesControllerTest < ActionDispatch::IntegrationTest
     assert_select "#repository_slug", 0
   end
 
+  test "new passes the url template and taken slugs to the wizard" do
+    get new_repository_path
+    assert_select "form[data-repository-wizard-url-template-value=?]", "http://www.example.com/repositories/__slug__/code"
+    assert_select "form[data-repository-wizard-taken-slugs-value=?]", [repositories(:meelting).slug].to_json
+    assert_select "[data-repository-wizard-target=url][hidden]"
+  end
+
   test "create without name fails" do
     assert_no_difference "Repository.count" do
       post repositories_path, params: valid_params(name: "")

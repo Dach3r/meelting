@@ -5,6 +5,7 @@ class RepositoriesController < ApplicationController
 
   def new
     @repository = Current.user.repositories.new
+    @taken_slugs = Current.user.repositories.pluck(:slug)
   end
 
   def create
@@ -13,6 +14,7 @@ class RepositoriesController < ApplicationController
     if @repository.save
       redirect_to repository_section_path(@repository.slug, :code), notice: t(".created")
     else
+      @taken_slugs = Current.user.repositories.pluck(:slug)
       render :new, status: :unprocessable_entity
     end
   end
