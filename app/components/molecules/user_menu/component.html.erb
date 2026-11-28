@@ -7,8 +7,7 @@
     <% end %>
   </summary>
   <div class="<%= panel_classes %>">
-    <%= render Atoms::Link::Component.new(href: repositories_path, tone: :menu) do %><%= t("navbar.repositories") %><% end %>
-    <%= render Atoms::Link::Component.new(href: access_tokens_path, tone: :menu) do %><%= t("navbar.access_tokens") %><% end %>
+    <%= render Atoms::Link::Component.new(href: settings_path, tone: :menu) do %><%= t("navbar.settings") %><% end %>
     <%= render Atoms::Button::Component.new(href: session_path, method: :delete, tone: :menu) do %><%= t("navbar.sign_out") %><% end %>
   </div>
 </details>

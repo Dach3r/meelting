@@ -12,7 +12,7 @@ class NavbarTest < ActionDispatch::IntegrationTest
     sign_in_as users(:one)
     get repositories_path
 
-    assert_select "nav a[href=?]", access_tokens_path
+    assert_select "nav details a[href=?]", settings_path
     assert_select "nav form[action=?]", session_path
   end
 end
