@@ -28,7 +28,10 @@
       <% end %>
     <% end %>
   </div>
-  <button type="button" class="mt-auto flex size-11 cursor-pointer items-center justify-center rounded-xl text-forest-muted hover:bg-forest-active/50" aria-label="<%= t("sidebar.expand") %>" data-action="sidebar#expand">
+  <div class="mt-auto">
+    <%= render Molecules::UserMenu::Component.new(user: user, compact: true) %>
+  </div>
+  <button type="button" class="mt-2 flex size-11 cursor-pointer items-center justify-center rounded-xl text-forest-muted hover:bg-forest-active/50" aria-label="<%= t("sidebar.expand") %>" data-action="sidebar#expand">
     <%= render Atoms::Icon::Component.new(name: :chevrons_right, class: "size-5", "stroke-width": 1.75) %>
   </button>
 </nav>
@@ -73,6 +76,9 @@
       <%= render Atoms::Icon::Component.new(name: :chevrons_left, class: "mx-px size-5 shrink-0", "stroke-width": 1.75) %>
       <span><%= t("sidebar.collapse") %></span>
     </button>
+    <div class="mt-2 border-t border-forest-active pt-3">
+      <%= render Molecules::UserMenu::Component.new(user: user) %>
+    </div>
   </div>
 </nav>
 </div>

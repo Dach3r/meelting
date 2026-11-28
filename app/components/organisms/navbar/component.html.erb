@@ -3,7 +3,6 @@
     <%= render Molecules::SearchTrigger::Component.new %>
     <nav class="flex items-center gap-3" aria-label="<%= t("navbar.label") %>">
       <button type="button" class="flex size-[54px] shrink-0 cursor-pointer items-center justify-center rounded-full bg-white text-ink" aria-label="<%= t("navbar.notifications_label") %>"><%= render Atoms::Icon::Component.new(name: :bell, class: "size-5", "stroke-width": 1.75) %></button>
-      <%= render Molecules::UserMenu::Component.new(user: user) %>
     </nav>
   <% else %>
     <%= render Molecules::Brand::Component.new(tone: :dark) %>

@@ -1,13 +1,12 @@
 module Organisms
   module Navbar
     class Component < ViewComponent::Base
-      def initialize(authenticated:, user: nil)
+      def initialize(authenticated:)
         @authenticated = authenticated
-        @user = user
       end
 
       private
-      attr_reader :authenticated, :user
+      attr_reader :authenticated
     end
   end
 end

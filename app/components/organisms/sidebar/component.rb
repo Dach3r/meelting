@@ -1,13 +1,14 @@
 module Organisms
   module Sidebar
     class Component < ViewComponent::Base
-      def initialize(workspace:, expanded_slug: nil)
+      def initialize(workspace:, user:, expanded_slug: nil)
         @workspace = workspace
+        @user = user
         @expanded_slug = expanded_slug
       end
 
       private
-      attr_reader :workspace, :expanded_slug
+      attr_reader :workspace, :user, :expanded_slug
 
       def expanded?(repository)
         repository.slug == (request.path_parameters[:repository_slug] || expanded_slug)

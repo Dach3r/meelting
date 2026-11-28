@@ -1,10 +1,12 @@
 <details class="relative">
-  <summary class="flex h-[54px] cursor-pointer list-none items-center gap-3.5 rounded-full bg-white pr-[18px] pl-[9px] text-ink [&::-webkit-details-marker]:hidden" aria-label="<%= t("navbar.user_menu") %>">
-    <span class="flex size-9 items-center justify-center rounded-full bg-lime font-initials text-sm font-bold text-ink" aria-hidden="true"><%= initial %></span>
-    <span class="hidden font-display text-base font-semibold sm:inline"><%= user.full_name %></span>
-    <%= render Atoms::Icon::Component.new(name: :chevrons_up_down, class: "size-4 text-forest", "stroke-width": 2) %>
+  <summary class="<%= summary_classes %>" aria-label="<%= t("navbar.user_menu") %>">
+    <span class="flex size-9 shrink-0 items-center justify-center rounded-full bg-lime text-sm font-bold text-ink" aria-hidden="true"><%= initial %></span>
+    <% unless compact %>
+      <span class="min-w-0 flex-1 truncate text-base font-semibold"><%= user.full_name %></span>
+      <%= render Atoms::Icon::Component.new(name: :chevrons_up_down, class: "size-4 shrink-0 text-forest-muted", "stroke-width": 2) %>
+    <% end %>
   </summary>
-  <div class="absolute right-0 top-full z-10 mt-2 grid w-56 gap-1 rounded-2xl border border-cream-line bg-white p-2 shadow-[0_12px_32px_-12px_rgb(33_53_36/0.25)]">
+  <div class="<%= panel_classes %>">
     <%= render Atoms::Link::Component.new(href: repositories_path, tone: :menu) do %><%= t("navbar.repositories") %><% end %>
     <%= render Atoms::Link::Component.new(href: access_tokens_path, tone: :menu) do %><%= t("navbar.access_tokens") %><% end %>
     <%= render Atoms::Button::Component.new(href: session_path, method: :delete, tone: :menu) do %><%= t("navbar.sign_out") %><% end %>

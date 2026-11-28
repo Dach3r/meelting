@@ -10,18 +10,18 @@ class Organisms::Navbar::ComponentTest < ViewComponent::TestCase
     assert_empty nav.css("a[href='/repositories']")
   end
 
-  test "renders navigation and sign out button when authenticated" do
-    nav = render_inline(Organisms::Navbar::Component.new(authenticated: true, user: users(:one)))
+  test "renders search and notifications when authenticated, the user menu lives in the sidebar" do
+    nav = render_inline(Organisms::Navbar::Component.new(authenticated: true))
 
-    assert_equal 1, nav.css("a[href='/repositories']").size
-    assert_equal 1, nav.css("a[href='/access_tokens']").size
-    assert_equal 1, nav.css("form[action='/session'] button").size
+    assert_equal 1, nav.css("button[aria-label='#{I18n.t("navbar.search_label")}']").size
+    assert_empty nav.css("details")
+    assert_empty nav.css("form[action='/session']")
     assert_empty nav.css("a[href='/session/new']")
   end
 
   test "shows the brand only to guests, the sidebar owns it once signed in" do
     guest = render_inline(Organisms::Navbar::Component.new(authenticated: false))
-    member = render_inline(Organisms::Navbar::Component.new(authenticated: true, user: users(:one)))
+    member = render_inline(Organisms::Navbar::Component.new(authenticated: true))
 
     assert_equal ApplicationHelper::CONFIG[:name], guest.css("a[href='/']").text.strip
     assert_empty member.css("a[href='/']")
@@ -30,7 +30,7 @@ class Organisms::Navbar::ComponentTest < ViewComponent::TestCase
   test "renders notifications bell only when authenticated" do
     label = I18n.t("navbar.notifications_label")
 
-    assert_equal 1, render_inline(Organisms::Navbar::Component.new(authenticated: true, user: users(:one))).css("button[aria-label='#{label}']").size
+    assert_equal 1, render_inline(Organisms::Navbar::Component.new(authenticated: true)).css("button[aria-label='#{label}']").size
     assert_empty render_inline(Organisms::Navbar::Component.new(authenticated: false)).css("button[aria-label='#{label}']")
   end
 
