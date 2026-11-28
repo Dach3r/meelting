@@ -5,6 +5,7 @@ gem "bootsnap", require: false
 gem "dotenv-rails"
 gem "image_processing", "~> 1.2"
 gem "importmap-rails"
+gem "licensee", "~> 10.1"
 gem "lucide-rails", "~> 0.7.4"
 gem "pg", "~> 1.1"
 gem "propshaft"
