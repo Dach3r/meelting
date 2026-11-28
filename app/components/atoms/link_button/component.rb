@@ -12,7 +12,7 @@ module Atoms
         sm: "h-10 px-4 text-sm",
         md: "h-11 px-5 text-[15px]",
         lg: "h-14 px-6 text-[17px]",
-        block: "h-14 w-full px-6 text-[17px]"
+        block: "h-16 w-full px-6 text-[17px]"
       }.freeze
 
       def initialize(href:, variant: :primary, size: :md, **html_options)
