@@ -2,7 +2,7 @@ require "test_helper"
 
 class Molecules::SidebarRepository::ComponentTest < ViewComponent::TestCase
   def repository(real: true, mirror: :ok)
-    Workspace::RepositoryEntry.new(name: "Meelting", slug: "meelting", mirror: mirror, real: real)
+    Workspace::RepositoryEntry.new(name: "Meelting", slug: "meelting", username: "ada", mirror: mirror, real: real)
   end
 
   test "collapsed renders the button with aria-expanded false and a hidden panel" do

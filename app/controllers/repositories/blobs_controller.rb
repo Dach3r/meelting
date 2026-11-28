@@ -1,11 +1,13 @@
 module Repositories
   class BlobsController < ApplicationController
+    include RepositoryScoped
+
     MAX_BYTES = 1.megabyte
 
     before_action { request.format = :html }
 
     def show
-      @repository = Current.user.repositories.active.find_by!(slug: params[:repository_slug])
+      @repository = find_repository
       @path = params[:path]
       content = @repository.head_sha && @repository.git.blob_at(@repository.head_sha, @path)
       raise ActiveRecord::RecordNotFound unless content

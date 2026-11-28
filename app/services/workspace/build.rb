@@ -41,7 +41,7 @@ module Workspace
     end
 
     def real_repositories
-      @real_repositories ||= user.repositories.active.order(:name).map { |repository_| RepositoryEntry.new(name: repository_.name, slug: repository_.slug, mirror: :none, real: true) }
+      @real_repositories ||= user.repositories.active.order(:name).map { |repository_| RepositoryEntry.new(name: repository_.name, slug: repository_.slug, username: user.username, mirror: :none, real: true) }
     end
 
     def problems

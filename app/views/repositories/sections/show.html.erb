@@ -14,7 +14,7 @@
     <% if @license %>
       <p id="repository_license" class="flex items-center gap-2 text-[15px]">
         <%= render Atoms::Icon::Component.new(name: :scale, class: "size-[18px] flex-none", "stroke-width": 2) %>
-        <%= render Atoms::Link::Component.new(href: repository_blob_path(@repository.slug, @license.path), tone: :underline) do %><%= @license.other? ? t("repositories.license.other") : t("repositories.license.named", name: @license.spdx_id) %><% end %>
+        <%= render Atoms::Link::Component.new(href: repository_blob_path(@repository.user.username, @repository.slug, @license.path), tone: :underline) do %><%= @license.other? ? t("repositories.license.other") : t("repositories.license.named", name: @license.spdx_id) %><% end %>
       </p>
     <% end %>
   </div>

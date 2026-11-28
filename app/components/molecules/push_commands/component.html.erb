@@ -1,7 +1,7 @@
 <div id="push_commands" class="mt-3 flex flex-col items-start gap-3">
   <pre class="w-full overflow-x-auto rounded-xl bg-forest p-4 font-mono text-[13px] leading-relaxed text-white"><code class="select-all">git remote add origin <%= remote_url %>
 git push -u origin <%= repository.default_branch %></code></pre>
-  <%= render Atoms::Button::Component.new(href: repository_push_token_path(repository.slug), tone: :pill) do %><%= t("repositories.push.generate") %><% end %>
+  <%= render Atoms::Button::Component.new(href: repository_push_token_path(username, repository.slug), tone: :pill) do %><%= t("repositories.push.generate") %><% end %>
   <% if access_token %>
     <dialog id="push_token" class="m-auto w-[calc(100%-2rem)] max-w-lg overflow-x-hidden rounded-[28px] bg-white p-8 text-ink backdrop:bg-forest/70" aria-labelledby="push_token_title" closedby="none" data-controller="dialog">
       <h2 id="push_token_title" class="text-2xl leading-tight font-bold tracking-[-0.02em]"><%= t("repositories.push.modal_title") %></h2>

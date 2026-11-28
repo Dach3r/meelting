@@ -9,7 +9,7 @@ class Molecules::PushCommands::ComponentTest < ViewComponent::TestCase
     commands = node.css("pre code").text
     assert_includes commands, "git remote add origin http://test.host/ada/meelting.git"
     assert_includes commands, "git push -u origin main"
-    assert_equal "/repositories/meelting/push_token", node.css("form").first["action"]
+    assert_equal "/ada/repositories/meelting/push_token", node.css("form").first["action"]
     assert_empty node.css("#push_token")
   end
 

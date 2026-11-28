@@ -16,8 +16,8 @@ module Workspace
     ].freeze
 
     REPOSITORIES = [
-      RepositoryEntry.new(name: "meelting", slug: "meelting", mirror: :ok, real: false),
-      RepositoryEntry.new(name: "veta", slug: "veta", mirror: :ok, real: false)
+      RepositoryEntry.new(name: "meelting", slug: "meelting", username: nil, mirror: :ok, real: false),
+      RepositoryEntry.new(name: "veta", slug: "veta", username: nil, mirror: :ok, real: false)
     ].freeze
 
     def self.items(scenario)

@@ -27,7 +27,7 @@ module Molecules
       def section_path(section)
         return repositories_path unless repository.real
 
-        section == :code ? repository_path(repository.slug) : repository_section_path(repository.slug, section)
+        section == :code ? repository_path(repository.username, repository.slug) : repository_section_path(repository.username, repository.slug, section)
       end
     end
   end

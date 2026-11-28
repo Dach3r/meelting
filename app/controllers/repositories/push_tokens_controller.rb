@@ -1,9 +1,11 @@
 module Repositories
   class PushTokensController < ApplicationController
+    include RepositoryScoped
+
     SCOPES = %w[git_read git_write].freeze
 
     def create
-      @repository = Current.user.repositories.active.find_by!(slug: params[:repository_slug])
+      @repository = find_repository
       @access_token = Current.user.access_tokens.create!(name: t(".name", repository: @repository.name), scopes: SCOPES)
 
       respond_to do |format|

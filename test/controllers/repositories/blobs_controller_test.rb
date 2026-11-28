@@ -10,7 +10,7 @@ class Repositories::BlobsControllerTest < ActionDispatch::IntegrationTest
     with_git_root do
       create_bare_repository(repositories(:meelting), files: { "LICENSE" => License.find_by!(key: "mit").render(user: users(:one)) })
 
-      get repository_blob_path("meelting", "LICENSE")
+      get repository_blob_path("ada", "meelting", "LICENSE")
 
       assert_response :success
       assert_select "#license_summary h2", "MIT License"
@@ -25,7 +25,7 @@ class Repositories::BlobsControllerTest < ActionDispatch::IntegrationTest
     with_git_root do
       create_bare_repository(repositories(:meelting), files: { "LICENSE" => Rails.root.join("LICENSE").read, "docs/notes.txt" => "<b>hi</b>\n" })
 
-      get repository_blob_path("meelting", "docs/notes.txt")
+      get repository_blob_path("ada", "meelting", "docs/notes.txt")
 
       assert_response :success
       assert_select "#license_summary", 0
@@ -37,7 +37,7 @@ class Repositories::BlobsControllerTest < ActionDispatch::IntegrationTest
     with_git_root do
       create_bare_repository(repositories(:meelting), files: { "LICENSE" => "All rights reserved.\n" })
 
-      get repository_blob_path("meelting", "LICENSE")
+      get repository_blob_path("ada", "meelting", "LICENSE")
 
       assert_select "#license_summary", 0
       assert_select "pre#blob"
@@ -46,19 +46,19 @@ class Repositories::BlobsControllerTest < ActionDispatch::IntegrationTest
 
   test "missing files, directories and empty repositories are not found" do
     with_git_root do
-      get repository_blob_path("meelting", "LICENSE")
+      get repository_blob_path("ada", "meelting", "LICENSE")
       assert_response :not_found
 
       create_bare_repository(repositories(:meelting), files: { "docs/notes.txt" => "x" })
-      get repository_blob_path("meelting", "nope.txt")
+      get repository_blob_path("ada", "meelting", "nope.txt")
       assert_response :not_found
-      get repository_blob_path("meelting", "docs")
+      get repository_blob_path("ada", "meelting", "docs")
       assert_response :not_found
     end
   end
 
   test "scopes repositories to the current user" do
-    get repository_blob_path("notes", "LICENSE")
+    get repository_blob_path("alan", "notes", "LICENSE")
 
     assert_response :not_found
   end

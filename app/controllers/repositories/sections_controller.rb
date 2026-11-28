@@ -1,9 +1,11 @@
 module Repositories
   class SectionsController < ApplicationController
+    include RepositoryScoped
+
     PHASES = { "code" => 1, "issues" => 2, "pull_requests" => 2, "runs" => 3, "memory" => 4 }.freeze
 
     def show
-      @repository = Current.user.repositories.active.find_by!(slug: params[:repository_slug])
+      @repository = find_repository
       @section = params[:section]
       @phase = PHASES.fetch(@section)
       return unless @section == "code"
