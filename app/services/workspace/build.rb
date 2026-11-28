@@ -38,7 +38,7 @@ module Workspace
     def checklist
       @checklist ||= [
         ChecklistStep.new(key: :repository, done: repository_pushed?),
-        ChecklistStep.new(key: :model_key, done: model_key_validated?),
+        ChecklistStep.new(key: :model_key, done: model_key_added?),
         ChecklistStep.new(key: :overview, done: overview_written?),
         ChecklistStep.new(key: :first_issue, done: first_issue_assigned?, available: false)
       ]
@@ -48,8 +48,8 @@ module Workspace
       pushed_repositories.any?
     end
 
-    def model_key_validated?
-      user.provider_credentials.status_valid.exists?
+    def model_key_added?
+      user.provider_credentials.usable.exists?
     end
 
     # TODO: read a flag stored by the push handler instead of running git on every request.
@@ -98,7 +98,7 @@ module Workspace
     def model_key_problem
       credential = user.provider_credentials.first
       if credential&.status_invalid? then Problem.new(kind: :invalid_model_key)
-      elsif !first_run? && !credential&.status_valid? then Problem.new(kind: :missing_model_key)
+      elsif !first_run? && credential.nil? then Problem.new(kind: :missing_model_key)
       end
     end
   end

@@ -53,7 +53,7 @@ class Workspace::BuildTest < ActiveSupport::TestCase
     assert_nil state.banner_problem
   end
 
-  PREDICATES = %i[repository_pushed? model_key_validated? overview_written? first_issue_assigned?].freeze
+  PREDICATES = %i[repository_pushed? model_key_added? overview_written? first_issue_assigned?].freeze
 
   def build_with(predicates)
     Workspace::Build.new(user: @user, scenario: nil).tap do |build_|
@@ -79,12 +79,28 @@ class Workspace::BuildTest < ActiveSupport::TestCase
     assert_equal completed_at, @user.reload.onboarding_completed_at
   end
 
-  test "checks the model key step only with a validated key" do
-    credential = @user.provider_credentials.create!(api_key: "sk")
-    assert_not Workspace::Build.call(user: @user).checklist.find { |step_| step_.key == :model_key }.done
+  def model_key_step
+    Workspace::Build.call(user: @user).checklist.find { |step_| step_.key == :model_key }
+  end
+
+  test "checks the model key step with a valid or unverified key, never an invalid one" do
+    assert_not model_key_step.done
+
+    credential = @user.provider_credentials.create!(api_key: "sk", status: :unverified)
+    assert model_key_step.done
 
     credential.update!(status: :valid)
-    assert Workspace::Build.call(user: @user).checklist.find { |step_| step_.key == :model_key }.done
+    assert model_key_step.done
+
+    credential.update!(status: :invalid)
+    assert_not model_key_step.done
+  end
+
+  test "an unverified key is not a missing key once onboarding is complete" do
+    @user.provider_credentials.create!(api_key: "sk", status: :unverified)
+    @user.complete_onboarding!
+
+    assert_not Workspace::Build.call(user: @user).settings_warning?
   end
 
   test "a rejected key shows the settings warning even during onboarding" do

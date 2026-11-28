@@ -48,6 +48,9 @@ class ProviderCredentialsControllerTest < ActionDispatch::IntegrationTest
 
     assert users(:one).provider_credentials.sole.status_unverified?
     assert_equal I18n.t("provider_credentials.create.unverified"), flash[:notice]
+    follow_redirect!
+    assert_select "#model_keys [role=status]", /No pudimos verificarla/
+    assert_select "#model_keys a", "Reintentar"
   end
 
   test "removes only the current user's key" do
