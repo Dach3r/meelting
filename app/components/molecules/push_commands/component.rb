@@ -1,13 +1,13 @@
 module Molecules
   module PushCommands
     class Component < ViewComponent::Base
-      def initialize(repository:, token: nil)
+      def initialize(repository:, access_token: nil)
         @repository = repository
-        @token = token
+        @access_token = access_token
       end
 
       private
-      attr_reader :repository, :token
+      attr_reader :repository, :access_token
 
       def username
         repository.user.username

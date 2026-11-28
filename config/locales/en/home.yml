@@ -63,6 +63,9 @@ en:
         accept: "Accept"
         copy: "Copy"
         copied: "Copied"
+        permissions: "Permissions"
+        permissions_note_html: "Works for all your repositories and never expires. You can revoke it in %{tokens}."
+        tokens_link: "access tokens"
       steps:
         repository:
           title: "Create a repository and push to it"

@@ -14,13 +14,15 @@ class Molecules::PushCommands::ComponentTest < ViewComponent::TestCase
   end
 
   test "opens the token in a modal apart from the commands, as the password for the username" do
-    node = render_inline(Molecules::PushCommands::Component.new(repository: @repository, token: "mlt_secret"))
+    token = users(:one).access_tokens.create!(name: "push", scopes: %w[git_read git_write])
+    node = render_inline(Molecules::PushCommands::Component.new(repository: @repository, access_token: token))
 
-    assert_not_includes node.css("pre code").text, "mlt_secret"
-    assert_equal %w[ada mlt_secret], node.css("#push_token code").map(&:text)
+    assert_not_includes node.css("pre code").text, token.plain_token
+    assert_equal ["ada", token.plain_token], node.css("#push_token code").map(&:text)
     assert_includes node.css("#push_token").text, "credential helper"
     assert_equal "dialog", node.css("dialog#push_token").first["data-controller"]
     assert_equal 1, node.css("form").size
+    assert_equal ["Clonar y descargar por Git", "Subir cambios por Git"], node.css("#push_token li").map { _1.text.strip }
     assert_equal ["Aceptar"], node.css("#push_token button[data-action='dialog#close']").map(&:text)
   end
 end

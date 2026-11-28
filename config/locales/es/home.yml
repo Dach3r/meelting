@@ -63,6 +63,9 @@ es:
         accept: "Aceptar"
         copy: "Copiar"
         copied: "Copiado"
+        permissions: "Permisos"
+        permissions_note_html: "Sirve para todos tus repositorios y no expira. Puedes revocarlo en %{tokens}."
+        tokens_link: "tokens de acceso"
       steps:
         repository:
           title: "Crea un repositorio y haz push"
