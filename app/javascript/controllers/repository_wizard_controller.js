@@ -1,7 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = ["step", "bar", "progress", "position", "label", "submit", "back", "cancel"]
+  static targets = ["step", "bar", "progress", "position", "label", "submit", "back"]
   static values = { step: Number, nextLabel: String, submitLabel: String }
 
   stepValueChanged() {
@@ -18,7 +18,6 @@ export default class extends Controller {
     this.labelTarget.textContent = this.stepTargets[current - 1].dataset.label
     this.submitTarget.textContent = current === total ? this.submitLabelValue : this.nextLabelValue
     this.backTarget.hidden = current === 1
-    this.cancelTarget.hidden = current !== 1
   }
 
   next(event) {

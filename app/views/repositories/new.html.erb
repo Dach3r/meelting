@@ -62,14 +62,6 @@
     </div>
 
     <%= render Atoms::SubmitButton::Component.new(class: "mt-1", data: { repository_wizard_target: "submit", action: "repository-wizard#next" }) do %><%= step == steps.size ? t(".submit") : t(".next") %><% end %>
-
-    <div class="flex items-center gap-4 text-xs leading-[normal] font-medium tracking-widest text-graphite-400 uppercase" role="separator">
-      <span class="h-px flex-1 bg-graphite-100"></span>
-      <span><%= t(".or") %></span>
-      <span class="h-px flex-1 bg-graphite-100"></span>
-    </div>
-
-    <%= render Atoms::LinkButton::Component.new(href: repositories_path, variant: :graphite_outline, size: :block, hidden: step != 1, data: { repository_wizard_target: "cancel" }) do %><%= t(".cancel") %><% end %>
     <button type="button" class="nb-btn w-full rounded-full border-transparent bg-graphite-50 px-6 py-5 text-base leading-[normal] font-semibold text-graphite-900 hover:bg-graphite-100" data-repository-wizard-target="back" data-action="repository-wizard#back" <%= "hidden" if step == 1 %>><%= t(".back") %></button>
   <% end %>
 </div>

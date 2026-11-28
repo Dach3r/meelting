@@ -31,8 +31,6 @@ en:
       next: "Next"
       back: "Back"
       submit: "Create repository"
-      or: "or"
-      cancel: "Cancel"
     create:
       created: "Repository created."
     push_tokens:
