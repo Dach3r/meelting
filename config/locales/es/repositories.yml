@@ -18,6 +18,12 @@ es:
       empty: "Aún no tienes repositorios."
     new:
       title: "Nuevo repositorio"
+      step_position: "Paso %{current} de %{total}"
+      summaries:
+        repository: "Nombre y slug"
+      slug_note:
+        title: "Sobre el slug"
+        body: "Es el identificador del repositorio en sus URLs. Se sugiere a partir del nombre."
       progress: "Progreso"
       steps:
         repository: "Repositorio"

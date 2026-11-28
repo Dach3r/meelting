@@ -30,6 +30,10 @@ class RepositoriesControllerTest < ActionDispatch::IntegrationTest
     assert_select "[data-repository-wizard-target=step]", 3
     assert_select "[data-repository-wizard-target=step]:not([hidden]) #repository_name"
     assert_select "[data-repository-wizard-target=step][hidden] #repository_default_branch"
+    assert_select "[data-repository-wizard-target=navItem]", 3
+    assert_select "[data-repository-wizard-target=navItem][aria-current=step]", text: /Repositorio/
+    assert_select "[data-repository-wizard-target=position]", "Paso 1 de 3"
+    assert_select "[data-repository-wizard-target=slugPreview]", "mi-proyecto"
   end
 
   test "create stores the repository for the current user" do
