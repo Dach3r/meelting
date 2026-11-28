@@ -77,13 +77,4 @@ class Repositories::SectionsControllerTest < ActionDispatch::IntegrationTest
 
     assert_redirected_to new_session_path
   end
-
-  test "expands the repository of the current page and marks the section as current" do
-    sign_in_as users(:one)
-    patch sidebar_expansion_path, params: { repository_slug: "other" }
-    get repository_section_path("ada", "meelting", "issues")
-
-    assert_select "button[aria-expanded=true]", count: 1
-    assert_select "#sidebar-repository-meelting:not([hidden]) a[aria-current=page]", "Issues"
-  end
 end

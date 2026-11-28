@@ -5,28 +5,10 @@ class Organisms::Sidebar::ComponentTest < ViewComponent::TestCase
     Workspace::Build.call(user: users(:one), scenario: scenario)
   end
 
-  test "has a single expanded repository at most" do
-    node = render_inline(Organisms::Sidebar::Component.new(workspace: workspace(:empty), user: users(:one), expanded_slug: "meelting"))
-
-    assert_operator node.css("button[aria-expanded=true]").size, :<=, 1
-  end
-
-  test "ignores a remembered slug that is not in the list" do
-    node = render_inline(Organisms::Sidebar::Component.new(workspace: workspace, user: users(:one), expanded_slug: "gone"))
-
-    assert_empty node.css("button[aria-expanded=true]")
-  end
-
   test "shows no counters when there is nothing to count" do
     node = render_inline(Organisms::Sidebar::Component.new(workspace: workspace, user: users(:one)))
 
     assert_empty node.css("[aria-label$=pendientes]")
-  end
-
-  test "wires the Stimulus controller with the persistence url" do
-    node = render_inline(Organisms::Sidebar::Component.new(workspace: workspace, user: users(:one)))
-
-    assert_equal "/sidebar_expansion", node.css("[data-controller=sidebar]").first["data-sidebar-url-value"]
   end
 
   test "offers a menu button for small screens that controls the navigation" do
@@ -65,15 +47,14 @@ class Organisms::Sidebar::ComponentTest < ViewComponent::TestCase
     assert_equal 2, node.css("details form[action='/session'] button").size
   end
 
-  test "lists the same repositories in the rail and in the expanded menu" do
+  test "lists no repositories in either mode" do
     node = render_inline(Organisms::Sidebar::Component.new(workspace: workspace(:empty), user: users(:one)))
-    names = node.css("#sidebar-menu button[data-action='sidebar#toggle'] span.truncate").map(&:text)
 
-    assert_not_empty names
-    assert_equal names, node.css("nav:not(#sidebar-menu) a[title]").map { |link_| link_["title"] }.drop(1)
+    assert_empty node.css("button[data-action='sidebar#toggle']")
+    assert_empty node.css("[id^=sidebar-repository-]")
   end
 
-  test "links the repositories heading to the list in both modes" do
+  test "links my repositories in both modes" do
     node = render_inline(Organisms::Sidebar::Component.new(workspace: workspace, user: users(:one)))
 
     assert_equal 2, node.css("a[href='/#{users(:one).username}/repositories']").count { |link_| link_.text.strip == I18n.t("sidebar.repositories") || link_["aria-label"] == I18n.t("sidebar.repositories") }

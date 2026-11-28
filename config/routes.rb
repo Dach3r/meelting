@@ -37,5 +37,4 @@ Rails.application.routes.draw do
   resources :provider_credentials, only: %i[new create destroy]
   resources :runs, only: :index
   resource :settings, only: :show
-  resource :sidebar_expansion, only: :update, controller: "navigation/expansions"
 end

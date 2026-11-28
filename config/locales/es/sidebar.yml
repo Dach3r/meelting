@@ -6,14 +6,10 @@ es:
     inbox_pending: "%{count} pendientes"
     runs: "Runs"
     runs_in_progress: "%{count} runs en curso"
-    repositories: "Repositorios"
+    repositories: "Mis repositorios"
     expand: "Expandir menú"
     collapse: "Contraer"
     preview: "Datos de ejemplo"
-    mirror:
-      ok: "Mirror al día"
-      failing: "Mirror fallando"
-      none: "Sin mirror"
     sections:
       code: "Código"
       issues: "Issues"

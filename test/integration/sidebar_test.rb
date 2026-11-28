@@ -8,17 +8,7 @@ class SidebarTest < ActionDispatch::IntegrationTest
     assert_select "nav[aria-label='Navegación del espacio de trabajo']" do
       assert_select "a[href=?]", root_path
       assert_select "a[href=?]", runs_path
-      assert_select "button[aria-expanded]", text: /Meelting/
-    end
-  end
-
-  test "repository sections link to their pages" do
-    sign_in_as users(:one)
-    get root_path
-
-    assert_select "#sidebar-repository-meelting a[href=?]", repository_path("ada", "meelting")
-    %w[issues pull_requests runs memory].each do |section|
-      assert_select "#sidebar-repository-meelting a[href=?]", repository_section_path("ada", "meelting", section)
+      assert_select "a[href=?]", user_repositories_path("ada"), text: "Mis repositorios"
     end
   end
 
@@ -46,16 +36,6 @@ class SidebarTest < ActionDispatch::IntegrationTest
 
     assert_select "a[href=?] span[aria-label=?]", root_path, "3 pendientes"
     assert_select "a[href=?] [role=img][aria-label=?]", runs_path, "1 runs en curso"
-    assert_select "[role=img][aria-label=?]", "Mirror al día"
-  end
-
-  test "preview empty shows a failing mirror dot" do
-    in_development do
-      sign_in_as users(:one)
-      get root_path(preview: "empty")
-    end
-
-    assert_select "[role=img][aria-label=?]", "Mirror fallando"
   end
 
   test "preview no_repositories does not label real data as preview" do
