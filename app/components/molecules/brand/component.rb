@@ -2,8 +2,8 @@ module Molecules
   module Brand
     class Component < ViewComponent::Base
       TONES = {
-        light: { name: "text-white", brace: "text-lime", dot: "from-lime to-white", mark: "bg-white" },
-        dark: { name: "text-ink", brace: "text-forest", dot: "from-lime-deep to-ink", mark: "bg-ink" }
+        light: { name: "text-white", brace: "text-lime", dot: "bg-lime", mark: "bg-white" },
+        dark: { name: "text-ink", brace: "text-forest", dot: "bg-lime-deep", mark: "bg-ink" }
       }.freeze
 
       def initialize(tone: :dark, compact: false)
