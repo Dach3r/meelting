@@ -119,6 +119,8 @@ Suggested core entities for the first milestone. This is a starting point, not a
 | Authenticated home | The home is the Inbox: things that need a decision, plus runs in progress. Nothing else | Notifications are out of scope, so the home is the only place a run waiting at the gate is seen; anything that is not a decision makes it harder to see | Decided |
 | Rejected run | The run stays in history as rejected and leaves the Inbox; its issue goes back to pending, ready to reassign. No automatic retry | Keeps the gate simple and inside the milestone; retry with feedback can come later | Decided |
 | Home placeholder data | The navigation shell and home are built before Phases 2–3 using placeholder data from one clearly labelled source; no models or migrations for future-phase entities | Lets the layout be built and reviewed early without creating schema ahead of its phase | Proposed |
+| Onboarding checklist | Four steps: create a repository and push (the token is generated inside this step), add a validated model key, write `.project/overview.md`, assign a first issue. The GitHub mirror is an optional recommendation on the repository page, outside the checklist | Each step is a precondition for an agent working on the first issue; the token and the mirror are not | Decided |
+| Onboarding completion | Once the four steps are done, completion is stored on the user and the checklist never reappears; later problems show as the Settings dot and the banner | A checklist that comes back would replace the Inbox, the only place where decisions are seen | Decided |
 | Visual style | shadcn/ui-inspired look (zinc neutrals, 1px borders, 8px radius, Geist) built with Hotwire, without React | Quiet and dense for daily use; the look is adopted, not the React components | Proposed |
 
 ## Architecture
@@ -223,7 +225,13 @@ Details (diff size, cost, tests run, memory used) belong on the run and pull req
 ### States
 
 - **Empty Inbox.** "Nothing needs you" with one action: "Assign an issue", which goes to the repository's open issues.
-- **First visit.** Until setup is complete, a checklist replaces both blocks: create an access token, create a repository and push to it, configure the GitHub mirror, add a model key, write `.project/overview.md`, assign a first issue to an agent. Each step is checked automatically when it is true. The checklist never appears next to the Inbox.
+- **First visit.** Until onboarding is complete, a checklist replaces both blocks. Four steps, in this order, each checked automatically when it is true:
+  1. **Create a repository and push to it.** Shows the `git remote add` and `git push` commands with an inline "Generate token" button; the token is shown once, already inserted in the commands. There is no separate access token step. Checked when the repository receives its first push.
+  2. **Add a model key.** Checked only when the key is validated, not when it exists. Validation happens on save with a cheap provider call (for example, listing models), never while rendering the home. Below the step, an automatic check that the Docker daemon is reachable (added with the sandbox in Phase 3).
+  3. **Write `.project/overview.md`.** Offers a template with sections (what the system does, who it is for, main modules) to copy or commit. Checked when the file exists on the repository's default branch, read from the bare repo with the git CLI; it does not depend on the memory index (Phase 4).
+  4. **Assign your first issue to an agent.** Checked on assignment; from there the Inbox takes over. Shown disabled, labelled as available in Phases 2–3, until issues and runs exist.
+
+  The GitHub mirror is not a step: it is an optional recommendation on the repository page when no mirror is configured. It does not count toward progress and does not show the warning dot. While the checklist is shown, the Settings dot is hidden for conditions the checklist already covers (missing model key); real failures (a key that became invalid after being valid, Docker down, a failing mirror) still show it. Once all four steps are done, onboarding is marked complete on the user and the checklist never appears again, even if a condition later stops being true: from then on problems show as the dot and the "Configuration problem" banner, never replacing the Inbox. The checklist never appears next to the Inbox.
 - **Configuration problem.** A missing model key, an unreachable Docker daemon or a failing mirror shows a dot on Settings (or on the repository) and, only when it blocks runs or puts the repository at risk, one banner above the Inbox with a link to fix it.
 
 ### Not on the home
@@ -286,7 +294,7 @@ Done when: Meelting's repository lives in Meelting, with a push mirror to GitHub
 
 - [x] Navigation sidebar and Inbox home with placeholder data (see "Authenticated home and navigation")
 - [ ] Create bare repositories on disk
-- [ ] Push and clone over HTTPS with a token (`git http-backend`)
+- [ ] Push and clone over HTTPS with a token (`git http-backend`). The push handler (post-receive or `git http-backend` wrapper) must call `Repository#touch_pushed`; without it the onboarding step "Create a repository and push to it" is never checked
 - [ ] File browser with syntax highlighting, commit history and per-commit diff
 - [ ] Configurable push mirror to GitHub
 
