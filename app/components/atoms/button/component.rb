@@ -4,7 +4,7 @@ module Atoms
       TONES = {
         light: "font-semibold text-forest hover:text-ink",
         menu: "block w-full rounded-xl px-4 py-2.5 text-left font-semibold text-ink hover:bg-cream",
-        pill: "inline-flex h-11 items-center rounded-xl bg-forest px-5 text-[15px] font-bold text-lime hover:bg-forest-active"
+        pill: "inline-flex h-11 items-center rounded-full bg-forest px-5 text-[15px] font-bold text-lime hover:bg-forest-active"
       }.freeze
 
       def initialize(href:, method: :post, tone: :light, **html_options)
