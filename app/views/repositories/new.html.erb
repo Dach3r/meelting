@@ -29,8 +29,7 @@
     </div>
   </fieldset>
 
-  <fieldset class="mt-2 grid min-w-0 gap-5 sm:grid-cols-2 sm:gap-x-2.5">
-    <legend class="mb-3 pl-1 text-[13px] font-semibold tracking-wide text-forest/60 uppercase"><%= t(".initialization") %></legend>
+  <div class="grid gap-5 sm:grid-cols-2 sm:gap-x-2.5">
     <%= render Molecules::FormField::Component.new(form: form, attribute: :default_branch, label: Repository.human_attribute_name(:default_branch), icon: :git_branch, autocapitalize: "none", class: "nb-field-shell-input font-mono") %>
     <%= render Molecules::FormField::Component.new(form: form, attribute: :license_id, label: Repository.human_attribute_name(:license_id), icon: :scale) do |field| %>
       <% field.with_control do %>
@@ -38,7 +37,7 @@
         <%= render Atoms::Icon::Component.new(name: :chevron_down, class: "pointer-events-none size-4 flex-none", "stroke-width": 2.4) %>
       <% end %>
     <% end %>
-  </fieldset>
+  </div>
 
   <div class="mt-1 flex justify-end">
     <button type="submit" class="flex h-16 cursor-pointer items-center gap-2 rounded-full bg-lime px-8 text-[17px] font-semibold text-forest hover:bg-lime-soft">
