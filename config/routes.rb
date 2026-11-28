@@ -25,6 +25,7 @@ Rails.application.routes.draw do
   resources :access_tokens, only: %i[index new create destroy]
   resources :repositories, only: %i[index new create], param: :slug do
     get ":section", to: "repositories/sections#show", as: :section, constraints: { section: /code|issues|pull_requests|runs|memory/ }
+    resource :push_token, only: :create, module: :repositories
   end
 
   resources :runs, only: :index

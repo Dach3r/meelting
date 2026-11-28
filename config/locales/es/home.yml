@@ -44,23 +44,33 @@ es:
         action: "Revisar Docker"
     checklist:
       title: "Configura Meelting"
-      lead: "Seis pasos hasta tu primer pull request de un agente. Cada uno se marca solo al cumplirse."
+      lead: "Cuatro pasos hasta que un agente trabaje en tu primer issue. Cada uno se marca solo al cumplirse."
       progress: "%{done} de %{total}"
       progress_of: "de %{total}"
       done: "Hecho"
+      push:
+        generate: "Generar token"
+        shown_once: "Copia los comandos ahora: el token no se volverá a mostrar."
+        token_placeholder: "TOKEN"
       steps:
-        access_token:
-          action: "Crear token"
-          title: "Crea un access token"
         repository:
           title: "Crea un repositorio y haz push"
-          detail: "Clona y sube por HTTPS con tu token."
+          detail: "Crea el repositorio en Meelting y luego sube tu código por HTTPS."
+          push_detail: "Agrega el remoto y haz push. Genera un token para insertarlo en el comando."
           action: "Crear repositorio"
-        mirror:
-          title: "Configura el mirror de GitHub"
         model_key:
           title: "Agrega una model key"
         overview:
           title: "Escribe %{file}"
+          template_label: "Ver plantilla"
+          template: |
+              # Visión general
+
+              ## Qué hace el sistema
+
+              ## Para quién
+
+              ## Módulos principales
         first_issue:
           title: "Asigna tu primer issue a un agente"
+          unavailable: "Disponible en Fase 2/3"

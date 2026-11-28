@@ -44,23 +44,33 @@ en:
         action: "Check Docker"
     checklist:
       title: "Set up Meelting"
-      lead: "Six steps to your first agent pull request. Each one checks itself off when it is done."
+      lead: "Four steps until an agent works on your first issue. Each one checks itself off when it is done."
       progress: "%{done} of %{total}"
       progress_of: "of %{total}"
       done: "Done"
+      push:
+        generate: "Generate token"
+        shown_once: "Copy the commands now: the token will not be shown again."
+        token_placeholder: "TOKEN"
       steps:
-        access_token:
-          action: "Create token"
-          title: "Create an access token"
         repository:
           title: "Create a repository and push to it"
-          detail: "Clone and push over HTTPS with your token."
+          detail: "Create the repository in Meelting, then push your code over HTTPS."
+          push_detail: "Add the remote and push. Generate a token to insert it into the command."
           action: "Create repository"
-        mirror:
-          title: "Configure the GitHub mirror"
         model_key:
           title: "Add a model key"
         overview:
           title: "Write %{file}"
+          template_label: "Show template"
+          template: |
+              # Overview
+
+              ## What the system does
+
+              ## Who it is for
+
+              ## Main modules
         first_issue:
           title: "Assign your first issue to an agent"
+          unavailable: "Available in Phase 2/3"

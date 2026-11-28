@@ -1,0 +1,3 @@
+<%= turbo_stream.replace "push_commands" do %>
+  <%= render Molecules::PushCommands::Component.new(repository: @repository, token: @access_token.plain_token) %>
+<% end %>

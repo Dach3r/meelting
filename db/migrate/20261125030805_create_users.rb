@@ -6,6 +6,7 @@ class CreateUsers < ActiveRecord::Migration[8.1]
       t.string :username, null: false
       t.string :email_address, null: false
       t.string :password_digest, null: false
+      t.datetime :onboarding_completed_at
 
       t.timestamps
     end

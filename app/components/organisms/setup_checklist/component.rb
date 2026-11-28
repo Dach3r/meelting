@@ -3,26 +3,21 @@ module Organisms
     class Component < ViewComponent::Base
       RING_RADIUS = 150
       RING_CIRCUMFERENCE = (2 * Math::PI * RING_RADIUS).round(2)
-      ACTIONS = { access_token: :new_access_token_path, repository: :new_repository_path }.freeze
 
-      def initialize(steps:)
+      def initialize(steps:, repository: nil)
         @steps = steps
+        @repository = repository
       end
 
       private
-      attr_reader :steps
+      attr_reader :steps, :repository
 
       def done_count
         steps.count(&:done)
       end
 
       def current
-        steps.find { |step_| !step_.done }
-      end
-
-      def action_path(step)
-        helper = ACTIONS[step.key]
-        send(helper) if helper
+        steps.find(&:pending?)
       end
 
       def ring_dash
@@ -30,7 +25,7 @@ module Organisms
       end
 
       def title_for(step)
-        t("home.checklist.steps.#{step.key}.title", file: ".project/overview.md")
+        t("home.checklist.steps.#{step.key}.title", file: Workspace::Build::OVERVIEW_PATH)
       end
     end
   end

@@ -42,5 +42,7 @@ module Meelting
 
     # Don't generate system test files.
     config.generators.system_tests = nil
+
+    config.x.git_root = Pathname(ENV["MEELTING_GIT_ROOT"].presence || Rails.root.join("storage/repositories"))
   end
 end

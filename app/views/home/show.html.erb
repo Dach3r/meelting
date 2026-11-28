@@ -3,7 +3,7 @@
 
 <div class="flex w-full max-w-6xl flex-col gap-8">
   <% if workspace.first_run? %>
-    <%= render Organisms::SetupChecklist::Component.new(steps: workspace.checklist) %>
+    <%= render Organisms::SetupChecklist::Component.new(steps: workspace.checklist, repository: workspace.push_repository) %>
   <% else %>
     <h1 class="sr-only"><%= t(".title") %></h1>
 

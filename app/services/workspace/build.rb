@@ -2,6 +2,8 @@ module Workspace
   # Everything the sidebar and the home need for one request: real records where they
   # exist (user, tokens, repositories), placeholder data only for the requested preview.
   class Build
+    OVERVIEW_PATH = ".project/overview.md".freeze
+
     def self.call(user:, scenario: nil)
       new(user: user, scenario: scenario).call
     end
@@ -12,13 +14,16 @@ module Workspace
     end
 
     def call
+      user.complete_onboarding! if scenario.nil? && !user.onboarding_completed? && checklist.all?(&:done)
+
       State.new(
         mode: first_run? ? :first_run : :inbox,
         items: PlaceholderData.items(scenario),
         runs: PlaceholderData.runs(scenario),
         repositories: repositories,
         problems: problems,
-        checklist: checklist,
+        checklist: first_run? ? checklist : [],
+        push_repository: push_repository,
         preview: scenario.present?
       )
     end
@@ -27,18 +32,24 @@ module Workspace
     attr_reader :user, :scenario
 
     def first_run?
-      scenario ? scenario == :first_run : checklist.any? { |step_| !step_.done }
+      scenario ? scenario == :first_run : !user.onboarding_completed?
     end
 
     def checklist
       @checklist ||= [
-        ChecklistStep.new(key: :access_token, done: user.access_tokens.active.exists?),
-        ChecklistStep.new(key: :repository, done: user.repositories.active.where.not(pushed_at: nil).exists?),
-        ChecklistStep.new(key: :mirror, done: false),
+        ChecklistStep.new(key: :repository, done: pushed_repositories.any?),
         ChecklistStep.new(key: :model_key, done: false),
-        ChecklistStep.new(key: :overview, done: false),
-        ChecklistStep.new(key: :first_issue, done: false)
+        ChecklistStep.new(key: :overview, done: pushed_repositories.any? { |repository_| repository_.file_on_default_branch?(OVERVIEW_PATH) }),
+        ChecklistStep.new(key: :first_issue, done: false, available: false)
       ]
+    end
+
+    def pushed_repositories
+      @pushed_repositories ||= user.repositories.active.where.not(pushed_at: nil).order(:created_at).to_a
+    end
+
+    def push_repository
+      user.repositories.active.order(:created_at).first if first_run?
     end
 
     def repositories
@@ -60,7 +71,8 @@ module Workspace
       case scenario
       when :inbox then []
       when :empty then [Problem.new(kind: :mirror_failing, repository: repositories.last.name)]
-      when :first_run, nil then [Problem.new(kind: :missing_model_key)]
+      when :first_run then []
+      when nil then first_run? ? [] : [Problem.new(kind: :missing_model_key)]
       end
     end
   end

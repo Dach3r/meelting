@@ -1,5 +1,5 @@
 module Workspace
-  State = Data.define(:mode, :items, :runs, :repositories, :problems, :checklist, :preview) do
+  State = Data.define(:mode, :items, :runs, :repositories, :problems, :checklist, :push_repository, :preview) do
     def first_run?
       mode == :first_run
     end
@@ -33,7 +33,7 @@ module Workspace
     end
 
     def current_step
-      checklist.find { |step_| !step_.done }
+      checklist.find(&:pending?)
     end
 
     def assign_issue_repository

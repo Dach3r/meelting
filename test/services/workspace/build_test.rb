@@ -15,20 +15,73 @@ class Workspace::BuildTest < ActiveSupport::TestCase
     assert_equal :none, state.repositories.first.mirror
   end
 
-  test "checks the token step with real access tokens" do
+  test "lists four steps with the first issue disabled and nothing done on a new account" do
     state = Workspace::Build.call(user: @user)
 
-    assert state.checklist.find { |step_| step_.key == :access_token }.done
+    assert_equal %i[repository model_key overview first_issue], state.checklist.map(&:key)
+    assert_equal 0, state.completed_steps
     assert_equal :repository, state.current_step.key
-    assert_equal 1, state.completed_steps
+    assert_not state.checklist.last.available
+    assert_equal repositories(:meelting), state.push_repository
   end
 
-  test "counts everything that does not exist yet as not done" do
-    state = Workspace::Build.call(user: users(:two))
-    done = state.checklist.select(&:done).map(&:key)
+  test "checks the push step when a repository has been pushed" do
+    repositories(:meelting).touch_pushed
+    state = Workspace::Build.call(user: @user)
 
-    assert_equal [:access_token], done
-    assert_not state.checklist.find { |step_| step_.key == :repository }.done
+    assert state.checklist.first.done
+    assert_equal :model_key, state.current_step.key
+  end
+
+  test "checks the overview step from the default branch of a pushed repository" do
+    repository = repositories(:meelting)
+
+    with_git_root do
+      create_bare_repository(repository, files: { ".project/overview.md" => "# Overview" })
+      assert_not Workspace::Build.call(user: @user).checklist.find { |step_| step_.key == :overview }.done
+
+      repository.touch_pushed
+      assert Workspace::Build.call(user: @user).checklist.find { |step_| step_.key == :overview }.done
+    end
+  end
+
+  test "hides the missing model key warning while the checklist is shown" do
+    state = Workspace::Build.call(user: @user)
+
+    assert state.first_run?
+    assert_not state.settings_warning?
+    assert_nil state.banner_problem
+  end
+
+  test "marks onboarding complete once every step is done" do
+    completed = Class.new(Workspace::Build) do
+      private
+      def checklist
+        [Workspace::ChecklistStep.new(key: :repository, done: true)]
+      end
+    end
+    state = completed.call(user: @user)
+
+    assert_not state.first_run?
+
+    assert @user.reload.onboarding_completed?
+  end
+
+  test "does not complete onboarding while a step is pending" do
+    Workspace::Build.call(user: @user)
+
+    assert_not @user.reload.onboarding_completed?
+  end
+
+  test "never shows the checklist again after onboarding, even if a step stops being true" do
+    @user.complete_onboarding!
+    state = Workspace::Build.call(user: @user)
+
+    assert_not state.first_run?
+    assert_empty state.checklist
+    assert_nil state.push_repository
+    assert_equal :missing_model_key, state.banner_problem.kind
+    assert state.settings_warning?
   end
 
   test "inbox scenario sorts items by waiting time, oldest first" do

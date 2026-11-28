@@ -18,6 +18,14 @@ class User < ApplicationRecord
     new(username: username).tap(&:valid?).errors[:username]
   end
 
+  def onboarding_completed?
+    onboarding_completed_at.present?
+  end
+
+  def complete_onboarding!
+    update!(onboarding_completed_at: Time.current) unless onboarding_completed?
+  end
+
   def full_name
     "#{first_name} #{last_name}"
   end

@@ -24,3 +24,6 @@ en:
       cancel: "Cancel"
     create:
       created: "Repository created."
+    push_tokens:
+      create:
+        name: "Push to %{repository}"

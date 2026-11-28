@@ -13,8 +13,10 @@ All placeholder data lives in `app/services/workspace/placeholder_data.rb` and i
 | Phase 2 | Inbox "Merge" items come from open agent pull requests, and the empty-state "Assign an issue" link points to the repository's real open issues. Remove the `:merge` entry from `PlaceholderData::ITEMS`. |
 | Phase 3 | Inbox "Approve" and "Failed" items, "In progress" runs and the sidebar counters (Inbox badge, Runs dot) come from runs, updated live with Turbo Streams. Remove `ITEMS`, `RUNS` and the `items` and `runs` methods. |
 | Phase 1 (mirror) | The mirror dot per repository and the "mirror failing" problem come from the real mirror status. Today every real repository reports `:none`. |
-| Phase 3 | The checklist steps "model key", "first issue assigned" and the missing model key problem come from real model keys and issues. |
-| Phase 4 | The checklist step "write `.project/overview.md`" comes from the indexed memory. |
+| Model keys | The checklist step "add a model key" is checked from a validated `ProviderCredential`, and the missing model key problem comes from it. A key that was valid and became invalid is a real failure and shows the Settings dot even during onboarding. The schema is proposed, not created. |
+| Phase 1 (hosting) | The push handler must call `Repository#touch_pushed`, or the step "create a repository and push to it" is never checked. The overview step already reads `.project/overview.md` from the bare repo at `Repository#git_path`. |
+| Phase 2–3 | The step "assign your first issue to an agent" is shown disabled until issues and runs exist; enable it and check it on assignment. Until then, onboarding cannot complete with real data. |
+| Phase 3 | Below the model key step, an automatic check that the Docker daemon is reachable. There is no Docker integration yet, so it is left out. |
 | Last placeholder removed | Delete `PlaceholderData`, `Previewable#preview_scenario`, the `?preview` tests and the "Datos de ejemplo" labels. |
 
 ## Links that still point to stand-ins
@@ -27,7 +29,7 @@ All placeholder data lives in `app/services/workspace/placeholder_data.rb` and i
 
 - The "Docker is not responding" banner has its copy and its place, but nothing detects the problem yet (Phase 3, with the sandbox).
 - The banner action always goes to `/settings`, which has no screen for mirrors or model keys yet.
-- The Settings dot shows while the model key is missing, because a missing key counts as a problem. The banner is hidden in that case while the checklist is shown.
+- While the checklist is shown, the missing model key does not show the Settings dot or the banner: the checklist already covers it. Once onboarding is complete (`users.onboarding_completed_at`), it shows both.
 
 ## Tests
 

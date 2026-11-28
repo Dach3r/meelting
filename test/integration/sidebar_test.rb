@@ -23,10 +23,13 @@ class SidebarTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test "settings carries a warning dot while a model key is missing" do
+  test "settings carries a warning dot for a missing model key once onboarding is complete" do
     sign_in_as users(:one)
     get root_path
+    assert_select "a[href=?] [role=img][aria-label=?]", settings_path, "Hay un problema de configuración", count: 0
 
+    users(:one).complete_onboarding!
+    get root_path
     assert_select "a[href=?] [role=img][aria-label=?]", settings_path, "Hay un problema de configuración"
   end
 

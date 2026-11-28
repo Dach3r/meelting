@@ -82,4 +82,44 @@ class RepositoryTest < ActiveSupport::TestCase
     repository.touch_pushed
     assert_not_nil repository.reload.pushed_at
   end
+
+  test "stores the bare repository under the git root by id" do
+    repository = repositories(:meelting)
+
+    assert_equal Rails.configuration.x.git_root.join("#{repository.id}.git"), repository.git_path
+  end
+
+  test "finds a file on the default branch of the bare repository" do
+    repository = repositories(:meelting)
+
+    with_git_root do
+      assert_not repository.file_on_default_branch?(".project/overview.md")
+
+      create_bare_repository(repository, files: { ".project/overview.md" => "# Overview" })
+      assert repository.file_on_default_branch?(".project/overview.md")
+      assert_not repository.file_on_default_branch?(".project/missing.md")
+    end
+  end
+
+  test "ignores files on other branches" do
+    repository = repositories(:meelting)
+
+    with_git_root do
+      create_bare_repository(repository, files: { ".project/overview.md" => "# Overview" }, branch: "draft")
+      assert_not repository.file_on_default_branch?(".project/overview.md")
+    end
+  end
+
+  test "rejects default branch names that git would read as options or invalid refs" do
+    repository = repositories(:meelting)
+
+    with_git_root do
+      create_bare_repository(repository, files: { ".project/overview.md" => "# Overview" })
+
+      ["--output=/tmp/x", "-h", "bad..name"].each do |branch_|
+        repository.default_branch = branch_
+        assert_not repository.file_on_default_branch?(".project/overview.md"), branch_
+      end
+    end
+  end
 end

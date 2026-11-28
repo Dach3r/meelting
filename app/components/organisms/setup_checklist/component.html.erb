@@ -1,5 +1,5 @@
 <div class="flex w-full flex-col gap-12 lg:flex-row lg:items-center lg:gap-16">
-  <div class="flex w-full flex-col gap-8 lg:flex-[3]">
+  <div class="flex w-full min-w-0 flex-col gap-8 lg:flex-[3]">
     <div>
       <h1 class="mb-3 text-5xl font-extrabold leading-none tracking-[-0.045em]"><%= t("home.checklist.title") %></h1>
       <p class="max-w-lg text-[17px] leading-relaxed text-graphite-500"><%= t("home.checklist.lead") %></p>
@@ -8,7 +8,7 @@
     <ol class="m-0 flex list-none flex-col gap-2 p-0">
       <% steps.each_with_index do |step, index| %>
         <% is_current = step == current %>
-        <li class="<%= class_names("flex flex-wrap items-center gap-5 rounded-3xl px-5", is_current ? "min-h-[72px] bg-sun-400 py-2 pr-3" : "min-h-[72px] py-2") %>" <%= 'aria-current=step' if is_current %>>
+        <li class="<%= class_names("flex flex-wrap items-center gap-5 rounded-3xl px-5 min-h-[72px] py-2", "bg-sun-400 pr-3" => is_current, "opacity-60" => !step.available) %>" <%= 'aria-current=step' if is_current %> <%= 'aria-disabled=true' unless step.available %>>
           <% if step.done %>
             <span class="flex size-10 shrink-0 items-center justify-center rounded-full bg-graphite-900 text-sun-400" role="img" aria-label="<%= t("home.checklist.done") %>"><%= render Atoms::Icon::Component.new(name: :check, class: "size-4") %></span>
           <% else %>
@@ -16,12 +16,24 @@
           <% end %>
           <div class="min-w-0 flex-[1_1_14rem]">
             <p class="<%= class_names("tracking-[-0.02em]", is_current ? "text-xl font-bold" : "text-lg font-semibold", "text-graphite-400 line-through" => step.done) %>"><%= title_for(step) %></p>
-            <% if is_current && (detail = t("home.checklist.steps.#{step.key}.detail", default: "")).present? %>
-              <p class="text-sm text-graphite-900/70"><%= detail %></p>
+            <% if is_current && step.key == :repository %>
+              <p class="text-sm text-graphite-900/70"><%= t(repository ? "home.checklist.steps.repository.push_detail" : "home.checklist.steps.repository.detail") %></p>
+              <% if repository %>
+                <%= render Molecules::PushCommands::Component.new(repository: repository) %>
+              <% end %>
+            <% end %>
+            <% if step.key == :overview && !step.done %>
+              <details class="mt-1 text-sm">
+                <summary class="cursor-pointer font-semibold text-graphite-500"><%= t("home.checklist.steps.overview.template_label") %></summary>
+                <pre class="mt-2 overflow-x-auto rounded-2xl bg-graphite-50 p-4 font-mono text-[13px] leading-relaxed text-graphite-900"><code class="select-all"><%= t("home.checklist.steps.overview.template") %></code></pre>
+              </details>
             <% end %>
           </div>
-          <% if is_current && action_path(step) %>
-            <%= render Atoms::LinkButton::Component.new(href: action_path(step), variant: :secondary, size: :pill) do %><%= t("home.checklist.steps.#{step.key}.action") %><% end %>
+          <% if is_current && step.key == :repository && repository.nil? %>
+            <%= render Atoms::LinkButton::Component.new(href: new_repository_path, variant: :secondary, size: :pill) do %><%= t("home.checklist.steps.repository.action") %><% end %>
+          <% end %>
+          <% unless step.available %>
+            <%= render Atoms::Chip::Component.new(class: "text-xs") do %><%= t("home.checklist.steps.#{step.key}.unavailable") %><% end %>
           <% end %>
         </li>
       <% end %>
