@@ -6,21 +6,20 @@
 
 | Principle | Score | Verdict |
 | --- | --- | --- |
-| DRY | 7/10 | Models are clean and most views use the components now. Repetition remains in the repository section list, the checklist count and a few hand-styled buttons. |
+| DRY | 7/10 | Models are clean and most views use the components now. Repetition remains in the repository section list and a few hand-styled buttons. |
 | KISS | 7/10 | Thin controllers, simple models. The heaviest piece is the `Workspace` placeholder layer. |
-| YAGNI | 8/10 | Unused components, tones and model methods removed. Only the duplicated checklist methods on `Workspace::State` remain. |
+| YAGNI | 9/10 | Unused components, tones, variants and model methods removed. Only intentional Phase 1 groundwork remains. |
 | Tell, Don't Ask | 7/10 | Models guard their own state (`revoke!`, `touch_last_used`). Some views and controllers still ask and decide outside. |
 
 ## DRY
 
 1. **Repository sections are listed three times**: the route constraint regex (`config/routes.rb`), `Repositories::SectionsController::PHASES` and `Molecules::SidebarRepository::Component::SECTIONS`. Adding a section means touching all three. Keep one source.
-2. **Checklist progress is computed twice**: `Organisms::SetupChecklist::Component#done_count` and `#current` repeat `Workspace::State#completed_steps` and `#current_step`, which the app never calls. Keep one pair: either the component asks the state, or the state methods go.
-3. **Hand-styled buttons and alerts next to existing components**:
+2. **Hand-styled buttons and alerts next to existing components**:
    - `repositories/new`: the `error_explanation` box is hand-written (`Molecules::Notice` with `tone: :alert` does this, as in `access_tokens/new` and `provider_credentials/new`), and the "back" button repeats the `secondary` + `block` classes of `Atoms::LinkButton`.
    - `access_tokens/new`: the submit uses `form.submit` with hand-written primary classes instead of `Atoms::SubmitButton`.
    - `access_tokens/index`: the revoke `button_to` hand-writes the `danger` styling.
-4. **The `rate_limit` line is near-identical** in `Auth::SessionsController`, `Auth::RegistrationsController` and `Auth::PasswordsController`, each with a hard-coded "Try again later." (also a breach of the i18n rule, like the other strings in `Auth::PasswordsController` and `passwords_mailer/*`). `ProviderCredentialsController` already uses a translated message and is the pattern to follow.
-5. `Atoms::SubmitButton` hard-codes the primary/block look instead of reusing the `nb-btn` base and the `LinkButton` `primary` and `block` classes, so the two can drift.
+3. **The `rate_limit` line is near-identical** in `Auth::SessionsController`, `Auth::RegistrationsController` and `Auth::PasswordsController`, each with a hard-coded "Try again later." (also a breach of the i18n rule, like the other strings in `Auth::PasswordsController` and `passwords_mailer/*`). `ProviderCredentialsController` already uses a translated message and is the pattern to follow.
+4. `Atoms::SubmitButton` hard-codes the primary/block look instead of reusing the `nb-btn` base and the `LinkButton` `primary` and `block` classes, so the two can drift.
 
 ## KISS
 
@@ -31,11 +30,9 @@
 
 ## YAGNI
 
-Done on 2026-11-28: removed `Atoms::PillButton`, `Atoms::AgentAvatar`, `LinkButton` `danger`, `Link` `light` (`tone:` is now required), `Repository#archive!`/`#unarchive!`/`#archived?`/`.archived` (the `archived_at` column and `.active` stay), `AccessToken#active?`, `Workspace::State#preview?`, and replaced `ApplicationHelper::CONFIG` with `ApplicationHelper::APP_NAME`. `Button` `pill` stays: `Molecules::PushCommands` uses it.
+Done on 2026-11-28: removed `Atoms::PillButton`, `Atoms::AgentAvatar`, `LinkButton` `danger`, `Link` `light` (`tone:` is now required), `Repository#archive!`/`#unarchive!`/`#archived?`/`.archived` (the `archived_at` column and `.active` stay), `StatusChip` tones `ok` and `run`, `LinkButton` `accent`, `AccessToken#active?`, `Workspace::State#preview?`, `#completed_steps` and `#current_step` (they duplicated `Organisms::SetupChecklist`), and replaced `ApplicationHelper::CONFIG` with `ApplicationHelper::APP_NAME`. `Button` `pill` stays: `Molecules::PushCommands` uses it.
 
 **Not YAGNI, keep**: `Repository#touch_pushed` and `AccessToken.authenticate` have no caller yet, but they are Phase 1 groundwork. `Workspace::Build` reads `pushed_at` for the first checklist step, and `docs/product.md` requires the push handler to call `touch_pushed`. `Repositories::PushTokensController` already issues `git_read`/`git_write` tokens that `authenticate` will check.
-
-Still open: `Workspace::State#completed_steps` and `#current_step` (see DRY 2).
 
 ## Tell, Don't Ask
 
@@ -49,6 +46,6 @@ Done well: `revoke!` and `touch_last_used` guard their own state; controllers te
 
 ## Suggested order
 
-1. **DRY**: keep the section list in one place; drop the duplicated checklist count; move the remaining hand-styled buttons and the `repositories/new` alert onto the components.
+1. **DRY**: keep the section list in one place; move the remaining hand-styled buttons and the `repositories/new` alert onto the components.
 2. **Tell, Don't Ask**: add `AccessToken#status`, `Repository.valid_slug?`, and resolve the assign link outside `home/show`.
 3. **i18n**: translate the hard-coded strings in the auth controllers and the password mailer.
