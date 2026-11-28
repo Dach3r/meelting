@@ -4,7 +4,7 @@
     <%= render Molecules::PageHeader::Component.new(title: t("sidebar.sections.code")) %>
     <section id="empty_repository" class="flex flex-col gap-1.5 border-t border-line pt-6">
       <h2 class="text-[22px] font-bold tracking-[-0.01em]"><%= t("repositories.empty.title") %></h2>
-      <p class="text-[15px] text-forest"><%= t("repositories.empty.detail") %></p>
+      <p class="text-[15px] text-muted"><%= t("repositories.empty.detail") %></p>
       <%= render Molecules::PushCommands::Component.new(repository: @repository) %>
     </section>
   </div>

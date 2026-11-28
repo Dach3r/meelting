@@ -9,8 +9,8 @@
           <span class="flex size-[104px] items-center justify-center rounded-[30px] bg-lime text-forest shadow-[0_0_80px_rgba(209,244,112,0.6)]"><%= render Atoms::Icon::Component.new(name: :folder_plus, class: "size-11", "stroke-width": 1.6) %></span>
         </div>
       </div>
-      <h1 class="text-[44px] font-extrabold leading-[1.05] tracking-[-0.025em]"><%= t("home.no_repositories.title_html", accent: tag.span(t("home.no_repositories.title_accent"), class: "box-decoration-clone rounded-[10px] bg-lime px-[0.15em]")) %></h1>
-      <p class="max-w-[460px] text-lg leading-[1.55] text-forest-active"><%= t("home.no_repositories.body") %></p>
+      <h1 class="text-[44px] font-extrabold leading-[1.05] tracking-[-0.025em]"><%= t("home.no_repositories.title_html", accent: tag.span(t("home.no_repositories.title_accent"), class: "box-decoration-clone rounded-[10px] bg-lime px-[0.15em] dark:text-forest")) %></h1>
+      <p class="max-w-[460px] text-lg leading-[1.55] text-forest-active dark:text-forest-soft"><%= t("home.no_repositories.body") %></p>
       <%= render Atoms::LinkButton::Component.new(href: new_repository_path, variant: :primary, size: :xl, class: "mt-1.5") do %><%= t("home.no_repositories.action") %><% end %>
     </section>
   <% else %>

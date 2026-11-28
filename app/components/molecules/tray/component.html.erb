@@ -7,7 +7,7 @@
       <%= render Atoms::Chip::Component.new do %><%= preview %><% end %>
     <% end %>
     <% if link %>
-      <%= link_to link[:label], link[:href], class: "ml-auto text-[15px] font-semibold text-forest hover:text-ink" %>
+      <%= link_to link[:label], link[:href], class: "ml-auto text-[15px] font-semibold text-muted hover:text-ink" %>
     <% end %>
   </div>
   <%= content_tag body_tag, content, class: "m-0 flex list-none flex-col gap-3 p-0" %>

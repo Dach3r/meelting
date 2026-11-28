@@ -2,8 +2,8 @@ module Atoms
   module Link
     class Component < ViewComponent::Base
       TONES = {
-        menu: "block rounded-xl px-4 py-2.5 font-semibold text-ink hover:bg-cream",
-        underline: "font-semibold text-forest underline underline-offset-3 hover:text-ink"
+        menu: "block rounded-xl px-4 py-2.5 font-semibold text-ink hover:bg-field",
+        underline: "font-semibold text-muted underline underline-offset-3 hover:text-ink"
       }.freeze
 
       def initialize(href:, tone:, **html_options)

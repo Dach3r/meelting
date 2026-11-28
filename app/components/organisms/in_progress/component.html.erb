@@ -4,7 +4,7 @@
       <span class="flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-lime text-forest" aria-hidden="true"><%= render Atoms::Icon::Component.new(name: :terminal, class: "size-[18px]", "stroke-width": 2) %></span>
       <div class="min-w-0 flex-[1_1_260px]">
         <p class="truncate text-base font-bold"><%= run.title %></p>
-        <p class="mt-0.5 truncate font-mono text-[13px] text-forest"><%= run.last_event %></p>
+        <p class="mt-0.5 truncate font-mono text-[13px] text-muted"><%= run.last_event %></p>
       </div>
       <span class="inline-flex items-center gap-2 font-mono text-[13px] font-semibold text-ink"><span class="size-2 rounded-full bg-info" aria-hidden="true"></span><%= helpers.format_duration(run.elapsed_seconds) %></span>
     </li>

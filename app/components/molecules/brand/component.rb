@@ -3,7 +3,7 @@ module Molecules
     class Component < ViewComponent::Base
       TONES = {
         light: { name: "text-white", brace: "text-lime", dot: "bg-lime", mark: "bg-white" },
-        dark: { name: "text-ink", brace: "text-forest", dot: "bg-lime-deep", mark: "bg-ink" }
+        dark: { name: "text-ink", brace: "text-forest dark:text-lime", dot: "bg-lime-deep", mark: "bg-ink" }
       }.freeze
 
       def initialize(tone: :dark, compact: false)

@@ -4,7 +4,7 @@
   </span>
   <div class="min-w-0 flex-[1_1_260px]">
     <p class="truncate text-[17px] font-bold"><%= item.title %></p>
-    <p class="mt-0.5 truncate text-sm text-forest"><%= context %></p>
+    <p class="mt-0.5 truncate text-sm text-muted"><%= context %></p>
   </div>
   <% if item.flag %>
     <%= render Atoms::StatusChip::Component.new(tone: :alert, icon: :triangle_alert) do %><%= t("home.inbox.flags.#{item.flag}") %><% end %>

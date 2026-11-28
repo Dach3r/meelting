@@ -11,24 +11,24 @@
   <% end %>
 
   <% if @plain_token %>
-    <div class="rounded-xl border-2 border-ink bg-lime-soft p-4" id="plain_token">
+    <div class="rounded-xl border-2 border-ink bg-lime-soft p-4 dark:border-forest dark:text-forest" id="plain_token">
       <p class="font-bold"><%= t(".copy_now") %></p>
       <code class="mt-2 block break-all font-mono text-[13px] select-all"><%= @plain_token %></code>
     </div>
   <% end %>
 
   <% if @access_tokens.empty? %>
-    <p class="border-t border-line pt-6 text-forest"><%= t(".empty") %></p>
+    <p class="border-t border-line pt-6 text-muted"><%= t(".empty") %></p>
   <% else %>
     <ul class="m-0 flex list-none flex-col border-t border-line p-0">
       <% @access_tokens.each do |access_token| %>
         <li class="flex items-center justify-between gap-4 border-b border-line py-5" id="<%= dom_id(access_token) %>">
           <div class="flex min-w-0 flex-col gap-0.5">
             <p class="text-[17px] font-bold"><%= access_token.name %></p>
-            <p class="text-sm text-forest">
+            <p class="text-sm text-muted">
               <%= access_token.scopes.map { |scope| t("access_tokens.scopes.#{scope}") }.to_sentence %>
             </p>
-            <p class="text-sm text-forest">
+            <p class="text-sm text-muted">
               <%= access_token.last_used_at ? t(".last_used", time: l(access_token.last_used_at, format: :short)) : t(".never_used") %>
               <% if access_token.expires_at %>
                 &middot; <%= t(".expires", time: l(access_token.expires_at, format: :short)) %>

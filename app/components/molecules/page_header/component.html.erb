@@ -1,12 +1,12 @@
 <%= tag.div **html_options, class: class_names("flex flex-wrap items-center gap-4", html_options[:class]) do %>
   <% if icon || initial %>
-    <span class="flex size-[50px] shrink-0 items-center justify-center rounded-full bg-lime text-lg font-bold text-ink" aria-hidden="true">
+    <span class="flex size-[50px] shrink-0 items-center justify-center rounded-full bg-lime text-lg font-bold text-ink dark:text-forest" aria-hidden="true">
       <%= icon ? render(Atoms::Icon::Component.new(name: icon, class: "size-[22px]", "stroke-width": 1.75)) : initial %>
     </span>
   <% end %>
   <div class="flex min-w-0 flex-col gap-1">
     <%= content_tag level, title, class: "text-[22px] leading-[1.1] font-bold tracking-[-0.01em]" %>
-    <% if subtitle %><p class="text-[15px] text-forest"><%= subtitle %></p><% end %>
+    <% if subtitle %><p class="text-[15px] text-muted"><%= subtitle %></p><% end %>
   </div>
   <% if aside? %><div class="ml-auto"><%= aside %></div><% end %>
 <% end %>

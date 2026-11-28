@@ -1,13 +1,13 @@
 <section class="flex flex-1 flex-col justify-center gap-16 py-10 pl-5 pr-2">
   <h1 class="text-[clamp(2.75rem,8vw,7.25rem)] leading-[1.02] font-extrabold tracking-[-0.04em]">
     <%= t("landing.hero.title_before") %>
-    <span class="inline-block rounded-full bg-lime px-[0.28em] pb-[0.06em]"><%= t("landing.hero.title_highlight") %></span>
+    <span class="inline-block rounded-full bg-lime px-[0.28em] pb-[0.06em] dark:text-forest"><%= t("landing.hero.title_highlight") %></span>
     <%= t("landing.hero.title_middle") %>
     <span class="inline-flex size-[0.8em] items-center justify-center rounded-full bg-forest align-middle text-lime"><%= render Atoms::Icon::Component.new(name: :arrow_right, class: "size-[52%]", "stroke-width": 2.6) %></span>
     <%= t("landing.hero.title_after") %>
   </h1>
 
-  <div class="flex flex-wrap items-center justify-between gap-8 rounded-full bg-white p-2">
+  <div class="flex flex-wrap items-center justify-between gap-8 rounded-full bg-surface p-2">
     <ul class="flex flex-wrap items-center pl-2">
       <% POINTS.each_with_index do |point, index| %>
         <li class="inline-flex items-center gap-3 pr-9 text-[18px] font-bold leading-[normal] tracking-[-0.01em] <%= index.zero? ? "pl-0" : "border-l-2 border-line pl-9" %>">

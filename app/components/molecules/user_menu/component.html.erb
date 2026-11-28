@@ -1,6 +1,6 @@
 <details class="relative" data-controller="dropdown" data-action="click@window->dropdown#close keydown.esc@window->dropdown#close">
   <summary class="<%= summary_classes %>" aria-label="<%= t("navbar.user_menu") %>">
-    <span class="flex size-9 shrink-0 items-center justify-center rounded-full bg-lime text-sm font-bold text-ink" aria-hidden="true"><%= initial %></span>
+    <span class="flex size-9 shrink-0 items-center justify-center rounded-full bg-lime text-sm font-bold text-ink dark:text-forest" aria-hidden="true"><%= initial %></span>
     <% unless compact %>
       <span class="min-w-0 flex-1 truncate text-base font-semibold"><%= user.full_name %></span>
       <%= render Atoms::Icon::Component.new(name: :chevrons_up_down, class: "size-4 shrink-0 text-forest-muted", "stroke-width": 2) %>

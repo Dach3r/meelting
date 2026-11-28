@@ -2,8 +2,8 @@ module Atoms
   module Button
     class Component < ViewComponent::Base
       TONES = {
-        light: "font-semibold text-forest hover:text-ink",
-        menu: "block w-full rounded-xl px-4 py-2.5 text-left font-semibold text-ink hover:bg-cream",
+        light: "font-semibold text-muted hover:text-ink",
+        menu: "block w-full rounded-xl px-4 py-2.5 text-left font-semibold text-ink hover:bg-field",
         pill: "inline-flex h-11 items-center rounded-full bg-forest px-5 text-[15px] font-bold text-lime hover:bg-forest-active"
       }.freeze
 

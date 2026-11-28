@@ -10,7 +10,7 @@
   <% end %>
 
   <%= render Molecules::FormField::Component.new(form: form, attribute: :api_key, label: t(".api_key"), icon: :key_round, type: :password, value: nil, placeholder: t(".api_key_placeholder")) do |field| %>
-    <% field.with_status do %><p class="text-sm text-forest"><%= t(".hint") %></p><% end %>
+    <% field.with_status do %><p class="text-sm text-muted"><%= t(".hint") %></p><% end %>
   <% end %>
 
   <%= render Atoms::SubmitButton::Component.new do %><%= t(".submit") %><% end %>

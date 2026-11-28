@@ -22,6 +22,44 @@
   --color-info: #2f7fd1;
   --color-info-soft: #7cc4ff;
   --color-warn: #f5a524;
+
+  --color-shell: var(--color-forest);
+  --color-canvas: var(--color-cream);
+  --color-surface: #ffffff;
+  --color-field: var(--color-cream);
+  --color-chip: var(--color-forest);
+  --color-muted: var(--color-forest);
+  --color-ring: var(--color-forest);
+  --color-selected: var(--color-forest);
+  --color-on-selected: #ffffff;
+  --color-selected-chip: var(--color-lime);
+  --color-on-selected-chip: var(--color-forest);
+}
+
+/* Dark mode follows the OS setting: "night forest" palette. */
+@layer base {
+  @media (prefers-color-scheme: dark) {
+    :root {
+      color-scheme: dark;
+      --color-ink: #eef3e6;
+      --color-line: #223125;
+      --color-cream-line: #2a3f2c;
+      --color-dashed: #4b5f48;
+      --color-danger: #ff8a78;
+      --color-danger-soft: #3a1a17;
+      --color-shell: #0b130d;
+      --color-canvas: #0b130d;
+      --color-surface: #121c14;
+      --color-field: #1b2a1e;
+      --color-chip: #2a3f2c;
+      --color-muted: var(--color-forest-soft);
+      --color-ring: var(--color-lime);
+      --color-selected: var(--color-lime);
+      --color-on-selected: #16230f;
+      --color-selected-chip: #16230f;
+      --color-on-selected-chip: var(--color-lime);
+    }
+  }
 }
 
 @layer components {
@@ -32,7 +70,7 @@
     border: 1px dashed var(--color-dashed);
     border-radius: 9999px;
     padding-inline: 0.75rem;
-    color: var(--color-forest);
+    color: var(--color-muted);
     font-size: 0.8125rem;
     font-weight: 500;
     white-space: nowrap;
@@ -53,7 +91,7 @@
 
   .nb-btn:active,
   .nb-btn:focus-visible {
-    box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-forest) 18%, transparent);
+    box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-ring) 18%, transparent);
   }
 
   .nb-field {
@@ -64,20 +102,20 @@
     box-sizing: border-box;
     border: 2px solid var(--color-ink);
     border-radius: 0.75rem;
-    background-color: white;
+    background-color: var(--color-surface);
     padding-inline: 1rem;
     color: var(--color-ink);
     font-size: 1.0625rem;
   }
 
   .nb-field::placeholder {
-    color: var(--color-forest);
+    color: var(--color-muted);
     opacity: 0.6;
   }
 
   .nb-field:focus {
     outline: none;
-    border-color: var(--color-forest);
+    border-color: var(--color-ring);
     box-shadow: 0 0 0 4px var(--color-lime-soft);
   }
 
@@ -89,13 +127,13 @@
     box-sizing: border-box;
     border: 2px solid transparent;
     border-radius: 9999px;
-    background-color: var(--color-cream);
+    background-color: var(--color-field);
     padding-inline: 0.5rem 1.25rem;
   }
 
   .nb-field-shell:focus-within {
-    border-color: var(--color-forest);
-    box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-forest) 18%, transparent);
+    border-color: var(--color-ring);
+    box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-ring) 18%, transparent);
   }
 
   .nb-field:user-invalid,
@@ -118,7 +156,7 @@
     width: 2.5rem;
     height: 2.5rem;
     border-radius: 9999px;
-    background-color: var(--color-forest);
+    background-color: var(--color-chip);
     color: var(--color-lime);
   }
 
@@ -134,7 +172,7 @@
   }
 
   .nb-field-shell-input::placeholder {
-    color: var(--color-forest);
+    color: var(--color-muted);
     opacity: 0.5;
   }
 
@@ -147,7 +185,7 @@
   .nb-field-shell-input:-webkit-autofill:focus {
     -webkit-text-fill-color: var(--color-ink);
     caret-color: var(--color-ink);
-    box-shadow: inset 0 0 0 1000px var(--color-cream);
+    box-shadow: inset 0 0 0 1000px var(--color-field);
   }
 
   .nb-field-shell-area {
@@ -180,7 +218,7 @@
     box-sizing: border-box;
     border: 2px solid transparent;
     border-radius: 9999px;
-    background-color: var(--color-cream);
+    background-color: var(--color-field);
     padding-inline: 0.5rem 1.25rem;
     color: var(--color-ink);
     font-weight: 600;
@@ -188,18 +226,18 @@
   }
 
   .nb-choice:has(input:checked) {
-    background-color: var(--color-forest);
-    color: white;
+    background-color: var(--color-selected);
+    color: var(--color-on-selected);
   }
 
   .nb-choice:has(input:checked) .nb-field-shell-icon {
-    background-color: var(--color-lime);
-    color: var(--color-forest);
+    background-color: var(--color-selected-chip);
+    color: var(--color-on-selected-chip);
   }
 
   .nb-choice:focus-within {
-    border-color: var(--color-forest);
-    box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-forest) 18%, transparent);
+    border-color: var(--color-ring);
+    box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-ring) 18%, transparent);
   }
 }
 
@@ -211,7 +249,7 @@
   }
 
   body {
-    background-color: var(--color-cream);
+    background-color: var(--color-canvas);
     color: var(--color-ink);
   }
 
@@ -231,7 +269,7 @@
     transition: background-color 600000s 0s;
     -webkit-text-fill-color: var(--color-ink);
     caret-color: var(--color-ink);
-    box-shadow: inset 0 0 0 1000px white;
+    box-shadow: inset 0 0 0 1000px var(--color-surface);
   }
 }
 
