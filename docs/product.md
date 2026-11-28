@@ -100,8 +100,8 @@ Suggested core entities for the first milestone. This is a starting point, not a
 | Database | PostgreSQL | Full-text search for the memory index; pgvector later if semantic search is needed | Decided |
 | Technical conventions | Defined in `CLAUDE.md`, which takes precedence over this document | Already agreed; one source avoids drift | Decided |
 | Document location | `docs/product.md` | `CLAUDE.md` keeps documentation in `docs/` with kebab-case names | Decided |
-| Agents | Own runtime (RubyLLM, BYOK) + Claude Code and Codex in headless mode, all in Docker sandboxes | Own control without giving up the best existing agents | Decided |
-| Agent order | Claude Code headless first; own runtime after the first milestone | A high-quality agent from day one without writing an agent loop; shortest path to daily use | Proposed |
+| Agents | Own runtime (RubyLLM, BYOK) + external CLI agents in headless mode (OpenCode first; Claude Code and Codex later), all in Docker sandboxes | Own control without giving up the best existing agents | Decided |
+| Agent order | OpenCode headless with DeepSeek as the first harness and provider; own runtime after the first milestone | OpenCode is open source and provider-agnostic, and DeepSeek keeps BYOK cost low; a capable agent from day one without writing an agent loop | Decided |
 | Memory | Versioned files in `.project/` as the source of truth, indexed in the database | Traceable, portable, and readable by external agents without integration | Decided |
 | `AGENTS.md` / `CLAUDE.md` ownership | Hand-written files with a generated block between markers; Meelting rewrites only that block. `CLAUDE.md` imports `AGENTS.md` and adds its own rules | The repo keeps hand-written conventions (as Meelting's own does) while memory summaries stay fresh | Decided |
 | Deployment | Docker Compose is the official path for self-hosters; Kamal deploys David's own instance | Self-hosting is the foundation of an open source project; Kamal is already in the stack | Decided |
@@ -113,13 +113,14 @@ Suggested core entities for the first milestone. This is a starting point, not a
 | Success criterion | Daily use on David's own projects | A verifiable signal that does not depend on third parties | Decided |
 | Weekly hours | Not fixed on purpose; no time commitment | The roadmap carries no dates or estimates | Decided |
 | Evaluation date | Not set | Without a date the experiment is never evaluated (see risks) | Open |
-| Sandbox network policy | Not set | Claude Code needs to reach the model provider, so "no network" is not an option; decide before Phase 3 | Open |
+| Sandbox network policy | Not set | The agent CLI needs to reach the model provider (DeepSeek), so "no network" is not an option; decide before Phase 3 | Open |
 | BYOK key inside the sandbox | Not set | Environment variable vs a proxy that injects the key outside the container; see risks | Open |
 | App navigation | Persistent sidebar: Inbox, Runs, repositories (each expands in place to Code, Issues, Pull requests, Runs, Memory) and Settings | With one or two repositories in the first milestone, expanding in place keeps everything one click away without an extra tab level | Decided |
 | Authenticated home | The home is the Inbox: things that need a decision, plus runs in progress. Nothing else | Notifications are out of scope, so the home is the only place a run waiting at the gate is seen; anything that is not a decision makes it harder to see | Decided |
 | Rejected run | The run stays in history as rejected and leaves the Inbox; its issue goes back to pending, ready to reassign. No automatic retry | Keeps the gate simple and inside the milestone; retry with feedback can come later | Decided |
 | Home placeholder data | The navigation shell and home are built before Phases 2–3 using placeholder data from one clearly labelled source; no models or migrations for future-phase entities | Lets the layout be built and reviewed early without creating schema ahead of its phase | Proposed |
 | Onboarding checklist | Four steps: create a repository and push (the token is generated inside this step), add a validated model key, write `.project/overview.md`, assign a first issue. The GitHub mirror is an optional recommendation on the repository page, outside the checklist | Each step is a precondition for an agent working on the first issue; the token and the mirror are not | Decided |
+| Model keys | One `ProviderCredential` per user and provider; only DeepSeek for now (string enum with a `CHECK`). The key is encrypted with Active Record Encryption, its keys read from environment variables; status is `unverified`, `valid` or `invalid` | DeepSeek is the first provider; env keys fit Docker Compose self-hosting. Losing the encryption keys makes stored model keys unrecoverable | Decided |
 | Onboarding completion | Once the four steps are done, completion is stored on the user and the checklist never reappears; later problems show as the Settings dot and the banner | A checklist that comes back would replace the Inbox, the only place where decisions are seen | Decided |
 | Visual style | shadcn/ui-inspired look (zinc neutrals, 1px borders, 8px radius, Geist) built with Hotwire, without React | Quiet and dense for daily use; the look is adopted, not the React components | Proposed |
 
@@ -135,24 +136,24 @@ Clients                 Rails 8 monolith                         Isolated execut
 Browser  ───────────▶   UI + API (Hotwire, Turbo Streams)
 Git client (HTTPS) ──▶  Git Smart HTTP (git http-backend, git CLI)
 SSH (later, Go)  ┄┄┄▶   Agent runs (Solid Queue jobs)  ────────▶ Docker sandbox per run
-                        Memory index (re-indexes .project/)         - external agents: Claude Code, Codex
+                        Memory index (re-indexes .project/)         - external agents: OpenCode (later Claude Code, Codex)
                                                                     - tools: shell, tests, file edits
                                 │                     │                        │
                                 ▼                     ▼                        ▼
                         Bare repos on disk      PostgreSQL              Model providers (BYOK)
-                        (code + .project/)      (data + index)          Anthropic, OpenAI, Ollama
+                        (code + .project/)      (data + index)          DeepSeek first; others later
 ```
 
 - **Git.** Smart HTTP through `git http-backend`; trees, diffs and blame through the git CLI. Merges use `git merge-tree` and `git commit-tree` under a per-repository lock. SSH is deferred to a separate Go service, the first component outside Rails.
 - **Agents.** Solid Queue jobs orchestrate runs. The own agent loop (later) runs in the job with RubyLLM and executes its tools inside the sandbox. External agents run as CLI processes inside the sandbox.
-- **Why Ruby is enough.** There are official Anthropic and MCP SDKs for Ruby, and RubyLLM covers multiple providers. The Claude Agent SDK does not exist for Ruby (Python and TypeScript only), but Meelting does not need it: external agents run as CLIs.
+- **Why Ruby is enough.** There is an official MCP SDK for Ruby, and RubyLLM covers multiple providers, DeepSeek included. Meelting does not need an agent SDK in Ruby: external agents run as CLIs.
 - **Self-hosting.** A Docker image of the app + PostgreSQL + a Docker daemon for sandboxes. Mounting the Docker socket into the app is equivalent to root access on the host, so use a separate runner or a socket proxy with limited permissions.
 
 ### Agent run lifecycle (first milestone)
 
 1. A user assigns an issue to an agent.
 2. A Solid Queue job creates an AgentRun, starts a sandbox container, clones the repository and creates a new branch.
-3. The agent (Claude Code in headless mode, using the user's API key) works on the issue with `.project/` available as context.
+3. The agent (OpenCode in headless mode, using the user's DeepSeek API key) works on the issue with `.project/` available as context.
 4. Every step is stored as a RunEvent and streamed to the UI with Turbo Streams.
 5. When the agent finishes, the run waits at the approval gate.
 6. On approval, Meelting pushes the branch and opens a pull request with a structured description. On rejection, the run is kept as rejected and its issue goes back to pending.
@@ -226,8 +227,8 @@ Details (diff size, cost, tests run, memory used) belong on the run and pull req
 
 - **Empty Inbox.** "Nothing needs you" with one action: "Assign an issue", which goes to the repository's open issues.
 - **First visit.** Until onboarding is complete, a checklist replaces both blocks. Four steps, in this order, each checked automatically when it is true:
-  1. **Create a repository and push to it.** Shows the `git remote add` and `git push` commands with an inline "Generate token" button; the token is shown once, already inserted in the commands. There is no separate access token step. Checked when the repository receives its first push.
-  2. **Add a model key.** Checked only when the key is validated, not when it exists. Validation happens on save with a cheap provider call (for example, listing models), never while rendering the home. Below the step, an automatic check that the Docker daemon is reachable (added with the sandbox in Phase 3).
+  1. **Create a repository and push to it.** Shows the `git remote add origin` and `git push` commands with a credential-free URL, and an inline "Generate token" button; the token is shown once, apart from the commands, with the instruction "username: your username, password: this token", so git's credential helper stores it. The token never goes in the remote URL. There is no separate access token step. Checked when the repository receives its first push.
+  2. **Add a model key.** Checked only when the key is validated, not when it exists. Validation happens synchronously on save with a cheap provider call (listing DeepSeek models) and a short timeout, never while rendering the home. A rejected key is not saved; a timeout or network error saves it as unverified. Below the step, an automatic check that the Docker daemon is reachable (added with the sandbox in Phase 3).
   3. **Write `.project/overview.md`.** Offers a template with sections (what the system does, who it is for, main modules) to copy or commit. Checked when the file exists on the repository's default branch, read from the bare repo with the git CLI; it does not depend on the memory index (Phase 4).
   4. **Assign your first issue to an agent.** Checked on assignment; from there the Inbox takes over. Shown disabled, labelled as available in Phases 2–3, until issues and runs exist.
 
@@ -259,7 +260,7 @@ In scope:
 - Users, authentication and personal access tokens.
 - Repositories with push and clone over HTTPS, a file browser, commit history and diffs.
 - Minimal issues, and pull requests between branches of the same repository, with comments and merge.
-- One agent (Claude Code headless) that takes an issue, works in a sandbox and opens an explained pull request.
+- One agent (OpenCode headless with DeepSeek) that takes an issue, works in a sandbox and opens an explained pull request.
 - Live agent activity and human approval before the pull request is opened.
 - Project Memory v0: `.project/` read by the agent at the start of every task.
 - The navigation sidebar and the Inbox home described above.
@@ -294,7 +295,7 @@ Done when: Meelting's repository lives in Meelting, with a push mirror to GitHub
 
 - [x] Navigation sidebar and Inbox home with placeholder data (see "Authenticated home and navigation")
 - [ ] Create bare repositories on disk
-- [ ] Push and clone over HTTPS with a token (`git http-backend`). The push handler (post-receive or `git http-backend` wrapper) must call `Repository#touch_pushed`; without it the onboarding step "Create a repository and push to it" is never checked
+- [ ] Push and clone over HTTPS with a token (`git http-backend`). The push handler (post-receive or `git http-backend` wrapper) must call `Repository#touch_pushed`; without it the onboarding step "Create a repository and push to it" is never checked. Move the `.project/overview.md` check there too: next to `touch_pushed`, check the file on the default branch and store the result on the repository, so the home stops running `git cat-file` on every request
 - [ ] File browser with syntax highlighting, commit history and per-commit diff
 - [ ] Configurable push mirror to GitHub
 
@@ -313,7 +314,7 @@ Done when: a real Meelting issue ends in a pull request generated by the agent a
 
 - [ ] Decide sandbox network policy and how the BYOK key enters the sandbox (blocks the rest of the phase)
 - [ ] Docker sandbox per run: clones the repository into a new branch, no host secrets
-- [ ] Claude Code headless inside the sandbox, using the user's API key
+- [ ] OpenCode headless inside the sandbox, using the user's DeepSeek API key
 - [ ] Live activity with Turbo Streams: what it reads, what it edits, which commands it runs
 - [ ] Human approval before the pull request is opened
 - [ ] Pull request with objective, summary of changes, decisions, tests run and risks
@@ -374,7 +375,7 @@ If David is still developing outside Meelting on the evaluation date, that is th
 | The public instance attracts abuse (mining, spam) and compute cost that BYOK does not cover | Launch it after the milestone, with controlled sign-up and per-user limits |
 | GitHub and GitLab close the memory gap before Meelting matures | In-repo memory stays useful even then, because any agent can read it |
 | Limited maintainer time (solo side project) with no fixed hours or evaluation date | Closed milestone scope; set an evaluation date once pace is known, otherwise the experiment is never judged |
-| Claude Code headless output format changes and breaks RunEvents | Isolate parsing in one adapter; pin the CLI version in the sandbox image |
+| OpenCode headless output format changes and breaks RunEvents | Isolate parsing in one adapter; pin the CLI version in the sandbox image |
 | Placeholder data outlives its phase and hides missing features | One labelled source, deleted in the phase that brings the real data (see "Placeholder data until Phases 2–3") |
 
 Open questions:
