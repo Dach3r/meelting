@@ -1,13 +1,28 @@
 <% content_for :title, t("placeholders.settings.title") %>
 <div class="flex w-full max-w-3xl flex-col gap-6">
   <h1 class="text-[32px] font-extrabold leading-none tracking-[-0.04em]"><%= t("placeholders.settings.title") %></h1>
+  <% if notice %>
+    <%= render Molecules::Notice::Component.new(tone: :notice, id: "notice") do %><%= notice %><% end %>
+  <% end %>
   <div class="flex flex-col gap-1 rounded-[30px] bg-graphite-50 p-1.5">
     <%= link_to access_tokens_path, class: "rounded-[22px] bg-white px-5 py-4 font-bold hover:bg-graphite-100" do %><%= t("placeholders.settings.access_tokens") %><% end %>
-    <% { model_keys: 3, mirrors: 1 }.each do |key, phase| %>
-      <div class="flex flex-wrap items-center justify-between gap-2 rounded-[22px] bg-white px-5 py-4">
-        <span class="font-bold"><%= t("placeholders.settings.#{key}") %></span>
-        <span class="text-sm text-graphite-500"><%= t("placeholders.phase", phase: phase) %></span>
+    <div class="flex flex-wrap items-center justify-between gap-3 rounded-[22px] bg-white px-5 py-4" id="model_keys">
+      <div class="flex flex-col">
+        <span class="font-bold"><%= t("placeholders.settings.model_keys") %></span>
+        <span class="text-sm text-graphite-500">
+          <%= @provider_credential ? t("provider_credentials.status.#{@provider_credential.status}", provider: t("provider_credentials.providers.#{@provider_credential.provider}")) : t("provider_credentials.status.none") %>
+        </span>
       </div>
-    <% end %>
+      <div class="flex items-center gap-2">
+        <%= render Atoms::LinkButton::Component.new(href: new_provider_credential_path, variant: :graphite_outline, size: :sm) do %><%= t(@provider_credential ? "provider_credentials.actions.replace" : "provider_credentials.actions.add") %><% end %>
+        <% if @provider_credential %>
+          <%= button_to t("provider_credentials.actions.remove"), provider_credential_path(@provider_credential), method: :delete, class: "cursor-pointer rounded-full bg-graphite-50 px-3.5 py-1.5 text-sm font-semibold text-coral-700 hover:bg-graphite-100" %>
+        <% end %>
+      </div>
+    </div>
+    <div class="flex flex-wrap items-center justify-between gap-2 rounded-[22px] bg-white px-5 py-4">
+      <span class="font-bold"><%= t("placeholders.settings.mirrors") %></span>
+      <span class="text-sm text-graphite-500"><%= t("placeholders.phase", phase: 1) %></span>
+    </div>
   </div>
 </div>

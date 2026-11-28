@@ -38,6 +38,10 @@ en:
         title: "The model key is missing."
         detail: "Agents cannot run without it."
         action: "Add model key"
+      invalid_model_key:
+        title: "The model key was rejected by the provider."
+        detail: "Agents cannot run until you replace it."
+        action: "Replace model key"
       docker_unreachable:
         title: "Docker is not responding."
         detail: "Runs cannot start their sandbox."
@@ -61,6 +65,8 @@ en:
           push_detail: "Add the remote and push. Generate a token to authenticate over HTTPS."
           action: "Create repository"
         model_key:
+          detail: "Paste your DeepSeek API key; it is verified on save."
+          action: "Add model key"
           title: "Add a model key"
         overview:
           title: "Write %{file}"

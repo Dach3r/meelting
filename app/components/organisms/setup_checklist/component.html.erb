@@ -22,6 +22,9 @@
                 <%= render Molecules::PushCommands::Component.new(repository: repository) %>
               <% end %>
             <% end %>
+            <% if is_current && step.key == :model_key %>
+              <p class="text-sm text-graphite-900/70"><%= t("home.checklist.steps.model_key.detail") %></p>
+            <% end %>
             <% if step.key == :overview && !step.done %>
               <details class="mt-1 text-sm">
                 <summary class="cursor-pointer font-semibold text-graphite-500"><%= t("home.checklist.steps.overview.template_label") %></summary>
@@ -31,6 +34,9 @@
           </div>
           <% if is_current && step.key == :repository && repository.nil? %>
             <%= render Atoms::LinkButton::Component.new(href: new_repository_path, variant: :secondary, size: :pill) do %><%= t("home.checklist.steps.repository.action") %><% end %>
+          <% end %>
+          <% if is_current && step.key == :model_key %>
+            <%= render Atoms::LinkButton::Component.new(href: new_provider_credential_path, variant: :secondary, size: :pill) do %><%= t("home.checklist.steps.model_key.action") %><% end %>
           <% end %>
           <% unless step.available %>
             <%= render Atoms::Chip::Component.new(class: "text-xs") do %><%= t("home.checklist.steps.#{step.key}.unavailable") %><% end %>

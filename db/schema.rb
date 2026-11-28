@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_27_195942) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_27_195943) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -38,6 +38,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_27_195942) do
     t.datetime "updated_at", null: false
     t.index ["key"], name: "index_licenses_on_key", unique: true
     t.check_constraint "status::text = ANY (ARRAY['active'::character varying, 'inactive'::character varying]::text[])", name: "licenses_status_check"
+  end
+
+  create_table "provider_credentials", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "provider", null: false
+    t.text "api_key", null: false
+    t.string "status", default: "unverified", null: false
+    t.datetime "validated_at"
+    t.string "last_error"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id", "provider"], name: "index_provider_credentials_on_user_id_and_provider", unique: true
+    t.check_constraint "provider::text = 'deepseek'::text", name: "provider_credentials_provider_check"
+    t.check_constraint "status::text = ANY (ARRAY['unverified'::character varying, 'valid'::character varying, 'invalid'::character varying]::text[])", name: "provider_credentials_status_check"
   end
 
   create_table "repositories", force: :cascade do |t|
@@ -81,6 +95,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_27_195942) do
   end
 
   add_foreign_key "access_tokens", "users"
+  add_foreign_key "provider_credentials", "users"
   add_foreign_key "repositories", "licenses"
   add_foreign_key "repositories", "users"
   add_foreign_key "sessions", "users"

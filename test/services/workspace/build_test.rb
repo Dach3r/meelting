@@ -53,18 +53,46 @@ class Workspace::BuildTest < ActiveSupport::TestCase
     assert_nil state.banner_problem
   end
 
-  test "marks onboarding complete once every step is done" do
-    completed = Class.new(Workspace::Build) do
-      private
-      def checklist
-        [Workspace::ChecklistStep.new(key: :repository, done: true)]
-      end
-    end
-    state = completed.call(user: @user)
+  PREDICATES = %i[repository_pushed? model_key_validated? overview_written? first_issue_assigned?].freeze
 
-    assert_not state.first_run?
+  def build_with(predicates)
+    Workspace::Build.new(user: @user, scenario: nil).tap do |build_|
+      predicates.each { |name_, value_| build_.define_singleton_method(name_) { value_.respond_to?(:call) ? value_.call : value_ } }
+    end
+  end
+
+  test "marks onboarding complete when the four steps are true" do
+    state = build_with(PREDICATES.index_with(true)).call
 
     assert @user.reload.onboarding_completed?
+    assert_not state.first_run?
+    assert_empty state.checklist
+  end
+
+  test "does not recalculate the steps once onboarding is complete" do
+    build_with(PREDICATES.index_with(true)).call
+    completed_at = @user.reload.onboarding_completed_at
+
+    state = build_with(PREDICATES.index_with(-> { flunk "checklist recalculated" })).call
+
+    assert_not state.first_run?
+    assert_equal completed_at, @user.reload.onboarding_completed_at
+  end
+
+  test "checks the model key step only with a validated key" do
+    credential = @user.provider_credentials.create!(api_key: "sk")
+    assert_not Workspace::Build.call(user: @user).checklist.find { |step_| step_.key == :model_key }.done
+
+    credential.update!(status: :valid)
+    assert Workspace::Build.call(user: @user).checklist.find { |step_| step_.key == :model_key }.done
+  end
+
+  test "a rejected key shows the settings warning even during onboarding" do
+    @user.provider_credentials.create!(api_key: "sk", status: :invalid)
+    state = Workspace::Build.call(user: @user)
+
+    assert state.first_run?
+    assert_equal :invalid_model_key, state.banner_problem.kind
   end
 
   test "does not complete onboarding while a step is pending" do

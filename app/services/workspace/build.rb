@@ -37,11 +37,29 @@ module Workspace
 
     def checklist
       @checklist ||= [
-        ChecklistStep.new(key: :repository, done: pushed_repositories.any?),
-        ChecklistStep.new(key: :model_key, done: false),
-        ChecklistStep.new(key: :overview, done: pushed_repositories.any? { |repository_| repository_.file_on_default_branch?(OVERVIEW_PATH) }),
-        ChecklistStep.new(key: :first_issue, done: false, available: false)
+        ChecklistStep.new(key: :repository, done: repository_pushed?),
+        ChecklistStep.new(key: :model_key, done: model_key_validated?),
+        ChecklistStep.new(key: :overview, done: overview_written?),
+        ChecklistStep.new(key: :first_issue, done: first_issue_assigned?, available: false)
       ]
+    end
+
+    def repository_pushed?
+      pushed_repositories.any?
+    end
+
+    def model_key_validated?
+      user.provider_credentials.status_valid.exists?
+    end
+
+    # TODO: read a flag stored by the push handler instead of running git on every request.
+    def overview_written?
+      pushed_repositories.any? { |repository_| repository_.file_on_default_branch?(OVERVIEW_PATH) }
+    end
+
+    # Issues and runs arrive in Phases 2 and 3.
+    def first_issue_assigned?
+      false
     end
 
     def pushed_repositories
@@ -72,7 +90,15 @@ module Workspace
       when :inbox then []
       when :empty then [Problem.new(kind: :mirror_failing, repository: repositories.last.name)]
       when :first_run then []
-      when nil then first_run? ? [] : [Problem.new(kind: :missing_model_key)]
+      when nil then [model_key_problem].compact
+      end
+    end
+
+    # While the checklist is shown it already covers a missing key; a rejected key is a real failure.
+    def model_key_problem
+      credential = user.provider_credentials.first
+      if credential&.status_invalid? then Problem.new(kind: :invalid_model_key)
+      elsif !first_run? && !credential&.status_valid? then Problem.new(kind: :missing_model_key)
       end
     end
   end

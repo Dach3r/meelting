@@ -28,6 +28,7 @@ Rails.application.routes.draw do
     resource :push_token, only: :create, module: :repositories
   end
 
+  resources :provider_credentials, only: %i[new create destroy]
   resources :runs, only: :index
   resource :settings, only: :show
   resource :sidebar_expansion, only: :update, controller: "navigation/expansions"

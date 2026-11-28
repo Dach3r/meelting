@@ -4,6 +4,7 @@ class User < ApplicationRecord
   has_many :sessions, dependent: :destroy
   has_many :access_tokens, dependent: :destroy
   has_many :repositories, dependent: :destroy
+  has_many :provider_credentials, dependent: :destroy
 
   normalizes :username, with: ->(username_) { username_.strip }
   normalizes :email_address, with: ->(email_address_) { email_address_.strip.downcase }

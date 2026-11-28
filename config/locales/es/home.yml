@@ -38,6 +38,10 @@ es:
         title: "Falta la model key."
         detail: "Sin ella los agentes no pueden ejecutar runs."
         action: "Agregar model key"
+      invalid_model_key:
+        title: "La model key fue rechazada por el proveedor."
+        detail: "Los agentes no pueden ejecutar runs hasta que la reemplaces."
+        action: "Reemplazar model key"
       docker_unreachable:
         title: "Docker no responde."
         detail: "Los runs no pueden iniciar su sandbox."
@@ -61,6 +65,8 @@ es:
           push_detail: "Agrega el remoto y haz push. Genera un token para autenticarte por HTTPS."
           action: "Crear repositorio"
         model_key:
+          detail: "Pega tu API key de DeepSeek; se verifica al guardar."
+          action: "Agregar model key"
           title: "Agrega una model key"
         overview:
           title: "Escribe %{file}"

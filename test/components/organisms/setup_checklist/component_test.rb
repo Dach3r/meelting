@@ -35,8 +35,15 @@ class Organisms::SetupChecklist::ComponentTest < ViewComponent::TestCase
   test "shows the push commands with the token button once a repository exists" do
     node = render_checklist(repository: repositories(:meelting))
 
-    assert_includes node.css("li[aria-current=step] #push_commands code").text, "git push -u meelting main"
+    assert_includes node.css("li[aria-current=step] #push_commands code").text, "git push -u origin main"
     assert_equal "/repositories/meelting/push_token", node.css("li[aria-current=step] form").first["action"]
+  end
+
+  test "links the model key step to the key form when it is current" do
+    node = render_checklist([:repository])
+
+    assert_equal "/provider_credentials/new", node.css("li[aria-current=step] a").first["href"]
+    assert_includes node.css("li[aria-current=step]").text, "DeepSeek"
   end
 
   test "offers the overview template while the file is missing" do
