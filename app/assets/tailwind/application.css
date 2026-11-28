@@ -215,23 +215,10 @@
     font-variant-ligatures: none;
   }
 
+  :focus,
   :focus-visible,
-  a.nb-btn:focus,
-  button:focus,
-  a.nb-btn:active,
-  button:active {
-    outline: 4px solid color-mix(in srgb, var(--color-lime) 60%, transparent);
-    outline-offset: 0;
-  }
-
-  a:not(.nb-btn):focus,
-  a:not(.nb-btn):active {
+  :active {
     outline: none;
-  }
-
-  a:not(.nb-btn):focus-visible {
-    outline: 3px solid var(--color-lime);
-    outline-offset: 2px;
   }
 
   input:-webkit-autofill,
