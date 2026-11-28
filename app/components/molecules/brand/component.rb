@@ -12,6 +12,10 @@ module Molecules
 
       private
       attr_reader :tone
+
+      def name_parts
+        ApplicationHelper::APP_NAME.split("i", 2)
+      end
     end
   end
 end

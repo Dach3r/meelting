@@ -1,12 +1,12 @@
 require "test_helper"
 
 class Molecules::Brand::ComponentTest < ViewComponent::TestCase
-  test "links to root with the brand name and the braces mark" do
+  test "links to root labelled with the brand name in braces and a lime i dot" do
     brand = render_inline(Molecules::Brand::Component.new)
 
-    assert_equal ApplicationHelper::APP_NAME, brand.css("a[href='/']").text.strip
-    assert_equal 1, brand.css("a svg[aria-hidden='true']").size
-    assert_includes brand.css("a svg circle").attr("class").value, "fill-lime"
+    assert_equal ApplicationHelper::APP_NAME, brand.css("a[href='/']").attr("aria-label").value
+    assert_equal "{Meeltıng}", brand.css("a").text.gsub(/\s/, "")
+    assert_equal 1, brand.css("a span.bg-lime").size
   end
 
   test "dark tone uses ink text" do
