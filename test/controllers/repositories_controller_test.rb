@@ -23,16 +23,17 @@ class RepositoriesControllerTest < ActionDispatch::IntegrationTest
     assert_select "##{dom_id(repositories(:public_notes))}", count: 0
   end
 
-  test "new renders the wizard on the first step" do
+  test "new renders every field in a single form" do
     get new_repository_path
     assert_response :success
-    assert_select "form[data-controller=repository-wizard][data-repository-wizard-step-value=1]"
-    assert_select "[data-repository-wizard-target=step]", 2
-    assert_select "[data-repository-wizard-target=step]:not([hidden]) #repository_name"
-    assert_select "[data-repository-wizard-target=step]:not([hidden]) #repository_default_branch"
-    assert_select "[data-repository-wizard-target=navItem]", 2
-    assert_select "[data-repository-wizard-target=navItem][aria-current=step]", text: /Repositorio/
-    assert_select "[data-repository-wizard-target=position]", "Paso 1 de 2"
+    assert_select "form[data-controller=repository-form]" do
+      assert_select "#repository_name"
+      assert_select "#repository_default_branch"
+      assert_select "#repository_description"
+      assert_select "input[name='repository[visibility]']", 2
+      assert_select "#repository_license_id"
+    end
+    assert_select "[hidden] input, [hidden] select, [hidden] textarea", 0
   end
 
   test "create stores the repository for the current user" do
@@ -55,11 +56,11 @@ class RepositoriesControllerTest < ActionDispatch::IntegrationTest
     assert_select "#repository_slug", 0
   end
 
-  test "new passes the url template and taken slugs to the wizard" do
+  test "new passes the url template and taken slugs to the form" do
     get new_repository_path
-    assert_select "form[data-repository-wizard-url-template-value=?]", "http://www.example.com/repositories/__slug__/code"
-    assert_select "form[data-repository-wizard-taken-slugs-value=?]", [repositories(:meelting).slug].to_json
-    assert_select "[data-repository-wizard-target=url][hidden]"
+    assert_select "form[data-repository-form-url-template-value=?]", "http://www.example.com/repositories/__slug__/code"
+    assert_select "form[data-repository-form-taken-slugs-value=?]", [repositories(:meelting).slug].to_json
+    assert_select "[data-repository-form-target=url][hidden]"
   end
 
   test "create without name fails" do
@@ -76,11 +77,11 @@ class RepositoriesControllerTest < ActionDispatch::IntegrationTest
     assert_response :unprocessable_entity
   end
 
-  test "create failure reopens the wizard on the step with the first error" do
+  test "create failure re-renders the form with errors" do
     post repositories_path, params: valid_params(default_branch: "")
     assert_response :unprocessable_entity
-    assert_select "form[data-repository-wizard-step-value=1]"
-    assert_select "[data-repository-wizard-target=step]:not([hidden]) #repository_default_branch"
+    assert_select "#error_explanation"
+    assert_select "#repository_default_branch"
   end
 
   test "create with inactive license fails" do

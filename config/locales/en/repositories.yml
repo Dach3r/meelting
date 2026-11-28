@@ -18,18 +18,9 @@ en:
       empty: "You have no repositories yet."
     new:
       title: "New repository"
-      step_position: "Step %{current} of %{total}"
-      summaries:
-        repository: "Name"
-      progress: "Progress"
-      steps:
-        repository: "Repository"
-        visibility: "Visibility"
       name_placeholder: "My project"
       description_placeholder: "What is it about?"
       no_license: "No license"
-      next: "Next"
-      back: "Back"
       submit: "Create repository"
     create:
       created: "Repository created."

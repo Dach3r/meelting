@@ -18,18 +18,9 @@ es:
       empty: "Aún no tienes repositorios."
     new:
       title: "Nuevo repositorio"
-      step_position: "Paso %{current} de %{total}"
-      summaries:
-        repository: "Nombre"
-      progress: "Progreso"
-      steps:
-        repository: "Repositorio"
-        visibility: "Visibilidad"
       name_placeholder: "Mi proyecto"
       description_placeholder: "¿De qué trata?"
       no_license: "Sin licencia"
-      next: "Siguiente"
-      back: "Atrás"
       submit: "Crear repositorio"
     create:
       created: "Repositorio creado."

@@ -1,82 +1,49 @@
 <% content_for :title, t(".title") %>
-<% step = repository_wizard_step(@repository) %>
-<% steps = [t(".steps.repository"), t(".steps.visibility")] %>
-<% summaries = [
-     @repository.name.presence || t(".summaries.repository"),
-     [t("repositories.visibilities.#{@repository.visibility}"), @repository.license&.name || t(".no_license")].join(" · ")
-   ] %>
 
-<%= form_with model: @repository, class: "grid w-full content-start gap-8 lg:grid-cols-[240px_minmax(0,1fr)]",
-      data: { controller: "repository-wizard", action: "input->repository-wizard#refresh change->repository-wizard#refresh",
-              repository_wizard_step_value: step, repository_wizard_next_label_value: t(".next"), repository_wizard_submit_label_value: t(".submit"),
-              repository_wizard_position_label_value: t(".step_position", current: "%{current}", total: "%{total}"),
-              repository_wizard_url_template_value: repository_section_url("__slug__", :code), repository_wizard_taken_slugs_value: @taken_slugs } do |form| %>
-  <ol class="grid auto-cols-[minmax(200px,1fr)] grid-flow-col content-start gap-1 overflow-x-auto lg:grid-flow-row lg:auto-cols-auto" aria-label="<%= t(".progress") %>">
-    <% steps.each_with_index do |label, index| %>
-      <li class="<%= class_names("grid grid-cols-[36px_minmax(0,1fr)] items-center gap-3 rounded-[18px] p-3", "bg-cream" => index + 1 == step) %>" data-repository-wizard-target="navItem" <%= "aria-current=step" if index + 1 == step %>>
-        <span class="<%= class_names("flex size-9 items-center justify-center rounded-full border-2 text-sm font-bold", index + 1 == step ? "border-forest bg-forest text-lime" : "border-line text-ink") %>" data-repository-wizard-target="navDot"><%= index + 1 %></span>
-        <span class="grid min-w-0">
-          <span class="font-semibold text-ink"><%= label %></span>
-          <span class="truncate text-[13px] text-forest/70" data-repository-wizard-target="summary" data-default="<%= index.zero? ? t(".summaries.repository") : summaries[index] %>"><%= summaries[index] %></span>
-        </span>
-      </li>
-    <% end %>
-  </ol>
+<%= form_with model: @repository, class: "grid w-full content-start gap-5",
+      data: { controller: "repository-form", action: "input->repository-form#refresh",
+              repository_form_url_template_value: repository_section_url("__slug__", :code), repository_form_taken_slugs_value: @taken_slugs } do |form| %>
+  <h1 class="mb-1 text-[34px] leading-[1.05] font-extrabold tracking-[-0.02em]"><%= t(".title") %></h1>
 
-  <div class="grid content-start gap-5">
-    <div class="mb-1 grid gap-2">
-      <h1 class="text-[34px] leading-[1.05] font-extrabold tracking-[-0.02em]" data-repository-wizard-target="label"><%= steps[step - 1] %></h1>
-      <p class="text-forest/70" data-repository-wizard-target="position"><%= t(".step_position", current: step, total: steps.size) %></p>
-    </div>
-
-    <% if @repository.errors.any? %>
-      <div class="rounded-xl bg-danger-soft px-4 py-3 text-[15px] font-semibold text-danger" id="error_explanation" role="alert">
-        <ul>
-          <% @repository.errors.full_messages.each do |message| %>
-            <li><%= message %></li>
-          <% end %>
-        </ul>
-      </div>
-    <% end %>
-
-    <div class="grid gap-5" data-repository-wizard-target="step" data-label="<%= steps[0] %>" <%= "hidden" unless step == 1 %>>
-      <%= render Molecules::FormField::Component.new(form: form, attribute: :name, label: Repository.human_attribute_name(:name), icon: :type, autofocus: step == 1, placeholder: t(".name_placeholder"), data: { repository_wizard_target: "name" }) do |field| %>
-        <% field.with_label_aside do %><p class="min-w-0 truncate font-mono text-[13px] font-semibold" data-repository-wizard-target="url" aria-live="polite" hidden></p><% end %>
-      <% end %>
-      <%= render Molecules::FormField::Component.new(form: form, attribute: :default_branch, label: Repository.human_attribute_name(:default_branch), icon: :git_branch, autocapitalize: "none", class: "nb-field-shell-input font-mono") %>
-      <%= render Molecules::FormField::Component.new(form: form, attribute: :description, label: Repository.human_attribute_name(:description), icon: :align_left, type: :text_area, required: false, rows: 3, maxlength: 350, placeholder: t(".description_placeholder")) %>
-    </div>
-
-    <div class="grid gap-5" data-repository-wizard-target="step" data-label="<%= steps[1] %>" <%= "hidden" unless step == 2 %>>
-      <fieldset class="min-w-0">
-        <legend class="mb-2 pl-1 text-[13px] leading-[normal] font-semibold text-forest"><%= Repository.human_attribute_name(:visibility) %></legend>
-        <div class="flex flex-wrap gap-2.5">
-          <% { private: :lock, public: :globe }.each do |visibility, icon| %>
-            <label class="nb-choice">
-              <%= form.radio_button :visibility, visibility, class: "sr-only", data: { repository_wizard_target: "visibility" } %>
-              <span class="nb-field-shell-icon"><%= render Atoms::Icon::Component.new(name: icon, class: "size-[18px]") %></span>
-              <span data-visibility-label><%= t("repositories.visibilities.#{visibility}") %></span>
-            </label>
-          <% end %>
-        </div>
-      </fieldset>
-      <%= render Molecules::FormField::Component.new(form: form, attribute: :license_id, label: Repository.human_attribute_name(:license_id), icon: :scale) do |field| %>
-        <% field.with_control do %>
-          <%= form.collection_select :license_id, License.active.order(:name), :id, :name, { include_blank: t(".no_license") }, class: "nb-field-shell-input", data: { repository_wizard_target: "license" } %>
-          <%= render Atoms::Icon::Component.new(name: :chevron_down, class: "pointer-events-none size-4 flex-none", "stroke-width": 2.4) %>
+  <% if @repository.errors.any? %>
+    <div class="rounded-xl bg-danger-soft px-4 py-3 text-[15px] font-semibold text-danger" id="error_explanation" role="alert">
+      <ul>
+        <% @repository.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
         <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <%= render Molecules::FormField::Component.new(form: form, attribute: :name, label: Repository.human_attribute_name(:name), icon: :type, autofocus: true, placeholder: t(".name_placeholder"), data: { repository_form_target: "name" }) do |field| %>
+    <% field.with_label_aside do %><p class="min-w-0 truncate font-mono text-[13px] font-semibold" data-repository-form-target="url" aria-live="polite" hidden></p><% end %>
+  <% end %>
+  <%= render Molecules::FormField::Component.new(form: form, attribute: :default_branch, label: Repository.human_attribute_name(:default_branch), icon: :git_branch, autocapitalize: "none", class: "nb-field-shell-input font-mono") %>
+  <%= render Molecules::FormField::Component.new(form: form, attribute: :description, label: Repository.human_attribute_name(:description), icon: :align_left, type: :text_area, required: false, rows: 3, maxlength: 350, placeholder: t(".description_placeholder")) %>
+
+  <fieldset class="min-w-0">
+    <legend class="mb-2 pl-1 text-[13px] leading-[normal] font-semibold text-forest"><%= Repository.human_attribute_name(:visibility) %></legend>
+    <div class="flex flex-wrap gap-2.5">
+      <% { private: :lock, public: :globe }.each do |visibility, icon| %>
+        <label class="nb-choice">
+          <%= form.radio_button :visibility, visibility, class: "sr-only" %>
+          <span class="nb-field-shell-icon"><%= render Atoms::Icon::Component.new(name: icon, class: "size-[18px]") %></span>
+          <span><%= t("repositories.visibilities.#{visibility}") %></span>
+        </label>
       <% end %>
     </div>
+  </fieldset>
+  <%= render Molecules::FormField::Component.new(form: form, attribute: :license_id, label: Repository.human_attribute_name(:license_id), icon: :scale) do |field| %>
+    <% field.with_control do %>
+      <%= form.collection_select :license_id, License.active.order(:name), :id, :name, { include_blank: t(".no_license") }, class: "nb-field-shell-input" %>
+      <%= render Atoms::Icon::Component.new(name: :chevron_down, class: "pointer-events-none size-4 flex-none", "stroke-width": 2.4) %>
+    <% end %>
+  <% end %>
 
-    <div class="mt-1 flex flex-wrap justify-end gap-3">
-      <button type="button" class="nb-btn flex h-14 cursor-pointer items-center gap-2 rounded-full bg-cream px-6 text-base font-semibold text-forest hover:bg-cream-line" data-repository-wizard-target="back" data-action="repository-wizard#back" <%= "hidden" if step == 1 %>>
-        <%= render Atoms::Icon::Component.new(name: :arrow_left, class: "size-[18px]", "stroke-width": 2) %><%= t(".back") %>
-      </button>
-      <button type="submit" class="flex h-14 cursor-pointer items-center gap-2 rounded-full bg-lime px-7 text-base font-semibold text-forest hover:bg-lime-soft" data-repository-wizard-target="submit" data-action="repository-wizard#next">
-        <span data-repository-wizard-target="submitLabel"><%= step == steps.size ? t(".submit") : t(".next") %></span>
-        <%= render Atoms::Icon::Component.new(name: :arrow_right, class: "size-[18px]", "stroke-width": 2) %>
-      </button>
-    </div>
+  <div class="mt-1 flex justify-end">
+    <button type="submit" class="flex h-14 cursor-pointer items-center gap-2 rounded-full bg-lime px-7 text-base font-semibold text-forest hover:bg-lime-soft">
+      <%= t(".submit") %>
+      <%= render Atoms::Icon::Component.new(name: :arrow_right, class: "size-[18px]", "stroke-width": 2) %>
+    </button>
   </div>
-
 <% end %>
