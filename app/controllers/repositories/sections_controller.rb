@@ -6,6 +6,10 @@ module Repositories
       @repository = Current.user.repositories.active.find_by!(slug: params[:repository_slug])
       @section = params[:section]
       @phase = PHASES.fetch(@section)
+      return unless @section == "code"
+
+      @empty = !@repository.initialized?
+      @license = Repositories::DetectLicense.call(@repository) unless @empty
     end
   end
 end

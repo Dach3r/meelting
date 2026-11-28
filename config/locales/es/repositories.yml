@@ -51,6 +51,12 @@ es:
       permissions_note_html: "Sirve para todos tus repositorios y no expira. Puedes revocarlo en %{tokens}."
       tokens_link: "tokens de acceso"
       scopes_blank: "Elige al menos un permiso."
+    license:
+      named: "Licencia %{name}"
+      other: "Otra"
+    blobs:
+      show:
+        too_large: "Este archivo es demasiado grande para mostrarlo."
     empty:
       title: "Sube tu código"
       detail: "Este repositorio está vacío. Agrega el remoto y haz push. Genera un token para autenticarte por HTTPS."

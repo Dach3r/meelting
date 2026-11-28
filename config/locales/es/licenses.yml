@@ -1,0 +1,27 @@
+es:
+  licenses:
+    groups:
+      permissions: "Permisos"
+      conditions: "Condiciones"
+      limitations: "Limitaciones"
+    rules:
+      permissions:
+        commercial-use: "Uso comercial"
+        modifications: "Modificación"
+        distribution: "Distribución"
+        patent-use: "Uso de patentes"
+        private-use: "Uso privado"
+      conditions:
+        include-copyright: "Aviso de licencia y copyright"
+        include-copyright--source: "Aviso de licencia y copyright en el código fuente"
+        document-changes: "Indicar los cambios"
+        disclose-source: "Publicar el código fuente"
+        network-use-disclose: "El uso en red es distribución"
+        same-license: "Misma licencia"
+        same-license--file: "Misma licencia (archivo)"
+        same-license--library: "Misma licencia (biblioteca)"
+      limitations:
+        trademark-use: "Uso de marcas"
+        liability: "Responsabilidad"
+        warranty: "Garantía"
+        patent-use: "Uso de patentes"

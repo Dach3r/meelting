@@ -50,6 +50,12 @@ en:
       permissions_note_html: "Works for all your repositories and never expires. You can revoke it in %{tokens}."
       tokens_link: "access tokens"
       scopes_blank: "Choose at least one permission."
+    license:
+      named: "%{name} license"
+      other: "Other"
+    blobs:
+      show:
+        too_large: "This file is too large to display."
     empty:
       title: "Push your code"
       detail: "This repository is empty. Add the remote and push. Generate a token to authenticate over HTTPS."

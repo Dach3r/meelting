@@ -1,0 +1,27 @@
+en:
+  licenses:
+    groups:
+      permissions: "Permissions"
+      conditions: "Conditions"
+      limitations: "Limitations"
+    rules:
+      permissions:
+        commercial-use: "Commercial use"
+        modifications: "Modification"
+        distribution: "Distribution"
+        patent-use: "Patent use"
+        private-use: "Private use"
+      conditions:
+        include-copyright: "License and copyright notice"
+        include-copyright--source: "License and copyright notice for source"
+        document-changes: "State changes"
+        disclose-source: "Disclose source"
+        network-use-disclose: "Network use is distribution"
+        same-license: "Same license"
+        same-license--file: "Same license (file)"
+        same-license--library: "Same license (library)"
+      limitations:
+        trademark-use: "Trademark use"
+        liability: "Liability"
+        warranty: "Warranty"
+        patent-use: "Patent use"

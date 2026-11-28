@@ -61,6 +61,14 @@ class Repository
       git("cat-file", "blob", sha)
     end
 
+    def blob_at(commit, file_path)
+      out, status = capture("rev-parse", "--verify", "--quiet", "#{commit}:#{file_path}")
+      return unless status.success?
+
+      sha = out.strip
+      cat_blob(sha) if git("cat-file", "-t", sha).strip == "blob"
+    end
+
     private
 
     def git(*args, stdin: nil, env: {}, git_dir: true)

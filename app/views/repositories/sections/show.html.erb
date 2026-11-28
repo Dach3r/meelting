@@ -1,5 +1,5 @@
 <% content_for :title, t("sidebar.sections.#{@section}") %>
-<% if @section == "code" && !@repository.pushed? %>
+<% if @empty %>
   <div class="flex w-full max-w-3xl flex-col gap-10">
     <%= render Molecules::PageHeader::Component.new(title: t("sidebar.sections.code")) %>
     <section id="empty_repository" class="flex flex-col gap-1.5 border-t border-line pt-6">
@@ -9,5 +9,13 @@
     </section>
   </div>
 <% else %>
-  <%= render Molecules::PhaseNotice::Component.new(title: t("sidebar.sections.#{@section}"), body: t("placeholders.repository", name: @repository.name), phase: @phase) %>
+  <div class="flex w-full max-w-3xl flex-col gap-6">
+    <%= render Molecules::PhaseNotice::Component.new(title: t("sidebar.sections.#{@section}"), body: t("placeholders.repository", name: @repository.name), phase: @phase) %>
+    <% if @license %>
+      <p id="repository_license" class="flex items-center gap-2 text-[15px]">
+        <%= render Atoms::Icon::Component.new(name: :scale, class: "size-[18px] flex-none", "stroke-width": 2) %>
+        <%= render Atoms::Link::Component.new(href: repository_blob_path(@repository.slug, @license.path), tone: :underline) do %><%= @license.other? ? t("repositories.license.other") : t("repositories.license.named", name: @license.spdx_id) %><% end %>
+      </p>
+    <% end %>
+  </div>
 <% end %>

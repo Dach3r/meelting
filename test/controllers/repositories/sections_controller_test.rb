@@ -11,15 +11,40 @@ class Repositories::SectionsControllerTest < ActionDispatch::IntegrationTest
     assert_select "#push_commands form[action=?] button", repository_push_token_path("meelting"), "Generar token"
   end
 
-  test "shows the phase that builds each section once the repository has been pushed" do
-    repositories(:meelting).touch_pushed
-    sign_in_as users(:one)
+  test "shows the phase that builds each section once the repository has commits" do
+    with_git_root do
+      create_bare_repository(repositories(:meelting), files: { "README.md" => "# Meelting\n" })
+      sign_in_as users(:one)
 
-    { "code" => 1, "issues" => 2, "pull_requests" => 2, "runs" => 3, "memory" => 4 }.each do |section, phase|
-      get repository_section_path("meelting", section)
+      { "code" => 1, "issues" => 2, "pull_requests" => 2, "runs" => 3, "memory" => 4 }.each do |section, phase|
+        get repository_section_path("meelting", section)
 
-      assert_response :success
-      assert_select "p", "Se construye en la Fase #{phase}."
+        assert_response :success
+        assert_select "p", "Se construye en la Fase #{phase}."
+        assert_select "#repository_license", 0
+      end
+    end
+  end
+
+  test "code shows meelting's own agpl license linking to the file" do
+    with_git_root do
+      create_bare_repository(repositories(:meelting), files: { "LICENSE" => Rails.root.join("LICENSE").read })
+      sign_in_as users(:one)
+
+      get repository_section_path("meelting", "code")
+
+      assert_select "#repository_license a[href=?]", repository_blob_path("meelting", "LICENSE"), "Licencia AGPL-3.0"
+    end
+  end
+
+  test "code shows other for an unrecognized license file" do
+    with_git_root do
+      create_bare_repository(repositories(:meelting), files: { "LICENSE.md" => "All rights reserved.\n" })
+      sign_in_as users(:one)
+
+      get repository_section_path("meelting", "code")
+
+      assert_select "#repository_license a[href=?]", repository_blob_path("meelting", "LICENSE.md"), "Otra"
     end
   end
 
