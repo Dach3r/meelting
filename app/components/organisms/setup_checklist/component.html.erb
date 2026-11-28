@@ -1,5 +1,5 @@
 <div class="flex w-full flex-col gap-12 lg:flex-row lg:items-center lg:gap-16">
-  <div class="flex w-full max-w-2xl flex-col gap-8 lg:flex-1">
+  <div class="flex w-full flex-col gap-8 lg:flex-[3]">
     <div>
       <h1 class="mb-3 text-5xl font-extrabold leading-none tracking-[-0.045em]"><%= t("home.checklist.title") %></h1>
       <p class="max-w-lg text-[17px] leading-relaxed text-graphite-500"><%= t("home.checklist.lead") %></p>
@@ -28,8 +28,8 @@
     </ol>
   </div>
 
-  <div class="flex flex-1 items-center justify-center lg:pb-12">
-    <div class="relative size-64 sm:size-80">
+  <div class="flex items-center justify-center lg:flex-[2] lg:pb-12">
+    <div class="relative size-64 sm:size-80 xl:size-96">
       <svg viewBox="0 0 340 340" class="size-full" aria-hidden="true">
         <circle cx="170" cy="170" r="<%= RING_RADIUS %>" fill="none" stroke-width="28" class="stroke-graphite-50"/>
         <circle cx="170" cy="170" r="<%= RING_RADIUS %>" fill="none" stroke-width="28" stroke-linecap="round" stroke-dasharray="<%= ring_dash %> <%= RING_CIRCUMFERENCE %>" transform="rotate(-90 170 170)" class="stroke-sun-400"/>
