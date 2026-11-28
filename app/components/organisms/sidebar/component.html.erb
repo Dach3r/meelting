@@ -21,7 +21,6 @@
       <% end %>
     <% end %>
     <%= render Molecules::RailItem::Component.new(label: t("sidebar.repositories"), href: repositories_path, icon: :git_branch, current: current_page_in?(repositories_path)) %>
-    <%= render Molecules::RailItem::Component.new(label: t("sidebar.new_repository"), href: new_repository_path, icon: :plus, current: current_page_in?(new_repository_path)) %>
   </div>
   <div class="mt-auto flex flex-col items-center gap-1 pt-8">
     <%= render Molecules::RailItem::Component.new(label: t("sidebar.settings"), href: settings_path, icon: :settings, current: current_page_in?(settings_path)) do |item| %>
@@ -65,7 +64,6 @@
     <% workspace.repositories.each do |repository| %>
       <%= render Molecules::SidebarRepository::Component.new(repository: repository, expanded: expanded?(repository)) %>
     <% end %>
-    <%= render Molecules::NavItem::Component.new(label: t("sidebar.new_repository"), href: new_repository_path, icon: :plus, muted: true, compact: true, current: current_page_in?(new_repository_path)) %>
   </div>
 
   <div class="mt-auto flex flex-col gap-1 pt-8">

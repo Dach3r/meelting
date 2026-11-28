@@ -9,7 +9,6 @@ class SidebarTest < ActionDispatch::IntegrationTest
       assert_select "a[href=?]", root_path
       assert_select "a[href=?]", runs_path
       assert_select "button[aria-expanded]", text: /Meelting/
-      assert_select "a[href=?]", new_repository_path
       assert_select "a[href=?]", settings_path
     end
   end

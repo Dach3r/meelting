@@ -12,4 +12,5 @@ es:
     search_placeholder: "Buscar o ir a…"
     search_label: "Buscar o abrir la paleta de comandos"
     notifications_label: "Notificaciones"
+    new_repository_label: "Nuevo repositorio"
     user_menu: "Menú de usuario"

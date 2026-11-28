@@ -7,7 +7,6 @@ es:
     runs: "Runs"
     runs_in_progress: "%{count} runs en curso"
     repositories: "Repositorios"
-    new_repository: "Nuevo repositorio"
     settings: "Configuración"
     settings_warning: "Hay un problema de configuración"
     expand: "Expandir menú"

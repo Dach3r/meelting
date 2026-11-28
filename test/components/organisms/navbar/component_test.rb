@@ -34,6 +34,15 @@ class Organisms::Navbar::ComponentTest < ViewComponent::TestCase
     assert_empty render_inline(Organisms::Navbar::Component.new(authenticated: false)).css("button[aria-label='#{label}']")
   end
 
+  test "renders the new repository link next to the bell only when authenticated" do
+    member = render_inline(Organisms::Navbar::Component.new(authenticated: true))
+    guest = render_inline(Organisms::Navbar::Component.new(authenticated: false))
+
+    link = member.css("nav button[aria-label='#{I18n.t("navbar.notifications_label")}'] + a[href='/repositories/new']")
+    assert_equal I18n.t("navbar.new_repository_label"), link.attr("aria-label").value
+    assert_empty guest.css("a[href='/repositories/new']")
+  end
+
   test "sign in link has the same height as the signed in controls" do
     link = render_inline(Organisms::Navbar::Component.new(authenticated: false)).css("a[href='/session/new']")
 
