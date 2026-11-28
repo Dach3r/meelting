@@ -20,7 +20,7 @@
 <% if authenticated? %>
   <body class="group/shell min-h-svh bg-forest text-ink" <%= "data-sidebar-expanded" if sidebar_expanded? %>>
     <%= render Organisms::Sidebar::Component.new(workspace: workspace, expanded_slug: session[:expanded_repository]) %>
-    <div class="mx-3 mb-3 flex min-h-[calc(100svh-0.75rem)] flex-col gap-6 rounded-[28px] bg-cream p-4 sm:p-7 lg:my-[22px] lg:mr-[22px] lg:ml-28 lg:min-h-[calc(100svh-44px)] lg:group-data-sidebar-expanded/shell:ml-66">
+    <div class="mx-3 mb-3 flex min-h-[calc(100svh-0.75rem)] flex-col gap-6 rounded-[28px] bg-cream p-4 sm:p-7 lg:my-[22px] lg:mr-[22px] lg:ml-23 lg:min-h-[calc(100svh-44px)] lg:group-data-sidebar-expanded/shell:ml-66">
       <%= render Organisms::Navbar::Component.new(authenticated: true, user: Current.user) %>
       <main class="<%= class_names("min-w-0 flex-1 rounded-3xl bg-white p-6 sm:p-9", content_for(:main_class) || "flex w-full") %>">
         <%= content_for?(:content) ? yield(:content) : yield %>
