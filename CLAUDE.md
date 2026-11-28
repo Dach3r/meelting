@@ -3,7 +3,7 @@
 Rails 8.1 app (repo dir `meelting`). Product scope is being redefined: ask before assuming product behavior or adding features nobody requested.
 
 ## Stack
-- Ruby 4.0.4, Rails 8.1, PostgreSQL, Propshaft, importmap, Hotwire (Turbo + Stimulus), Tailwind (`tailwindcss-rails`).
+- Ruby 4.0.10, Rails 8.1, PostgreSQL, Propshaft, importmap, Hotwire (Turbo + Stimulus), Tailwind (`tailwindcss-rails`).
 - Solid Queue / Cache / Cable. Env vars via `dotenv-rails` (`.env.example` lists them).
 - Auth: Rails 8 authentication generator (`Authentication` concern, `Session`, `has_secure_password`). Not Devise.
 - Tests: Minitest + fixtures, SimpleCov. Lint: `bin/rubocop`. Security: `bin/brakeman -q`, `bin/bundler-audit`.
