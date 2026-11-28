@@ -2,7 +2,7 @@ require "test_helper"
 
 class RepositoryTest < ActiveSupport::TestCase
   def build(**attrs)
-    Repository.new({ user: users(:one), name: "Other", slug: "other" }.merge(attrs))
+    Repository.new({ user: users(:one), name: "Other" }.merge(attrs))
   end
 
   test "valid repository with defaults" do
@@ -19,28 +19,45 @@ class RepositoryTest < ActiveSupport::TestCase
     assert repository.errors[:slug].any?
   end
 
-  test "normalizes slug" do
-    assert_equal "other", build(slug: "  Other ").slug
-  end
-
-  test "rejects invalid slug format" do
-    ["-bad", "has space", "bad/slash", ".hidden", "ñandú"].each do |slug|
-      assert_not build(slug: slug).valid?, "#{slug} should be invalid"
+  test "generates the slug from the name" do
+    { "Hola mundo" => "hola-mundo", "Los de la culpa 2026" => "los-de-la-culpa-2026", "Ñandú  Café!" => "nandu-cafe" }.each do |name, slug|
+      repository = build(name: name)
+      repository.validate
+      assert_equal slug, repository.slug
     end
   end
 
+  test "ignores a submitted slug" do
+    repository = build(slug: "custom")
+    repository.validate
+    assert_equal "other", repository.slug
+  end
+
+  test "regenerates the slug when the name changes" do
+    repository = repositories(:meelting)
+    repository.update!(name: "Renamed Forge")
+    assert_equal "renamed-forge", repository.slug
+  end
+
+  test "rejects a name without letters or numbers" do
+    repository = build(name: "!!!")
+    assert_not repository.valid?
+    assert repository.errors[:slug].any?
+  end
+
   test "rejects duplicate slug for the same user regardless of case" do
-    repository = build(slug: repositories(:meelting).slug.upcase)
+    repository = build(name: "MEELTING")
     assert_not repository.valid?
     assert repository.errors[:slug].any?
   end
 
   test "allows the same slug for different users" do
-    assert build(user: users(:two), slug: repositories(:meelting).slug).valid?
+    assert build(user: users(:two), name: "Meelting").valid?
   end
 
   test "database enforces slug uniqueness per user" do
-    duplicate = build(slug: repositories(:meelting).slug)
+    duplicate = build(name: "Meelting")
+    duplicate.validate
     assert_raises(ActiveRecord::RecordNotUnique) { duplicate.save!(validate: false) }
   end
 

@@ -40,10 +40,7 @@
     <% end %>
 
     <div class="grid gap-5" data-repository-wizard-target="step" data-label="<%= steps[0] %>" <%= "hidden" unless step == 1 %>>
-      <%= render Molecules::FormField::Component.new(form: form, attribute: :name, label: Repository.human_attribute_name(:name), icon: :type, autofocus: step == 1, placeholder: t(".name_placeholder"), data: { repository_wizard_target: "name", action: "repository-wizard#suggestSlug" }) %>
-      <%= render Molecules::FormField::Component.new(form: form, attribute: :slug, label: Repository.human_attribute_name(:slug), icon: :link, autocapitalize: "none", placeholder: t(".slug_placeholder"), class: "nb-field-shell-input font-mono", data: { repository_wizard_target: "slug", action: "repository-wizard#touchSlug" }) do |field| %>
-        <% field.with_status do %><p class="pl-1 text-[13px] text-forest"><%= t(".slug_hint") %></p><% end %>
-      <% end %>
+      <%= render Molecules::FormField::Component.new(form: form, attribute: :name, label: Repository.human_attribute_name(:name), icon: :type, autofocus: step == 1, placeholder: t(".name_placeholder"), data: { repository_wizard_target: "name" }) %>
       <%= render Molecules::FormField::Component.new(form: form, attribute: :description, label: Repository.human_attribute_name(:description), icon: :align_left, type: :text_area, required: false, rows: 3, maxlength: 350, placeholder: t(".description_placeholder")) %>
     </div>
 

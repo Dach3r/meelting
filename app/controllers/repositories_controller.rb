@@ -20,6 +20,6 @@ class RepositoriesController < ApplicationController
   private
 
   def repository_params
-    params.expect(repository: %i[name slug description visibility license_id default_branch])
+    params.expect(repository: %i[name description visibility license_id default_branch])
   end
 end

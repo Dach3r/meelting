@@ -7,7 +7,7 @@ class RepositoriesControllerTest < ActionDispatch::IntegrationTest
   end
 
   def valid_params(overrides = {})
-    { repository: { name: "Docs", slug: "docs", description: "Notes", visibility: "public", license_id: licenses(:mit).id, default_branch: "main" }.merge(overrides) }
+    { repository: { name: "Docs", description: "Notes", visibility: "public", license_id: licenses(:mit).id, default_branch: "main" }.merge(overrides) }
   end
 
   test "requires authentication" do
@@ -45,6 +45,16 @@ class RepositoriesControllerTest < ActionDispatch::IntegrationTest
     assert_equal licenses(:mit), repository.license
   end
 
+  test "create derives the slug from the name and ignores a submitted one" do
+    post repositories_path, params: valid_params(name: "Los de la culpa 2026", slug: "custom")
+    assert_redirected_to repository_section_path("los-de-la-culpa-2026", :code)
+  end
+
+  test "new has no slug input" do
+    get new_repository_path
+    assert_select "#repository_slug", 0
+  end
+
   test "create without name fails" do
     assert_no_difference "Repository.count" do
       post repositories_path, params: valid_params(name: "")
@@ -54,7 +64,7 @@ class RepositoriesControllerTest < ActionDispatch::IntegrationTest
 
   test "create with duplicate slug fails" do
     assert_no_difference "Repository.count" do
-      post repositories_path, params: valid_params(slug: repositories(:meelting).slug)
+      post repositories_path, params: valid_params(name: repositories(:meelting).name)
     end
     assert_response :unprocessable_entity
   end

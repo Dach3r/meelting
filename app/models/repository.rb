@@ -9,6 +9,8 @@ class Repository < ApplicationRecord
   normalizes :name, :description, with: ->(text_) { text_.strip }
   normalizes :slug, with: ->(slug_) { slug_.strip.downcase }
 
+  before_validation :assign_slug, if: :will_save_change_to_name?
+
   validates :name, presence: true
   validates :default_branch, presence: true
   validates :description, length: { maximum: 350 }
@@ -30,6 +32,10 @@ class Repository < ApplicationRecord
   end
 
   private
+  def assign_slug
+    self.slug = name.to_s.parameterize.first(100).delete_suffix("-")
+  end
+
   def license_is_active
     errors.add(:license, :inclusion) if license&.inactive?
   end

@@ -20,15 +20,13 @@ es:
       title: "Nuevo repositorio"
       step_position: "Paso %{current} de %{total}"
       summaries:
-        repository: "Nombre y slug"
+        repository: "Nombre"
       progress: "Progreso"
       steps:
         repository: "Repositorio"
         visibility: "Visibilidad"
         default_branch: "Rama por defecto"
       name_placeholder: "Mi proyecto"
-      slug_placeholder: "mi-proyecto"
-      slug_hint: "Minúsculas, números, puntos, guiones y guiones bajos."
       description_placeholder: "¿De qué trata?"
       no_license: "Sin licencia"
       next: "Siguiente"

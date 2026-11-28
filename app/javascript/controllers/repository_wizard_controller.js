@@ -16,7 +16,6 @@ export default class extends Controller {
     "submitLabel",
     "back",
     "name",
-    "slug",
     "visibility",
     "license",
     "branch",
@@ -27,10 +26,6 @@ export default class extends Controller {
     submitLabel: String,
     positionLabel: String,
   };
-
-  connect() {
-    this.slugTouched = this.slugTarget.value !== "";
-  }
 
   stepValueChanged() {
     const current = this.stepValue;
@@ -71,21 +66,6 @@ export default class extends Controller {
 
     this.stepValue--;
     this.#focusCurrentStep();
-  }
-
-  suggestSlug() {
-    if (this.slugTouched) return;
-
-    this.slugTarget.value = this.nameTarget.value
-      .normalize("NFD")
-      .replace(/[̀-ͯ]/g, "")
-      .toLowerCase()
-      .replace(/[^a-z0-9._-]+/g, "-")
-      .replace(/^[^a-z0-9]+|-+$/g, "");
-  }
-
-  touchSlug() {
-    this.slugTouched = this.slugTarget.value !== "";
   }
 
   refresh() {

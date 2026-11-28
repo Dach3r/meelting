@@ -20,15 +20,13 @@ en:
       title: "New repository"
       step_position: "Step %{current} of %{total}"
       summaries:
-        repository: "Name and slug"
+        repository: "Name"
       progress: "Progress"
       steps:
         repository: "Repository"
         visibility: "Visibility"
         default_branch: "Default branch"
       name_placeholder: "My project"
-      slug_placeholder: "my-project"
-      slug_hint: "Lowercase letters, numbers, dots, dashes and underscores."
       description_placeholder: "What is it about?"
       no_license: "No license"
       next: "Next"
