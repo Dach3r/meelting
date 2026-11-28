@@ -21,12 +21,7 @@
           <% else %>
             <span class="<%= class_names("flex size-[60px] shrink-0 items-center justify-center rounded-full font-mono text-lg font-semibold text-forest", is_current ? "border-4 border-forest bg-lime shadow-[0_0_0_8px_var(--color-lime-soft)]" : "border-2 border-dashed border-(--color-dashed) bg-white") %>" aria-hidden="true"><%= index + 1 %></span>
           <% end %>
-          <div class="flex min-w-0 flex-col items-start gap-2 lg:items-center">
-            <p class="<%= class_names("text-[15px]", is_current ? "font-extrabold" : "font-semibold", "text-forest/60 line-through" => step.done) %>"><%= title_for(step) %></p>
-            <% unless step.available %>
-              <%= render Atoms::Chip::Component.new do %><%= t("home.checklist.steps.#{step.key}.unavailable") %><% end %>
-            <% end %>
-          </div>
+          <p class="<%= class_names("min-w-0 text-[15px]", is_current ? "font-extrabold" : "font-semibold", "text-forest/60 line-through" => step.done) %>"><%= title_for(step) %></p>
         </li>
       <% end %>
     </ol>

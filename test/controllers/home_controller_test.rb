@@ -14,7 +14,7 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "h1", "Configura Meelting"
     assert_select "ol li", 4
-    assert_select "ol li[aria-disabled=true]", /Disponible en Fase 2\/3/
+    assert_select "ol li[aria-disabled=true]", /Asigna tu primer issue/
     assert_select "section#inbox", count: 0
     assert_select "section#in-progress", count: 0
   end

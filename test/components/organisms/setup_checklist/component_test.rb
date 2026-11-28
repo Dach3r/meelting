@@ -62,12 +62,12 @@ class Organisms::SetupChecklist::ComponentTest < ViewComponent::TestCase
     assert_empty render_checklist.css("details")
   end
 
-  test "disables the first issue step until Phases 2 and 3" do
+  test "disables the first issue step" do
     node = render_checklist(%i[repository model_key overview])
 
     disabled = node.css("li[aria-disabled=true]")
     assert_equal 1, disabled.size
-    assert_includes disabled.text, "Disponible en Fase 2/3"
+    assert_includes disabled.text, "Asigna tu primer issue a un agente"
     assert_empty node.css("li[aria-current=step]")
   end
 
