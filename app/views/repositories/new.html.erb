@@ -18,8 +18,6 @@
   <%= render Molecules::FormField::Component.new(form: form, attribute: :name, label: Repository.human_attribute_name(:name), icon: :type, autofocus: true, placeholder: t(".name_placeholder"), data: { repository_form_target: "name" }) do |field| %>
     <% field.with_label_aside do %><p class="min-w-0 truncate font-mono text-[13px] font-semibold" data-repository-form-target="url" aria-live="polite" hidden></p><% end %>
   <% end %>
-  <%= render Molecules::FormField::Component.new(form: form, attribute: :description, label: Repository.human_attribute_name(:description), icon: :align_left, type: :text_area, required: false, rows: 3, maxlength: 350, placeholder: t(".description_placeholder")) %>
-
   <fieldset class="min-w-0">
     <legend class="mb-2 pl-1 text-base leading-[normal] font-semibold text-forest"><%= Repository.human_attribute_name(:visibility) %></legend>
     <div class="flex flex-wrap gap-2.5">
@@ -41,6 +39,7 @@
     <% end %>
     <%= render Molecules::FormField::Component.new(form: form, attribute: :default_branch, label: Repository.human_attribute_name(:default_branch), icon: :git_branch, autocapitalize: "none", class: "nb-field-shell-input font-mono") %>
   </div>
+  <%= render Molecules::FormField::Component.new(form: form, attribute: :description, label: Repository.human_attribute_name(:description), icon: :align_left, type: :text_area, required: false, rows: 3, maxlength: 350, placeholder: t(".description_placeholder")) %>
 
   <div class="mt-1 flex justify-end">
     <button type="submit" class="flex h-16 cursor-pointer items-center gap-2 rounded-full bg-lime px-8 text-[17px] font-semibold text-forest hover:bg-lime-soft">
