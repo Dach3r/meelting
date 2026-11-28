@@ -17,7 +17,6 @@ export default class extends Controller {
     "back",
     "name",
     "slug",
-    "slugPreview",
     "visibility",
     "license",
     "branch",
@@ -100,7 +99,6 @@ export default class extends Controller {
       license?.text,
     ].filter(Boolean).join(" · "));
     this.#show(branch, this.branchTarget.value);
-    this.#show(this.slugPreviewTarget, this.slugTarget.value);
   }
 
   #show(element, value) {

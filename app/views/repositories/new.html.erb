@@ -7,7 +7,7 @@
      @repository.default_branch
    ] %>
 
-<%= form_with model: @repository, class: "grid w-full content-start gap-8 lg:grid-cols-[240px_minmax(0,1fr)] xl:grid-cols-[240px_minmax(0,1fr)_260px]",
+<%= form_with model: @repository, class: "grid w-full content-start gap-8 lg:grid-cols-[240px_minmax(0,1fr)]",
       data: { controller: "repository-wizard", action: "input->repository-wizard#refresh change->repository-wizard#refresh",
               repository_wizard_step_value: step, repository_wizard_next_label_value: t(".next"), repository_wizard_submit_label_value: t(".submit"),
               repository_wizard_position_label_value: t(".step_position", current: "%{current}", total: "%{total}") } do |form| %>
@@ -83,13 +83,4 @@
     </div>
   </div>
 
-  <aside class="hidden content-start gap-3.5 self-start rounded-3xl bg-cream p-6 xl:grid">
-    <span class="flex size-16 items-center justify-center rounded-full bg-lime text-ink">
-      <%= render Atoms::Icon::Component.new(name: :git_branch, class: "size-7", "stroke-width": 1.75) %>
-    </span>
-    <h2 class="text-lg font-bold"><%= t(".slug_note.title") %></h2>
-    <p class="text-[15px] text-forest/70"><%= t(".slug_note.body") %></p>
-    <hr class="my-1 border-cream-line">
-    <p class="font-mono text-sm break-all"><%= Current.user.username %>/<b data-repository-wizard-target="slugPreview" data-default="<%= t(".slug_placeholder") %>"><%= @repository.slug.presence || t(".slug_placeholder") %></b></p>
-  </aside>
 <% end %>

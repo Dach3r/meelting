@@ -21,9 +21,6 @@ en:
       step_position: "Step %{current} of %{total}"
       summaries:
         repository: "Name and slug"
-      slug_note:
-        title: "About the slug"
-        body: "It identifies the repository in its URLs. It is suggested from the name."
       progress: "Progress"
       steps:
         repository: "Repository"
