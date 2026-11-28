@@ -94,7 +94,7 @@ export default class extends Controller {
 
     this.urlTarget.hidden = this.nameTarget.value.trim() === "";
     this.urlTarget.textContent = this.urlTemplateValue.replace("__slug__", slug);
-    this.urlTarget.classList.toggle("text-forest", valid);
+    this.urlTarget.classList.toggle("text-lime-deep", valid);
     this.urlTarget.classList.toggle("text-danger", !valid);
   }
 
