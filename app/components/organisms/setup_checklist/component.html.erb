@@ -37,7 +37,7 @@
           <p class="text-sm text-forest"><%= t("home.checklist.steps.model_key.detail") %></p>
         <% end %>
       </div>
-      <div class="flex min-w-0 flex-col items-start">
+      <div class="min-w-0">
         <% if current.key == :repository %>
           <% if repository %>
             <%= render Molecules::PushCommands::Component.new(repository: repository) %>
