@@ -35,58 +35,11 @@ es:
         title: "El mirror de GitHub de %{repository} está fallando."
         detail: "Los cambios no se están respaldando en GitHub."
         action: "Arreglar mirror"
-      missing_model_key:
-        title: "Falta la model key."
-        detail: "Sin ella los agentes no pueden ejecutar runs."
-        action: "Agregar model key"
-      invalid_model_key:
-        title: "La model key fue rechazada por el proveedor."
-        detail: "Los agentes no pueden ejecutar runs hasta que la reemplaces."
-        action: "Reemplazar model key"
       docker_unreachable:
         title: "Docker no responde."
         detail: "Los runs no pueden iniciar su sandbox."
         action: "Revisar Docker"
-    checklist:
-      title: "Configura Meelting"
-      lead: "Cuatro pasos hasta que un agente trabaje en tu primer issue. Cada uno se marca solo al cumplirse."
-      progress: "%{done} de %{total}"
-      progress_of: "de %{total}"
-      done: "Hecho"
-      push:
-        generate: "Generar token"
-        shown_once: "Cópialo ahora: el token no se volverá a mostrar."
-        credentials: "Cuando git pida credenciales, usa tu username como usuario y este token como contraseña. El credential helper de git lo guarda."
-        username: "Usuario"
-        password: "Contraseña"
-        modal_title: "Tu token de acceso"
-        accept: "Aceptar"
-        copy: "Copiar"
-        copied: "Copiado"
-        permissions: "Permisos"
-        permissions_note_html: "Sirve para todos tus repositorios y no expira. Puedes revocarlo en %{tokens}."
-        tokens_link: "tokens de acceso"
-        scopes_blank: "Elige al menos un permiso."
-      steps:
-        repository:
-          title: "Crea un repositorio y haz push"
-          detail: "Crea el repositorio en Meelting y luego sube tu código por HTTPS."
-          push_detail: "Agrega el remoto y haz push. Genera un token para autenticarte por HTTPS."
-          action: "Crear repositorio"
-        model_key:
-          detail: "Pega tu API key de DeepSeek; se verifica al guardar."
-          action: "Agregar model key"
-          title: "Agrega una model key"
-        overview:
-          title: "Escribe %{file}"
-          template_label: "Ver plantilla"
-          template: |
-              # Visión general
-
-              ## Qué hace el sistema
-
-              ## Para quién
-
-              ## Módulos principales
-        first_issue:
-          title: "Asigna tu primer issue a un agente"
+    no_repositories:
+      title: "Crea tu primer repositorio"
+      body: "Tu inbox aparece aquí cuando tengas un repositorio en el que trabajar."
+      action: "Crear repositorio"

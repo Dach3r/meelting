@@ -1,7 +1,18 @@
 require "test_helper"
 
 class Repositories::SectionsControllerTest < ActionDispatch::IntegrationTest
-  test "shows the phase that builds each section" do
+  test "shows the push commands and an inline token button on an empty repository" do
+    sign_in_as users(:one)
+    get repository_section_path("meelting", "code")
+
+    assert_response :success
+    assert_select "section#empty_repository h2", "Sube tu código"
+    assert_select "#push_commands code", /git remote add origin http:\/\/www.example.com\/ada\/meelting.git/
+    assert_select "#push_commands form[action=?] button", repository_push_token_path("meelting"), "Generar token"
+  end
+
+  test "shows the phase that builds each section once the repository has been pushed" do
+    repositories(:meelting).touch_pushed
     sign_in_as users(:one)
 
     { "code" => 1, "issues" => 2, "pull_requests" => 2, "runs" => 3, "memory" => 4 }.each do |section, phase|

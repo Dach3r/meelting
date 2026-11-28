@@ -2,8 +2,13 @@
 <% content_for :main_class, "flex w-full flex-col" %>
 
 <div class="flex w-full flex-col gap-10">
-  <% if workspace.first_run? %>
-    <%= render Organisms::SetupChecklist::Component.new(steps: workspace.checklist, repository: workspace.push_repository) %>
+  <% if workspace.no_repositories? %>
+    <section id="no_repositories" class="flex flex-col items-center gap-2 px-6 pt-16 pb-8 text-center">
+      <span class="mb-2 flex size-14 items-center justify-center rounded-xl bg-lime text-forest" aria-hidden="true"><%= render Atoms::Icon::Component.new(name: :folder_plus, class: "size-6", "stroke-width": 2) %></span>
+      <h1 class="text-[22px] font-bold tracking-[-0.01em]"><%= t("home.no_repositories.title") %></h1>
+      <p class="mb-3 max-w-sm leading-relaxed text-forest"><%= t("home.no_repositories.body") %></p>
+      <%= render Atoms::LinkButton::Component.new(href: new_repository_path, variant: :primary, size: :md) do %><%= t("home.no_repositories.action") %><% end %>
+    </section>
   <% else %>
     <h1 class="sr-only"><%= t(".title") %></h1>
 

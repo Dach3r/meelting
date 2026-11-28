@@ -35,58 +35,11 @@ en:
         title: "The GitHub mirror for %{repository} is failing."
         detail: "Changes are not being backed up to GitHub."
         action: "Fix mirror"
-      missing_model_key:
-        title: "The model key is missing."
-        detail: "Agents cannot run without it."
-        action: "Add model key"
-      invalid_model_key:
-        title: "The model key was rejected by the provider."
-        detail: "Agents cannot run until you replace it."
-        action: "Replace model key"
       docker_unreachable:
         title: "Docker is not responding."
         detail: "Runs cannot start their sandbox."
         action: "Check Docker"
-    checklist:
-      title: "Set up Meelting"
-      lead: "Four steps until an agent works on your first issue. Each one checks itself off when it is done."
-      progress: "%{done} of %{total}"
-      progress_of: "of %{total}"
-      done: "Done"
-      push:
-        generate: "Generate token"
-        shown_once: "Copy it now: the token will not be shown again."
-        credentials: "When git asks for credentials, use your username as the username and this token as the password. Git's credential helper stores it."
-        username: "Username"
-        password: "Password"
-        modal_title: "Your access token"
-        accept: "Accept"
-        copy: "Copy"
-        copied: "Copied"
-        permissions: "Permissions"
-        permissions_note_html: "Works for all your repositories and never expires. You can revoke it in %{tokens}."
-        tokens_link: "access tokens"
-        scopes_blank: "Choose at least one permission."
-      steps:
-        repository:
-          title: "Create a repository and push to it"
-          detail: "Create the repository in Meelting, then push your code over HTTPS."
-          push_detail: "Add the remote and push. Generate a token to authenticate over HTTPS."
-          action: "Create repository"
-        model_key:
-          detail: "Paste your DeepSeek API key; it is verified on save."
-          action: "Add model key"
-          title: "Add a model key"
-        overview:
-          title: "Write %{file}"
-          template_label: "Show template"
-          template: |
-              # Overview
-
-              ## What the system does
-
-              ## Who it is for
-
-              ## Main modules
-        first_issue:
-          title: "Assign your first issue to an agent"
+    no_repositories:
+      title: "Create your first repository"
+      body: "Your inbox shows up here once you have a repository to work on."
+      action: "Create repository"

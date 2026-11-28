@@ -29,21 +29,7 @@ class Repository < ApplicationRecord
     Rails.configuration.x.git_root.join("#{id}.git")
   end
 
-  def file_on_default_branch?(path)
-    return false unless git_path.directory? && valid_branch_name?(default_branch)
-
-    _output, status = Open3.capture2e("git", "--git-dir", git_path.to_s, "cat-file", "-e", "refs/heads/#{default_branch}:#{path}")
-    status.success?
-  end
-
   private
-  def valid_branch_name?(name)
-    return false if name.start_with?("-")
-
-    _output, status = Open3.capture2e("git", "check-ref-format", "--branch", name)
-    status.success?
-  end
-
   def license_is_active
     errors.add(:license, :inclusion) if license&.inactive?
   end

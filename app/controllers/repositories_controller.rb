@@ -11,7 +11,7 @@ class RepositoriesController < ApplicationController
     @repository = Current.user.repositories.new(repository_params)
 
     if @repository.save
-      redirect_to repositories_path, notice: t(".created")
+      redirect_to repository_section_path(@repository.slug, :code), notice: t(".created")
     else
       render :new, status: :unprocessable_entity
     end

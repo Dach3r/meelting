@@ -11,9 +11,6 @@ class ProviderCredential < ApplicationRecord
   validates :api_key, presence: true
   validates :provider, uniqueness: { scope: :user_id }
 
-  # Unverified keys (the provider did not answer) count as added; invalid is reserved for a future re-check.
-  scope :usable, -> { where(status: %i[valid unverified]) }
-
   def record_verification(status, error: nil)
     self.status = status
     self.validated_at = Time.current

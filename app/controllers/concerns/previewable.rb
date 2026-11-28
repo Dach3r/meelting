@@ -6,7 +6,7 @@ module Previewable
   end
 
   private
-  # ?preview=inbox|empty|first_run swaps in placeholder data, in development only.
+  # ?preview=inbox|empty|no_repositories swaps in placeholder data, in development only.
   def preview_scenario
     return unless Rails.env.development?
 

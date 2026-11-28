@@ -110,18 +110,4 @@ class UserTest < ActiveSupport::TestCase
   test "initials come from first and last name" do
     assert_equal "AL", users(:one).initials
   end
-
-  test "completes onboarding once and keeps the first timestamp" do
-    user = users(:one)
-    assert_not user.onboarding_completed?
-
-    user.complete_onboarding!
-    completed_at = user.reload.onboarding_completed_at
-    assert user.onboarding_completed?
-
-    travel 1.day do
-      user.complete_onboarding!
-    end
-    assert_equal completed_at, user.reload.onboarding_completed_at
-  end
 end

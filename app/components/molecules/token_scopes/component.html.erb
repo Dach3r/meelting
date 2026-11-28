@@ -1,5 +1,5 @@
 <div id="push_token_scopes" class="rounded-xl bg-cream p-4" role="group" aria-labelledby="push_token_scopes_label">
-  <p id="push_token_scopes_label" class="mb-2 text-sm font-semibold text-forest"><%= t("home.checklist.push.permissions") %></p>
+  <p id="push_token_scopes_label" class="mb-2 text-sm font-semibold text-forest"><%= t("repositories.push.permissions") %></p>
   <%= hidden_field_tag "access_token[scopes][]", "", id: nil %>
   <div class="flex flex-col gap-1">
     <% AccessToken::SCOPES.each do |scope| %>
@@ -10,7 +10,7 @@
     <% end %>
   </div>
   <% if access_token.errors[:scopes].any? %>
-    <p class="mt-2 text-sm font-semibold text-danger" role="alert"><%= t("home.checklist.push.scopes_blank") %></p>
+    <p class="mt-2 text-sm font-semibold text-danger" role="alert"><%= t("repositories.push.scopes_blank") %></p>
   <% end %>
-  <p class="mt-3 text-sm text-forest"><%= t("home.checklist.push.permissions_note_html", tokens: link_to(t("home.checklist.push.tokens_link"), access_tokens_path, class: "font-semibold underline")) %></p>
+  <p class="mt-3 text-sm text-forest"><%= t("repositories.push.permissions_note_html", tokens: link_to(t("repositories.push.tokens_link"), access_tokens_path, class: "font-semibold underline")) %></p>
 </div>

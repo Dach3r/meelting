@@ -42,3 +42,20 @@ es:
     push_tokens:
       create:
         name: "Push de %{repository}"
+    push:
+      generate: "Generar token"
+      shown_once: "Cópialo ahora: el token no se volverá a mostrar."
+      credentials: "Cuando git pida credenciales, usa tu username como usuario y este token como contraseña. El credential helper de git lo guarda."
+      username: "Usuario"
+      password: "Contraseña"
+      modal_title: "Tu token de acceso"
+      accept: "Aceptar"
+      copy: "Copiar"
+      copied: "Copiado"
+      permissions: "Permisos"
+      permissions_note_html: "Sirve para todos tus repositorios y no expira. Puedes revocarlo en %{tokens}."
+      tokens_link: "tokens de acceso"
+      scopes_blank: "Elige al menos un permiso."
+    empty:
+      title: "Sube tu código"
+      detail: "Este repositorio está vacío. Agrega el remoto y haz push. Genera un token para autenticarte por HTTPS."

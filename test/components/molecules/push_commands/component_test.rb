@@ -18,6 +18,8 @@ class Molecules::PushCommands::ComponentTest < ViewComponent::TestCase
     node = render_inline(Molecules::PushCommands::Component.new(repository: @repository, access_token: token))
 
     assert_not_includes node.css("pre code").text, token.plain_token
+    remote_url = node.css("pre code").text[%r{git remote add origin (\S+)}, 1]
+    assert_nil URI.parse(remote_url).userinfo
     assert_equal ["ada", token.plain_token], node.css("#push_token code").map(&:text)
     assert_includes node.css("#push_token").text, "credential helper"
     assert_equal "dialog", node.css("dialog#push_token").first["data-controller"]

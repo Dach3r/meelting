@@ -7,36 +7,25 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     assert_equal "landing", @controller.controller_name
   end
 
-  test "shows the setup checklist instead of the inbox on a first visit" do
+  test "shows create repository instead of the inbox without repositories" do
+    users(:one).repositories.destroy_all
     sign_in_as users(:one)
     get root_path
 
     assert_response :success
-    assert_select "h1", "Configura Meelting"
-    assert_select "ol li", 4
-    assert_select "ol li[aria-disabled=true]", /Asigna tu primer issue/
+    assert_select "h1", "Crea tu primer repositorio"
+    assert_select "a[href=?]", new_repository_path, "Crear repositorio"
     assert_select "section#inbox", count: 0
     assert_select "section#in-progress", count: 0
   end
 
-  test "checks steps off with real data" do
-    repositories(:meelting).touch_pushed
+  test "shows the inbox with a repository that was never pushed" do
     sign_in_as users(:one)
     get root_path
 
-    assert_select "ol li[aria-current=step]", /Agrega una model key/
-    assert_select "ol li [aria-label=Hecho]", 1
-    assert_select "[role=img]", text: "1 de 4"
-  end
-
-  test "shows the inbox instead of the checklist once onboarding is complete" do
-    users(:one).complete_onboarding!
-    sign_in_as users(:one)
-    get root_path
-
-    assert_select "h1", text: "Configura Meelting", count: 0
     assert_select "section#inbox"
-    assert_select "[role=alert]", /model key/
+    assert_select "section#no_repositories", count: 0
+    assert_select "[role=alert]", count: 0
   end
 
   test "previews the inbox with sorted items and in progress runs in development" do
@@ -67,13 +56,13 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     assert_select "[role=alert]", /mirror de GitHub de .* está fallando/
   end
 
-  test "previews the checklist alone in development" do
+  test "previews the home without repositories in development" do
     in_development do
       sign_in_as users(:one)
-      get root_path(preview: "first_run")
+      get root_path(preview: "no_repositories")
     end
 
-    assert_select "h1", "Configura Meelting"
+    assert_select "h1", "Crea tu primer repositorio"
     assert_select "section#inbox", count: 0
     assert_select "section#in-progress", count: 0
   end
@@ -82,8 +71,7 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     sign_in_as users(:one)
     get root_path(preview: "inbox")
 
-    assert_select "h1", "Configura Meelting"
-    assert_select "section#inbox", count: 0
+    assert_select "section#inbox li", count: 0
     assert_select "*", text: /Datos de ejemplo/, count: 0
   end
 

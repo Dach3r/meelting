@@ -3,7 +3,7 @@ module Workspace
   # and runs exist as models (Phases 2 and 3). Only reachable through ?preview in development.
   # Delete each part when its phase brings the real records.
   module PlaceholderData
-    SCENARIOS = %i[inbox empty first_run].freeze
+    SCENARIOS = %i[inbox empty no_repositories].freeze
 
     ITEMS = [
       InboxItem.new(kind: :approve, title: "#14 Configurable push mirror to GitHub", repository: "meelting", agent: "claude-code", waiting_seconds: 12.minutes.to_i, target: :run),

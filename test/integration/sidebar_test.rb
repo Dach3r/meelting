@@ -57,10 +57,10 @@ class SidebarTest < ActionDispatch::IntegrationTest
     assert_select "[role=img][aria-label=?]", "Mirror fallando"
   end
 
-  test "preview first_run does not label real data as preview" do
+  test "preview no_repositories does not label real data as preview" do
     in_development do
       sign_in_as users(:one)
-      get root_path(preview: "first_run")
+      get root_path(preview: "no_repositories")
     end
 
     assert_select "*", text: /Datos de ejemplo/, count: 0

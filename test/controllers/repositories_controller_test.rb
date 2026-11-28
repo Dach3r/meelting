@@ -40,7 +40,7 @@ class RepositoriesControllerTest < ActionDispatch::IntegrationTest
     assert_difference "@user.repositories.count", 1 do
       post repositories_path, params: valid_params
     end
-    assert_redirected_to repositories_path
+    assert_redirected_to repository_section_path("docs", :code)
     repository = @user.repositories.find_by!(slug: "docs")
     assert repository.visibility_public?
     assert_equal licenses(:mit), repository.license

@@ -1,11 +1,11 @@
 module Workspace
-  State = Data.define(:mode, :items, :runs, :repositories, :problems, :checklist, :push_repository, :preview) do
-    def first_run?
-      mode == :first_run
+  State = Data.define(:mode, :items, :runs, :repositories, :problems, :preview) do
+    def no_repositories?
+      mode == :no_repositories
     end
 
     def placeholder?
-      preview && !first_run?
+      preview && !no_repositories?
     end
 
     def inbox_count

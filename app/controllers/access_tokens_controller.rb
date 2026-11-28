@@ -29,7 +29,7 @@ class AccessTokensController < ApplicationController
         if saved
           redirect_to access_tokens_path, notice: t(".updated"), status: :see_other
         else
-          redirect_to access_tokens_path, alert: t("home.checklist.push.scopes_blank"), status: :see_other
+          redirect_to access_tokens_path, alert: t("repositories.push.scopes_blank"), status: :see_other
         end
       end
     end

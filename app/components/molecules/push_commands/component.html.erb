@@ -1,27 +1,27 @@
 <div id="push_commands" class="mt-3 flex flex-col items-start gap-3">
   <pre class="w-full overflow-x-auto rounded-xl bg-forest p-4 font-mono text-[13px] leading-relaxed text-white"><code class="select-all">git remote add origin <%= remote_url %>
 git push -u origin <%= repository.default_branch %></code></pre>
-  <%= render Atoms::Button::Component.new(href: repository_push_token_path(repository.slug), tone: :pill) do %><%= t("home.checklist.push.generate") %><% end %>
+  <%= render Atoms::Button::Component.new(href: repository_push_token_path(repository.slug), tone: :pill) do %><%= t("repositories.push.generate") %><% end %>
   <% if access_token %>
     <dialog id="push_token" class="m-auto w-[calc(100%-2rem)] max-w-lg overflow-x-hidden rounded-[28px] bg-white p-8 text-ink backdrop:bg-forest/70" aria-labelledby="push_token_title" closedby="none" data-controller="dialog">
-      <h2 id="push_token_title" class="text-2xl leading-tight font-bold tracking-[-0.02em]"><%= t("home.checklist.push.modal_title") %></h2>
-      <p class="mt-3 text-[15px] text-forest"><%= t("home.checklist.push.credentials") %></p>
+      <h2 id="push_token_title" class="text-2xl leading-tight font-bold tracking-[-0.02em]"><%= t("repositories.push.modal_title") %></h2>
+      <p class="mt-3 text-[15px] text-forest"><%= t("repositories.push.credentials") %></p>
       <div class="mt-6 flex flex-col gap-4">
         <% { username: username, password: access_token.plain_token }.each do |field, value| %>
-          <div data-controller="clipboard" data-clipboard-copied-value="<%= t("home.checklist.push.copied") %>">
-            <p class="mb-1.5 text-sm font-semibold text-forest"><%= t("home.checklist.push.#{field}") %></p>
+          <div data-controller="clipboard" data-clipboard-copied-value="<%= t("repositories.push.copied") %>">
+            <p class="mb-1.5 text-sm font-semibold text-forest"><%= t("repositories.push.#{field}") %></p>
             <div class="flex items-center gap-3 rounded-xl bg-forest py-2 pr-2 pl-4">
               <code class="min-w-0 flex-1 font-mono text-sm leading-relaxed whitespace-nowrap overflow-x-auto py-1 text-lime select-all [scrollbar-width:thin] [scrollbar-color:var(--color-forest-active)_transparent]" data-clipboard-target="source"><%= value %></code>
-              <button type="button" class="h-9 shrink-0 cursor-pointer rounded-lg bg-lime px-3 text-sm font-bold text-forest hover:bg-lime-soft" data-action="clipboard#copy" data-clipboard-target="label"><%= t("home.checklist.push.copy") %></button>
+              <button type="button" class="h-9 shrink-0 cursor-pointer rounded-lg bg-lime px-3 text-sm font-bold text-forest hover:bg-lime-soft" data-action="clipboard#copy" data-clipboard-target="label"><%= t("repositories.push.copy") %></button>
             </div>
           </div>
         <% end %>
       </div>
       <%= form_with model: access_token, url: access_token_path(access_token), method: :patch, class: "mt-6" do %>
         <%= render Molecules::TokenScopes::Component.new(access_token: access_token) %>
-        <p class="mt-5 text-sm font-semibold text-forest" role="status"><%= t("home.checklist.push.shown_once") %></p>
+        <p class="mt-5 text-sm font-semibold text-forest" role="status"><%= t("repositories.push.shown_once") %></p>
         <div class="mt-6 flex justify-end">
-          <button type="submit" class="inline-flex h-11 cursor-pointer items-center rounded-xl bg-forest px-6 text-[15px] font-bold text-lime hover:bg-forest-active"><%= t("home.checklist.push.accept") %></button>
+          <button type="submit" class="inline-flex h-11 cursor-pointer items-center rounded-xl bg-forest px-6 text-[15px] font-bold text-lime hover:bg-forest-active"><%= t("repositories.push.accept") %></button>
         </div>
       <% end %>
     </dialog>

@@ -6,7 +6,7 @@ class Workspace::BuildTest < ActiveSupport::TestCase
   test "uses real records and no placeholder data without a scenario" do
     state = Workspace::Build.call(user: @user)
 
-    assert state.first_run?
+    assert_not state.no_repositories?
     assert_not state.preview
     assert_empty state.items
     assert_empty state.runs
@@ -15,115 +15,26 @@ class Workspace::BuildTest < ActiveSupport::TestCase
     assert_equal :none, state.repositories.first.mirror
   end
 
-  test "lists four steps with the first issue disabled and nothing done on a new account" do
+  test "shows the home without repositories when the user has none" do
+    @user.repositories.destroy_all
     state = Workspace::Build.call(user: @user)
 
-    assert_equal %i[repository model_key overview first_issue], state.checklist.map(&:key)
-    assert_equal 0, state.checklist.count(&:done)
-    assert_equal :repository, state.checklist.find(&:pending?).key
-    assert_not state.checklist.last.available
-    assert_equal repositories(:meelting), state.push_repository
+    assert state.no_repositories?
+    assert_empty state.repositories
   end
 
-  test "checks the push step when a repository has been pushed" do
-    repositories(:meelting).touch_pushed
+  test "shows the inbox with a repository, whether or not it was pushed" do
+    assert_not repositories(:meelting).pushed?
     state = Workspace::Build.call(user: @user)
 
-    assert state.checklist.first.done
-    assert_equal :model_key, state.checklist.find(&:pending?).key
-  end
-
-  test "checks the overview step from the default branch of a pushed repository" do
-    repository = repositories(:meelting)
-
-    with_git_root do
-      create_bare_repository(repository, files: { ".project/overview.md" => "# Overview" })
-      assert_not Workspace::Build.call(user: @user).checklist.find { |step_| step_.key == :overview }.done
-
-      repository.touch_pushed
-      assert Workspace::Build.call(user: @user).checklist.find { |step_| step_.key == :overview }.done
-    end
-  end
-
-  test "hides the missing model key warning while the checklist is shown" do
-    state = Workspace::Build.call(user: @user)
-
-    assert state.first_run?
+    assert_not state.no_repositories?
     assert_nil state.banner_problem
   end
 
-  PREDICATES = %i[repository_pushed? model_key_added? overview_written? first_issue_assigned?].freeze
-
-  def build_with(predicates)
-    Workspace::Build.new(user: @user, scenario: nil).tap do |build_|
-      predicates.each { |name_, value_| build_.define_singleton_method(name_) { value_.respond_to?(:call) ? value_.call : value_ } }
-    end
-  end
-
-  test "marks onboarding complete when the four steps are true" do
-    state = build_with(PREDICATES.index_with(true)).call
-
-    assert @user.reload.onboarding_completed?
-    assert_not state.first_run?
-    assert_empty state.checklist
-  end
-
-  test "does not recalculate the steps once onboarding is complete" do
-    build_with(PREDICATES.index_with(true)).call
-    completed_at = @user.reload.onboarding_completed_at
-
-    state = build_with(PREDICATES.index_with(-> { flunk "checklist recalculated" })).call
-
-    assert_not state.first_run?
-    assert_equal completed_at, @user.reload.onboarding_completed_at
-  end
-
-  def model_key_step
-    Workspace::Build.call(user: @user).checklist.find { |step_| step_.key == :model_key }
-  end
-
-  test "checks the model key step with a valid or unverified key, never an invalid one" do
-    assert_not model_key_step.done
-
-    credential = @user.provider_credentials.create!(api_key: "sk", status: :unverified)
-    assert model_key_step.done
-
-    credential.update!(status: :valid)
-    assert model_key_step.done
-
-    credential.update!(status: :invalid)
-    assert_not model_key_step.done
-  end
-
-  test "an unverified key is not a missing key once onboarding is complete" do
-    @user.provider_credentials.create!(api_key: "sk", status: :unverified)
-    @user.complete_onboarding!
+  test "shows no model key problem until Phase 3" do
+    @user.provider_credentials.create!(api_key: "sk", status: :invalid)
 
     assert_nil Workspace::Build.call(user: @user).banner_problem
-  end
-
-  test "a rejected key shows the settings warning even during onboarding" do
-    @user.provider_credentials.create!(api_key: "sk", status: :invalid)
-    state = Workspace::Build.call(user: @user)
-
-    assert state.first_run?
-    assert_equal :invalid_model_key, state.banner_problem.kind
-  end
-
-  test "does not complete onboarding while a step is pending" do
-    Workspace::Build.call(user: @user)
-
-    assert_not @user.reload.onboarding_completed?
-  end
-
-  test "never shows the checklist again after onboarding, even if a step stops being true" do
-    @user.complete_onboarding!
-    state = Workspace::Build.call(user: @user)
-
-    assert_not state.first_run?
-    assert_empty state.checklist
-    assert_nil state.push_repository
-    assert_equal :missing_model_key, state.banner_problem.kind
   end
 
   test "inbox scenario sorts items by waiting time, oldest first" do
@@ -163,10 +74,10 @@ class Workspace::BuildTest < ActiveSupport::TestCase
     assert_nil state.assign_issue_repository
   end
 
-  test "first run scenario forces the checklist without placeholder blocks" do
-    state = Workspace::Build.call(user: @user, scenario: :first_run)
+  test "no repositories scenario forces the empty home without placeholder blocks" do
+    state = Workspace::Build.call(user: @user, scenario: :no_repositories)
 
-    assert state.first_run?
+    assert state.no_repositories?
     assert_empty state.items
     assert_empty state.runs
   end
