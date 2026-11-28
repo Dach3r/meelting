@@ -14,7 +14,7 @@
 
   <div>
     <%= form.label :name, class: "text-[15px] font-bold" %>
-    <%= form.text_field :name, required: true, autofocus: true, class: "nb-field" %>
+    <%= form.text_field :name, required: true, autofocus: true, autocomplete: "off", class: "nb-field" %>
   </div>
 
   <fieldset>
@@ -29,7 +29,7 @@
 
   <div>
     <%= form.label :expires_at, class: "text-[15px] font-bold" %>
-    <%= form.datetime_field :expires_at, class: "nb-field" %>
+    <%= form.datetime_field :expires_at, autocomplete: "off", class: "nb-field" %>
     <p class="mt-2 text-sm text-forest"><%= t(".expires_hint") %></p>
   </div>
 

@@ -1,8 +1,8 @@
 <% content_for :title, t(".title") %>
 
 <%= form_with url: password_path(params[:token]), method: :put, class: "grid grid-cols-1 gap-5" do |form| %>
-  <%= render Molecules::FormField::Component.new(form: form, attribute: :password, label: t("auth.fields.new_password"), icon: :lock, type: :password, autofocus: true, autocomplete: "new-password", placeholder: t(".password_placeholder"), maxlength: 72) %>
-  <%= render Molecules::FormField::Component.new(form: form, attribute: :password_confirmation, label: t("auth.fields.password_confirmation"), icon: :lock, type: :password, autocomplete: "new-password", placeholder: t(".password_confirmation_placeholder"), maxlength: 72) %>
+  <%= render Molecules::FormField::Component.new(form: form, attribute: :password, label: t("auth.fields.new_password"), icon: :lock, type: :password, autofocus: true, placeholder: t(".password_placeholder"), maxlength: 72) %>
+  <%= render Molecules::FormField::Component.new(form: form, attribute: :password_confirmation, label: t("auth.fields.password_confirmation"), icon: :lock, type: :password, placeholder: t(".password_confirmation_placeholder"), maxlength: 72) %>
 
   <%= render Atoms::SubmitButton::Component.new do %><%= t(".submit") %><% end %>
 <% end %>

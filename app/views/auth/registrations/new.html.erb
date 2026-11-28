@@ -12,15 +12,15 @@
   <% end %>
 
   <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
-    <%= render Molecules::FormField::Component.new(form: form, attribute: :first_name, label: t("auth.fields.first_name"), icon: :user, autofocus: true, autocomplete: "given-name", placeholder: t(".first_name_placeholder")) %>
-    <%= render Molecules::FormField::Component.new(form: form, attribute: :last_name, label: t("auth.fields.last_name"), icon: :user, autocomplete: "family-name", placeholder: t(".last_name_placeholder")) %>
+    <%= render Molecules::FormField::Component.new(form: form, attribute: :first_name, label: t("auth.fields.first_name"), icon: :user, autofocus: true, placeholder: t(".first_name_placeholder")) %>
+    <%= render Molecules::FormField::Component.new(form: form, attribute: :last_name, label: t("auth.fields.last_name"), icon: :user, placeholder: t(".last_name_placeholder")) %>
   </div>
 
-  <%= render Molecules::FormField::Component.new(form: form, attribute: :email_address, label: t("auth.fields.email_address"), icon: :mail, type: :email, autocomplete: "email", placeholder: t(".email_address_placeholder")) %>
-  <%= render Molecules::FormField::Component.new(form: form, attribute: :username, label: t("auth.fields.username"), icon: :user, autocapitalize: "none", autocomplete: "nickname", placeholder: t(".username_placeholder"), pattern: "[a-z][a-z0-9_]*", minlength: 3, maxlength: 39, data: { controller: "username-availability", action: "input->username-availability#check", username_availability_url_value: username_availability_path, username_availability_frame_value: "username_availability" }) do |field| %>
+  <%= render Molecules::FormField::Component.new(form: form, attribute: :email_address, label: t("auth.fields.email_address"), icon: :mail, type: :email, placeholder: t(".email_address_placeholder")) %>
+  <%= render Molecules::FormField::Component.new(form: form, attribute: :username, label: t("auth.fields.username"), icon: :user, autocapitalize: "none", placeholder: t(".username_placeholder"), pattern: "[a-z][a-z0-9_]*", minlength: 3, maxlength: 39, data: { controller: "username-availability", action: "input->username-availability#check", username_availability_url_value: username_availability_path, username_availability_frame_value: "username_availability" }) do |field| %>
     <% field.with_status do %><%= turbo_frame_tag "username_availability" %><% end %>
   <% end %>
-  <%= render Molecules::FormField::Component.new(form: form, attribute: :password, label: t("auth.fields.password"), icon: :lock, type: :password, autocomplete: "new-password", placeholder: t(".password_placeholder"), maxlength: 72) %>
+  <%= render Molecules::FormField::Component.new(form: form, attribute: :password, label: t("auth.fields.password"), icon: :lock, type: :password, placeholder: t(".password_placeholder"), maxlength: 72) %>
 
   <%= render Atoms::SubmitButton::Component.new do %><%= t(".submit") %><% end %>
 <% end %>

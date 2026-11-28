@@ -12,6 +12,12 @@ class Molecules::FormField::ComponentTest < ViewComponent::TestCase
     assert_equal 1, field.css("input#user_username[type=text][required].nb-field-shell-input").size
   end
 
+  test "disables autocomplete by default" do
+    field = render_inline(Molecules::FormField::Component.new(form: builder, attribute: :username, label: "Username", icon: :user))
+
+    assert_equal "off", field.css("input").attr("autocomplete").value
+  end
+
   test "type selects the input kind" do
     field = render_inline(Molecules::FormField::Component.new(form: builder, attribute: :password, label: "Password", icon: :lock, type: :password))
 

@@ -9,7 +9,7 @@
     <% end %>
   <% end %>
 
-  <%= render Molecules::FormField::Component.new(form: form, attribute: :api_key, label: t(".api_key"), icon: :key_round, type: :password, value: nil, autocomplete: "off", placeholder: t(".api_key_placeholder")) do |field| %>
+  <%= render Molecules::FormField::Component.new(form: form, attribute: :api_key, label: t(".api_key"), icon: :key_round, type: :password, value: nil, placeholder: t(".api_key_placeholder")) do |field| %>
     <% field.with_status do %><p class="text-sm text-forest"><%= t(".hint") %></p><% end %>
   <% end %>
 

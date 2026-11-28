@@ -29,7 +29,7 @@ module Molecules
       end
 
       def input_tag
-        form.public_send(input, attribute, **{ required: true, class: "nb-field-shell-input" }.merge(input_options))
+        form.public_send(input, attribute, **{ required: true, autocomplete: "off", class: "nb-field-shell-input" }.merge(input_options))
       end
     end
   end

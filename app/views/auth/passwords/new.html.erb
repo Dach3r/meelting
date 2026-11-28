@@ -1,7 +1,7 @@
 <% content_for :title, t(".title") %>
 
 <%= form_with url: passwords_path, class: "grid grid-cols-1 gap-5" do |form| %>
-  <%= render Molecules::FormField::Component.new(form: form, attribute: :email_address, label: t("auth.fields.email_address"), icon: :mail, type: :email, autofocus: true, autocomplete: "username", placeholder: t(".email_address_placeholder"), value: params[:email_address]) %>
+  <%= render Molecules::FormField::Component.new(form: form, attribute: :email_address, label: t("auth.fields.email_address"), icon: :mail, type: :email, autofocus: true, placeholder: t(".email_address_placeholder"), value: params[:email_address]) %>
 
   <%= render Atoms::SubmitButton::Component.new do %><%= t(".submit") %><% end %>
 

@@ -1,8 +1,8 @@
 <% content_for :title, t(".title") %>
 
 <%= form_with url: session_url, class: "grid grid-cols-1 gap-5" do |form| %>
-  <%= render Molecules::FormField::Component.new(form: form, attribute: :username, label: t("auth.fields.username"), icon: :user, autofocus: true, autocapitalize: "none", autocomplete: "username", placeholder: t(".username_placeholder"), value: params[:username]) %>
-  <%= render Molecules::FormField::Component.new(form: form, attribute: :password, label: t("auth.fields.password"), icon: :lock, type: :password, autocomplete: "current-password", placeholder: t(".password_placeholder"), maxlength: 72) do |field| %>
+  <%= render Molecules::FormField::Component.new(form: form, attribute: :username, label: t("auth.fields.username"), icon: :user, autofocus: true, autocapitalize: "none", placeholder: t(".username_placeholder"), value: params[:username]) %>
+  <%= render Molecules::FormField::Component.new(form: form, attribute: :password, label: t("auth.fields.password"), icon: :lock, type: :password, placeholder: t(".password_placeholder"), maxlength: 72) do |field| %>
     <% field.with_label_aside do %><%= render Atoms::Link::Component.new(href: new_password_path, tone: :underline, class: "text-[15px]") do %><%= t(".forgot_password") %><% end %><% end %>
   <% end %>
 
