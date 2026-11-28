@@ -2,8 +2,8 @@
   <% if authenticated %>
     <%= render Molecules::SearchTrigger::Component.new %>
     <nav class="flex items-center gap-3" aria-label="<%= t("navbar.label") %>">
-      <button type="button" class="flex size-[54px] shrink-0 cursor-pointer items-center justify-center rounded-full bg-white text-ink" aria-label="<%= t("navbar.notifications_label") %>"><%= render Atoms::Icon::Component.new(name: :bell, class: "size-5", "stroke-width": 1.75) %></button>
-      <a href="<%= new_repository_path %>" class="flex size-[54px] shrink-0 items-center justify-center rounded-full bg-white text-ink" aria-label="<%= t("navbar.new_repository_label") %>"><%= render Atoms::Icon::Component.new(name: :plus, class: "size-5", "stroke-width": 1.75) %></a>
+      <button type="button" class="flex size-[54px] shrink-0 cursor-pointer items-center justify-center rounded-full bg-forest-active text-white" aria-label="<%= t("navbar.notifications_label") %>"><%= render Atoms::Icon::Component.new(name: :bell, class: "size-5", "stroke-width": 1.75) %></button>
+      <a href="<%= new_repository_path %>" class="flex size-[54px] shrink-0 items-center justify-center rounded-full bg-forest-active text-white" aria-label="<%= t("navbar.new_repository_label") %>"><%= render Atoms::Icon::Component.new(name: :plus, class: "size-5", "stroke-width": 1.75) %></a>
     </nav>
   <% else %>
     <%= render Molecules::Brand::Component.new(tone: :dark) %>
