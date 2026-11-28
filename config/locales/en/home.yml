@@ -59,6 +59,8 @@ en:
         credentials: "When git asks for credentials, use your username as the username and this token as the password. Git's credential helper stores it."
         username: "Username"
         password: "Password"
+        modal_title: "Your access token"
+        close: "Close"
       steps:
         repository:
           title: "Create a repository and push to it"

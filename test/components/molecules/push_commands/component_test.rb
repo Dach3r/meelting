@@ -13,12 +13,13 @@ class Molecules::PushCommands::ComponentTest < ViewComponent::TestCase
     assert_empty node.css("#push_token")
   end
 
-  test "shows the token apart from the commands, as the password for the username" do
+  test "opens the token in a modal apart from the commands, as the password for the username" do
     node = render_inline(Molecules::PushCommands::Component.new(repository: @repository, token: "mlt_secret"))
 
     assert_not_includes node.css("pre code").text, "mlt_secret"
     assert_equal %w[ada mlt_secret], node.css("#push_token dd").map(&:text)
     assert_includes node.css("#push_token").text, "credential helper"
-    assert_empty node.css("form")
+    assert_equal "dialog", node.css("dialog#push_token").first["data-controller"]
+    assert_equal 1, node.css("form").size
   end
 end

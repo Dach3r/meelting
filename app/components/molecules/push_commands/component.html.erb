@@ -1,18 +1,24 @@
 <div id="push_commands" class="mt-3 flex flex-col items-start gap-3">
   <pre class="w-full overflow-x-auto rounded-xl bg-forest p-4 font-mono text-[13px] leading-relaxed text-white"><code class="select-all">git remote add origin <%= remote_url %>
 git push -u origin <%= repository.default_branch %></code></pre>
+  <%= render Atoms::Button::Component.new(href: repository_push_token_path(repository.slug), tone: :pill) do %><%= t("home.checklist.push.generate") %><% end %>
   <% if token %>
-    <div class="flex w-full flex-col gap-2 rounded-xl border-2 border-ink bg-white p-4 text-sm text-ink" id="push_token">
-      <p class="font-semibold"><%= t("home.checklist.push.credentials") %></p>
-      <dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 font-mono text-[13px]">
+    <dialog id="push_token" class="m-auto w-[calc(100%-2rem)] max-w-lg rounded-[28px] bg-white p-8 text-ink backdrop:bg-forest/70" aria-labelledby="push_token_title" data-controller="dialog" data-action="click->dialog#closeOnBackdrop">
+      <div class="flex items-start justify-between gap-4">
+        <h2 id="push_token_title" class="text-2xl leading-tight font-bold tracking-[-0.02em]"><%= t("home.checklist.push.modal_title") %></h2>
+        <button type="button" class="flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-full bg-cream text-forest hover:bg-cream-line" aria-label="<%= t("home.checklist.push.close") %>" data-action="dialog#close"><%= render Atoms::Icon::Component.new(name: :x) %></button>
+      </div>
+      <p class="mt-3 text-[15px] text-forest"><%= t("home.checklist.push.credentials") %></p>
+      <dl class="mt-5 grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 rounded-xl bg-cream p-4 font-mono text-[13px]">
         <dt class="text-forest"><%= t("home.checklist.push.username") %></dt>
         <dd class="select-all"><%= username %></dd>
         <dt class="text-forest"><%= t("home.checklist.push.password") %></dt>
         <dd class="select-all break-all"><%= token %></dd>
       </dl>
-      <p class="text-forest" role="status"><%= t("home.checklist.push.shown_once") %></p>
-    </div>
-  <% else %>
-    <%= render Atoms::Button::Component.new(href: repository_push_token_path(repository.slug), tone: :pill) do %><%= t("home.checklist.push.generate") %><% end %>
+      <p class="mt-4 rounded-lg bg-lime-soft px-3 py-2 text-sm font-semibold text-forest" role="status"><%= t("home.checklist.push.shown_once") %></p>
+      <div class="mt-6 flex justify-end">
+        <button type="button" class="inline-flex h-11 cursor-pointer items-center rounded-xl bg-forest px-5 text-[15px] font-bold text-lime hover:bg-forest-active" data-action="dialog#close"><%= t("home.checklist.push.close") %></button>
+      </div>
+    </dialog>
   <% end %>
 </div>
