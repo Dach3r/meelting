@@ -3,7 +3,7 @@
     <%= render Atoms::Icon::Component.new(name: kind[:icon], class: "size-5", "stroke-width": 2) %>
   </span>
   <div class="min-w-0 flex-[1_1_260px]">
-    <p class="truncate font-display text-[17px] font-bold"><%= item.title %></p>
+    <p class="truncate text-[17px] font-bold"><%= item.title %></p>
     <p class="mt-0.5 truncate text-sm text-forest"><%= context %></p>
   </div>
   <% if item.flag %>

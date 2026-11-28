@@ -1,7 +1,7 @@
 <div class="flex w-full max-w-3xl flex-col gap-10">
   <%= render Molecules::PageHeader::Component.new(title: title) %>
   <div class="flex flex-col items-start gap-3 border-t border-line pt-6">
-    <p class="font-display text-[17px] font-bold"><%= body %></p>
+    <p class="text-[17px] font-bold"><%= body %></p>
     <p class="nb-chip"><%= t("placeholders.phase", phase: phase) %></p>
   </div>
 </div>

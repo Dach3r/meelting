@@ -38,7 +38,7 @@
 
     <div class="grid gap-5" data-repository-wizard-target="step" data-label="<%= steps[1] %>" <%= "hidden" unless step == 2 %>>
       <fieldset class="min-w-0">
-        <legend class="mb-2.5 font-display text-[15px] leading-[normal] font-bold text-ink"><%= Repository.human_attribute_name(:visibility) %></legend>
+        <legend class="mb-2.5 text-[15px] leading-[normal] font-bold text-ink"><%= Repository.human_attribute_name(:visibility) %></legend>
         <div class="flex flex-wrap gap-2.5">
           <% { private: :lock, public: :globe }.each do |visibility, icon| %>
             <label class="nb-choice">

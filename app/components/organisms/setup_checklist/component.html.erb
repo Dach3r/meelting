@@ -15,7 +15,7 @@
             <span class="<%= class_names("flex size-10 shrink-0 items-center justify-center rounded-full font-mono text-[15px] font-semibold", is_current ? "bg-forest text-lime" : "border-[1.5px] border-dashed text-forest") %>" aria-hidden="true"><%= index + 1 %></span>
           <% end %>
           <div class="min-w-0 flex-[1_1_14rem]">
-            <p class="<%= class_names("font-display", is_current ? "text-xl font-bold" : "text-lg font-semibold", "text-forest/60 line-through" => step.done) %>"><%= title_for(step) %></p>
+            <p class="<%= class_names(is_current ? "text-xl font-bold" : "text-lg font-semibold", "text-forest/60 line-through" => step.done) %>"><%= title_for(step) %></p>
             <% if is_current && step.key == :repository %>
               <p class="text-sm text-forest"><%= t(repository ? "home.checklist.steps.repository.push_detail" : "home.checklist.steps.repository.detail") %></p>
               <% if repository %>
@@ -53,7 +53,7 @@
         <circle cx="170" cy="170" r="<%= RING_RADIUS %>" fill="none" stroke-width="28" stroke-linecap="round" stroke-dasharray="<%= ring_dash %> <%= RING_CIRCUMFERENCE %>" transform="rotate(-90 170 170)" class="stroke-lime"/>
       </svg>
       <div class="absolute inset-0 flex flex-col items-center justify-center gap-1" aria-hidden="true">
-        <span class="font-display text-8xl leading-[0.9] font-extrabold tracking-[-0.05em]"><%= done_count %></span>
+        <span class="text-8xl leading-[0.9] font-extrabold tracking-[-0.05em]"><%= done_count %></span>
         <span class="font-mono text-base text-forest"><%= t("home.checklist.progress_of", total: steps.size) %></span>
       </div>
       <span class="sr-only" role="img"><%= t("home.checklist.progress", done: done_count, total: steps.size) %></span>

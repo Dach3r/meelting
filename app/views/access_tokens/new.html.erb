@@ -13,12 +13,12 @@
   <% end %>
 
   <div>
-    <%= form.label :name, class: "font-display text-[15px] font-bold" %>
+    <%= form.label :name, class: "text-[15px] font-bold" %>
     <%= form.text_field :name, required: true, autofocus: true, class: "nb-field" %>
   </div>
 
   <fieldset>
-    <legend class="font-display text-[15px] font-bold"><%= AccessToken.human_attribute_name(:scopes) %></legend>
+    <legend class="text-[15px] font-bold"><%= AccessToken.human_attribute_name(:scopes) %></legend>
     <% AccessToken::SCOPES.each do |scope| %>
       <div class="mt-3 flex items-center gap-2.5">
         <%= check_box_tag "access_token[scopes][]", scope, @access_token.scopes.include?(scope), id: "access_token_scopes_#{scope}", class: "size-[18px] accent-forest" %>
@@ -28,7 +28,7 @@
   </fieldset>
 
   <div>
-    <%= form.label :expires_at, class: "font-display text-[15px] font-bold" %>
+    <%= form.label :expires_at, class: "text-[15px] font-bold" %>
     <%= form.datetime_field :expires_at, class: "nb-field" %>
     <p class="mt-2 text-sm text-forest"><%= t(".expires_hint") %></p>
   </div>

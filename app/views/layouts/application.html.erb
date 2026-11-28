@@ -12,16 +12,15 @@
   <link rel="icon" href="/icon.png" type="image/png">
   <link rel="icon" href="/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/icon.png">
-  <link rel="preload" href="<%= asset_path("instrument-sans-latin-wght-normal.woff2") %>" as="font" type="font/woff2" crossorigin>
-  <link rel="preload" href="<%= asset_path("bricolage-grotesque-latin-wght-normal.woff2") %>" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="<%= asset_path("inter-latin-wght-normal.woff2") %>" as="font" type="font/woff2" crossorigin>
   <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
   <%= javascript_importmap_tags %>
 </head>
 <% if authenticated? %>
   <body class="group/shell min-h-svh bg-forest text-ink" <%= "data-sidebar-expanded" if sidebar_expanded? %>>
-    <%= render Organisms::Sidebar::Component.new(workspace: workspace, expanded_slug: session[:expanded_repository]) %>
+    <%= render Organisms::Sidebar::Component.new(workspace: workspace, user: Current.user, expanded_slug: session[:expanded_repository]) %>
     <div class="mx-3 mb-3 flex min-h-[calc(100svh-0.75rem)] flex-col gap-6 rounded-[28px] bg-cream p-4 sm:p-7 lg:my-[22px] lg:mr-[22px] lg:ml-23 lg:min-h-[calc(100svh-44px)] lg:group-data-sidebar-expanded/shell:ml-66">
-      <%= render Organisms::Navbar::Component.new(authenticated: true, user: Current.user) %>
+      <%= render Organisms::Navbar::Component.new(authenticated: true) %>
       <main class="<%= class_names("min-w-0 flex-1 rounded-3xl bg-white p-6 sm:p-9", content_for(:main_class) || "flex w-full") %>">
         <%= content_for?(:content) ? yield(:content) : yield %>
       </main>

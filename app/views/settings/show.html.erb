@@ -10,14 +10,14 @@
     <li class="border-b border-line">
       <%= link_to access_tokens_path, class: "flex items-center gap-4 py-5 text-ink" do %>
         <span class="flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-lime text-forest" aria-hidden="true"><%= render Atoms::Icon::Component.new(name: :key_round, class: "size-[18px]", "stroke-width": 2) %></span>
-        <span class="flex-1 font-display text-[17px] font-bold"><%= t("placeholders.settings.access_tokens") %></span>
+        <span class="flex-1 text-[17px] font-bold"><%= t("placeholders.settings.access_tokens") %></span>
         <%= render Atoms::Icon::Component.new(name: :chevron_right, class: "size-[18px] text-forest", "stroke-width": 2) %>
       <% end %>
     </li>
     <li class="flex flex-wrap items-center gap-4 border-b border-line py-5" id="model_keys">
       <span class="flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-lime text-forest" aria-hidden="true"><%= render Atoms::Icon::Component.new(name: :bot, class: "size-[18px]", "stroke-width": 2) %></span>
       <div class="flex min-w-0 flex-[1_1_240px] flex-col gap-0.5">
-        <span class="font-display text-[17px] font-bold"><%= t("placeholders.settings.model_keys") %></span>
+        <span class="text-[17px] font-bold"><%= t("placeholders.settings.model_keys") %></span>
         <span class="text-sm text-forest">
           <%= @provider_credential ? t("provider_credentials.status.#{@provider_credential.status}", provider: t("provider_credentials.providers.#{@provider_credential.provider}")) : t("provider_credentials.status.none") %>
         </span>
@@ -35,7 +35,7 @@
     </li>
     <li class="flex flex-wrap items-center gap-4 border-b border-line py-5">
       <span class="flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-cream text-forest" aria-hidden="true"><%= render Atoms::Icon::Component.new(name: :refresh_cw, class: "size-[18px]", "stroke-width": 2) %></span>
-      <span class="flex-1 font-display text-[17px] font-bold"><%= t("placeholders.settings.mirrors") %></span>
+      <span class="flex-1 text-[17px] font-bold"><%= t("placeholders.settings.mirrors") %></span>
       <%= render Atoms::Chip::Component.new do %><%= t("placeholders.phase_short", phase: 1) %><% end %>
     </li>
   </ul>

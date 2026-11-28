@@ -16,9 +16,9 @@
     <ul class="m-0 flex list-none flex-col border-t border-line p-0">
       <% @repositories.each do |repository| %>
         <li class="flex items-center gap-4 border-b border-line py-5" id="<%= dom_id(repository) %>">
-          <span class="flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-lime font-initials text-sm font-bold text-forest" aria-hidden="true"><%= repository.name[0].downcase %></span>
+          <span class="flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-lime text-sm font-bold text-forest" aria-hidden="true"><%= repository.name[0].downcase %></span>
           <div class="flex min-w-0 flex-col gap-0.5">
-            <p class="font-display text-[17px] font-bold"><%= repository.name %> <span class="font-sans text-sm font-normal text-forest">&middot; <%= t("repositories.visibilities.#{repository.visibility}") %></span></p>
+            <p class="text-[17px] font-bold"><%= repository.name %> <span class="font-sans text-sm font-normal text-forest">&middot; <%= t("repositories.visibilities.#{repository.visibility}") %></span></p>
             <% if repository.description.present? %>
               <p class="text-sm text-forest"><%= repository.description %></p>
             <% end %>

@@ -12,7 +12,7 @@
 
   <% if @plain_token %>
     <div class="rounded-xl border-2 border-ink bg-lime-soft p-4" id="plain_token">
-      <p class="font-display font-bold"><%= t(".copy_now") %></p>
+      <p class="font-bold"><%= t(".copy_now") %></p>
       <code class="mt-2 block break-all font-mono text-[13px] select-all"><%= @plain_token %></code>
     </div>
   <% end %>
@@ -24,7 +24,7 @@
       <% @access_tokens.each do |access_token| %>
         <li class="flex items-center justify-between gap-4 border-b border-line py-5" id="<%= dom_id(access_token) %>">
           <div class="flex min-w-0 flex-col gap-0.5">
-            <p class="font-display text-[17px] font-bold"><%= access_token.name %></p>
+            <p class="text-[17px] font-bold"><%= access_token.name %></p>
             <p class="text-sm text-forest">
               <%= access_token.scopes.map { |scope| t("access_tokens.scopes.#{scope}") }.to_sentence %>
             </p>
