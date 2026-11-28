@@ -48,6 +48,7 @@ class AccessToken < ApplicationRecord
   end
 
   private
+
   def generate_token
     return if token_digest.present?
 
