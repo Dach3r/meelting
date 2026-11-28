@@ -22,7 +22,7 @@ module Molecules
 
       def panel_classes
         class_names(
-          "absolute z-40 grid w-56 gap-1 rounded-2xl border border-cream-line bg-white p-2 shadow-[0_12px_32px_-12px_rgb(17_17_12/0.45)]",
+          "absolute z-40 grid w-56 gap-1 rounded-2xl border border-cream-line bg-white p-2",
           compact ? "bottom-0 left-full ml-3" : "bottom-full left-0 mb-2"
         )
       end
