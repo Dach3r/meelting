@@ -17,9 +17,10 @@ class Molecules::PushCommands::ComponentTest < ViewComponent::TestCase
     node = render_inline(Molecules::PushCommands::Component.new(repository: @repository, token: "mlt_secret"))
 
     assert_not_includes node.css("pre code").text, "mlt_secret"
-    assert_equal %w[ada mlt_secret], node.css("#push_token dd").map(&:text)
+    assert_equal %w[ada mlt_secret], node.css("#push_token code").map(&:text)
     assert_includes node.css("#push_token").text, "credential helper"
     assert_equal "dialog", node.css("dialog#push_token").first["data-controller"]
     assert_equal 1, node.css("form").size
+    assert_equal ["Aceptar"], node.css("#push_token button[data-action='dialog#close']").map(&:text)
   end
 end

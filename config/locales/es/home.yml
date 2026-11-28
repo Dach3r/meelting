@@ -60,7 +60,9 @@ es:
         username: "Usuario"
         password: "Contraseña"
         modal_title: "Tu token de acceso"
-        close: "Cerrar"
+        accept: "Aceptar"
+        copy: "Copiar"
+        copied: "Copiado"
       steps:
         repository:
           title: "Crea un repositorio y haz push"

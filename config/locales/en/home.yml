@@ -60,7 +60,9 @@ en:
         username: "Username"
         password: "Password"
         modal_title: "Your access token"
-        close: "Close"
+        accept: "Accept"
+        copy: "Copy"
+        copied: "Copied"
       steps:
         repository:
           title: "Create a repository and push to it"
