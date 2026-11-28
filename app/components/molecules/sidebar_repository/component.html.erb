@@ -1,3 +1,9 @@
+<% if compact %>
+  <%= link_to section_path(:code), class: rail_classes, title: repository.name, aria: { label: repository.name, current: (current_repository? ? "page" : nil) } do %>
+    <span class="flex size-[26px] items-center justify-center rounded-lg bg-forest-active text-xs font-bold text-lime" aria-hidden="true"><%= monogram %></span>
+    <span class="absolute top-[11px] right-[19px] flex rounded-full ring-2 ring-shell"><%= render Atoms::StatusDot::Component.new(tone: MIRROR_TONES.fetch(repository.mirror), label: t("sidebar.mirror.#{repository.mirror}")) %></span>
+  <% end %>
+<% else %>
 <div>
   <button type="button" class="flex h-[46px] w-full cursor-pointer items-center gap-3.5 rounded-xl px-4 text-left text-[15px] font-semibold text-forest-soft hover:bg-forest-active/50 aria-expanded:text-white" aria-expanded="<%= expanded %>" aria-controls="<%= panel_id %>" data-sidebar-target="toggle" data-slug="<%= repository.slug %>" data-action="sidebar#toggle">
     <span class="flex size-[26px] shrink-0 items-center justify-center rounded-lg bg-forest-active text-xs font-bold text-lime" aria-hidden="true"><%= monogram %></span>
@@ -11,3 +17,4 @@
     <% end %>
   </div>
 </div>
+<% end %>

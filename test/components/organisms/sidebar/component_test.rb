@@ -50,7 +50,7 @@ class Organisms::Sidebar::ComponentTest < ViewComponent::TestCase
     node = render_inline(Organisms::Sidebar::Component.new(workspace: workspace, user: users(:one)))
 
     rail = node.css("nav:not(#sidebar-menu)").first
-    assert_equal [I18n.t("sidebar.inbox"), I18n.t("sidebar.runs"), I18n.t("sidebar.repositories")], rail.css("a[aria-label]").map { |link_| link_["aria-label"] }.drop(1)
+    assert_equal [I18n.t("sidebar.inbox"), I18n.t("sidebar.runs"), I18n.t("sidebar.repositories")], rail.css("a[aria-label]").map { |link_| link_["aria-label"] }.drop(1).first(3)
     assert_equal I18n.t("sidebar.expand"), rail.css("button[data-action='sidebar#expand']").first["aria-label"]
     assert_equal 1, node.css("#sidebar-menu button[data-action='sidebar#collapse']").size
     assert_equal ApplicationHelper::SIDEBAR_COOKIE, node.css("[data-controller=sidebar]").first["data-sidebar-cookie-value"]
@@ -63,5 +63,19 @@ class Organisms::Sidebar::ComponentTest < ViewComponent::TestCase
     assert_equal "A", rail_menu.text.strip
     assert_includes node.css("#sidebar-menu details summary").text, "Ada Lovelace"
     assert_equal 2, node.css("details form[action='/session'] button").size
+  end
+
+  test "lists the same repositories in the rail and in the expanded menu" do
+    node = render_inline(Organisms::Sidebar::Component.new(workspace: workspace(:empty), user: users(:one)))
+    names = node.css("#sidebar-menu button[data-action='sidebar#toggle'] span.truncate").map(&:text)
+
+    assert_not_empty names
+    assert_equal names, node.css("nav:not(#sidebar-menu) a[title]").map { |link_| link_["title"] }.drop(1)
+  end
+
+  test "links the repositories heading to the list in both modes" do
+    node = render_inline(Organisms::Sidebar::Component.new(workspace: workspace, user: users(:one)))
+
+    assert_equal 2, node.css("a[href='/#{users(:one).username}/repositories']").count { |link_| link_.text.strip == I18n.t("sidebar.repositories") || link_["aria-label"] == I18n.t("sidebar.repositories") }
   end
 end

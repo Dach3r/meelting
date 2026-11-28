@@ -34,4 +34,13 @@ class Molecules::SidebarRepository::ComponentTest < ViewComponent::TestCase
 
     assert_equal ["/ada/repositories"], node.css("a").map { |link_| link_["href"] }.uniq
   end
+
+  test "compact renders a labelled monogram link to the code with the mirror dot" do
+    link = render_inline(Molecules::SidebarRepository::Component.new(repository: repository, compact: true)).css("a").first
+
+    assert_equal "/ada/repositories/meelting", link["href"]
+    assert_equal "Meelting", link["aria-label"]
+    assert_equal "m", link.css("span[aria-hidden]").text
+    assert_equal "Mirror al día", link.css("[role=img]").first["aria-label"]
+  end
 end
