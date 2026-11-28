@@ -122,6 +122,7 @@ Suggested core entities for the first milestone. This is a starting point, not a
 | Onboarding | No checklist; contextual empty states per feature, shipped with that feature's phase | A checklist couples the home to features that don't exist yet and is seen once in a single-user self-hosted product | Proposed |
 | Model keys | One `ProviderCredential` per user and provider; only DeepSeek for now (string enum with a `CHECK`). The key is encrypted with Active Record Encryption, its keys read from environment variables; status is `unverified`, `valid` or `invalid` (`invalid` is reserved for a future re-check of stored keys and is not reachable yet) | DeepSeek is the first provider; env keys fit Docker Compose self-hosting. Losing the encryption keys makes stored model keys unrecoverable | Decided |
 | Model key validation | Synchronous on save with a cheap provider call (listing DeepSeek models) and a short timeout, never while rendering a page. A rejected key is not saved; a timeout or network error saves it as `unverified`, and Settings offers to retry by saving it again | The user learns right away whether the key works, without a background job or a slow page | Decided |
+| License templates and detection | The new repository form offers a fixed list of 13 licenses (default "No license"), taken from the `licensee` gem's vendored choosealicense.com catalog; a chosen license becomes an "Initial commit" with a single `LICENSE` file, written with git plumbing on the bare repo under the per-repository lock. The displayed license is always detected from the default branch's license file with `licensee`, cached by commit SHA, and never stored as an authoritative column | Matches GitHub's behavior with the same library and catalog; the repository content stays the source of truth, so a push that changes the license updates the display without a post-receive hook | Proposed |
 | Visual style | shadcn/ui-inspired look (zinc neutrals, 1px borders, 8px radius, Geist) built with Hotwire, without React | Quiet and dense for daily use; the look is adopted, not the React components | Proposed |
 
 ## Architecture
@@ -289,6 +290,7 @@ Done when: Meelting's repository lives in Meelting, with a push mirror to GitHub
 
 - [x] Navigation sidebar and Inbox home with placeholder data (see "Authenticated home and navigation")
 - [ ] Create bare repositories on disk
+- [ ] License on repository creation and license detection: "Add a license" selector on the new repository form (13 licenses from `licensee`), an "Initial commit" with `LICENSE` built with git plumbing, and the detected license shown in the Code view and above a recognized license file (see the "License templates and detection" decision)
 - [ ] Push and clone over HTTPS with a token (`git http-backend`). The push handler (post-receive or `git http-backend` wrapper) must call `Repository#touch_pushed`, so the repository page stops showing its empty state
 - [ ] File browser with syntax highlighting, commit history and per-commit diff
 - [ ] Configurable push mirror to GitHub
