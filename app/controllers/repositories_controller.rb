@@ -1,5 +1,7 @@
 class RepositoriesController < ApplicationController
   def index
+    raise ActiveRecord::RecordNotFound unless params[:username] == Current.user.username
+
     @repositories = Current.user.repositories.active.order(:name)
   end
 

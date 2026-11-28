@@ -31,7 +31,7 @@ module Workspace
 
     def repositories
       entries = real_repositories
-      entries = PlaceholderData.repositories if entries.empty? && %i[inbox empty].include?(scenario)
+      entries = PlaceholderData.repositories.map { |entry_| entry_.with(username: user.username) } if entries.empty? && %i[inbox empty].include?(scenario)
 
       case scenario
       when :inbox then entries.map { |entry_| entry_.with(mirror: :ok) }

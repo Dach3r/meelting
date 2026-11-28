@@ -10,7 +10,7 @@ class NavbarTest < ActionDispatch::IntegrationTest
 
   test "shows user links with a session" do
     sign_in_as users(:one)
-    get repositories_path
+    get user_repositories_path("ada")
 
     assert_select "nav details a[href=?]", settings_path
     assert_select "nav form[action=?]", session_path

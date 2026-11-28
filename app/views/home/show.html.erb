@@ -20,7 +20,7 @@
       <%= render Molecules::ConfigBanner::Component.new(problem: workspace.banner_problem) %>
     <% end %>
 
-    <%= render Organisms::InboxList::Component.new(items: workspace.items, preview: workspace.placeholder?, assign_href: (workspace.assign_issue_repository ? repository_section_path(workspace.assign_issue_repository.username, workspace.assign_issue_repository.slug, :issues) : repositories_path)) %>
+    <%= render Organisms::InboxList::Component.new(items: workspace.items, preview: workspace.placeholder?, assign_href: (workspace.assign_issue_repository ? repository_section_path(workspace.assign_issue_repository.username, workspace.assign_issue_repository.slug, :issues) : user_repositories_path(Current.user.username)), repositories_href: user_repositories_path(Current.user.username)) %>
 
     <% if workspace.runs.any? %>
       <%= render Organisms::InProgress::Component.new(runs: workspace.runs, preview: workspace.placeholder?) %>

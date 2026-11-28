@@ -22,7 +22,7 @@
         <% item.with_badge do %><span class="absolute top-3 right-[18px] flex"><%= render Atoms::StatusDot::Component.new(tone: :run, label: t("sidebar.runs_in_progress", count: workspace.runs_count)) %></span><% end %>
       <% end %>
     <% end %>
-    <%= render Molecules::RailItem::Component.new(label: t("sidebar.repositories"), href: repositories_path, icon: :git_branch, current: current_page_in?(repositories_path)) %>
+    <%= render Molecules::RailItem::Component.new(label: t("sidebar.repositories"), href: user_repositories_path(user.username), icon: :git_branch, current: current_page_in?(user_repositories_path(user.username))) %>
   </div>
   <div class="mt-auto flex flex-col items-center gap-1 pt-8">
     <button type="button" class="flex h-11 w-[68px] cursor-pointer items-center justify-center rounded-xl text-forest-muted hover:bg-forest-active/50" aria-label="<%= t("sidebar.expand") %>" data-action="sidebar#expand">

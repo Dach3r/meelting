@@ -24,10 +24,15 @@ class RepositoriesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "index lists only the current user's repositories" do
-    get repositories_path
+    get user_repositories_path("ada")
     assert_response :success
     assert_select "##{dom_id(repositories(:meelting))}"
     assert_select "##{dom_id(repositories(:public_notes))}", count: 0
+  end
+
+  test "index of another user is not found" do
+    get user_repositories_path("alan")
+    assert_response :not_found
   end
 
   test "new renders the fields in order with private selected" do

@@ -77,7 +77,7 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
 
   test "navbar shows the user menu" do
     sign_in_as users(:one)
-    get repositories_path
+    get user_repositories_path("ada")
 
     assert_select "nav summary", /A\s+Ada Lovelace/
   end

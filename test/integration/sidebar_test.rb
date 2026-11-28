@@ -3,7 +3,7 @@ require "test_helper"
 class SidebarTest < ActionDispatch::IntegrationTest
   test "authenticated pages render the sidebar in order" do
     sign_in_as users(:one)
-    get repositories_path
+    get user_repositories_path("ada")
 
     assert_select "nav[aria-label='Navegación del espacio de trabajo']" do
       assert_select "a[href=?]", root_path

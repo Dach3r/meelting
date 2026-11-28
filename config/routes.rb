@@ -23,8 +23,9 @@ Rails.application.routes.draw do
   get "up" => "rails/health#show", as: :rails_health_check
 
   resources :access_tokens, only: %i[index new create update destroy]
-  resources :repositories, only: %i[index new create]
+  resources :repositories, only: %i[new create]
   scope ":username", constraints: { username: /[a-z][a-z0-9_]*/ } do
+    get "repositories", to: "repositories#index", as: :user_repositories
     resources :repositories, only: [], param: :slug do
       get "blob/*path", to: "repositories/blobs#show", as: :blob, format: false
       get ":section", to: "repositories/sections#show", as: :section, constraints: { section: /issues|pull_requests|runs|memory/ }

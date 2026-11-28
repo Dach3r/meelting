@@ -32,6 +32,6 @@ class Molecules::SidebarRepository::ComponentTest < ViewComponent::TestCase
   test "placeholder repositories link to the repositories list" do
     node = render_inline(Molecules::SidebarRepository::Component.new(repository: repository(real: false), expanded: true))
 
-    assert_equal ["/repositories"], node.css("a").map { |link_| link_["href"] }.uniq
+    assert_equal ["/ada/repositories"], node.css("a").map { |link_| link_["href"] }.uniq
   end
 end
