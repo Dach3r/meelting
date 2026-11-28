@@ -50,13 +50,15 @@ en:
       done: "Done"
       push:
         generate: "Generate token"
-        shown_once: "Copy the commands now: the token will not be shown again."
-        token_placeholder: "TOKEN"
+        shown_once: "Copy it now: the token will not be shown again."
+        credentials: "When git asks for credentials, use your username as the username and this token as the password. Git's credential helper stores it."
+        username: "Username"
+        password: "Password"
       steps:
         repository:
           title: "Create a repository and push to it"
           detail: "Create the repository in Meelting, then push your code over HTTPS."
-          push_detail: "Add the remote and push. Generate a token to insert it into the command."
+          push_detail: "Add the remote and push. Generate a token to authenticate over HTTPS."
           action: "Create repository"
         model_key:
           title: "Add a model key"

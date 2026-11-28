@@ -21,8 +21,10 @@ class Repositories::PushTokensControllerTest < ActionDispatch::IntegrationTest
     assert_equal %w[git_read git_write], token.scopes
     assert_equal "Push de Meelting", token.name
     assert_select "turbo-stream[action=replace][target=push_commands]"
-    assert_match %r{http://ada:mlt_[^@]+@www.example.com/ada/meelting.git}, response.body
-    assert_equal token, AccessToken.authenticate(response.body[/ada:(mlt_[^@]+)@/, 1], scope: :git_write)
+    assert_includes response.body, "git remote add origin http://www.example.com/ada/meelting.git"
+    plain_token = response.body[/(#{AccessToken::PREFIX}[\w-]+)/, 1]
+    assert_equal token, AccessToken.authenticate(plain_token, scope: :git_write)
+    assert_no_match(/:#{plain_token}@/, response.body)
   end
 
   test "falls back to the access tokens page without Turbo" do

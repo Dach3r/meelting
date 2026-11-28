@@ -3,20 +3,22 @@ require "test_helper"
 class Molecules::PushCommands::ComponentTest < ViewComponent::TestCase
   setup { @repository = repositories(:meelting) }
 
-  test "shows the remote and push commands with a token placeholder and the generate button" do
+  test "shows the remote and push commands without credentials and the generate button" do
     node = render_inline(Molecules::PushCommands::Component.new(repository: @repository))
 
-    assert_includes node.css("code").text, "git remote add meelting http://ada:TOKEN@test.host/ada/meelting.git"
-    assert_includes node.css("code").text, "git push -u meelting main"
+    commands = node.css("pre code").text
+    assert_includes commands, "git remote add origin http://test.host/ada/meelting.git"
+    assert_includes commands, "git push -u origin main"
     assert_equal "/repositories/meelting/push_token", node.css("form").first["action"]
-    assert_includes node.text, "Generar token"
+    assert_empty node.css("#push_token")
   end
 
-  test "inserts the token in the commands and drops the button" do
+  test "shows the token apart from the commands, as the password for the username" do
     node = render_inline(Molecules::PushCommands::Component.new(repository: @repository, token: "mlt_secret"))
 
-    assert_includes node.css("code").text, "http://ada:mlt_secret@test.host/ada/meelting.git"
+    assert_not_includes node.css("pre code").text, "mlt_secret"
+    assert_equal %w[ada mlt_secret], node.css("#push_token dd").map(&:text)
+    assert_includes node.css("#push_token").text, "credential helper"
     assert_empty node.css("form")
-    assert_includes node.css("[role=status]").text, "no se volverá a mostrar"
   end
 end
