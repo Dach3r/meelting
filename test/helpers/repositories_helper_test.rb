@@ -12,6 +12,6 @@ class RepositoriesHelperTest < ActionView::TestCase
 
     repository.errors.clear
     repository.errors.add(:default_branch, :blank)
-    assert_equal 3, repository_wizard_step(repository)
+    assert_equal 1, repository_wizard_step(repository)
   end
 end

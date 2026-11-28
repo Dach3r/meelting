@@ -20,7 +20,6 @@ export default class extends Controller {
     "url",
     "visibility",
     "license",
-    "branch",
   ];
   static values = {
     step: Number,
@@ -77,7 +76,7 @@ export default class extends Controller {
   }
 
   refresh() {
-    const [repository, visibility, branch] = this.summaryTargets;
+    const [repository, visibility] = this.summaryTargets;
     const checked = this.visibilityTargets.find((radio) => radio.checked);
     const license = this.licenseTarget.selectedOptions[0];
 
@@ -86,7 +85,6 @@ export default class extends Controller {
       checked?.closest("label").querySelector("[data-visibility-label]").textContent.trim(),
       license?.text,
     ].filter(Boolean).join(" · "));
-    this.#show(branch, this.branchTarget.value);
     this.#showUrl();
   }
 

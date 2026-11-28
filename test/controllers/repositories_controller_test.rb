@@ -27,12 +27,12 @@ class RepositoriesControllerTest < ActionDispatch::IntegrationTest
     get new_repository_path
     assert_response :success
     assert_select "form[data-controller=repository-wizard][data-repository-wizard-step-value=1]"
-    assert_select "[data-repository-wizard-target=step]", 3
+    assert_select "[data-repository-wizard-target=step]", 2
     assert_select "[data-repository-wizard-target=step]:not([hidden]) #repository_name"
-    assert_select "[data-repository-wizard-target=step][hidden] #repository_default_branch"
-    assert_select "[data-repository-wizard-target=navItem]", 3
+    assert_select "[data-repository-wizard-target=step]:not([hidden]) #repository_default_branch"
+    assert_select "[data-repository-wizard-target=navItem]", 2
     assert_select "[data-repository-wizard-target=navItem][aria-current=step]", text: /Repositorio/
-    assert_select "[data-repository-wizard-target=position]", "Paso 1 de 3"
+    assert_select "[data-repository-wizard-target=position]", "Paso 1 de 2"
   end
 
   test "create stores the repository for the current user" do
@@ -79,7 +79,7 @@ class RepositoriesControllerTest < ActionDispatch::IntegrationTest
   test "create failure reopens the wizard on the step with the first error" do
     post repositories_path, params: valid_params(default_branch: "")
     assert_response :unprocessable_entity
-    assert_select "form[data-repository-wizard-step-value=3]"
+    assert_select "form[data-repository-wizard-step-value=1]"
     assert_select "[data-repository-wizard-target=step]:not([hidden]) #repository_default_branch"
   end
 

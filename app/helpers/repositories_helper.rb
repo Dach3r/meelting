@@ -1,8 +1,7 @@
 module RepositoriesHelper
   REPOSITORY_WIZARD_STEPS = [
-    %i[name slug description],
-    %i[visibility license license_id],
-    %i[default_branch]
+    %i[name slug default_branch description],
+    %i[visibility license license_id]
   ].freeze
 
   def repository_wizard_step(repository)

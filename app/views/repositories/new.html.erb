@@ -1,10 +1,9 @@
 <% content_for :title, t(".title") %>
 <% step = repository_wizard_step(@repository) %>
-<% steps = [t(".steps.repository"), t(".steps.visibility"), t(".steps.default_branch")] %>
+<% steps = [t(".steps.repository"), t(".steps.visibility")] %>
 <% summaries = [
      @repository.name.presence || t(".summaries.repository"),
-     [t("repositories.visibilities.#{@repository.visibility}"), @repository.license&.name || t(".no_license")].join(" · "),
-     @repository.default_branch
+     [t("repositories.visibilities.#{@repository.visibility}"), @repository.license&.name || t(".no_license")].join(" · ")
    ] %>
 
 <%= form_with model: @repository, class: "grid w-full content-start gap-8 lg:grid-cols-[240px_minmax(0,1fr)]",
@@ -44,6 +43,7 @@
       <%= render Molecules::FormField::Component.new(form: form, attribute: :name, label: Repository.human_attribute_name(:name), icon: :type, autofocus: step == 1, placeholder: t(".name_placeholder"), data: { repository_wizard_target: "name" }) do |field| %>
         <% field.with_label_aside do %><p class="min-w-0 truncate font-mono text-[13px] font-semibold" data-repository-wizard-target="url" aria-live="polite" hidden></p><% end %>
       <% end %>
+      <%= render Molecules::FormField::Component.new(form: form, attribute: :default_branch, label: Repository.human_attribute_name(:default_branch), icon: :git_branch, autocapitalize: "none", class: "nb-field-shell-input font-mono") %>
       <%= render Molecules::FormField::Component.new(form: form, attribute: :description, label: Repository.human_attribute_name(:description), icon: :align_left, type: :text_area, required: false, rows: 3, maxlength: 350, placeholder: t(".description_placeholder")) %>
     </div>
 
@@ -66,10 +66,6 @@
           <%= render Atoms::Icon::Component.new(name: :chevron_down, class: "pointer-events-none size-4 flex-none", "stroke-width": 2.4) %>
         <% end %>
       <% end %>
-    </div>
-
-    <div class="grid gap-5" data-repository-wizard-target="step" data-label="<%= steps[2] %>" <%= "hidden" unless step == 3 %>>
-      <%= render Molecules::FormField::Component.new(form: form, attribute: :default_branch, label: Repository.human_attribute_name(:default_branch), icon: :git_branch, autocapitalize: "none", class: "nb-field-shell-input font-mono", data: { repository_wizard_target: "branch" }) %>
     </div>
 
     <div class="mt-1 flex flex-wrap justify-end gap-3">

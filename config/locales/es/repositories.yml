@@ -25,7 +25,6 @@ es:
       steps:
         repository: "Repositorio"
         visibility: "Visibilidad"
-        default_branch: "Rama por defecto"
       name_placeholder: "Mi proyecto"
       description_placeholder: "¿De qué trata?"
       no_license: "Sin licencia"
