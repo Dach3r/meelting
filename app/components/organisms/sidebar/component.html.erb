@@ -68,7 +68,7 @@
       <%= render Atoms::Icon::Component.new(name: :chevrons_left, class: "mx-px size-5 shrink-0", "stroke-width": 1.75) %>
       <span><%= t("sidebar.collapse") %></span>
     </button>
-    <div class="mt-2 border-t border-forest-active pt-3">
+    <div class="mt-2">
       <%= render Molecules::UserMenu::Component.new(user: user) %>
     </div>
   </div>
