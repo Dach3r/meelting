@@ -32,7 +32,7 @@
 
 Done on 2026-11-28: removed `Atoms::PillButton`, `Atoms::AgentAvatar`, `LinkButton` `danger`, `Link` `light` (`tone:` is now required), `Repository#archive!`/`#unarchive!`/`#archived?`/`.archived` (the `archived_at` column and `.active` stay), `StatusChip` tones `ok` and `run`, `LinkButton` `accent`, `AccessToken#active?`, `Workspace::State#preview?`, `#completed_steps` and `#current_step` (they duplicated `Organisms::SetupChecklist`), and replaced `ApplicationHelper::CONFIG` with `ApplicationHelper::APP_NAME`. `Button` `pill` stays: `Molecules::PushCommands` uses it.
 
-**Not YAGNI, keep**: `Repository#touch_pushed` and `AccessToken.authenticate` have no caller yet, but they are Phase 1 groundwork. `Workspace::Build` reads `pushed_at` for the first checklist step, and `docs/product.md` requires the push handler to call `touch_pushed`. `Repositories::PushTokensController` already issues `git_read`/`git_write` tokens that `authenticate` will check.
+**Not YAGNI, keep**: `Repository#touch_pushed` and `AccessToken.authenticate` have no caller yet, but they are Phase 1 groundwork. The repository page reads `pushed_at` for its empty state, and `docs/product.md` requires the push handler to call `touch_pushed`. `Repositories::PushTokensController` already issues `git_read`/`git_write` tokens that `authenticate` will check.
 
 ## Tell, Don't Ask
 

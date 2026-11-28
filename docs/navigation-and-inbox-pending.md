@@ -6,17 +6,16 @@ The shell and the home are built. Everything below is deliberately left for the 
 
 ## Replace placeholder data
 
-All placeholder data lives in `app/services/workspace/placeholder_data.rb` and is only reachable through `?preview=inbox|empty|first_run` in development. `Workspace::Build` is the single place that mixes it with real records.
+All placeholder data lives in `app/services/workspace/placeholder_data.rb` and is only reachable through `?preview=inbox|empty|no_repositories` in development. `Workspace::Build` is the single place that mixes it with real records.
 
 | When | What to do |
 | --- | --- |
 | Phase 2 | Inbox "Merge" items come from open agent pull requests, and the empty-state "Assign an issue" link points to the repository's real open issues. Remove the `:merge` entry from `PlaceholderData::ITEMS`. |
 | Phase 3 | Inbox "Approve" and "Failed" items, "In progress" runs and the sidebar counters (Inbox badge, Runs dot) come from runs, updated live with Turbo Streams. Remove `ITEMS`, `RUNS` and the `items` and `runs` methods. |
 | Phase 1 (mirror) | The mirror dot per repository and the "mirror failing" problem come from the real mirror status. Today every real repository reports `:none`. |
-| Model keys | Done: the step is checked by a `valid` or `unverified` DeepSeek `ProviderCredential`; an unverified key shows a retry notice in Settings and is retried only by saving it again. `invalid` (with its Settings dot and banner) is wired but unreachable until a background re-check of stored keys exists. |
-| Phase 1 (hosting) | The push handler must call `Repository#touch_pushed`, or the step "create a repository and push to it" is never checked. The overview step reads `.project/overview.md` from the bare repo at `Repository#git_path` with `git cat-file` on each home request; move that check into the push handler, next to `touch_pushed`, and store the result on the repository. |
-| Phase 2–3 | The step "assign your first issue to an agent" is shown disabled until issues and runs exist; enable it and check it on assignment. Until then, onboarding cannot complete with real data. |
-| Phase 3 | Below the model key step, an automatic check that the Docker daemon is reachable. There is no Docker integration yet, so it is left out. |
+| Phase 3 | The model key only shows up when it is needed: "Assign to agent" is disabled with a link to Settings while there is none. No banner and no Settings dot for the model key until then. |
+| Phase 1 (hosting) | The push handler must call `Repository#touch_pushed`, or the repository page keeps showing its empty state (push URL, commands and "Generate token"). |
+| Phase 3 | The "Docker is not responding" banner, once the sandbox can detect it. |
 | Last placeholder removed | Delete `PlaceholderData`, `Previewable#preview_scenario`, the `?preview` tests and the "Datos de ejemplo" labels. |
 
 ## Links that still point to stand-ins
@@ -29,11 +28,10 @@ All placeholder data lives in `app/services/workspace/placeholder_data.rb` and i
 
 - The "Docker is not responding" banner has its copy and its place, but nothing detects the problem yet (Phase 3, with the sandbox).
 - The banner action always goes to `/settings`. Model keys are managed there; mirrors are not yet.
-- While the checklist is shown, the missing model key does not show the Settings dot or the banner: the checklist already covers it. Once onboarding is complete (`users.onboarding_completed_at`), it shows both.
 
 ## Tests
 
-- There is no browser test setup (no Capybara or Selenium). The three states, the sidebar, the expansion and the ignored `?preview` are covered by integration and component tests. Stimulus behavior (one repository expanded at a time, small-screen menu) was checked by hand.
+- There is no browser test setup (no Capybara or Selenium). The home states, the sidebar, the expansion and the ignored `?preview` are covered by integration and component tests. Stimulus behavior (one repository expanded at a time, small-screen menu) was checked by hand.
 - Decision needed: add Capybara with Selenium for real system tests. It is a new dependency, so it needs approval first.
 
 ## Decisions to confirm

@@ -119,9 +119,9 @@ Suggested core entities for the first milestone. This is a starting point, not a
 | Authenticated home | The home is the Inbox: things that need a decision, plus runs in progress. Nothing else | Notifications are out of scope, so the home is the only place a run waiting at the gate is seen; anything that is not a decision makes it harder to see | Decided |
 | Rejected run | The run stays in history as rejected and leaves the Inbox; its issue goes back to pending, ready to reassign. No automatic retry | Keeps the gate simple and inside the milestone; retry with feedback can come later | Decided |
 | Home placeholder data | The navigation shell and home are built before Phases 2–3 using placeholder data from one clearly labelled source; no models or migrations for future-phase entities | Lets the layout be built and reviewed early without creating schema ahead of its phase | Proposed |
-| Onboarding checklist | Four steps: create a repository and push (the token is generated inside this step), add a validated model key, write `.project/overview.md`, assign a first issue. The GitHub mirror is an optional recommendation on the repository page, outside the checklist | Each step is a precondition for an agent working on the first issue; the token and the mirror are not | Decided |
+| Onboarding | No checklist; contextual empty states per feature, shipped with that feature's phase | A checklist couples the home to features that don't exist yet and is seen once in a single-user self-hosted product | Proposed |
 | Model keys | One `ProviderCredential` per user and provider; only DeepSeek for now (string enum with a `CHECK`). The key is encrypted with Active Record Encryption, its keys read from environment variables; status is `unverified`, `valid` or `invalid` (`invalid` is reserved for a future re-check of stored keys and is not reachable yet) | DeepSeek is the first provider; env keys fit Docker Compose self-hosting. Losing the encryption keys makes stored model keys unrecoverable | Decided |
-| Onboarding completion | Once the four steps are done, completion is stored on the user and the checklist never reappears; later problems show as the Settings dot and the banner | A checklist that comes back would replace the Inbox, the only place where decisions are seen | Decided |
+| Model key validation | Synchronous on save with a cheap provider call (listing DeepSeek models) and a short timeout, never while rendering a page. A rejected key is not saved; a timeout or network error saves it as `unverified`, and Settings offers to retry by saving it again | The user learns right away whether the key works, without a background job or a slow page | Decided |
 | Visual style | shadcn/ui-inspired look (zinc neutrals, 1px borders, 8px radius, Geist) built with Hotwire, without React | Quiet and dense for daily use; the look is adopted, not the React components | Proposed |
 
 ## Architecture
@@ -144,7 +144,7 @@ SSH (later, Go)  ┄┄┄▶   Agent runs (Solid Queue jobs)  ─────�
                         (code + .project/)      (data + index)          DeepSeek first; others later
 ```
 
-- **Git.** Smart HTTP through `git http-backend`; trees, diffs and blame through the git CLI. Merges use `git merge-tree` and `git commit-tree` under a per-repository lock. SSH is deferred to a separate Go service, the first component outside Rails.
+- **Git.** Smart HTTP through `git http-backend`; trees, diffs and blame through the git CLI. Access tokens never go in the remote URL: the push commands show a credential-free URL and git asks for username and token, so the credential helper stores them. Merges use `git merge-tree` and `git commit-tree` under a per-repository lock. SSH is deferred to a separate Go service, the first component outside Rails.
 - **Agents.** Solid Queue jobs orchestrate runs. The own agent loop (later) runs in the job with RubyLLM and executes its tools inside the sandbox. External agents run as CLI processes inside the sandbox.
 - **Why Ruby is enough.** There is an official MCP SDK for Ruby, and RubyLLM covers multiple providers, DeepSeek included. Meelting does not need an agent SDK in Ruby: external agents run as CLIs.
 - **Self-hosting.** A Docker image of the app + PostgreSQL + a Docker daemon for sandboxes. Mounting the Docker socket into the app is equivalent to root access on the host, so use a separate runner or a socket proxy with limited permissions.
@@ -226,13 +226,7 @@ Details (diff size, cost, tests run, memory used) belong on the run and pull req
 ### States
 
 - **Empty Inbox.** "Nothing needs you" with one action: "Assign an issue", which goes to the repository's open issues.
-- **First visit.** Until onboarding is complete, a checklist replaces both blocks. Four steps, in this order, each checked automatically when it is true:
-  1. **Create a repository and push to it.** Shows the `git remote add origin` and `git push` commands with a credential-free URL, and an inline "Generate token" button; the token is shown once, apart from the commands, with the instruction "username: your username, password: this token", so git's credential helper stores it. The token never goes in the remote URL. There is no separate access token step. Checked when the repository receives its first push.
-  2. **Add a model key.** Checked only when the key is validated, not when it exists. Validation happens synchronously on save with a cheap provider call (listing DeepSeek models) and a short timeout, never while rendering the home. A rejected key is not saved; a timeout or network error saves it as unverified. An unverified key also checks the step, and Settings shows "we could not verify it, retry" until it is saved again and verified. The `invalid` status exists in the schema but is not reachable yet: it activates when a background re-check of stored keys exists, and an invalid key never counts as verified. Below the step, an automatic check that the Docker daemon is reachable (added with the sandbox in Phase 3).
-  3. **Write `.project/overview.md`.** Offers a template with sections (what the system does, who it is for, main modules) to copy or commit. Checked when the file exists on the repository's default branch, read from the bare repo with the git CLI; it does not depend on the memory index (Phase 4).
-  4. **Assign your first issue to an agent.** Checked on assignment; from there the Inbox takes over. Shown disabled, labelled as available in Phases 2–3, until issues and runs exist.
-
-  The GitHub mirror is not a step: it is an optional recommendation on the repository page when no mirror is configured. It does not count toward progress and does not show the warning dot. While the checklist is shown, the Settings dot is hidden for conditions the checklist already covers (missing model key); real failures (a key that became invalid after being valid, Docker down, a failing mirror) still show it. Once all four steps are done, onboarding is marked complete on the user and the checklist never appears again, even if a condition later stops being true: from then on problems show as the dot and the "Configuration problem" banner, never replacing the Inbox. The checklist never appears next to the Inbox.
+- **First visit.** There is no setup checklist. Each missing piece shows up where it is needed: no repositories → the home shows "Create repository" instead of the Inbox; an empty repository → its page shows the push URL, commands and an inline "Generate token"; no model key → "Assign to agent" is disabled with a link to Settings. Each empty state ships in the phase of its feature.
 - **Configuration problem.** A missing model key, an unreachable Docker daemon or a failing mirror shows a dot on Settings (or on the repository) and, only when it blocks runs or puts the repository at risk, one banner above the Inbox with a link to fix it.
 
 ### Not on the home
@@ -295,7 +289,7 @@ Done when: Meelting's repository lives in Meelting, with a push mirror to GitHub
 
 - [x] Navigation sidebar and Inbox home with placeholder data (see "Authenticated home and navigation")
 - [ ] Create bare repositories on disk
-- [ ] Push and clone over HTTPS with a token (`git http-backend`). The push handler (post-receive or `git http-backend` wrapper) must call `Repository#touch_pushed`; without it the onboarding step "Create a repository and push to it" is never checked. Move the `.project/overview.md` check there too: next to `touch_pushed`, check the file on the default branch and store the result on the repository, so the home stops running `git cat-file` on every request
+- [ ] Push and clone over HTTPS with a token (`git http-backend`). The push handler (post-receive or `git http-backend` wrapper) must call `Repository#touch_pushed`, so the repository page stops showing its empty state
 - [ ] File browser with syntax highlighting, commit history and per-commit diff
 - [ ] Configurable push mirror to GitHub
 
