@@ -92,13 +92,10 @@
     box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-forest) 18%, transparent);
   }
 
+  .nb-field:user-invalid,
   .nb-field-shell:has(.nb-field-shell-input:user-invalid),
   .nb-field-shell:has(.nb-field-shell-input[data-availability="unavailable"]) {
     border-color: var(--color-danger);
-  }
-
-  .nb-field-shell:has(.nb-field-shell-input:user-invalid):focus-within,
-  .nb-field-shell:has(.nb-field-shell-input[data-availability="unavailable"]):focus-within {
     box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-danger) 18%, transparent);
   }
 
