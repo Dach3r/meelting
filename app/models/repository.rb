@@ -14,7 +14,7 @@ class Repository < ApplicationRecord
   validates :name, presence: true
   validates :default_branch, presence: true
   validates :description, length: { maximum: 350 }
-  validate :license_is_active, if: :license_id_changed?
+  validate :license_is_selectable, if: :license_id_changed?
   validates :slug, presence: true, uniqueness: { scope: :user_id }, length: { maximum: 100 }, format: { with: SLUG_FORMAT }
 
   scope :active, -> { where(archived_at: nil) }
@@ -31,12 +31,25 @@ class Repository < ApplicationRecord
     Rails.configuration.x.git_root.join("#{id}.git")
   end
 
+  def git
+    Repository::Git.new(git_path)
+  end
+
+  def head_sha
+    git.resolve(default_branch) if git_path.directory?
+  end
+
+  def initialized?
+    head_sha.present?
+  end
+
   private
+
   def assign_slug
     self.slug = name.to_s.parameterize.first(100).delete_suffix("-")
   end
 
-  def license_is_active
-    errors.add(:license, :inclusion) if license&.inactive?
+  def license_is_selectable
+    errors.add(:license, :inclusion) if license && !License.selectable.exists?(license.id)
   end
 end

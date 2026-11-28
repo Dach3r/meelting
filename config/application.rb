@@ -48,5 +48,9 @@ module Meelting
     config.active_record.encryption.key_derivation_salt = ENV["ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT"]
 
     config.x.git_root = Pathname(ENV["MEELTING_GIT_ROOT"].presence || Rails.root.join("storage/repositories"))
+    config.x.git_committer = {
+      name: ENV["MEELTING_COMMITTER_NAME"].presence || "Meelting",
+      email: ENV["MEELTING_COMMITTER_EMAIL"].presence || "noreply@#{ENV["APP_HOST"].presence || "localhost"}"
+    }
   end
 end

@@ -4,6 +4,13 @@ class RepositoriesControllerTest < ActionDispatch::IntegrationTest
   setup do
     @user = users(:one)
     sign_in_as @user
+    @original_git_root = Rails.configuration.x.git_root
+    Rails.configuration.x.git_root = Pathname(Dir.mktmpdir)
+  end
+
+  teardown do
+    FileUtils.rm_rf(Rails.configuration.x.git_root)
+    Rails.configuration.x.git_root = @original_git_root
   end
 
   def valid_params(overrides = {})
@@ -43,6 +50,27 @@ class RepositoriesControllerTest < ActionDispatch::IntegrationTest
     repository = @user.repositories.find_by!(slug: "docs")
     assert repository.visibility_public?
     assert_equal licenses(:mit), repository.license
+    assert repository.initialized?
+    assert_equal ["LICENSE"], repository.git.ls_tree(repository.head_sha).map(&:name)
+  end
+
+  test "create without a license leaves an empty bare repository" do
+    post repositories_path, params: valid_params(license_id: "")
+
+    repository = @user.repositories.find_by!(slug: "docs")
+    assert_nil repository.license
+    assert repository.git_path.directory?
+    assert_not repository.initialized?
+  end
+
+  test "new offers no license first and the selectable licenses in order" do
+    License.sync_catalog
+    get new_repository_path
+
+    options = css_select("#repository_license_id option")
+    assert_equal ["", *License::SELECTABLE_KEYS.map { |key_| License.find_by!(key: key_).id.to_s }], options.map { |option_| option_["value"] }
+    assert_equal "Sin licencia", options.first.text
+    assert_select "label[for=repository_license_id]", "Agregar una licencia"
   end
 
   test "create derives the slug from the name and ignores a submitted one" do

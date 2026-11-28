@@ -4,7 +4,6 @@ class CreateLicenses < ActiveRecord::Migration[8.1]
       t.string :key, null: false
       t.string :name, null: false
       t.text :description, null: false, default: ""
-      t.text :body, null: false, default: ""
       t.string :status, null: false, default: "active"
 
       t.timestamps

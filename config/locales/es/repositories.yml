@@ -8,6 +8,12 @@ es:
         visibility: "Visibilidad"
         license_id: "Licencia"
         default_branch: "Rama por defecto"
+    errors:
+      models:
+        repository:
+          attributes:
+            base:
+              git_failed: "No se pudo crear el repositorio en disco. Inténtalo de nuevo."
   repositories:
     visibilities:
       private: "Privado"
@@ -21,6 +27,9 @@ es:
       name_placeholder: "Mi proyecto"
       description_label: "Descripción (opcional)"
       description_placeholder: "¿De qué trata?"
+      initialization: "Inicialización"
+      license_label: "Agregar una licencia"
+      license_hint: "Una licencia indica a otros qué pueden y qué no pueden hacer con tu código."
       no_license: "Sin licencia"
       submit: "Crear repositorio"
     create:

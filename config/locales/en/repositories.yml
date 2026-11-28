@@ -8,6 +8,12 @@ en:
         visibility: "Visibility"
         license_id: "License"
         default_branch: "Default branch"
+    errors:
+      models:
+        repository:
+          attributes:
+            base:
+              git_failed: "The repository could not be created on disk. Try again."
   repositories:
     visibilities:
       private: "Private"
@@ -21,6 +27,8 @@ en:
       name_placeholder: "My project"
       description_label: "Description (optional)"
       description_placeholder: "What is it about?"
+      license_label: "Add a license"
+      license_hint: "A license tells others what they can and cannot do with your code."
       no_license: "No license"
       submit: "Create repository"
     create:

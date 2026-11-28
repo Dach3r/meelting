@@ -32,7 +32,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_27_195943) do
     t.string "key", null: false
     t.string "name", null: false
     t.text "description", default: "", null: false
-    t.text "body", default: "", null: false
     t.string "status", default: "active", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
