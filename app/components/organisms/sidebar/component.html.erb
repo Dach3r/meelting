@@ -8,7 +8,9 @@
 </div>
 
 <nav class="hidden h-full flex-col items-center py-[22px] lg:flex lg:group-data-sidebar-expanded/shell:hidden" aria-label="<%= t("sidebar.label") %>">
-  <%= link_to root_path, class: "mt-3.5 mb-[34px] block size-[26px] rounded-full bg-lime", aria: { label: ApplicationHelper::APP_NAME } do %><% end %>
+  <div class="mt-3.5 mb-[34px] flex h-[26px] items-center">
+    <%= render Molecules::Brand::Component.new(tone: :light, compact: true) %>
+  </div>
   <div class="flex flex-col gap-2">
     <%= render Molecules::RailItem::Component.new(label: t("sidebar.inbox"), href: root_path, icon: :inbox, current: current_page_in?(root_path)) do |item| %>
       <% if workspace.inbox_count.positive? %>

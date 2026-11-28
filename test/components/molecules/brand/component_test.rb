@@ -23,4 +23,12 @@ class Molecules::Brand::ComponentTest < ViewComponent::TestCase
     assert_equal 2, brand.css("span.text-lime").size
     assert_equal 1, brand.css("span.bg-clip-text.from-lime").size
   end
+
+  test "compact renders braces around the lime dot without the name" do
+    brand = render_inline(Molecules::Brand::Component.new(tone: :light, compact: true))
+
+    assert_equal ApplicationHelper::APP_NAME, brand.css("a[href='/']").attr("aria-label").value
+    assert_equal "{}", brand.css("a").text.gsub(/\s/, "")
+    assert_equal 1, brand.css("a span.rounded-full.bg-lime").size
+  end
 end
