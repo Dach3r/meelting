@@ -1,13 +1,5 @@
 <header class="<%= class_names("flex flex-wrap items-center gap-3", "py-7 pl-5 pr-2" => !authenticated) %>">
   <% if authenticated %>
-    <%= link_to root_path, class: "hidden h-[54px] items-center gap-3 rounded-full bg-white pr-[18px] pl-[9px] text-ink lg:flex lg:group-data-sidebar-expanded/shell:hidden", aria: { label: ApplicationHelper::CONFIG[:name] } do %>
-      <span class="flex size-9 items-center justify-center rounded-full bg-forest font-initials text-sm font-bold text-lime" aria-hidden="true"><%= ApplicationHelper::CONFIG[:name][0] %></span>
-      <span class="flex flex-col leading-[1.15]">
-        <span class="font-display text-[15px] font-bold"><%= ApplicationHelper::CONFIG[:name].downcase %></span>
-        <span class="text-[13px] text-forest"><%= t("navbar.workspace") %></span>
-      </span>
-      <%= render Atoms::Icon::Component.new(name: :chevrons_up_down, class: "ml-3 size-4 text-forest", "stroke-width": 2) %>
-    <% end %>
     <%= render Molecules::SearchTrigger::Component.new %>
     <nav class="flex items-center gap-3" aria-label="<%= t("navbar.label") %>">
       <button type="button" class="flex size-[54px] shrink-0 cursor-pointer items-center justify-center rounded-full bg-white text-ink" aria-label="<%= t("navbar.notifications_label") %>"><%= render Atoms::Icon::Component.new(name: :bell, class: "size-5", "stroke-width": 1.75) %></button>
