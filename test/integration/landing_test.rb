@@ -32,7 +32,7 @@ class LandingTest < ActionDispatch::IntegrationTest
     assert_select "main section h1", false
   end
 
-  test "layout preloads the Inter font and sets the brand title" do
+  test "layout preloads the fonts and sets the brand title" do
     get root_path
 
     assert_select "link[rel=preload][as=font][type='font/woff2']"

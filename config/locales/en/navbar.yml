@@ -1,6 +1,7 @@
 en:
   navbar:
     label: "Main navigation"
+    workspace: "Workspace"
     product: "Product"
     memory: "Memory"
     self_host: "Self-host"

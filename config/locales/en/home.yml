@@ -5,6 +5,7 @@ en:
     preview_label: "Preview data"
     inbox:
       title: "Needs your decision"
+      subtitle: "%{count} pending · %{repositories}"
       kinds:
         approve: "Approve"
         merge: "Merge"

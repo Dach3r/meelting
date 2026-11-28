@@ -5,7 +5,7 @@
 
   <%= render Atoms::SubmitButton::Component.new do %><%= t(".submit") %><% end %>
 
-  <div class="text-center text-sm text-graphite-500">
-    <%= render Atoms::Link::Component.new(href: new_session_path, tone: :graphite) do %><%= t(".back_to_sign_in") %><% end %>
+  <div class="text-center text-sm text-forest">
+    <%= render Atoms::Link::Component.new(href: new_session_path, tone: :underline) do %><%= t(".back_to_sign_in") %><% end %>
   </div>
 <% end %>

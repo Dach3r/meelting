@@ -1,16 +1,21 @@
-<% if items.empty? %>
-  <%= render Molecules::Tray::Component.new(title: t("home.inbox.title"), id: "inbox") do %>
-    <div class="flex flex-col items-center gap-2 rounded-[22px] bg-white px-6 py-16 text-center">
-      <span class="mb-2 flex size-16 items-center justify-center rounded-[20px] bg-graphite-900 text-sun-400" aria-hidden="true"><%= render Atoms::Icon::Component.new(name: :check, class: "size-7") %></span>
-      <h3 class="text-2xl font-extrabold tracking-[-0.04em]"><%= t("home.inbox.empty.title") %></h3>
-      <p class="mb-3 max-w-sm leading-relaxed text-graphite-500"><%= t("home.inbox.empty.body") %></p>
-      <%= render Atoms::LinkButton::Component.new(href: assign_href, variant: :primary, size: :pill) do %><%= t("home.inbox.empty.action") %><% end %>
-    </div>
-  <% end %>
-<% else %>
-  <%= render Molecules::Tray::Component.new(title: t("home.inbox.title"), count: items.size, preview: (t("home.preview_label") if preview), list: true, id: "inbox") do %>
-    <% items.each do |item| %>
-      <%= render Molecules::InboxRow::Component.new(item: item, href: item_href(item)) %>
+<section id="inbox" class="flex flex-col gap-5">
+  <%= render Molecules::PageHeader::Component.new(title: t("home.inbox.title"), subtitle: (subtitle if items.any?), icon: :inbox, level: :h2) do |header| %>
+    <% if preview && items.any? %>
+      <% header.with_aside do %><%= render Atoms::Chip::Component.new do %><%= t("home.preview_label") %><% end %><% end %>
     <% end %>
   <% end %>
-<% end %>
+  <% if items.empty? %>
+    <div class="flex flex-col items-center gap-2 border-t border-line px-6 pt-16 pb-8 text-center">
+      <span class="mb-2 flex size-14 items-center justify-center rounded-xl bg-lime text-forest" aria-hidden="true"><%= render Atoms::Icon::Component.new(name: :check, class: "size-6", "stroke-width": 2) %></span>
+      <h3 class="text-[22px] font-bold tracking-[-0.01em]"><%= t("home.inbox.empty.title") %></h3>
+      <p class="mb-3 max-w-sm leading-relaxed text-forest"><%= t("home.inbox.empty.body") %></p>
+      <%= render Atoms::LinkButton::Component.new(href: assign_href, variant: :primary, size: :md) do %><%= t("home.inbox.empty.action") %><% end %>
+    </div>
+  <% else %>
+    <ul class="m-0 flex list-none flex-col border-t border-line p-0">
+      <% items.each do |item| %>
+        <%= render Molecules::InboxRow::Component.new(item: item, href: item_href(item)) %>
+      <% end %>
+    </ul>
+  <% end %>
+</section>

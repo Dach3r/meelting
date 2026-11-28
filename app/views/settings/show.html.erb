@@ -1,32 +1,42 @@
 <% content_for :title, t("placeholders.settings.title") %>
-<div class="flex w-full max-w-3xl flex-col gap-6">
-  <h1 class="text-[32px] font-extrabold leading-none tracking-[-0.04em]"><%= t("placeholders.settings.title") %></h1>
+<% content_for :main_class, "flex w-full flex-col" %>
+<%= render Molecules::PageHeader::Component.new(title: t("placeholders.settings.title"), subtitle: t("placeholders.settings.subtitle", name: Current.user.full_name, username: Current.user.username), initial: Current.user.initials.first, class: "mb-10") %>
+
+<div class="flex w-full max-w-[760px] flex-col gap-6">
   <% if notice %>
     <%= render Molecules::Notice::Component.new(tone: :notice, id: "notice") do %><%= notice %><% end %>
   <% end %>
-  <div class="flex flex-col gap-1 rounded-[30px] bg-graphite-50 p-1.5">
-    <%= link_to access_tokens_path, class: "rounded-[22px] bg-white px-5 py-4 font-bold hover:bg-graphite-100" do %><%= t("placeholders.settings.access_tokens") %><% end %>
-    <div class="flex flex-wrap items-center justify-between gap-3 rounded-[22px] bg-white px-5 py-4" id="model_keys">
-      <div class="flex flex-col">
-        <span class="font-bold"><%= t("placeholders.settings.model_keys") %></span>
-        <span class="text-sm text-graphite-500">
+  <ul class="m-0 flex list-none flex-col border-t border-line p-0">
+    <li class="border-b border-line">
+      <%= link_to access_tokens_path, class: "flex items-center gap-4 py-5 text-ink" do %>
+        <span class="flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-lime text-forest" aria-hidden="true"><%= render Atoms::Icon::Component.new(name: :key_round, class: "size-[18px]", "stroke-width": 2) %></span>
+        <span class="flex-1 font-display text-[17px] font-bold"><%= t("placeholders.settings.access_tokens") %></span>
+        <%= render Atoms::Icon::Component.new(name: :chevron_right, class: "size-[18px] text-forest", "stroke-width": 2) %>
+      <% end %>
+    </li>
+    <li class="flex flex-wrap items-center gap-4 border-b border-line py-5" id="model_keys">
+      <span class="flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-lime text-forest" aria-hidden="true"><%= render Atoms::Icon::Component.new(name: :bot, class: "size-[18px]", "stroke-width": 2) %></span>
+      <div class="flex min-w-0 flex-[1_1_240px] flex-col gap-0.5">
+        <span class="font-display text-[17px] font-bold"><%= t("placeholders.settings.model_keys") %></span>
+        <span class="text-sm text-forest">
           <%= @provider_credential ? t("provider_credentials.status.#{@provider_credential.status}", provider: t("provider_credentials.providers.#{@provider_credential.provider}")) : t("provider_credentials.status.none") %>
         </span>
         <% if @provider_credential&.status_unverified? %>
-          <span class="text-sm font-semibold text-coral-700" role="status"><%= t("provider_credentials.unverified_notice") %></span>
+          <span class="text-sm font-semibold text-danger" role="status"><%= t("provider_credentials.unverified_notice") %></span>
         <% end %>
       </div>
       <div class="flex items-center gap-2">
         <% action = if @provider_credential.nil? then :add elsif @provider_credential.status_unverified? then :retry else :replace end %>
-        <%= render Atoms::LinkButton::Component.new(href: new_provider_credential_path, variant: :graphite_outline, size: :sm) do %><%= t("provider_credentials.actions.#{action}") %><% end %>
+        <%= render Atoms::LinkButton::Component.new(href: new_provider_credential_path, variant: :secondary, size: :sm) do %><%= t("provider_credentials.actions.#{action}") %><% end %>
         <% if @provider_credential %>
-          <%= button_to t("provider_credentials.actions.remove"), provider_credential_path(@provider_credential), method: :delete, class: "cursor-pointer rounded-full bg-graphite-50 px-3.5 py-1.5 text-sm font-semibold text-coral-700 hover:bg-graphite-100" %>
+          <%= button_to t("provider_credentials.actions.remove"), provider_credential_path(@provider_credential), method: :delete, class: "nb-btn h-10 bg-transparent px-3.5 text-sm text-danger hover:bg-danger-soft" %>
         <% end %>
       </div>
-    </div>
-    <div class="flex flex-wrap items-center justify-between gap-2 rounded-[22px] bg-white px-5 py-4">
-      <span class="font-bold"><%= t("placeholders.settings.mirrors") %></span>
-      <span class="text-sm text-graphite-500"><%= t("placeholders.phase", phase: 1) %></span>
-    </div>
-  </div>
+    </li>
+    <li class="flex flex-wrap items-center gap-4 border-b border-line py-5">
+      <span class="flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-cream text-forest" aria-hidden="true"><%= render Atoms::Icon::Component.new(name: :refresh_cw, class: "size-[18px]", "stroke-width": 2) %></span>
+      <span class="flex-1 font-display text-[17px] font-bold"><%= t("placeholders.settings.mirrors") %></span>
+      <%= render Atoms::Chip::Component.new do %><%= t("placeholders.phase_short", phase: 1) %><% end %>
+    </li>
+  </ul>
 </div>

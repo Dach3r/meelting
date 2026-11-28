@@ -19,22 +19,15 @@ class Organisms::Navbar::ComponentTest < ViewComponent::TestCase
     assert_empty nav.css("a[href='/session/new']")
   end
 
-  test "shows the brand only to guests, the sidebar owns it once signed in" do
+  test "shows the brand to guests and a workspace pill hidden while the sidebar is expanded" do
     guest = render_inline(Organisms::Navbar::Component.new(authenticated: false))
     member = render_inline(Organisms::Navbar::Component.new(authenticated: true, user: users(:one)))
 
     assert_equal ApplicationHelper::CONFIG[:name], guest.css("a[href='/']").text.strip
-    assert_empty member.css("a[href='/']")
-  end
-
-  test "stays fixed at the top in both states" do
-    [true, false].each do |authenticated|
-      header = render_inline(Organisms::Navbar::Component.new(authenticated: authenticated, user: (users(:one) if authenticated))).css("header")
-
-      assert_includes header.attr("class").value, "sticky"
-      assert_includes header.attr("class").value, "top-0"
-      assert_includes header.attr("class").value, "bg-white"
-    end
+    pill = member.css("a[href='/']").first
+    assert_equal ApplicationHelper::CONFIG[:name], pill["aria-label"]
+    assert_includes pill.text, I18n.t("navbar.workspace")
+    assert_includes pill["class"], "lg:group-data-sidebar-expanded/shell:hidden"
   end
 
   test "renders notifications bell only when authenticated" do

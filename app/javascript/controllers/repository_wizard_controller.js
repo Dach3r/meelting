@@ -10,8 +10,8 @@ export default class extends Controller {
 
     this.stepTargets.forEach((step, index) => { step.hidden = index + 1 !== current })
     this.barTargets.forEach((bar, index) => {
-      bar.classList.toggle("bg-graphite-900", index < current)
-      bar.classList.toggle("bg-graphite-100", index >= current)
+      bar.classList.toggle("bg-forest", index < current)
+      bar.classList.toggle("bg-line", index >= current)
     })
     this.progressTarget.setAttribute("aria-valuenow", current)
     this.positionTarget.textContent = `${current}/${total}`

@@ -7,6 +7,10 @@ module Molecules
 
       private
       attr_reader :user
+
+      def initial
+        user.initials.first
+      end
     end
   end
 end

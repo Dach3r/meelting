@@ -1,17 +1,11 @@
 require "test_helper"
 
 class Atoms::Chip::ComponentTest < ViewComponent::TestCase
-  test "renders the content with the tone classes" do
-    chip = render_inline(Atoms::Chip::Component.new(tone: :deep)) { "New" }.css("span")
+  test "renders the content as a dashed chip" do
+    chip = render_inline(Atoms::Chip::Component.new) { "New" }.css("span")
 
     assert_equal "New", chip.text
-    assert_includes chip.attr("class").value, "border-white/40"
-  end
-
-  test "upper adds uppercase styling" do
-    chip = render_inline(Atoms::Chip::Component.new(upper: true)) { "Label" }.css("span")
-
-    assert_includes chip.attr("class").value, "uppercase"
+    assert_includes chip.attr("class").value, "nb-chip"
   end
 
   test "passes html options through" do
@@ -24,6 +18,6 @@ class Atoms::Chip::ComponentTest < ViewComponent::TestCase
     chip = render_inline(Atoms::Chip::Component.new(class: "text-sm")) { "x" }.css("span")
 
     assert_includes chip.attr("class").value, "text-sm"
-    assert_includes chip.attr("class").value, "bg-white"
+    assert_includes chip.attr("class").value, "nb-chip"
   end
 end

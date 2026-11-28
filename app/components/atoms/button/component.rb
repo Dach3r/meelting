@@ -2,10 +2,9 @@ module Atoms
   module Button
     class Component < ViewComponent::Base
       TONES = {
-        light: "font-bold text-ink-soft hover:text-brand-600",
-        deep: "font-bold text-brand-200 hover:text-white",
-        menu: "block w-full rounded-full px-4 py-2.5 text-left font-semibold text-graphite-900 hover:bg-graphite-100",
-        pill: "rounded-full bg-graphite-900 px-5 py-[11px] font-semibold leading-[normal] text-white"
+        light: "font-semibold text-forest hover:text-ink",
+        menu: "block w-full rounded-xl px-4 py-2.5 text-left font-semibold text-ink hover:bg-cream",
+        pill: "inline-flex h-11 items-center rounded-xl bg-forest px-5 font-display text-[15px] font-bold text-lime hover:bg-forest-active"
       }.freeze
 
       def initialize(href:, method: :post, tone: :light, **html_options)

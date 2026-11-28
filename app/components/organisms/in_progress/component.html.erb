@@ -1,12 +1,12 @@
-<%= render Molecules::Tray::Component.new(title: t("home.in_progress.title"), count: runs.size, preview: (t("home.preview_label") if preview), link: { label: t("home.in_progress.view_all"), href: runs_path }, list: true, id: "in-progress") do %>
+<%= render Molecules::Tray::Component.new(title: t("home.in_progress.title"), preview: (t("home.preview_label") if preview), link: { label: t("home.in_progress.view_all"), href: runs_path }, list: true, id: "in-progress") do %>
   <% visible_runs.each do |run| %>
-    <li class="flex flex-wrap items-center gap-3.5 rounded-[22px] bg-white px-5 py-3.5">
-      <%= render Atoms::AgentAvatar::Component.new(size: :lg) %>
-      <div class="min-w-0 flex-[1_1_16rem]">
-        <p class="truncate text-[17px] font-bold tracking-[-0.02em]"><%= run.title %></p>
-        <p class="truncate font-mono text-[13px] text-graphite-500">› <%= run.last_event %></p>
+    <li class="flex flex-wrap items-center gap-4 rounded-xl border-2 border-ink py-3.5 pr-4 pl-3.5">
+      <span class="flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-lime text-forest" aria-hidden="true"><%= render Atoms::Icon::Component.new(name: :terminal, class: "size-[18px]", "stroke-width": 2) %></span>
+      <div class="min-w-0 flex-[1_1_260px]">
+        <p class="truncate font-display text-base font-bold"><%= run.title %></p>
+        <p class="mt-0.5 truncate font-mono text-[13px] text-forest"><%= run.last_event %></p>
       </div>
-      <%= render Atoms::StatusChip::Component.new(tone: :run, class: "font-mono") do %><%= helpers.format_duration(run.elapsed_seconds) %><% end %>
+      <span class="inline-flex items-center gap-2 font-mono text-[13px] font-semibold text-ink"><span class="size-2 rounded-full bg-info" aria-hidden="true"></span><%= helpers.format_duration(run.elapsed_seconds) %></span>
     </li>
   <% end %>
 <% end %>

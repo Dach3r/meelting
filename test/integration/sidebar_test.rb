@@ -33,6 +33,16 @@ class SidebarTest < ActionDispatch::IntegrationTest
     assert_select "a[href=?] [role=img][aria-label=?]", settings_path, "Hay un problema de configuración"
   end
 
+  test "renders the rail by default and the expanded sidebar when its cookie says so" do
+    sign_in_as users(:one)
+    get root_path
+    assert_select "body[data-sidebar-expanded]", count: 0
+
+    cookies[ApplicationHelper::SIDEBAR_COOKIE] = "1"
+    get root_path
+    assert_select "body[data-sidebar-expanded]"
+  end
+
   test "the sidebar is absent for guests" do
     get unauthenticated_root_path
 

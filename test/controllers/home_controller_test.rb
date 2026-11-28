@@ -98,6 +98,6 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     sign_in_as users(:one)
     get repositories_path
 
-    assert_select "nav summary", /AL\s+Ada Lovelace/
+    assert_select "nav summary", /A\s+Ada Lovelace/
   end
 end

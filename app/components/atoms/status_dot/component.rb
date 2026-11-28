@@ -2,11 +2,11 @@ module Atoms
   module StatusDot
     class Component < ViewComponent::Base
       TONES = {
-        ok: "bg-brand-500",
-        bad: "bg-danger-500",
-        none: "bg-graphite-300",
-        run: "bg-sky-400",
-        warn: "bg-amber-500"
+        ok: "bg-lime",
+        bad: "bg-danger-bright",
+        none: "bg-forest-muted",
+        run: "bg-info-soft",
+        warn: "bg-warn"
       }.freeze
 
       def initialize(tone:, label:)
@@ -15,7 +15,7 @@ module Atoms
       end
 
       def call
-        tag.span class: class_names("inline-block size-2 shrink-0 rounded-full", TONES.fetch(@tone)), role: "img", "aria-label": @label
+        tag.span class: class_names("inline-block size-[7px] shrink-0 rounded-full", TONES.fetch(@tone)), role: "img", "aria-label": @label
       end
     end
   end

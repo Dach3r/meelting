@@ -1,13 +1,13 @@
 <div>
-  <button type="button" class="group flex w-full cursor-pointer focus-visible:ring-2 focus-visible:ring-graphite-900 items-center gap-2.5 rounded-full px-3.5 py-2.5 text-left font-medium text-graphite-700 hover:bg-white/60 aria-expanded:font-semibold aria-expanded:text-graphite-900" aria-expanded="<%= expanded %>" aria-controls="<%= panel_id %>" data-sidebar-target="toggle" data-slug="<%= repository.slug %>" data-action="sidebar#toggle">
-    <%= render Atoms::Icon::Component.new(name: :chevron_right, class: "size-4 shrink-0 transition-transform group-aria-expanded:rotate-90") %>
+  <button type="button" class="flex h-[46px] w-full cursor-pointer items-center gap-3.5 rounded-xl px-4 text-left text-[15px] font-semibold text-forest-soft hover:bg-forest-active/50 aria-expanded:text-white" aria-expanded="<%= expanded %>" aria-controls="<%= panel_id %>" data-sidebar-target="toggle" data-slug="<%= repository.slug %>" data-action="sidebar#toggle">
+    <span class="flex size-[26px] shrink-0 items-center justify-center rounded-lg bg-forest-active font-initials text-xs font-bold text-lime" aria-hidden="true"><%= monogram %></span>
     <span class="min-w-0 flex-1 truncate"><%= repository.name %></span>
     <%= render Atoms::StatusDot::Component.new(tone: MIRROR_TONES.fetch(repository.mirror), label: t("sidebar.mirror.#{repository.mirror}")) %>
   </button>
-  <div id="<%= panel_id %>" class="ml-[26px] mt-0.5 mb-1.5 flex flex-col gap-px border-l-2 border-graphite-100 pl-2.5" <%= "hidden" unless expanded %>>
+  <div id="<%= panel_id %>" class="mt-0.5 mb-1.5 ml-[28px] flex flex-col gap-px border-l-2 border-forest-active pl-3" <%= "hidden" unless expanded %>>
     <% SECTIONS.each do |section| %>
       <% current = current_section?(section) %>
-      <%= link_to t("sidebar.sections.#{section}"), section_path(section), class: class_names("rounded-full px-3.5 py-1.5 text-sm font-medium hover:bg-white/60 focus-visible:ring-2 focus-visible:ring-graphite-900", current ? "bg-white font-semibold text-graphite-900" : "text-graphite-700"), aria: { current: (current ? "page" : nil) } %>
+      <%= link_to t("sidebar.sections.#{section}"), section_path(section), class: class_names("flex h-9 items-center rounded-lg px-3 text-sm font-medium", current ? "bg-forest-active text-lime" : "text-forest-soft hover:bg-forest-active/50"), aria: { current: (current ? "page" : nil) } %>
     <% end %>
   </div>
 </div>

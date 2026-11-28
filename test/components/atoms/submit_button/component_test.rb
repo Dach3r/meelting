@@ -11,6 +11,6 @@ class Atoms::SubmitButton::ComponentTest < ViewComponent::TestCase
     button = render_inline(Atoms::SubmitButton::Component.new(id: "go", class: "mt-2")) { "Go" }.css("button#go")
 
     assert_includes button.attr("class").value, "mt-2"
-    assert_includes button.attr("class").value, "bg-sun-400"
+    assert_includes button.attr("class").value, "bg-forest"
   end
 end

@@ -1,12 +1,14 @@
 es:
   placeholders:
     phase: "Se construye en la Fase %{phase}."
+    phase_short: "Fase %{phase}"
     runs:
       title: "Runs"
       body: "Aquí verás todos los runs de tus agentes."
     repository: "Repositorio %{name}"
     settings:
       title: "Configuración"
+      subtitle: "%{name} · %{username}"
       access_tokens: "Tokens de acceso"
       model_keys: "Model keys"
       mirrors: "Mirrors"

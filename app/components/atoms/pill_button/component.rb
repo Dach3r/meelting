@@ -1,7 +1,7 @@
 module Atoms
   module PillButton
     class Component < ViewComponent::Base
-      def initialize(variant: :graphite_outline, size: :sm, **html_options)
+      def initialize(variant: :secondary, size: :sm, **html_options)
         @variant = variant
         @size = size
         @extra_class = html_options.delete(:class)

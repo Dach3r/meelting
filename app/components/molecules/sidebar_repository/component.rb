@@ -12,6 +12,10 @@ module Molecules
       private
       attr_reader :repository, :expanded
 
+      def monogram
+        repository.name[0].downcase
+      end
+
       def panel_id
         "sidebar-repository-#{repository.slug}"
       end

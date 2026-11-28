@@ -1,23 +1,28 @@
-<div class="nb-card mx-auto w-full bg-white p-6 md:w-2/3 md:p-8">
+<% content_for :main_class, "flex w-full flex-col" %>
+<%= render Molecules::PageHeader::Component.new(title: t(".title"), icon: :git_branch, class: "mb-10") do |header| %>
+  <% header.with_aside do %>
+    <%= render Atoms::LinkButton::Component.new(href: new_repository_path, variant: :primary, size: :md) do %><%= render Atoms::Icon::Component.new(name: :plus, class: "size-[18px]", "stroke-width": 2) %><%= t(".new") %><% end %>
+  <% end %>
+<% end %>
+
+<div class="flex w-full max-w-[760px] flex-col gap-6">
   <% if notice = flash[:notice] %>
-    <p class="nb-card mb-5 bg-sky-100 px-4 py-2.5 font-bold text-sky-700" id="notice"><%= notice %></p>
+    <%= render Molecules::Notice::Component.new(tone: :notice, id: "notice") do %><%= notice %><% end %>
   <% end %>
 
-  <div class="flex items-center justify-between">
-    <h1 class="text-4xl font-extrabold tracking-tight"><%= t(".title") %></h1>
-    <%= link_to t(".new"), new_repository_path, class: "nb-btn nb-btn-raised bg-brand-600 px-4 py-2.5 text-sm text-white hover:bg-brand-700" %>
-  </div>
-
   <% if @repositories.empty? %>
-    <p class="my-8 text-ink-soft"><%= t(".empty") %></p>
+    <p class="border-t border-line pt-6 text-forest"><%= t(".empty") %></p>
   <% else %>
-    <ul class="my-8 divide-y divide-line">
+    <ul class="m-0 flex list-none flex-col border-t border-line p-0">
       <% @repositories.each do |repository| %>
-        <li class="py-4" id="<%= dom_id(repository) %>">
-          <p class="font-bold"><%= repository.name %> <span class="text-sm text-ink-soft">&middot; <%= t("repositories.visibilities.#{repository.visibility}") %></span></p>
-          <% if repository.description.present? %>
-            <p class="text-sm text-ink-soft"><%= repository.description %></p>
-          <% end %>
+        <li class="flex items-center gap-4 border-b border-line py-5" id="<%= dom_id(repository) %>">
+          <span class="flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-lime font-initials text-sm font-bold text-forest" aria-hidden="true"><%= repository.name[0].downcase %></span>
+          <div class="flex min-w-0 flex-col gap-0.5">
+            <p class="font-display text-[17px] font-bold"><%= repository.name %> <span class="font-sans text-sm font-normal text-forest">&middot; <%= t("repositories.visibilities.#{repository.visibility}") %></span></p>
+            <% if repository.description.present? %>
+              <p class="text-sm text-forest"><%= repository.description %></p>
+            <% end %>
+          </div>
         </li>
       <% end %>
     </ul>

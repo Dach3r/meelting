@@ -5,6 +5,7 @@ es:
     preview_label: "Datos de ejemplo"
     inbox:
       title: "Necesita tu decisión"
+      subtitle: "%{count} pendientes · %{repositories}"
       kinds:
         approve: "Aprobar"
         merge: "Merge"

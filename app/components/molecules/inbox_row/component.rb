@@ -2,9 +2,9 @@ module Molecules
   module InboxRow
     class Component < ViewComponent::Base
       KINDS = {
-        approve: { tone: :wait, icon: :check, button: :primary },
-        merge: { tone: :neutral, icon: :git_merge, button: :graphite_outline },
-        failed: { tone: :bad, icon: :triangle_alert, button: :graphite_outline }
+        approve: { tone: :neutral, icon: :check, button: :primary, tile: "bg-lime text-forest" },
+        merge: { tone: :neutral, icon: :git_pull_request, button: :primary, tile: "bg-lime text-forest" },
+        failed: { tone: :bad, icon: :x, button: :secondary, tile: "bg-danger-soft text-danger" }
       }.freeze
 
       def initialize(item:, href:)

@@ -6,7 +6,7 @@ class Molecules::SearchTrigger::ComponentTest < ViewComponent::TestCase
 
     assert_equal "button", button.attr("type").value
     assert button.attr("aria-label").value.present?
-    assert_includes button.attr("class").value, "flex-1"
+    assert_includes button.attr("class").value, "flex-[1_1_280px]"
     assert_empty button.css("kbd")
   end
 end

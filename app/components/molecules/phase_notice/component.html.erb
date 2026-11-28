@@ -1,7 +1,7 @@
-<div class="flex w-full max-w-3xl flex-col gap-6">
-  <h1 class="ml-1 text-[32px] font-extrabold leading-none tracking-[-0.04em]"><%= title %></h1>
-  <div class="flex flex-col items-start gap-2 rounded-[30px] bg-graphite-50 p-8">
-    <p class="font-bold"><%= body %></p>
-    <p class="text-graphite-500"><%= t("placeholders.phase", phase: phase) %></p>
+<div class="flex w-full max-w-3xl flex-col gap-10">
+  <%= render Molecules::PageHeader::Component.new(title: title) %>
+  <div class="flex flex-col items-start gap-3 border-t border-line pt-6">
+    <p class="font-display text-[17px] font-bold"><%= body %></p>
+    <p class="nb-chip"><%= t("placeholders.phase", phase: phase) %></p>
   </div>
 </div>

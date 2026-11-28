@@ -1,16 +1,22 @@
-<header class="<%= class_names("sticky top-0 z-20 flex items-center gap-3 bg-white", authenticated ? "pb-7 pt-5" : "py-7 pl-5 pr-2") %>">
-  <% unless authenticated %>
-    <%= render Molecules::Brand::Component.new(tone: :graphite, size: :lg) %>
-  <% end %>
+<header class="<%= class_names("flex flex-wrap items-center gap-3", "py-7 pl-5 pr-2" => !authenticated) %>">
   <% if authenticated %>
-    <%= render Molecules::SearchTrigger::Component.new %>
-  <% end %>
-  <nav class="<%= class_names("flex items-center gap-2.5", "ml-auto" => !authenticated) %>" aria-label="<%= t("navbar.label") %>">
-    <% if authenticated %>
-      <button type="button" class="flex size-14 shrink-0 cursor-pointer items-center justify-center rounded-full bg-graphite-50 text-graphite-900" aria-label="<%= t("navbar.notifications_label") %>"><%= render Atoms::Icon::Component.new(name: :bell, class: "size-5") %></button>
-      <%= render Molecules::UserMenu::Component.new(user: user) %>
-    <% else %>
-      <%= render Atoms::LinkButton::Component.new(href: new_session_path, variant: :secondary, size: :pill, class: "inline-flex h-14 items-center gap-2 px-7") do %><%= render Atoms::Icon::Component.new(name: :log_in, class: "size-4") %><%= t("navbar.sign_in") %><% end %>
+    <%= link_to root_path, class: "hidden h-[54px] items-center gap-3 rounded-full bg-white pr-[18px] pl-[9px] text-ink lg:flex lg:group-data-sidebar-expanded/shell:hidden", aria: { label: ApplicationHelper::CONFIG[:name] } do %>
+      <span class="flex size-9 items-center justify-center rounded-full bg-forest font-initials text-sm font-bold text-lime" aria-hidden="true"><%= ApplicationHelper::CONFIG[:name][0] %></span>
+      <span class="flex flex-col leading-[1.15]">
+        <span class="font-display text-[15px] font-bold"><%= ApplicationHelper::CONFIG[:name].downcase %></span>
+        <span class="text-[13px] text-forest"><%= t("navbar.workspace") %></span>
+      </span>
+      <%= render Atoms::Icon::Component.new(name: :chevrons_up_down, class: "ml-3 size-4 text-forest", "stroke-width": 2) %>
     <% end %>
-  </nav>
+    <%= render Molecules::SearchTrigger::Component.new %>
+    <nav class="flex items-center gap-3" aria-label="<%= t("navbar.label") %>">
+      <button type="button" class="flex size-[54px] shrink-0 cursor-pointer items-center justify-center rounded-full bg-white text-ink" aria-label="<%= t("navbar.notifications_label") %>"><%= render Atoms::Icon::Component.new(name: :bell, class: "size-5", "stroke-width": 1.75) %></button>
+      <%= render Molecules::UserMenu::Component.new(user: user) %>
+    </nav>
+  <% else %>
+    <%= render Molecules::Brand::Component.new(tone: :dark) %>
+    <nav class="ml-auto flex items-center gap-3" aria-label="<%= t("navbar.label") %>">
+      <%= render Atoms::LinkButton::Component.new(href: new_session_path, variant: :primary, size: :lg) do %><%= render Atoms::Icon::Component.new(name: :log_in, class: "size-[18px]") %><%= t("navbar.sign_in") %><% end %>
+    </nav>
+  <% end %>
 </header>

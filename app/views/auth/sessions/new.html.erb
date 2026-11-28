@@ -3,15 +3,15 @@
 <%= form_with url: session_url, class: "grid grid-cols-1 gap-5" do |form| %>
   <%= render Molecules::FormField::Component.new(form: form, attribute: :username, label: t("auth.fields.username"), icon: :user, autofocus: true, autocapitalize: "none", autocomplete: "username", placeholder: t(".username_placeholder"), value: params[:username]) %>
   <%= render Molecules::FormField::Component.new(form: form, attribute: :password, label: t("auth.fields.password"), icon: :lock, type: :password, autocomplete: "current-password", placeholder: t(".password_placeholder"), maxlength: 72) do |field| %>
-    <% field.with_label_aside do %><%= render Atoms::Link::Component.new(href: new_password_path, tone: :graphite, class: "text-[13px]") do %><%= t(".forgot_password") %><% end %><% end %>
+    <% field.with_label_aside do %><%= render Atoms::Link::Component.new(href: new_password_path, tone: :underline, class: "text-[13px]") do %><%= t(".forgot_password") %><% end %><% end %>
   <% end %>
 
   <%= render Atoms::SubmitButton::Component.new do %><%= t(".submit") %><% end %>
 
-  <div class="flex items-center gap-4 py-1 text-xs font-medium uppercase leading-[normal] tracking-widest text-graphite-400" role="separator">
-    <span class="h-px flex-1 bg-gradient-to-r from-transparent to-graphite-100"></span>
+  <div class="flex items-center gap-4 py-1 text-xs font-medium uppercase leading-[normal] tracking-widest text-forest/70" role="separator">
+    <span class="h-px flex-1 bg-gradient-to-r from-transparent to-cream-line"></span>
     <span><%= t(".or") %></span>
-    <span class="h-px flex-1 bg-gradient-to-l from-transparent to-graphite-100"></span>
+    <span class="h-px flex-1 bg-gradient-to-l from-transparent to-cream-line"></span>
   </div>
 
   <%= render Atoms::LinkButton::Component.new(href: new_registration_path, variant: :secondary, size: :block) do %><%= t(".sign_up") %><% end %>

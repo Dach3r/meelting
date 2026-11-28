@@ -1,14 +1,14 @@
 <%= tag.section **html_options do %>
-  <div class="mb-3 ml-1 flex flex-wrap items-center gap-3">
-    <h2 class="text-[22px] font-extrabold leading-none tracking-[-0.035em]">
-      <%= title %><% if count %> <span class="text-graphite-400"><%= count %></span><% end %>
+  <div class="mb-4 flex flex-wrap items-baseline gap-3">
+    <h2 class="text-[28px] leading-[1.1] font-extrabold tracking-[-0.02em]">
+      <%= title %><% if count %> <span class="text-forest-muted"><%= count %></span><% end %>
     </h2>
     <% if preview %>
-      <span class="rounded-full border border-dashed border-graphite-300 px-2.5 py-0.5 text-xs font-medium text-graphite-500"><%= preview %></span>
+      <%= render Atoms::Chip::Component.new do %><%= preview %><% end %>
     <% end %>
     <% if link %>
-      <%= link_to link[:label], link[:href], class: "ml-auto pr-1 text-sm font-semibold text-graphite-500 hover:text-graphite-900" %>
+      <%= link_to link[:label], link[:href], class: "ml-auto text-[15px] font-semibold text-forest hover:text-ink" %>
     <% end %>
   </div>
-  <%= content_tag body_tag, content, class: "m-0 flex list-none flex-col gap-1 rounded-[30px] bg-graphite-50 p-1.5" %>
+  <%= content_tag body_tag, content, class: "m-0 flex list-none flex-col gap-3 p-0" %>
 <% end %>

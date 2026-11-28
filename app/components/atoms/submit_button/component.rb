@@ -10,7 +10,7 @@ module Atoms
 
       def classes
         class_names(
-          "flex w-full cursor-pointer items-center justify-center rounded-full bg-sun-400 px-6 py-5 text-base font-semibold leading-[normal] text-graphite-900 focus:outline-sun-400/40 active:outline-sun-400/40",
+          "flex h-14 w-full cursor-pointer items-center justify-center rounded-xl bg-forest px-6 font-display text-[17px] font-bold text-lime hover:bg-forest-active",
           html_options[:class]
         )
       end

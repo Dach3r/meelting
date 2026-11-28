@@ -5,6 +5,6 @@ class Atoms::StatusDot::ComponentTest < ViewComponent::TestCase
     dot = render_inline(Atoms::StatusDot::Component.new(tone: :bad, label: "Mirror fallando"))
 
     assert_equal "Mirror fallando", dot.css("span[role=img]").first["aria-label"]
-    assert_includes dot.css("span").first["class"], "bg-danger-500"
+    assert_includes dot.css("span").first["class"], "bg-danger-bright"
   end
 end

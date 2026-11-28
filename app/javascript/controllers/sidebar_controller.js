@@ -1,15 +1,24 @@
 import { Controller } from "@hotwired/stimulus"
 
 // Expands one repository at a time and remembers it on the server so the next page load
-// renders the same state without a flash.
+// renders the same state without a flash. The rail/expanded width lives in a cookie for the
+// same reason.
 export default class extends Controller {
   static targets = ["toggle", "menu", "menuButton"]
-  static values = { url: String }
+  static values = { url: String, cookie: String }
 
   menu() {
     const open = this.menuTarget.toggleAttribute("data-open")
 
     this.menuButtonTarget.setAttribute("aria-expanded", open)
+  }
+
+  expand() {
+    this.#width(true)
+  }
+
+  collapse() {
+    this.#width(false)
   }
 
   toggle({ currentTarget: button }) {
@@ -19,6 +28,11 @@ export default class extends Controller {
     if (opening) this.#set(button, true)
 
     this.#persist(opening ? button.dataset.slug : "")
+  }
+
+  #width(expanded) {
+    document.body.toggleAttribute("data-sidebar-expanded", expanded)
+    document.cookie = `${this.cookieValue}=${expanded ? 1 : 0}; path=/; max-age=31536000; samesite=lax`
   }
 
   #set(button, open) {

@@ -1,12 +1,14 @@
 en:
   placeholders:
     phase: "Built in Phase %{phase}."
+    phase_short: "Phase %{phase}"
     runs:
       title: "Runs"
       body: "All the runs of your agents will be listed here."
     repository: "Repository %{name}"
     settings:
       title: "Settings"
+      subtitle: "%{name} · %{username}"
       access_tokens: "Access tokens"
       model_keys: "Model keys"
       mirrors: "Mirrors"

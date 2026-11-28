@@ -10,6 +10,8 @@ en:
     new_repository: "New repository"
     settings: "Settings"
     settings_warning: "There is a configuration problem"
+    expand: "Expand menu"
+    collapse: "Collapse"
     preview: "Preview data"
     mirror:
       ok: "Mirror up to date"

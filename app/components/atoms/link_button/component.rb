@@ -4,25 +4,17 @@ module Atoms
       BASE = "nb-btn".freeze
 
       VARIANTS = {
-        primary: "rounded-full border-transparent bg-sun-400 font-semibold text-graphite-900 focus:outline-sun-400/40 active:outline-sun-400/40",
-        secondary: "rounded-full border-transparent bg-graphite-900 font-semibold text-white",
-        signal: "nb-btn-raised-light nb-btn-raised border-white bg-sun-400 text-ink focus:outline-sun-400/40 active:outline-sun-400/40",
-        deep: "border-white/40 bg-transparent text-white hover:bg-white/10 focus:outline-white/30 active:outline-white/30",
-        inverse: "nb-btn-raised bg-white text-brand-700 hover:bg-brand-50 focus:outline-white/30 active:outline-white/30",
-        graphite: "rounded-full border-transparent bg-graphite-900 font-semibold text-white",
-        graphite_outline: "rounded-full border-transparent bg-graphite-50 font-semibold text-graphite-900 hover:bg-graphite-100",
-        danger: "rounded-full border-transparent bg-graphite-50 font-semibold text-coral-700 hover:bg-graphite-100",
-        graphite_soft: "rounded-full border-transparent bg-white font-semibold text-graphite-900 hover:bg-graphite-100",
-        inverse_outline: "border-white bg-transparent text-white hover:bg-white/10 focus:outline-white/30 active:outline-white/30"
+        primary: "bg-forest text-lime hover:bg-forest-active",
+        secondary: "border-ink bg-white text-ink hover:bg-cream",
+        accent: "bg-lime text-forest",
+        danger: "bg-transparent text-danger hover:bg-danger-soft"
       }.freeze
 
       SIZES = {
-        sm: "px-3.5 py-1.5 text-sm",
-        pill: "px-5 py-[11px] text-sm leading-[normal]",
-        cta: "px-[34px] py-[18px] text-[17px] leading-[normal]",
-        block: "w-full px-6 py-5 text-base leading-[normal]",
-        md: "px-4 py-2.5 text-sm",
-        lg: "px-6 py-3.5 text-base"
+        sm: "h-10 px-4 text-sm",
+        md: "h-11 px-5 text-[15px]",
+        lg: "h-14 px-6 text-[17px]",
+        block: "h-14 w-full px-6 text-[17px]"
       }.freeze
 
       def initialize(href:, variant: :primary, size: :md, **html_options)

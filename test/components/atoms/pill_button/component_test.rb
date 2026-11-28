@@ -6,19 +6,19 @@ class Atoms::PillButton::ComponentTest < ViewComponent::TestCase
 
     assert_equal "Go", button.text
     assert_equal "button", button.attr("type").value
-    assert_includes button.attr("class").value, "bg-sun-400"
+    assert_includes button.attr("class").value, "bg-forest"
   end
 
-  test "defaults to the gray variant" do
+  test "defaults to the outlined variant" do
     button = render_inline(Atoms::PillButton::Component.new) { "Go" }.css("button")
 
-    assert_includes button.attr("class").value, "bg-graphite-50"
+    assert_includes button.attr("class").value, "border-ink"
   end
 
-  test "danger variant uses coral text" do
+  test "danger variant uses danger text" do
     button = render_inline(Atoms::PillButton::Component.new(variant: :danger)) { "Reject" }.css("button")
 
-    assert_includes button.attr("class").value, "text-coral-700"
+    assert_includes button.attr("class").value, "text-danger"
   end
 
   test "merges custom classes" do

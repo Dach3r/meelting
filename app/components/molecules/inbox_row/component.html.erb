@@ -1,14 +1,14 @@
-<li class="flex flex-wrap items-center gap-3.5 rounded-[22px] bg-white px-5 py-3.5">
-  <span class="<%= class_names("flex size-[52px] shrink-0 items-center justify-center rounded-2xl bg-graphite-900", item.kind == :failed ? "text-coral-400" : "text-sun-400") %>" aria-hidden="true">
-    <%= render Atoms::Icon::Component.new(name: kind[:icon], class: "size-6") %>
+<li class="flex flex-wrap items-center gap-4 border-b border-line py-[18px]">
+  <span class="<%= class_names("flex size-11 shrink-0 items-center justify-center rounded-xl", kind[:tile]) %>" aria-hidden="true">
+    <%= render Atoms::Icon::Component.new(name: kind[:icon], class: "size-5", "stroke-width": 2) %>
   </span>
-  <div class="min-w-0 flex-[1_1_16rem]">
-    <p class="truncate text-[17px] font-bold tracking-[-0.02em]"><%= item.title %></p>
-    <p class="truncate text-sm text-graphite-500"><%= context %></p>
+  <div class="min-w-0 flex-[1_1_260px]">
+    <p class="truncate font-display text-[17px] font-bold"><%= item.title %></p>
+    <p class="mt-0.5 truncate text-sm text-forest"><%= context %></p>
   </div>
   <% if item.flag %>
-    <%= render Atoms::StatusChip::Component.new(tone: :bad, icon: :triangle_alert) do %><%= t("home.inbox.flags.#{item.flag}") %><% end %>
+    <%= render Atoms::StatusChip::Component.new(tone: :alert, icon: :triangle_alert) do %><%= t("home.inbox.flags.#{item.flag}") %><% end %>
   <% end %>
   <%= render Atoms::StatusChip::Component.new(tone: kind[:tone]) do %><%= t("home.inbox.kinds.#{item.kind}") %><% end %>
-  <%= render Atoms::LinkButton::Component.new(href: href, variant: kind[:button], size: :pill) do %><%= t("home.inbox.actions.#{item.kind}") %><% end %>
+  <%= render Atoms::LinkButton::Component.new(href: href, variant: kind[:button], size: :md) do %><%= t("home.inbox.actions.#{item.kind}") %><% end %>
 </li>

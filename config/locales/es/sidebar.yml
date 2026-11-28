@@ -10,6 +10,8 @@ es:
     new_repository: "Nuevo repositorio"
     settings: "Configuración"
     settings_warning: "Hay un problema de configuración"
+    expand: "Expandir menú"
+    collapse: "Contraer"
     preview: "Datos de ejemplo"
     mirror:
       ok: "Mirror al día"
